@@ -20,6 +20,9 @@ secrets.json
 *.sln.docstates
 *.rsuser
 
+node_modules/
+dist/
+
 .idea/
 *.sln.iml
 
@@ -38,7 +41,6 @@ secrets.json
 *.snupkg
 .nuget/
 packages/
-nuget.config
 
 [Tt]est[Rr]esult*/
 [Bb]uild[Ll]og.*
@@ -50,8 +52,8 @@ coverage.opencover.xml
 
 *_backup.cs
 
-.dockerignore
-
 .DS_Store
 Thumbs.db
 desktop.ini
+
+ai-context/
