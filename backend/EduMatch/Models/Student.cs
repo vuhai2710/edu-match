@@ -1,5 +1,3 @@
-using EduMatch.Shared.Enums;
-
 namespace EduMatch.Models
 {
   public class Student : BaseEntity

@@ -1,4 +1,4 @@
-﻿using EduMatch.Shared.Enums;
+﻿using EduMatch.Enums;
 
 namespace EduMatch.Models
 {

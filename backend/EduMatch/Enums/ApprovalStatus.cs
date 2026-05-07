@@ -1,4 +1,4 @@
-﻿namespace EduMatch.Shared.Enums
+﻿namespace EduMatch.Enums
 {
   public enum ApprovalStatus
   {

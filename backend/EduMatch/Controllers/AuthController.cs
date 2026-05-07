@@ -34,6 +34,16 @@ namespace EduMatch.Controllers
       var data = await _authService.LoginAsync(dto);
       return Ok(ApiResponse<AuthResponseDto>.SuccessResult(data, "Đăng nhập thành công"));
     }
+    
+    [HttpPost("google")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<GoogleAuthResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequestDto dto)
+    {
+      var data = await _authService.GoogleLoginAsync(dto);
+      return Ok(ApiResponse<GoogleAuthResponseDto>.SuccessResult(data, "Google login successful"));
+    }
 
     [HttpPost("refresh-token")]
     [ProducesResponseType(typeof(ApiResponse<AuthResponseDto>), StatusCodes.Status200OK)]

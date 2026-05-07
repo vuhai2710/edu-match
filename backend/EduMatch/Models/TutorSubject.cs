@@ -1,4 +1,4 @@
-﻿using EduMatch.Shared.Enums;
+﻿using EduMatch.Enums;
 
 namespace EduMatch.Models
 {
@@ -6,7 +6,7 @@ namespace EduMatch.Models
   {
     public long TutorProfileId { get; set; }
     public long SubjectId { get; set; }
-    public Level Level { get; set; }   
+    public Level Level { get; set; }
     public Tutor Tutor { get; set; } = null!;
     public Subject Subject { get; set; } = null!;
   }

@@ -1,9 +1,9 @@
 using EduMatch.DTOs;
 using EduMatch.DTOs.Tutor;
+using EduMatch.Enums;
 using EduMatch.Exception;
 using EduMatch.Models;
 using EduMatch.Repositories;
-using EduMatch.Shared.Enums;
 
 namespace EduMatch.Services;
 
@@ -78,7 +78,6 @@ public class TutorService : ITutorService
 
     if (profile == null)
     {
-      // Create if it doesn't exist
       var user = await _userRepository.GetByIdAsync(userId);
       if (user == null) throw new AppException("User not found.", 404);
 
@@ -93,16 +92,13 @@ public class TutorService : ITutorService
     }
     else
     {
-      // Update existing
       profile.Bio = dto.Bio;
       profile.HourlyRate = dto.HourlyRate;
       _tutorRepository.Update(profile);
 
-      // Remove existing subjects
       if (profile.TutorSubjects.Any()) _tutorSubjectRepository.RemoveRange(profile.TutorSubjects);
     }
 
-    // Add new subjects
     if (dto.Subjects != null && dto.Subjects.Any())
     {
       var subjectIds = dto.Subjects.Select(s => s.SubjectId).ToList();
@@ -123,7 +119,6 @@ public class TutorService : ITutorService
 
     await _tutorRepository.SaveChangesAsync();
 
-    // Fetch again to get updated includes
     var updatedProfile = await _tutorRepository.GetTutorProfileByUserIdAsync(userId);
     return MapToDetailDto(updatedProfile!);
   }

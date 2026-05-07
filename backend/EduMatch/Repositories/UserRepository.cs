@@ -16,6 +16,22 @@ namespace EduMatch.Repositories
       return await _dbSet.FirstOrDefaultAsync(u => u.Email == email.ToLower().Trim());
     }
 
+    public async Task<User?> GetByEmailWithProfilesAsync(string email)
+    {
+      return await _dbSet
+        .Include(u => u.TutorProfile)
+        .Include(u => u.StudentProfile)
+        .FirstOrDefaultAsync(u => u.Email == email.ToLower().Trim());
+    }
+
+    public async Task<User?> GetByIdWithProfilesAsync(long id)
+    {
+      return await _dbSet
+        .Include(u => u.TutorProfile)
+        .Include(u => u.StudentProfile)
+        .FirstOrDefaultAsync(u => u.Id == id);
+    }
+
     public async Task<(IEnumerable<User>, int)> GetUsersWithPaginationAsync(int pageNumber, int pageSize)
     {
       var query = _dbSet.AsQueryable();

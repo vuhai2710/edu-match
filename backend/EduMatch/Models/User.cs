@@ -1,4 +1,4 @@
-using EduMatch.Shared.Enums;
+using EduMatch.Enums;
 
 namespace EduMatch.Models
 {
@@ -17,6 +17,7 @@ namespace EduMatch.Models
     public ICollection<Message> SentMessages { get; set; } = [];
     public ICollection<Message> ReceivedMessages { get; set; } = [];
     public ICollection<Notification> Notifications { get; set; } = [];
+    public bool IsGoogleAccount { get; set; } = false;
     public string? RefreshToken { get; set; }
     public DateTime? RefreshTokenExpiryTime { get; set; }
   }

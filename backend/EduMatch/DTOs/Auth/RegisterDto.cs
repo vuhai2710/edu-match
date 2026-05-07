@@ -1,4 +1,3 @@
-﻿using EduMatch.Shared.Enums;
 using System.ComponentModel.DataAnnotations;
 
 namespace EduMatch.DTOs.Auth
@@ -17,7 +16,5 @@ namespace EduMatch.DTOs.Auth
     public string Password { get; set; } = string.Empty;
 
     public string? Phone { get; set; }
-
-    public UserRole Role { get; set; } = UserRole.Student;
   }
 }
