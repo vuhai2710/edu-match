@@ -1,3 +1,4 @@
+using AutoMapper;
 using EduMatch.DTOs;
 using EduMatch.DTOs.Tutor;
 using EduMatch.Enums;
@@ -13,43 +14,29 @@ public class TutorService : ITutorService
   private readonly ITutorRepository _tutorRepository;
   private readonly IRepository<TutorSubject> _tutorSubjectRepository;
   private readonly IRepository<User> _userRepository;
+  private readonly IMapper _mapper;
 
   public TutorService(
     ITutorRepository tutorRepository,
     IRepository<User> userRepository,
     IRepository<Subject> subjectRepository,
-    IRepository<TutorSubject> tutorSubjectRepository)
+    IRepository<TutorSubject> tutorSubjectRepository,
+    IMapper mapper)
   {
     _tutorRepository = tutorRepository;
     _userRepository = userRepository;
     _subjectRepository = subjectRepository;
     _tutorSubjectRepository = tutorSubjectRepository;
+    _mapper = mapper;
   }
 
-  public async Task<PagedResponse<TutorDto>> GetTutorsAsync(int pageNumber, int pageSize)
+  public async Task<PagedResponse<TutorDto>> GetTutorsAsync(int pageNumber, int pageSize, int? provinceId = null, string? wardCode = null)
   {
-    var pagedProfiles = await _tutorRepository.GetTutorsAsync(pageNumber, pageSize);
-
-    var dtos = pagedProfiles.Items.Select(t => new TutorDto
-    {
-      Id = t.Id,
-      UserId = t.UserId,
-      FullName = t.User?.FullName ?? "",
-      AvatarUrl = t.User?.AvatarUrl,
-      HourlyRate = t.HourlyRate,
-      Rating = t.Rating,
-      TotalReviews = t.TotalReviews,
-      Subjects = t.TutorSubjects.Select(ts => new TutorSubjectDto
-      {
-        SubjectId = ts.SubjectId,
-        SubjectName = ts.Subject?.Name ?? "",
-        Level = ts.Level
-      }).ToList()
-    });
+    var pagedProfiles = await _tutorRepository.GetTutorsAsync(pageNumber, pageSize, provinceId, wardCode);
 
     return new PagedResponse<TutorDto>
     {
-      Items = dtos,
+      Items = _mapper.Map<List<TutorDto>>(pagedProfiles.Items),
       TotalCount = pagedProfiles.TotalCount,
       PageNumber = pagedProfiles.PageNumber,
       PageSize = pagedProfiles.PageSize
@@ -61,7 +48,7 @@ public class TutorService : ITutorService
     var profile = await _tutorRepository.GetTutorProfileDetailAsync(id);
     if (profile == null) throw new AppException("Tutor profile not found.", 404);
 
-    return MapToDetailDto(profile);
+    return _mapper.Map<TutorDetailDto>(profile);
   }
 
   public async Task<TutorDetailDto> GetTutorByUserIdAsync(long userId)
@@ -69,7 +56,7 @@ public class TutorService : ITutorService
     var profile = await _tutorRepository.GetTutorProfileByUserIdAsync(userId);
     if (profile == null) throw new AppException("Tutor profile not found for this user.", 404);
 
-    return MapToDetailDto(profile);
+    return _mapper.Map<TutorDetailDto>(profile);
   }
 
   public async Task<TutorDetailDto> UpdateTutorProfileAsync(long userId, UpdateTutorDto dto)
@@ -84,16 +71,33 @@ public class TutorService : ITutorService
       profile = new Tutor
       {
         UserId = userId,
-        Bio = dto.Bio,
-        HourlyRate = dto.HourlyRate,
         ApprovalStatus = ApprovalStatus.Pending
       };
+      _mapper.Map(dto, profile);
+      
+      if (dto.Address != null)
+      {
+        profile.Address = _mapper.Map<Address>(dto.Address);
+      }
+      
       await _tutorRepository.AddAsync(profile);
     }
     else
     {
-      profile.Bio = dto.Bio;
-      profile.HourlyRate = dto.HourlyRate;
+      _mapper.Map(dto, profile);
+      
+      if (dto.Address != null)
+      {
+        if (profile.Address == null)
+        {
+          profile.Address = _mapper.Map<Address>(dto.Address);
+        }
+        else
+        {
+          _mapper.Map(dto.Address, profile.Address);
+        }
+      }
+      
       _tutorRepository.Update(profile);
 
       if (profile.TutorSubjects.Any()) _tutorSubjectRepository.RemoveRange(profile.TutorSubjects);
@@ -120,29 +124,6 @@ public class TutorService : ITutorService
     await _tutorRepository.SaveChangesAsync();
 
     var updatedProfile = await _tutorRepository.GetTutorProfileByUserIdAsync(userId);
-    return MapToDetailDto(updatedProfile!);
-  }
-
-  private TutorDetailDto MapToDetailDto(Tutor profile)
-  {
-    return new TutorDetailDto
-    {
-      Id = profile.Id,
-      UserId = profile.UserId,
-      FullName = profile.User?.FullName ?? "",
-      Email = profile.User?.Email ?? "",
-      AvatarUrl = profile.User?.AvatarUrl,
-      Bio = profile.Bio,
-      HourlyRate = profile.HourlyRate,
-      Rating = profile.Rating,
-      TotalReviews = profile.TotalReviews,
-      ApprovalStatus = profile.ApprovalStatus,
-      Subjects = profile.TutorSubjects.Select(ts => new TutorSubjectDto
-      {
-        SubjectId = ts.SubjectId,
-        SubjectName = ts.Subject?.Name ?? "",
-        Level = ts.Level
-      }).ToList()
-    };
+    return _mapper.Map<TutorDetailDto>(updatedProfile!);
   }
 }

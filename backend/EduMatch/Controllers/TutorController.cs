@@ -24,9 +24,11 @@ namespace EduMatch.Controllers
     [HttpGet]
     public async Task<ActionResult<ApiResponse<PagedResponse<TutorDto>>>> GetTutors(
       [FromQuery] int pageNumber = 1,
-      [FromQuery] int pageSize = 10)
+      [FromQuery] int pageSize = 10,
+      [FromQuery] int? provinceId = null,
+      [FromQuery] string? wardCode = null)
     {
-      var result = await _tutorService.GetTutorsAsync(pageNumber, pageSize);
+      var result = await _tutorService.GetTutorsAsync(pageNumber, pageSize, provinceId, wardCode);
       return Ok(ApiResponse<PagedResponse<TutorDto>>.SuccessResult(result));
     }
 

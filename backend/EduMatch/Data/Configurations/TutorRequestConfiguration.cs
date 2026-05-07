@@ -1,4 +1,4 @@
-﻿using EduMatch.Models;
+using EduMatch.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -10,9 +10,6 @@ namespace EduMatch.Data.Configurations
     {
       builder.HasQueryFilter(e => !e.IsDeleted);
 
-      builder.Property(x => x.Area)
-        .HasMaxLength(200)
-        .IsRequired(false);
 
       builder.Property(x => x.BudgetMax)
         .HasColumnType("decimal(18,2)")

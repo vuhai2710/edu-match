@@ -1,3 +1,4 @@
+using EduMatch.DTOs.Address;
 using EduMatch.Enums;
 
 namespace EduMatch.DTOs.StudentProfile
@@ -10,5 +11,6 @@ namespace EduMatch.DTOs.StudentProfile
     public string Bio { get; set; } = string.Empty;
     public string School { get; set; } = string.Empty;
     public string GradeLevel { get; set; } = string.Empty;
+    public CreateAddressDto? Address { get; set; }
   }
 }

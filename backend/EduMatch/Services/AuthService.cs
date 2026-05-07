@@ -1,3 +1,4 @@
+using AutoMapper;
 using EduMatch.DTOs.Auth;
 using EduMatch.DTOs.Tutor;
 using EduMatch.DTOs.User;
@@ -19,12 +20,14 @@ public class AuthService
   private readonly IConfiguration _config;
   private readonly IUserRepository _userRepository;
   private readonly ILogger<AuthService> _logger;
+  private readonly IMapper _mapper;
 
-  public AuthService(IUserRepository userRepository, IConfiguration config, ILogger<AuthService> logger)
+  public AuthService(IUserRepository userRepository, IConfiguration config, ILogger<AuthService> logger, IMapper mapper)
   {
     _userRepository = userRepository;
     _config = config;
     _logger = logger;
+    _mapper = mapper;
   }
 
   public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto)
@@ -119,16 +122,7 @@ public class AuthService
     return new GoogleAuthResponseDto
     {
       Token = token,
-      User = new UserDto
-      {
-        Id = user.Id,
-        Email = user.Email,
-        FullName = user.FullName,
-        Role = user.Role,
-        AvatarUrl = user.AvatarUrl,
-        Status = user.Status,
-        IsActive = user.IsActive
-      }
+      User = _mapper.Map<UserDto>(user)
     };
   }
 

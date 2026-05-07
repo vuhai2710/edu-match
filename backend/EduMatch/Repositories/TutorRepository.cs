@@ -11,13 +11,24 @@ namespace EduMatch.Repositories
     {
     }
 
-    public async Task<PagedResponse<Tutor>> GetTutorsAsync(int pageNumber, int pageSize)
+    public async Task<PagedResponse<Tutor>> GetTutorsAsync(int pageNumber, int pageSize, int? provinceId = null, string? wardCode = null)
     {
       var query = _dbSet
         .Include(t => t.User)
+        .Include(t => t.Address)
         .Include(t => t.TutorSubjects)
           .ThenInclude(ts => ts.Subject)
         .AsQueryable();
+
+      if (provinceId.HasValue)
+      {
+        query = query.Where(t => t.Address != null && t.Address.ProvinceId == provinceId.Value);
+      }
+
+      if (!string.IsNullOrWhiteSpace(wardCode))
+      {
+        query = query.Where(t => t.Address != null && t.Address.WardCode == wardCode);
+      }
 
       var totalCount = await query.CountAsync();
 
@@ -39,6 +50,7 @@ namespace EduMatch.Repositories
     {
       return await _dbSet
         .Include(t => t.User)
+        .Include(t => t.Address)
         .Include(t => t.TutorSubjects)
           .ThenInclude(ts => ts.Subject)
         .FirstOrDefaultAsync(t => t.Id == id);
@@ -48,6 +60,7 @@ namespace EduMatch.Repositories
     {
       return await _dbSet
         .Include(t => t.User)
+        .Include(t => t.Address)
         .Include(t => t.TutorSubjects)
           .ThenInclude(ts => ts.Subject)
         .FirstOrDefaultAsync(t => t.UserId == userId);

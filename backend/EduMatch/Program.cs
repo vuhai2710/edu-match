@@ -1,6 +1,7 @@
 using EduMatch.Data;
 using EduMatch.Exception;
 using EduMatch.Services;
+using EduMatch.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -11,6 +12,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddAutoMapper(cfg => cfg.AddMaps(typeof(Program)));
 
 builder.Services.AddSwaggerGen(options =>
 {
@@ -68,6 +70,21 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<AuthService>();
 
 #region Dependency Injection
+builder.Services.AddMemoryCache();
+builder.Services.AddHttpClient<IAddressService, AddressService>((sp, client) =>
+{
+  var baseUrl = sp.GetRequiredService<IConfiguration>()["AddressApi:BaseUrl"];
+  if (string.IsNullOrWhiteSpace(baseUrl))
+  {
+    return;
+  }
+
+  if (Uri.TryCreate(baseUrl, UriKind.Absolute, out var baseUri))
+  {
+    client.BaseAddress = baseUri;
+  }
+});
+
 builder.Services.AddScoped(typeof(EduMatch.Repositories.IRepository<>), typeof(EduMatch.Repositories.Repository<>));
 builder.Services.AddScoped<EduMatch.Repositories.ITutorRepository, EduMatch.Repositories.TutorRepository>();
 builder.Services.AddScoped<EduMatch.Services.ITutorService, EduMatch.Services.TutorService>();

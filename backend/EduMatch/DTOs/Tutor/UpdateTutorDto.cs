@@ -1,3 +1,4 @@
+using EduMatch.DTOs.Address;
 using EduMatch.Enums;
 
 namespace EduMatch.DTOs.Tutor
@@ -12,6 +13,7 @@ namespace EduMatch.DTOs.Tutor
   {
     public string Bio { get; set; } = string.Empty;
     public decimal HourlyRate { get; set; }
+    public CreateAddressDto? Address { get; set; }
     public List<UpdateTutorSubjectDto> Subjects { get; set; } = [];
   }
 }

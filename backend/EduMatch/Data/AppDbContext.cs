@@ -17,6 +17,7 @@ public class AppDbContext : DbContext
   public DbSet<Notification> Notifications => Set<Notification>();
   public DbSet<Subject> Subjects => Set<Subject>();
   public DbSet<TutorSubject> TutorSubjects => Set<TutorSubject>();
+  public DbSet<Address> Addresses => Set<Address>();
   #endregion
 
   protected override void OnModelCreating(ModelBuilder modelBuilder)

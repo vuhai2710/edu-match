@@ -1,3 +1,4 @@
+using EduMatch.DTOs.Address;
 using EduMatch.Enums;
 
 namespace EduMatch.DTOs.Tutor
@@ -14,6 +15,8 @@ namespace EduMatch.DTOs.Tutor
     public double Rating { get; set; }
     public long TotalReviews { get; set; }
     public ApprovalStatus ApprovalStatus { get; set; }
+    public AddressDto? Address { get; set; }
     public List<TutorSubjectDto> Subjects { get; set; } = [];
   }
 }
+

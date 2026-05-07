@@ -1,3 +1,4 @@
+using AutoMapper;
 using EduMatch.DTOs;
 using EduMatch.DTOs.StudentProfile;
 using EduMatch.Exception;
@@ -11,33 +12,25 @@ namespace EduMatch.Services
   {
     private readonly IStudentRepository _studentRepository;
     private readonly ILogger<StudentService> _logger;
+    private readonly IMapper _mapper;
 
-    public StudentService(IStudentRepository studentRepository, ILogger<StudentService> logger)
+    public StudentService(IStudentRepository studentRepository, ILogger<StudentService> logger, IMapper mapper)
     {
       _studentRepository = studentRepository;
       _logger = logger;
+      _mapper = mapper;
     }
 
     public async Task<PagedResponse<StudentDto>> GetStudentsAsync(int pageNumber, int pageSize)
     {
       var pagedProfiles = await _studentRepository.GetStudentsAsync(pageNumber, pageSize);
 
-      var dtos = pagedProfiles.Items.Select(p => new StudentDto
-      {
-        UserId = p.UserId,
-        FullName = p.User.FullName,
-        AvatarUrl = p.User.AvatarUrl,
-        Gender = p.User.Gender,
-        GradeLevel = p.GradeLevel,
-        School = p.School
-      }).ToList();
-
       return new PagedResponse<StudentDto>
       {
-          Items = dtos,
-          PageNumber = pagedProfiles.PageNumber,
-          PageSize = pagedProfiles.PageSize,
-          TotalCount = pagedProfiles.TotalCount
+        Items = _mapper.Map<List<StudentDto>>(pagedProfiles.Items),
+        PageNumber = pagedProfiles.PageNumber,
+        PageSize = pagedProfiles.PageSize,
+        TotalCount = pagedProfiles.TotalCount
       };
     }
 
@@ -49,7 +42,7 @@ namespace EduMatch.Services
         throw new AppException("Không tìm thấy thông tin học sinh", 404);
       }
 
-      return MapToDetailDto(profile);
+      return _mapper.Map<StudentDetailDto>(profile);
     }
 
     public async Task<StudentDetailDto> GetMyProfileAsync(long currentUserId)
@@ -60,7 +53,7 @@ namespace EduMatch.Services
         throw new AppException("Không tìm thấy thông tin học sinh", 404);
       }
 
-      return MapToDetailDto(profile);
+      return _mapper.Map<StudentDetailDto>(profile);
     }
 
     public async Task<StudentDetailDto> UpdateMyProfileAsync(long currentUserId, UpdateStudentDto dto)
@@ -74,31 +67,27 @@ namespace EduMatch.Services
       profile.User.FullName = dto.FullName;
       profile.User.Gender = dto.Gender;
       profile.User.AvatarUrl = dto.AvatarUrl;
-      profile.Bio = dto.Bio;
-      profile.School = dto.School;
-      profile.GradeLevel = dto.GradeLevel;
+
+      _mapper.Map(dto, profile);
+
+      if (dto.Address != null)
+      {
+        if (profile.Address == null)
+        {
+          profile.Address = _mapper.Map<Address>(dto.Address);
+        }
+        else
+        {
+          _mapper.Map(dto.Address, profile.Address);
+        }
+      }
 
       _studentRepository.Update(profile);
       await _studentRepository.SaveChangesAsync();
 
       _logger.LogInformation("Student profile updated for User ID: {UserId}", currentUserId);
 
-      return MapToDetailDto(profile);
-    }
-
-    private StudentDetailDto MapToDetailDto(Student profile)
-    {
-      return new StudentDetailDto
-      {
-        UserId = profile.UserId,
-        FullName = profile.User.FullName,
-        Email = profile.User.Email,
-        AvatarUrl = profile.User.AvatarUrl,
-        Gender = profile.User.Gender,
-        Bio = profile.Bio,
-        School = profile.School,
-        GradeLevel = profile.GradeLevel
-      };
+      return _mapper.Map<StudentDetailDto>(profile);
     }
   }
 }
