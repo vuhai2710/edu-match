@@ -1,11 +1,12 @@
 using AutoMapper;
 using EduMatch.DTOs.Auth;
-using EduMatch.DTOs.Tutor;
+using EduMatch.DTOs.Student;
 using EduMatch.DTOs.User;
 using EduMatch.Enums;
 using EduMatch.Exception;
 using EduMatch.Models;
 using EduMatch.Repositories.Interfaces;
+using EduMatch.Services.Interfaces;
 using Google.Apis.Auth;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -18,13 +19,15 @@ namespace EduMatch.Services;
 public class AuthService
 {
   private readonly IConfiguration _config;
+  private readonly IFileService _fileService;
   private readonly IUserRepository _userRepository;
   private readonly ILogger<AuthService> _logger;
   private readonly IMapper _mapper;
 
-  public AuthService(IUserRepository userRepository, IConfiguration config, ILogger<AuthService> logger, IMapper mapper)
+  public AuthService(IUserRepository userRepository, IFileService fileService, IConfiguration config, ILogger<AuthService> logger, IMapper mapper)
   {
     _userRepository = userRepository;
+    _fileService = fileService;
     _config = config;
     _logger = logger;
     _mapper = mapper;
@@ -94,11 +97,16 @@ public class AuthService
         FullName = payload.Name,
         Email = payload.Email,
         Role = UserRole.Student,
-        AvatarUrl = payload.Picture,
         IsGoogleAccount = true,
-        Status = UserStatus.Active,
         IsActive = true
       };
+
+      if (!string.IsNullOrWhiteSpace(payload.Picture))
+      {
+        var avatarFile = await _fileService.CreateAvatarReferenceAsync(payload.Picture, $"google-avatar-{Guid.NewGuid():N}");
+        user.AvatarFileId = avatarFile.Id;
+        user.AvatarFile = avatarFile;
+      }
 
       user.StudentProfile = new Student
       {
@@ -181,8 +189,7 @@ public class AuthService
     user.TutorProfile = new Tutor
     {
       Bio = dto.Bio,
-      HourlyRate = dto.HourlyRate,
-      ApprovalStatus = ApprovalStatus.Pending
+      HourlyRate = dto.HourlyRate
     };
 
     _userRepository.Update(user);

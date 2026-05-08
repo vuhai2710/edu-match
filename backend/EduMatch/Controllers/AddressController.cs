@@ -17,7 +17,6 @@ namespace EduMatch.Controllers
     }
 
     [HttpGet("provinces")]
-    [ProducesResponseType(typeof(ApiResponse<List<ProvinceDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<List<ProvinceDto>>>> GetProvinces(CancellationToken ct)
     {
       var result = await _addressService.GetProvincesAsync(ct);
@@ -25,7 +24,6 @@ namespace EduMatch.Controllers
     }
 
     [HttpGet("wards/{provinceId}")]
-    [ProducesResponseType(typeof(ApiResponse<List<WardDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<List<WardDto>>>> GetWards(int provinceId, CancellationToken ct)
     {
       var result = await _addressService.GetWardsAsync(provinceId, ct);

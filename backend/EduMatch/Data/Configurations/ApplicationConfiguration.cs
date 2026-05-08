@@ -10,7 +10,7 @@ namespace EduMatch.Data.Configurations
     {
       builder.HasQueryFilter(x => !x.IsDeleted);
 
-      builder.HasIndex(x => new { x.TutorProfileId, x.TutorRequestId })
+      builder.HasIndex(x => new { TutorProfileId = x.TutorId, x.TutorRequestId })
         .IsUnique();
 
       builder.Property(x => x.Message)
@@ -19,12 +19,20 @@ namespace EduMatch.Data.Configurations
 
       builder.Property(x => x.Status)
         .HasConversion<string>()
-        .HasMaxLength(20)
+        .HasMaxLength(32)
+        .IsRequired();
+
+      builder.Property(x => x.StudentAcceptedMatch)
+        .HasDefaultValue(false)
+        .IsRequired();
+
+      builder.Property(x => x.TutorAcceptedMatch)
+        .HasDefaultValue(false)
         .IsRequired();
 
       builder.HasOne(x => x.Tutor)
         .WithMany(x => x.Applications)
-        .HasForeignKey(x => x.TutorProfileId)
+        .HasForeignKey(x => x.TutorId)
         .OnDelete(DeleteBehavior.Cascade);
 
       builder.HasOne(x => x.TutorRequest)

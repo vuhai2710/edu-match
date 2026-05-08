@@ -1,5 +1,6 @@
 using EduMatch.Data;
 using EduMatch.DTOs;
+using EduMatch.DTOs.StudentProfile;
 using EduMatch.Models;
 using EduMatch.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -12,27 +13,61 @@ namespace EduMatch.Repositories
     {
     }
 
-    public async Task<PagedResponse<Student>> GetStudentsAsync(int pageNumber, int pageSize)
+    public async Task<PagedResult<Student>> GetStudentsAsync(StudentQueryParameters parameters)
     {
       var query = _dbSet
           .Include(s => s.User)
-          .Where(s => s.User.IsActive);
+            .ThenInclude(u => u.AvatarFile)
+          .Include(s => s.Address)
+          .AsQueryable();
+
+      query = query.Where(s => s.User.IsActive);
+
+      if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
+      {
+          var searchTerm = parameters.SearchTerm.ToLower().Trim();
+          query = query.Where(s => 
+              (s.User.FullName != null && s.User.FullName.ToLower().Contains(searchTerm)) ||
+              (s.GradeLevel != null && s.GradeLevel.ToLower().Contains(searchTerm)));
+      }
+
+      if (parameters.ProvinceId.HasValue)
+      {
+          query = query.Where(s => s.Address != null && s.Address.ProvinceId == parameters.ProvinceId.Value);
+      }
+
+      if (!string.IsNullOrWhiteSpace(parameters.WardCode))
+      {
+          query = query.Where(s => s.Address != null && s.Address.WardCode == parameters.WardCode);
+      }
+
+      var isDescending = string.Equals(parameters.SortDirection, "desc", StringComparison.OrdinalIgnoreCase);
+      if (!string.IsNullOrWhiteSpace(parameters.SortColumn))
+      {
+          query = parameters.SortColumn.ToLower() switch
+          {
+              "createdat" => isDescending ? query.OrderByDescending(s => s.CreatedAt) : query.OrderBy(s => s.CreatedAt),
+              _ => query.OrderByDescending(s => s.CreatedAt) // Default sorting
+          };
+      }
+      else
+      {
+          query = query.OrderByDescending(s => s.CreatedAt); // Default sorting
+      }
 
       var totalRecords = await query.CountAsync();
-      var totalPages = (int)Math.Ceiling(totalRecords / (double)pageSize);
-
       var data = await query
-          .OrderByDescending(s => s.CreatedAt)
-          .Skip((pageNumber - 1) * pageSize)
-          .Take(pageSize)
+          .Skip((parameters.PageNumber - 1) * parameters.PageSize)
+          .Take(parameters.PageSize)
           .ToListAsync();
 
-      return new PagedResponse<Student>
+      return new PagedResult<Student>
       {
           Items = data,
-          PageNumber = pageNumber,
-          PageSize = pageSize,
-          TotalCount = totalRecords
+          Page = parameters.PageNumber,
+          PageSize = parameters.PageSize,
+          TotalCount = totalRecords,
+          TotalPages = totalRecords == 0 ? 0 : (int)Math.Ceiling(totalRecords / (double)parameters.PageSize)
       };
     }
 
@@ -40,6 +75,7 @@ namespace EduMatch.Repositories
     {
       return await _dbSet
           .Include(s => s.User)
+            .ThenInclude(u => u.AvatarFile)
           .FirstOrDefaultAsync(s => s.UserId == userId && s.User.IsActive);
     }
   }

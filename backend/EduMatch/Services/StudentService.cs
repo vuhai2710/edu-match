@@ -21,16 +21,17 @@ namespace EduMatch.Services
       _mapper = mapper;
     }
 
-    public async Task<PagedResponse<StudentDto>> GetStudentsAsync(int pageNumber, int pageSize)
+    public async Task<PagedResult<StudentDto>> GetStudentsAsync(StudentQueryParameters parameters)
     {
-      var pagedProfiles = await _studentRepository.GetStudentsAsync(pageNumber, pageSize);
+      var pagedProfiles = await _studentRepository.GetStudentsAsync(parameters);
 
-      return new PagedResponse<StudentDto>
+      return new PagedResult<StudentDto>
       {
         Items = _mapper.Map<List<StudentDto>>(pagedProfiles.Items),
-        PageNumber = pagedProfiles.PageNumber,
+        Page = pagedProfiles.Page,
         PageSize = pagedProfiles.PageSize,
-        TotalCount = pagedProfiles.TotalCount
+        TotalCount = pagedProfiles.TotalCount,
+        TotalPages = pagedProfiles.TotalPages
       };
     }
 
@@ -66,7 +67,11 @@ namespace EduMatch.Services
 
       profile.User.FullName = dto.FullName;
       profile.User.Gender = dto.Gender;
-      profile.User.AvatarUrl = dto.AvatarUrl;
+      
+      if (dto.PhoneNumber != null)
+      {
+        profile.User.PhoneNumber = dto.PhoneNumber;
+      }
 
       _mapper.Map(dto, profile);
 

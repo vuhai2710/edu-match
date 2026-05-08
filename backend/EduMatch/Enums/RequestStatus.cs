@@ -1,4 +1,4 @@
-﻿namespace EduMatch.Enums
+namespace EduMatch.Enums
 {
   public enum RequestStatus
   {

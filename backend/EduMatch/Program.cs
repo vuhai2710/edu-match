@@ -1,5 +1,8 @@
+using EduMatch.Configuration;
 using EduMatch.Data;
 using EduMatch.Exception;
+using EduMatch.Repositories;
+using EduMatch.Repositories.Interfaces;
 using EduMatch.Services;
 using EduMatch.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -13,6 +16,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddAutoMapper(cfg => cfg.AddMaps(typeof(Program)));
+builder.Services.AddSignalR();
 
 builder.Services.AddSwaggerGen(options =>
 {
@@ -21,6 +25,7 @@ builder.Services.AddSwaggerGen(options =>
     Title = "EduMatch API",
     Version = "v1"
   });
+  options.OperationFilter<FileUploadOperationFilter>();
 
   options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
   {
@@ -63,6 +68,22 @@ builder.Services.AddAuthentication(options =>
       IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
       ClockSkew = TimeSpan.Zero
     };
+
+    options.Events = new JwtBearerEvents
+    {
+      OnMessageReceived = context =>
+      {
+        var accessToken = context.Request.Query["access_token"];
+        var path = context.HttpContext.Request.Path;
+
+        if (!string.IsNullOrWhiteSpace(accessToken) && path.StartsWithSegments("/hubs/notifications"))
+        {
+          context.Token = accessToken;
+        }
+
+        return Task.CompletedTask;
+      }
+    };
   });
 
 builder.Services.AddAuthorization();
@@ -92,6 +113,15 @@ builder.Services.AddScoped<EduMatch.Repositories.Interfaces.IStudentRepository, 
 builder.Services.AddScoped<EduMatch.Services.Interfaces.IStudentService, EduMatch.Services.StudentService>();
 builder.Services.AddScoped<EduMatch.Repositories.Interfaces.IUserRepository, EduMatch.Repositories.UserRepository>();
 builder.Services.AddScoped<EduMatch.Services.Interfaces.IUserService, EduMatch.Services.UserService>();
+builder.Services.AddScoped<IFileRepository, FileRepository>();
+builder.Services.AddScoped<IFileService, FileService>();
+builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("Cloudinary"));
+builder.Services.AddSingleton<ICloudinaryService, CloudinaryService>();
+builder.Services.AddScoped<ITutorRequestRepository, TutorRequestRepository>();
+builder.Services.AddScoped<IApplicationRepository, ApplicationRepository>();
+builder.Services.AddScoped<ITutorRequestService, TutorRequestService>();
+builder.Services.AddScoped<IApplicationService, ApplicationService>();
+builder.Services.AddHostedService<RequestExpiryBackgroundService>();
 #endregion
 
 builder.Services.AddCors(options =>
@@ -100,7 +130,8 @@ builder.Services.AddCors(options =>
   {
     policy.WithOrigins("http://localhost:4200")
       .AllowAnyHeader()
-      .AllowAnyMethod();
+      .AllowAnyMethod()
+      .AllowCredentials();
   });
 });
 
@@ -126,5 +157,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<NotificationHub>("/hubs/notifications");
 
 app.Run();

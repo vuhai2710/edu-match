@@ -18,8 +18,6 @@ namespace EduMatch.Controllers
     }
 
     [HttpPost("register")]
-    [ProducesResponseType(typeof(ApiResponse<AuthResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Register([FromBody] RegisterDto dto)
     {
       var data = await _authService.RegisterAsync(dto);
@@ -27,18 +25,14 @@ namespace EduMatch.Controllers
     }
 
     [HttpPost("login")]
-    [ProducesResponseType(typeof(ApiResponse<AuthResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login([FromBody] LoginDto dto)
     {
       var data = await _authService.LoginAsync(dto);
       return Ok(ApiResponse<AuthResponseDto>.SuccessResult(data, "Đăng nhập thành công"));
     }
-    
+
     [HttpPost("google")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<GoogleAuthResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequestDto dto)
     {
       var data = await _authService.GoogleLoginAsync(dto);
@@ -46,8 +40,6 @@ namespace EduMatch.Controllers
     }
 
     [HttpPost("refresh-token")]
-    [ProducesResponseType(typeof(ApiResponse<AuthResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenDto dto)
     {
       var data = await _authService.RefreshTokenAsync(dto);
@@ -56,7 +48,6 @@ namespace EduMatch.Controllers
 
     [HttpGet("me")]
     [Authorize]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     public IActionResult Me()
     {
       var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;

@@ -5,7 +5,7 @@ namespace EduMatch.Services.Interfaces
 {
   public interface IStudentService
   {
-    Task<PagedResponse<StudentDto>> GetStudentsAsync(int pageNumber, int pageSize);
+    Task<PagedResult<StudentDto>> GetStudentsAsync(StudentQueryParameters parameters);
     Task<StudentDetailDto> GetStudentByIdAsync(long id);
     Task<StudentDetailDto> GetMyProfileAsync(long currentUserId);
     Task<StudentDetailDto> UpdateMyProfileAsync(long currentUserId, UpdateStudentDto dto);

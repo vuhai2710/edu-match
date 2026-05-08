@@ -10,13 +10,13 @@ public class StudentMapper : Profile
   {
     CreateMap<Student, StudentDto>()
       .ForMember(d => d.FullName, opt => opt.MapFrom(s => s.User.FullName))
-      .ForMember(d => d.AvatarUrl, opt => opt.MapFrom(s => s.User.AvatarUrl))
+      .ForMember(d => d.AvatarUrl, opt => opt.MapFrom(s => s.User.AvatarFile != null ? s.User.AvatarFile.FilePath : null))
       .ForMember(d => d.Gender, opt => opt.MapFrom(s => s.User.Gender));
 
     CreateMap<Student, StudentDetailDto>()
       .ForMember(d => d.FullName, opt => opt.MapFrom(s => s.User.FullName))
       .ForMember(d => d.Email, opt => opt.MapFrom(s => s.User.Email))
-      .ForMember(d => d.AvatarUrl, opt => opt.MapFrom(s => s.User.AvatarUrl))
+      .ForMember(d => d.AvatarUrl, opt => opt.MapFrom(s => s.User.AvatarFile != null ? s.User.AvatarFile.FilePath : null))
       .ForMember(d => d.Gender, opt => opt.MapFrom(s => s.User.Gender));
 
     CreateMap<UpdateStudentDto, Student>()

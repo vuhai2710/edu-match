@@ -5,6 +5,8 @@ using EduMatch.Enums;
 using EduMatch.Exception;
 using EduMatch.Models;
 using EduMatch.Repositories;
+using EduMatch.Services.Interfaces;
+using Microsoft.AspNetCore.Http;
 
 namespace EduMatch.Services;
 
@@ -14,6 +16,7 @@ public class TutorService : ITutorService
   private readonly ITutorRepository _tutorRepository;
   private readonly IRepository<TutorSubject> _tutorSubjectRepository;
   private readonly IRepository<User> _userRepository;
+  private readonly IFileService _fileService;
   private readonly IMapper _mapper;
 
   public TutorService(
@@ -21,25 +24,28 @@ public class TutorService : ITutorService
     IRepository<User> userRepository,
     IRepository<Subject> subjectRepository,
     IRepository<TutorSubject> tutorSubjectRepository,
+    IFileService fileService,
     IMapper mapper)
   {
     _tutorRepository = tutorRepository;
     _userRepository = userRepository;
     _subjectRepository = subjectRepository;
     _tutorSubjectRepository = tutorSubjectRepository;
+    _fileService = fileService;
     _mapper = mapper;
   }
 
-  public async Task<PagedResponse<TutorDto>> GetTutorsAsync(int pageNumber, int pageSize, int? provinceId = null, string? wardCode = null)
+  public async Task<PagedResult<TutorDto>> GetTutorsAsync(TutorQueryParameters parameters)
   {
-    var pagedProfiles = await _tutorRepository.GetTutorsAsync(pageNumber, pageSize, provinceId, wardCode);
+    var pagedProfiles = await _tutorRepository.GetTutorsAsync(parameters);
 
-    return new PagedResponse<TutorDto>
+    return new PagedResult<TutorDto>
     {
       Items = _mapper.Map<List<TutorDto>>(pagedProfiles.Items),
       TotalCount = pagedProfiles.TotalCount,
-      PageNumber = pagedProfiles.PageNumber,
-      PageSize = pagedProfiles.PageSize
+      Page = pagedProfiles.Page,
+      PageSize = pagedProfiles.PageSize,
+      TotalPages = pagedProfiles.TotalPages
     };
   }
 
@@ -68,10 +74,14 @@ public class TutorService : ITutorService
       var user = await _userRepository.GetByIdAsync(userId);
       if (user == null) throw new AppException("User not found.", 404);
 
+      if (dto.PhoneNumber != null)
+      {
+        user.PhoneNumber = dto.PhoneNumber;
+      }
+
       profile = new Tutor
       {
-        UserId = userId,
-        ApprovalStatus = ApprovalStatus.Pending
+        UserId = userId
       };
       _mapper.Map(dto, profile);
       
@@ -84,6 +94,11 @@ public class TutorService : ITutorService
     }
     else
     {
+      if (dto.PhoneNumber != null)
+      {
+        profile.User.PhoneNumber = dto.PhoneNumber;
+      }
+
       _mapper.Map(dto, profile);
       
       if (dto.Address != null)
@@ -125,5 +140,22 @@ public class TutorService : ITutorService
 
     var updatedProfile = await _tutorRepository.GetTutorProfileByUserIdAsync(userId);
     return _mapper.Map<TutorDetailDto>(updatedProfile!);
+  }
+
+  public async Task<FileDto> UpdateCvAsync(long userId, IFormFile file)
+  {
+    var profile = await _tutorRepository.GetTutorProfileByUserIdAsync(userId);
+    if (profile == null)
+    {
+      throw new NotFoundException("Không tìm thấy hồ sơ gia sư");
+    }
+
+    var savedFile = await _fileService.UploadCvAsync(file);
+    profile.CvFileId = savedFile.Id;
+
+    _tutorRepository.Update(profile);
+    await _tutorRepository.SaveChangesAsync();
+
+    return _mapper.Map<FileDto>(savedFile);
   }
 }

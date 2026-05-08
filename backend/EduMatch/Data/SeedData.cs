@@ -22,7 +22,6 @@ namespace EduMatch.Data
         Email = "admin@edumatch.com",
         Password = BCrypt.Net.BCrypt.HashPassword("123456", workFactor: 12),
         Role = UserRole.Admin,
-        Status = UserStatus.Active,
         IsActive = true
       };
 

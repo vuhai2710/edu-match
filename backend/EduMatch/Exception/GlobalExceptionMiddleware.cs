@@ -20,6 +20,16 @@ namespace EduMatch.Exception
       {
         await _next(context);
       }
+      catch (NotFoundException ex)
+      {
+        _logger.LogWarning("NotFoundException: {Message}", ex.Message);
+        await WriteResponse(context, 404, ex.Message);
+      }
+      catch (ArgumentException ex)
+      {
+        _logger.LogWarning("ArgumentException: {Message}", ex.Message);
+        await WriteResponse(context, 400, ex.Message);
+      }
       catch (AppException ex)
       {
         _logger.LogWarning("AppException [{StatusCode}]: {Message}", ex.StatusCode, ex.Message);

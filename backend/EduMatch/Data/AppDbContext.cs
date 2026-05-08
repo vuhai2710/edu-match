@@ -1,5 +1,6 @@
 using EduMatch.Models;
 using Microsoft.EntityFrameworkCore;
+using File = EduMatch.Models.File;
 
 namespace EduMatch.Data;
 
@@ -18,6 +19,7 @@ public class AppDbContext : DbContext
   public DbSet<Subject> Subjects => Set<Subject>();
   public DbSet<TutorSubject> TutorSubjects => Set<TutorSubject>();
   public DbSet<Address> Addresses => Set<Address>();
+  public DbSet<File> Files => Set<File>();
   #endregion
 
   protected override void OnModelCreating(ModelBuilder modelBuilder)

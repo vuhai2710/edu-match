@@ -10,7 +10,7 @@ namespace EduMatch.Data.Configurations
     {
       builder.HasQueryFilter(e => !e.IsDeleted);
 
-      builder.HasIndex(x => new { x.TutorProfileId, x.SubjectId })
+      builder.HasIndex(x => new { TutorProfileId = x.TutorId, x.SubjectId })
         .IsUnique();
 
       builder.Property(x => x.Level)
@@ -20,7 +20,7 @@ namespace EduMatch.Data.Configurations
 
       builder.HasOne(x => x.Tutor)
         .WithMany(x => x.TutorSubjects)
-        .HasForeignKey(x => x.TutorProfileId)
+        .HasForeignKey(x => x.TutorId)
         .OnDelete(DeleteBehavior.Cascade);
 
       builder.HasOne(x => x.Subject)

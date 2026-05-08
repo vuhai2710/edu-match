@@ -1,3 +1,5 @@
+using EduMatch.DTOs;
+using EduMatch.DTOs.User;
 using EduMatch.Models;
 
 namespace EduMatch.Repositories.Interfaces
@@ -7,6 +9,6 @@ namespace EduMatch.Repositories.Interfaces
     Task<User?> GetByEmailAsync(string email);
     Task<User?> GetByEmailWithProfilesAsync(string email);
     Task<User?> GetByIdWithProfilesAsync(long id);
-    Task<(IEnumerable<User>, int)> GetUsersWithPaginationAsync(int pageNumber, int pageSize);
+    Task<PagedResult<User>> GetUsersWithPaginationAsync(UserQueryParameters parameters);
   }
 }

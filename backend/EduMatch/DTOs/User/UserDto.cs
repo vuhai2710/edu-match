@@ -10,7 +10,6 @@ namespace EduMatch.DTOs.User
     public UserRole Role { get; set; }
     public string? AvatarUrl { get; set; }
     public Gender Gender { get; set; }
-    public UserStatus Status { get; set; }
     public bool IsActive { get; set; }
   }
 }

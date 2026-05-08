@@ -24,10 +24,28 @@ namespace EduMatch.Data.Configurations
         .HasMaxLength(20)
         .IsRequired();
 
+      builder.Property(x => x.ExpiresAt)
+        .IsRequired(false);
+
+      builder.Property(x => x.PreferredSchedule)
+        .HasColumnType("text")
+        .IsRequired(false);
+
+      builder.Property(x => x.SessionsPerWeek)
+        .IsRequired(false);
+
+      builder.Property(x => x.MinutesPerSession)
+        .IsRequired(false);
+
       builder.HasOne(x => x.Student)
         .WithMany()
         .HasForeignKey(x => x.StudentId)
         .OnDelete(DeleteBehavior.Cascade);
+
+      builder.HasOne(x => x.Address)
+        .WithMany()
+        .HasForeignKey(x => x.AddressId)
+        .OnDelete(DeleteBehavior.SetNull);
 
       builder.HasOne(x => x.Subject)
         .WithMany()

@@ -14,7 +14,6 @@ namespace EduMatch.DTOs.Tutor
     public decimal HourlyRate { get; set; }
     public double Rating { get; set; }
     public long TotalReviews { get; set; }
-    public ApprovalStatus ApprovalStatus { get; set; }
     public AddressDto? Address { get; set; }
     public List<TutorSubjectDto> Subjects { get; set; } = [];
   }

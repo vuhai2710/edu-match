@@ -10,13 +10,13 @@ public class TutorMapper : Profile
   {
     CreateMap<Tutor, TutorDto>()
       .ForMember(d => d.FullName, opt => opt.MapFrom(s => s.User != null ? s.User.FullName : string.Empty))
-      .ForMember(d => d.AvatarUrl, opt => opt.MapFrom(s => s.User != null ? s.User.AvatarUrl : null))
+      .ForMember(d => d.AvatarUrl, opt => opt.MapFrom(s => s.User != null && s.User.AvatarFile != null ? s.User.AvatarFile.FilePath : null))
       .ForMember(d => d.Subjects, opt => opt.MapFrom(s => s.TutorSubjects));
 
     CreateMap<Tutor, TutorDetailDto>()
       .ForMember(d => d.FullName, opt => opt.MapFrom(s => s.User != null ? s.User.FullName : string.Empty))
       .ForMember(d => d.Email, opt => opt.MapFrom(s => s.User != null ? s.User.Email : string.Empty))
-      .ForMember(d => d.AvatarUrl, opt => opt.MapFrom(s => s.User != null ? s.User.AvatarUrl : null))
+      .ForMember(d => d.AvatarUrl, opt => opt.MapFrom(s => s.User != null && s.User.AvatarFile != null ? s.User.AvatarFile.FilePath : null))
       .ForMember(d => d.Subjects, opt => opt.MapFrom(s => s.TutorSubjects));
 
     CreateMap<TutorSubject, TutorSubjectDto>()
@@ -24,7 +24,6 @@ public class TutorMapper : Profile
 
     CreateMap<UpdateTutorDto, Tutor>()
       .ForMember(d => d.UserId, opt => opt.Ignore())
-      .ForMember(d => d.ApprovalStatus, opt => opt.Ignore())
       .ForMember(d => d.Rating, opt => opt.Ignore())
       .ForMember(d => d.TotalReviews, opt => opt.Ignore())
       .ForMember(d => d.User, opt => opt.Ignore())
