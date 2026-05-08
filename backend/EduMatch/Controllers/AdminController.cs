@@ -51,5 +51,11 @@ namespace EduMatch.Controllers
     {
       return Ok(await _applicationService.AdminMatchAsync(requestId, dto.TutorProfileId));
     }
+
+    [HttpPost("tutor-requests/{studentId:long}")]
+    public async Task<ActionResult<ApiResponse<TutorRequestResponseDto>>> AdminCreateTutorRequest(long studentId, [FromBody] CreateTutorRequestDto dto)
+    {
+      return Ok(await _tutorRequestService.CreateAsync(studentId, dto));
+    }
   }
 }

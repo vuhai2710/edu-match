@@ -33,7 +33,7 @@ namespace EduMatch.Controllers
       return Ok(await _applicationService.GetByRequestIdAsync(requestId, GetCurrentUserId(), page, pageSize));
     }
 
-    [HttpGet("my")]
+    [HttpGet("me")]
     [Authorize(Roles = "Tutor")]
     public async Task<ActionResult<ApiResponse<PagedResult<ApplicationResponseDto>>>> GetMyApplications([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {

@@ -1,4 +1,5 @@
 using EduMatch.Configuration;
+using EduMatch.Configurations;
 using EduMatch.Data;
 using EduMatch.Exception;
 using EduMatch.Repositories;
@@ -121,6 +122,9 @@ builder.Services.AddScoped<ITutorRequestRepository, TutorRequestRepository>();
 builder.Services.AddScoped<IApplicationRepository, ApplicationRepository>();
 builder.Services.AddScoped<ITutorRequestService, TutorRequestService>();
 builder.Services.AddScoped<IApplicationService, ApplicationService>();
+builder.Services.AddScoped<IMessageService, MessageService>();
+builder.Services.AddScoped<EduMatch.Repositories.Interfaces.INotificationRepository, EduMatch.Repositories.NotificationRepository>();
+builder.Services.AddScoped<EduMatch.Services.Interfaces.INotificationService, EduMatch.Services.NotificationService>();
 builder.Services.AddHostedService<RequestExpiryBackgroundService>();
 #endregion
 
@@ -158,5 +162,6 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<NotificationHub>("/hubs/notifications");
+app.MapHub<ChatHub>("/hubs/chat");
 
 app.Run();
