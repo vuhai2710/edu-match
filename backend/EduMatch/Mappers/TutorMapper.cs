@@ -17,6 +17,7 @@ public class TutorMapper : Profile
       .ForMember(d => d.FullName, opt => opt.MapFrom(s => s.User != null ? s.User.FullName : string.Empty))
       .ForMember(d => d.Email, opt => opt.MapFrom(s => s.User != null ? s.User.Email : string.Empty))
       .ForMember(d => d.AvatarUrl, opt => opt.MapFrom(s => s.User != null && s.User.AvatarFile != null ? s.User.AvatarFile.FilePath : null))
+      .ForMember(d => d.CvUrl, opt => opt.MapFrom(s => s.CvFile != null ? s.CvFile.FilePath : null))
       .ForMember(d => d.Subjects, opt => opt.MapFrom(s => s.TutorSubjects));
 
     CreateMap<TutorSubject, TutorSubjectDto>()

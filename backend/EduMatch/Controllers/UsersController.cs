@@ -52,6 +52,14 @@ namespace EduMatch.Controllers
       return Ok(ApiResponse<string>.SuccessResult(result, "Cập nhật ảnh đại diện thành công"));
     }
 
+    [HttpDelete("me/avatar")]
+    [Authorize]
+    public async Task<ActionResult<ApiResponse>> DeleteMyAvatar()
+    {
+      await _userService.DeleteAvatarAsync(GetCurrentUserId());
+      return Ok(ApiResponse.Ok("Xóa ảnh đại diện thành công"));
+    }
+
     private long GetCurrentUserId()
     {
       var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);

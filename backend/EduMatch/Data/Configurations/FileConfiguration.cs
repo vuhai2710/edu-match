@@ -1,6 +1,6 @@
-using File = EduMatch.Models.File;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using File = EduMatch.Models.File;
 
 namespace EduMatch.Data.Configurations
 {
@@ -8,7 +8,6 @@ namespace EduMatch.Data.Configurations
   {
     public void Configure(EntityTypeBuilder<File> builder)
     {
-      builder.ToTable("Files");
       builder.HasQueryFilter(e => !e.IsDeleted);
 
       builder.Property(x => x.FileName)

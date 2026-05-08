@@ -8,7 +8,7 @@ using System.Security.Claims;
 
 namespace EduMatch.Controllers
 {
-  [Route("api/tutor-requests")]
+  [Route("api/[controller]")]
   [ApiController]
   public class TutorRequestsController : ControllerBase
   {

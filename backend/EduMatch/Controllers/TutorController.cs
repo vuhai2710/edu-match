@@ -58,6 +58,14 @@ namespace EduMatch.Controllers
       return Ok(ApiResponse<FileDto>.SuccessResult(result, "Cập nhật CV thành công"));
     }
 
+    [HttpDelete("me/cv")]
+    [Authorize(Roles = "Tutor")]
+    public async Task<ActionResult<ApiResponse>> DeleteMyCv()
+    {
+      await _tutorService.DeleteCvAsync(GetCurrentUserId());
+      return Ok(ApiResponse.Ok("Xóa CV thành công"));
+    }
+
     private long GetCurrentUserId()
     {
       var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);

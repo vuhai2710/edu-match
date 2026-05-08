@@ -69,18 +69,45 @@ namespace EduMatch.Services
     public async Task<string> UpdateAvatarAsync(long userId, IFormFile file)
     {
       var user = await _userRepository.GetByIdAsync(userId);
-      if (user == null)
+      if (user == null || user.IsDeleted)
       {
         throw new NotFoundException("Không tìm thấy người dùng");
       }
 
+      if (user.AvatarFileId.HasValue)
+      {
+        await _fileService.DeleteFileRecordAsync(user.AvatarFileId.Value);
+      }
+
       var savedFile = await _fileService.UploadAvatarAsync(file);
       user.AvatarFileId = savedFile.Id;
+      user.UpdatedAt = DateTime.UtcNow;
 
       _userRepository.Update(user);
       await _userRepository.SaveChangesAsync();
 
       return savedFile.FilePath;
+    }
+
+    public async Task DeleteAvatarAsync(long userId)
+    {
+      var user = await _userRepository.GetByIdAsync(userId);
+      if (user == null || user.IsDeleted)
+      {
+        throw new NotFoundException("Không tìm thấy người dùng");
+      }
+
+      if (!user.AvatarFileId.HasValue)
+      {
+        throw new AppException("User chưa có avatar", 400);
+      }
+
+      await _fileService.DeleteFileRecordAsync(user.AvatarFileId.Value);
+      user.AvatarFileId = null;
+      user.UpdatedAt = DateTime.UtcNow;
+
+      _userRepository.Update(user);
+      await _userRepository.SaveChangesAsync();
     }
   }
 }

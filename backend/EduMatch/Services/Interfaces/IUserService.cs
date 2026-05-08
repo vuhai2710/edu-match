@@ -10,5 +10,6 @@ namespace EduMatch.Services.Interfaces
     Task<UserDto> GetUserByIdAsync(long id);
     Task<bool> DeleteUserAsync(long id);
     Task<string> UpdateAvatarAsync(long userId, IFormFile file);
+    Task DeleteAvatarAsync(long userId);
   }
 }

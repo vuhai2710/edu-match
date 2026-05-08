@@ -67,6 +67,19 @@ namespace EduMatch.Services
       return await _fileRepository.CreateAsync(file);
     }
 
+    public async Task DeleteFileRecordAsync(long fileId)
+    {
+      var file = await _fileRepository.GetByIdAsync(fileId);
+      if (file == null || file.IsDeleted)
+      {
+        throw new EduMatch.Exception.NotFoundException("File không tồn tại");
+      }
+
+      file.IsDeleted = true;
+      file.UpdatedAt = DateTime.UtcNow;
+      await _fileRepository.UpdateAsync(file);
+    }
+
     private static string ResolveFileName(string fileUrl, string? providedFileName)
     {
       if (!string.IsNullOrWhiteSpace(providedFileName))

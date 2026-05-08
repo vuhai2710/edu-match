@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace EduMatch.Controllers
 {
-  [Route("api/admin")]
+  [Route("api/[controller]")]
   [ApiController]
   [Authorize(Roles = "Admin")]
   public class AdminController : ControllerBase

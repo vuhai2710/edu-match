@@ -14,7 +14,7 @@ namespace EduMatch.Data.Configurations
         .IsUnique();
 
       builder.Property(x => x.Level)
-        .HasConversion<string>()        
+        .HasConversion<string>()
         .HasMaxLength(20)
         .IsRequired();
 

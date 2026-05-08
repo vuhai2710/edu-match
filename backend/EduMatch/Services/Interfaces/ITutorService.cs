@@ -11,5 +11,6 @@ namespace EduMatch.Services
     Task<TutorDetailDto> GetTutorByUserIdAsync(long userId);
     Task<TutorDetailDto> UpdateTutorProfileAsync(long userId, UpdateTutorDto dto);
     Task<FileDto> UpdateCvAsync(long userId, IFormFile file);
+    Task DeleteCvAsync(long userId);
   }
 }

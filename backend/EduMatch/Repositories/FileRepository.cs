@@ -25,5 +25,11 @@ namespace EduMatch.Repositories
     {
       return await _context.Files.FirstOrDefaultAsync(file => file.Id == id);
     }
+
+    public async Task UpdateAsync(FileEntity file)
+    {
+      _context.Files.Update(file);
+      await _context.SaveChangesAsync();
+    }
   }
 }

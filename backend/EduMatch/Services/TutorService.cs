@@ -145,17 +145,44 @@ public class TutorService : ITutorService
   public async Task<FileDto> UpdateCvAsync(long userId, IFormFile file)
   {
     var profile = await _tutorRepository.GetTutorProfileByUserIdAsync(userId);
-    if (profile == null)
+    if (profile == null || profile.IsDeleted)
     {
       throw new NotFoundException("Không tìm thấy hồ sơ gia sư");
     }
 
+    if (profile.CvFileId.HasValue)
+    {
+      await _fileService.DeleteFileRecordAsync(profile.CvFileId.Value);
+    }
+
     var savedFile = await _fileService.UploadCvAsync(file);
     profile.CvFileId = savedFile.Id;
+    profile.UpdatedAt = DateTime.UtcNow;
 
     _tutorRepository.Update(profile);
     await _tutorRepository.SaveChangesAsync();
 
     return _mapper.Map<FileDto>(savedFile);
+  }
+
+  public async Task DeleteCvAsync(long userId)
+  {
+    var profile = await _tutorRepository.GetTutorProfileByUserIdAsync(userId);
+    if (profile == null || profile.IsDeleted)
+    {
+      throw new NotFoundException("Không tìm thấy hồ sơ gia sư");
+    }
+
+    if (!profile.CvFileId.HasValue)
+    {
+      throw new AppException("Tutor chưa có CV", 400);
+    }
+
+    await _fileService.DeleteFileRecordAsync(profile.CvFileId.Value);
+    profile.CvFileId = null;
+    profile.UpdatedAt = DateTime.UtcNow;
+
+    _tutorRepository.Update(profile);
+    await _tutorRepository.SaveChangesAsync();
   }
 }
