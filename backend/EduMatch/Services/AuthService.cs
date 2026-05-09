@@ -5,6 +5,7 @@ using EduMatch.DTOs.User;
 using EduMatch.Enums;
 using EduMatch.Exception;
 using EduMatch.Models;
+using EduMatch.Repositories;
 using EduMatch.Repositories.Interfaces;
 using EduMatch.Services.Interfaces;
 using Google.Apis.Auth;
@@ -21,11 +22,21 @@ public class AuthService
   private readonly IConfiguration _config;
   private readonly IFileService _fileService;
   private readonly IUserRepository _userRepository;
+  private readonly ITutorRepository _tutorProfileRepository;
+  private readonly INotificationService _notificationService;
   private readonly ILogger<AuthService> _logger;
   private readonly IMapper _mapper;
   private readonly ICodeGeneratorService _codeGenerator;
 
-  public AuthService(IUserRepository userRepository, IFileService fileService, IConfiguration config, ILogger<AuthService> logger, IMapper mapper, ICodeGeneratorService codeGenerator)
+  public AuthService(
+    IUserRepository userRepository,
+    IFileService fileService,
+    IConfiguration config,
+    ILogger<AuthService> logger,
+    IMapper mapper,
+    ICodeGeneratorService codeGenerator,
+    ITutorRepository tutorProfileRepository,
+    INotificationService notificationService)
   {
     _userRepository = userRepository;
     _fileService = fileService;
@@ -33,6 +44,8 @@ public class AuthService
     _logger = logger;
     _mapper = mapper;
     _codeGenerator = codeGenerator;
+    _tutorProfileRepository = tutorProfileRepository;
+    _notificationService = notificationService;
   }
 
   public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto)
@@ -180,7 +193,7 @@ public class AuthService
     return await BuildAuthResponseAsync(user);
   }
 
-  public async Task<AuthResponseDto> BecomeTutorAsync(long userId, BecomeTutorDto dto)
+  public async Task BecomeTutorAsync(long userId, BecomeTutorDto dto)
   {
     var user = await _userRepository.GetByIdWithProfilesAsync(userId);
     if (user == null)
@@ -188,25 +201,42 @@ public class AuthService
       throw new AppException("User not found", 404);
     }
 
-    if (user.Role == UserRole.Tutor || user.TutorProfile != null)
+    if (user.TutorProfile != null)
     {
-      throw new AppException("User is already a tutor", 400);
+      throw new AppException("Bạn đã gửi yêu cầu trở thành Gia sư hoặc đã là Gia sư.", 400);
     }
 
-    user.Role = UserRole.Tutor;
-    user.TutorProfile = new Tutor
+    var tutorProfile = new Tutor
     {
-      Bio = dto.Bio,
-      HourlyRate = dto.HourlyRate
+      UserId         = userId,
+      Bio            = dto.Bio,
+      HourlyRate     = dto.HourlyRate,
+      ApprovalStatus = Enums.ApprovalStatus.Pending
     };
 
-    _userRepository.Update(user);
-    await _userRepository.SaveChangesAsync();
+    await _tutorProfileRepository.AddAsync(tutorProfile);
+    await _tutorProfileRepository.SaveChangesAsync();
 
-    user.TutorProfile.Code = _codeGenerator.GenerateTutorCode(user.TutorProfile.Id);
-    await _userRepository.SaveChangesAsync();
+    tutorProfile.Code = _codeGenerator.GenerateTutorCode(tutorProfile.Id);
+    await _tutorProfileRepository.SaveChangesAsync();
 
-    return await BuildAuthResponseAsync(user);
+    _logger.LogInformation("BecomeTutor request submitted by UserId={UserId}, TutorProfileId={TutorProfileId}",
+      userId, tutorProfile.Id);
+
+    var adminIds = await _userRepository.FindAsync(u => u.Role == Enums.UserRole.Admin && !u.IsDeleted);
+    var adminUserIds = adminIds.Select(a => a.Id).ToList();
+
+    if (adminUserIds.Count > 0)
+    {
+      await _notificationService.SendToMultipleAsync(
+        adminUserIds,
+        "Yêu cầu gia sư mới",
+        $"{user.FullName} đã gửi yêu cầu trở thành Gia sư.",
+        Enums.NotificationType.BecomeTutorRequest,
+        referenceType: "TutorProfile",
+        referenceId: tutorProfile.Id,
+        actionUrl: "/admin/tutors/pending");
+    }
   }
 
   private async Task<AuthResponseDto> BuildAuthResponseAsync(User user)

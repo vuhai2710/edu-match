@@ -27,6 +27,7 @@ public class TutorMapper : Profile
       .ForMember(d => d.UserId, opt => opt.Ignore())
       .ForMember(d => d.Rating, opt => opt.Ignore())
       .ForMember(d => d.TotalReviews, opt => opt.Ignore())
+      .ForMember(d => d.ApprovalStatus, opt => opt.Ignore())
       .ForMember(d => d.User, opt => opt.Ignore())
       .ForMember(d => d.TutorSubjects, opt => opt.Ignore())
       .ForMember(d => d.Applications, opt => opt.Ignore())

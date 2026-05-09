@@ -67,7 +67,7 @@ namespace EduMatch.Controllers
 
     [HttpPost("become-tutor")]
     [Authorize(Roles = "Student")]
-    public async Task<ActionResult<ApiResponse<AuthResponseDto>>> BecomeTutor([FromBody] BecomeTutorDto dto)
+    public async Task<ActionResult<ApiResponse>> BecomeTutor([FromBody] BecomeTutorDto dto)
     {
       var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
       if (userIdClaim == null || !long.TryParse(userIdClaim, out var userId))
@@ -75,8 +75,8 @@ namespace EduMatch.Controllers
         return Unauthorized(ApiResponse.Fail("Unauthorized"));
       }
 
-      var result = await _authService.BecomeTutorAsync(userId, dto);
-      return Ok(ApiResponse<AuthResponseDto>.SuccessResult(result, "Congratulations! You are now a tutor. Please log in again to update your permissions."));
+      await _authService.BecomeTutorAsync(userId, dto);
+      return Ok(ApiResponse.Ok("Yêu cầu trở thành Gia sư đã được gửi. Vui lòng chờ Admin xét duyệt."));
     }
   }
 }

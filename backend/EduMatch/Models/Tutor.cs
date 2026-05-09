@@ -11,6 +11,7 @@ namespace EduMatch.Models
     public decimal HourlyRate { get; set; }
     public double Rating { get; set; } = 0;
     public long TotalReviews { get; set; } = 0;
+    public ApprovalStatus ApprovalStatus { get; set; } = ApprovalStatus.Pending;
 
     public long? AddressId { get; set; }
     public Address? Address { get; set; }
