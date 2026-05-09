@@ -22,6 +22,7 @@ public class AppDbContext : DbContext
   public DbSet<File> Files => Set<File>();
   public DbSet<Class> Classes => Set<Class>();
   public DbSet<Payment> Payments => Set<Payment>();
+  public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
   #endregion
 
   protected override void OnModelCreating(ModelBuilder modelBuilder)

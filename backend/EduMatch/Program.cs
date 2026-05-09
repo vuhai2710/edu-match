@@ -6,6 +6,7 @@ using EduMatch.Repositories;
 using EduMatch.Repositories.Interfaces;
 using EduMatch.Services;
 using EduMatch.Services.Interfaces;
+using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -130,6 +131,11 @@ builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 builder.Services.Configure<PayOSSettings>(builder.Configuration.GetSection("PayOS"));
 builder.Services.AddHttpClient<IPaymentService, PaymentService>();
 builder.Services.AddHostedService<RequestExpiryBackgroundService>();
+
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Email"));
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
+builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
 #endregion
 
 builder.Services.AddCors(options =>

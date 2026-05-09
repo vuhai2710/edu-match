@@ -1,6 +1,7 @@
 using EduMatch.DTOs;
 using EduMatch.DTOs.Auth;
 using EduMatch.Services;
+using EduMatch.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,10 +12,12 @@ namespace EduMatch.Controllers
   public class AuthController : ControllerBase
   {
     private readonly AuthService _authService;
+    private readonly IPasswordResetService _passwordResetService;
 
-    public AuthController(AuthService authService)
+    public AuthController(AuthService authService, IPasswordResetService passwordResetService)
     {
       _authService = authService;
+      _passwordResetService = passwordResetService;
     }
 
     [HttpPost("register")]
@@ -55,6 +58,31 @@ namespace EduMatch.Controllers
       var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
 
       return Ok(ApiResponse<object>.SuccessResult(new { userId, email, role }));
+    }
+
+    [HttpPost("forgot-password")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto dto)
+    {
+      await _passwordResetService.ForgotPasswordAsync(dto.Email);
+      return Ok(ApiResponse.Ok("Nếu email tồn tại, link đặt lại mật khẩu đã được gửi."));
+    }
+
+    [HttpPost("reset-password")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequestDto dto)
+    {
+      await _passwordResetService.ResetPasswordAsync(dto.Token, dto.NewPassword);
+      return Ok(ApiResponse.Ok("Đặt lại mật khẩu thành công."));
+    }
+
+    [HttpGet("validate-reset-token")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ValidateResetToken([FromQuery] string token)
+    {
+      var isValid = await _passwordResetService.ValidateTokenAsync(token);
+      return Ok(ApiResponse<ValidateResetTokenResponseDto>.SuccessResult(
+        new ValidateResetTokenResponseDto { IsValid = isValid }));
     }
   }
 }
