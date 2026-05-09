@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace EduMatch.DTOs.TutorRequests
 {
-  public class CreateTutorRequestDto
+  public class UpdateTutorRequestDto
   {
     [Required]
     public long SubjectId { get; set; }

@@ -10,5 +10,6 @@ namespace EduMatch.Services.Interfaces
     Task<ApiResponse<PagedResult<TutorRequestResponseDto>>> GetMyRequestsAsync(long studentId, int page, int pageSize);
     Task<ApiResponse<TutorRequestResponseDto>> GetByIdAsync(long id);
     Task<ApiResponse<bool>> CloseAsync(long id, long studentId);
+    Task<ApiResponse<TutorRequestResponseDto>> UpdateAsync(long id, long studentId, UpdateTutorRequestDto dto);
   }
 }

@@ -10,7 +10,7 @@ namespace EduMatch.DTOs.StudentProfile
     public string FullName { get; set; } = string.Empty;
     public string? AvatarUrl { get; set; }
     public Gender Gender { get; set; }
-    public string GradeLevel { get; set; } = string.Empty;
+    public Enums.Grade? GradeLevel { get; set; }
     public string School { get; set; } = string.Empty;
     public AddressDto? Address { get; set; }
   }

@@ -10,7 +10,7 @@ namespace EduMatch.DTOs.StudentProfile
     public Gender Gender { get; set; }
     public string Bio { get; set; } = string.Empty;
     public string School { get; set; } = string.Empty;
-    public string GradeLevel { get; set; } = string.Empty;
+    public Enums.Grade? GradeLevel { get; set; }
     
     [RegularExpression(@"^0\d{9}$", ErrorMessage = "Số điện thoại phải bắt đầu bằng 0 và có đúng 10 chữ số")]
     public string? PhoneNumber { get; set; }

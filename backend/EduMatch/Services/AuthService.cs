@@ -71,7 +71,7 @@ public class AuthService
     {
       Bio = string.Empty,
       School = string.Empty,
-      GradeLevel = string.Empty
+      GradeLevel = null
     };
 
     await _userRepository.AddAsync(user);
@@ -130,7 +130,7 @@ public class AuthService
       {
         Bio = string.Empty,
         School = string.Empty,
-        GradeLevel = string.Empty
+        GradeLevel = null
       };
 
       await _userRepository.AddAsync(user);

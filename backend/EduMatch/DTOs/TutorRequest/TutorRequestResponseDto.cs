@@ -19,6 +19,8 @@ namespace EduMatch.DTOs.TutorRequests
     public int SessionsPerWeek { get; set; }
     public int MinutesPerSession { get; set; }
     public int SessionsPerMonth { get; set; }
+    public string? GradeLevel { get; set; }
+    public string? EducationLevel { get; set; }
     public int ApplicationCount { get; set; }
     public DateTime CreatedAt { get; set; }
   }

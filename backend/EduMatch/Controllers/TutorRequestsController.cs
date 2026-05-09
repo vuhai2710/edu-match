@@ -47,6 +47,13 @@ namespace EduMatch.Controllers
       return Ok(await _tutorRequestService.CreateAsync(GetCurrentUserId(), dto));
     }
 
+    [HttpPut("{id:long}")]
+    [Authorize(Roles = "Student")]
+    public async Task<ActionResult<ApiResponse<TutorRequestResponseDto>>> Update(long id, [FromBody] UpdateTutorRequestDto dto)
+    {
+      return Ok(await _tutorRequestService.UpdateAsync(id, GetCurrentUserId(), dto));
+    }
+
     [HttpPut("{id:long}/close")]
     [Authorize(Roles = "Student")]
     public async Task<ActionResult<ApiResponse<bool>>> Close(long id)

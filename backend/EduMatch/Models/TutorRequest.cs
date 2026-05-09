@@ -14,7 +14,8 @@ namespace EduMatch.Models
     public string? PreferredSchedule { get; set; }
     public int SessionsPerWeek { get; set; }
     public int MinutesPerSession { get; set; }
-
+    public Grade? GradeLevel { get; set; }
+    public EducationLevel? EducationLevel { get; set; }
     public long? AddressId { get; set; }
     public Address? Address { get; set; }
 

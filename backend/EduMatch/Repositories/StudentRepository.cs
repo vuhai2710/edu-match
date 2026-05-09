@@ -29,8 +29,7 @@ namespace EduMatch.Repositories
           var exactTerm = parameters.SearchTerm.Trim();
           query = query.Where(s => 
               s.Code == exactTerm ||
-              (s.User.FullName != null && s.User.FullName.ToLower().Contains(searchTerm)) ||
-              (s.GradeLevel != null && s.GradeLevel.ToLower().Contains(searchTerm)));
+              (s.User.FullName != null && s.User.FullName.ToLower().Contains(searchTerm)));
       }
 
       if (parameters.ProvinceId.HasValue)

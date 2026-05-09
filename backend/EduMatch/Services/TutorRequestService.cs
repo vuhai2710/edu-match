@@ -66,6 +66,8 @@ namespace EduMatch.Services
         PreferredSchedule = dto.PreferredSchedule,
         SessionsPerWeek = dto.SessionsPerWeek,
         MinutesPerSession = dto.MinutesPerSession,
+        GradeLevel = dto.GradeLevel,
+        EducationLevel = dto.EducationLevel,
         Address = address
       };
 
@@ -161,6 +163,74 @@ namespace EduMatch.Services
       return ApiResponse<bool>.SuccessResult(true, "Đóng bài đăng thành công");
     }
 
+    public async Task<ApiResponse<TutorRequestResponseDto>> UpdateAsync(long id, long studentId, UpdateTutorRequestDto dto)
+    {
+      var utcNow = DateTime.UtcNow;
+      ValidateExpiry(dto.ExpiresAt, utcNow);
+
+      var request = await _tutorRequestRepository.GetByIdAsync(id);
+      if (request == null)
+      {
+        throw new AppException("Không tìm thấy bài đăng", 404);
+      }
+
+      if (request.StudentId != studentId)
+      {
+        throw new AppException("Bạn không có quyền cập nhật bài đăng này", 403);
+      }
+
+      if (request.Applications != null && request.Applications.Any(x => !x.IsDeleted))
+      {
+        throw new AppException("Không thể cập nhật bài đăng đã có gia sư ứng tuyển", 400);
+      }
+
+      var subject = await _dbContext.Subjects.FirstOrDefaultAsync(x => x.Id == dto.SubjectId);
+      if (subject == null)
+      {
+        throw new AppException("Không tìm thấy môn học", 404);
+      }
+
+      request.SubjectId = dto.SubjectId;
+      request.Note = string.IsNullOrWhiteSpace(dto.Note) ? null : dto.Note.Trim();
+      request.PricePerSession = dto.PricePerSession;
+      request.ExpiresAt = ToUtc(dto.ExpiresAt);
+      request.PreferredSchedule = dto.PreferredSchedule;
+      request.SessionsPerWeek = dto.SessionsPerWeek;
+      request.MinutesPerSession = dto.MinutesPerSession;
+      request.GradeLevel = dto.GradeLevel;
+      request.EducationLevel = dto.EducationLevel;
+
+      if (HasAnyAddressFieldUpdate(dto))
+      {
+        if (request.Address == null)
+        {
+            request.Address = BuildAddressUpdate(dto);
+        }
+        else
+        {
+            request.Address.ProvinceId = dto.ProvinceId!.Value;
+            request.Address.ProvinceName = dto.ProvinceName!.Trim();
+            request.Address.WardCode = dto.WardCode!.Trim();
+            request.Address.WardName = dto.WardName!.Trim();
+            request.Address.AddressDetail = string.IsNullOrWhiteSpace(dto.AddressDetail) ? null : dto.AddressDetail.Trim();
+            request.Address.FullAddress = string.Join(", ", new[] { request.Address.AddressDetail, request.Address.WardName, request.Address.ProvinceName }.Where(x => !string.IsNullOrWhiteSpace(x)));
+        }
+      }
+      else
+      {
+          if (request.Address != null)
+          {
+              _dbContext.Addresses.Remove(request.Address);
+              request.Address = null;
+              request.AddressId = null;
+          }
+      }
+
+      await _tutorRequestRepository.UpdateAsync(request);
+
+      return ApiResponse<TutorRequestResponseDto>.SuccessResult(MapTutorRequest(request), "Cập nhật bài đăng thành công");
+    }
+
     private static TutorRequestResponseDto MapTutorRequest(TutorRequest request)
     {
       var utcNow = DateTime.UtcNow;
@@ -183,6 +253,8 @@ namespace EduMatch.Services
         SessionsPerWeek = request.SessionsPerWeek,
         MinutesPerSession = request.MinutesPerSession,
         SessionsPerMonth = request.SessionsPerWeek * 4,
+        GradeLevel = request.GradeLevel?.ToString(),
+        EducationLevel = request.EducationLevel?.ToString(),
         ApplicationCount = request.Applications?.Count(x => !x.IsDeleted) ?? 0,
         CreatedAt = request.CreatedAt
       };
@@ -234,6 +306,40 @@ namespace EduMatch.Services
     private static DateTime ToUtc(DateTime dateTime)
     {
       return dateTime.Kind == DateTimeKind.Utc ? dateTime : dateTime.ToUniversalTime();
+    }
+
+    private static bool HasAnyAddressFieldUpdate(UpdateTutorRequestDto dto)
+    {
+      return dto.ProvinceId.HasValue
+        || !string.IsNullOrWhiteSpace(dto.ProvinceName)
+        || !string.IsNullOrWhiteSpace(dto.WardCode)
+        || !string.IsNullOrWhiteSpace(dto.WardName)
+        || !string.IsNullOrWhiteSpace(dto.AddressDetail);
+    }
+
+    private static Address BuildAddressUpdate(UpdateTutorRequestDto dto)
+    {
+      if (!dto.ProvinceId.HasValue
+        || string.IsNullOrWhiteSpace(dto.ProvinceName)
+        || string.IsNullOrWhiteSpace(dto.WardCode)
+        || string.IsNullOrWhiteSpace(dto.WardName))
+      {
+        throw new AppException("Thông tin địa chỉ không hợp lệ", 400);
+      }
+
+      var provinceName = dto.ProvinceName.Trim();
+      var wardName = dto.WardName.Trim();
+      var addressDetail = string.IsNullOrWhiteSpace(dto.AddressDetail) ? null : dto.AddressDetail.Trim();
+
+      return new Address
+      {
+        ProvinceId = dto.ProvinceId.Value,
+        ProvinceName = provinceName,
+        WardCode = dto.WardCode.Trim(),
+        WardName = wardName,
+        AddressDetail = addressDetail,
+        FullAddress = string.Join(", ", new[] { addressDetail, wardName, provinceName }.Where(x => !string.IsNullOrWhiteSpace(x)))
+      };
     }
 
 
