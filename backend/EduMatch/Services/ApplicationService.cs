@@ -1,4 +1,3 @@
-using EduMatch.Configuration;
 using EduMatch.Data;
 using EduMatch.DTOs;
 using EduMatch.DTOs.Applications;
@@ -7,7 +6,6 @@ using EduMatch.Exception;
 using EduMatch.Repositories;
 using EduMatch.Repositories.Interfaces;
 using EduMatch.Services.Interfaces;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace EduMatch.Services
@@ -18,7 +16,7 @@ namespace EduMatch.Services
     private readonly ITutorRequestRepository _tutorRequestRepository;
     private readonly ITutorRepository _tutorRepository;
     private readonly AppDbContext _dbContext;
-    private readonly IHubContext<NotificationHub> _hubContext;
+    private readonly INotificationService _notificationService;
     private readonly ILogger<ApplicationService> _logger;
 
     public ApplicationService(
@@ -26,14 +24,14 @@ namespace EduMatch.Services
       ITutorRequestRepository tutorRequestRepository,
       ITutorRepository tutorRepository,
       AppDbContext dbContext,
-      IHubContext<NotificationHub> hubContext,
+      INotificationService notificationService,
       ILogger<ApplicationService> logger)
     {
       _applicationRepository = applicationRepository;
       _tutorRequestRepository = tutorRequestRepository;
       _tutorRepository = tutorRepository;
       _dbContext = dbContext;
-      _hubContext = hubContext;
+      _notificationService = notificationService;
       _logger = logger;
     }
 
@@ -75,18 +73,14 @@ namespace EduMatch.Services
       application.Tutor = tutorProfile;
       application.TutorRequest = request;
 
-      await CreateNotificationsAsync(
-        new[] { request.StudentId },
+      await _notificationService.SendAsync(
+        request.StudentId,
+        "Ứng tuyển mới",
         $"{tutorProfile.User.FullName} vừa ứng tuyển bài đăng của bạn",
+        NotificationType.ApplicationCreated,
+        "Application",
+        application.Id,
         $"/tutor-requests/{request.Id}/applications");
-
-      await _hubContext.Clients.User(request.StudentId.ToString()).SendAsync("NewApplication", new
-      {
-        applicationId = application.Id,
-        requestId = request.Id,
-        tutorProfileId = tutorProfile.Id,
-        tutorName = tutorProfile.User.FullName
-      });
 
       _logger.LogInformation("Tutor {TutorId} applied to Request {RequestId}", tutorProfile.Id, requestId);
 
@@ -105,17 +99,14 @@ namespace EduMatch.Services
       await _applicationRepository.UpdateAsync(application);
 
       var adminIds = await GetAdminUserIdsAsync();
-      await CreateNotificationsAsync(
+      await _notificationService.SendToMultipleAsync(
         adminIds,
+        "Học sinh xác nhận gia sư",
         $"Học sinh đã xác nhận gia sư cho bài đăng #{application.TutorRequestId}",
+        NotificationType.StudentConfirmed,
+        "Application",
+        application.Id,
         $"/admin/applications/{application.Id}");
-
-      await _hubContext.Clients.Group("Admin").SendAsync("ApplicationStudentConfirmed", new
-      {
-        applicationId = application.Id,
-        requestId = application.TutorRequestId,
-        studentId
-      });
 
       return ApiResponse<bool>.SuccessResult(true, "Đã xác nhận gia sư");
     }
@@ -131,9 +122,13 @@ namespace EduMatch.Services
       application.Status = ApplicationStatus.StudentRejected;
       await _applicationRepository.UpdateAsync(application);
 
-      await CreateNotificationsAsync(
-        new[] { application.Tutor.UserId },
+      await _notificationService.SendAsync(
+        application.Tutor.UserId,
+        "Ứng tuyển bị từ chối",
         "Ứng tuyển của bạn đã bị học sinh từ chối",
+        NotificationType.StudentRejected,
+        "Application",
+        application.Id,
         $"/applications/{application.Id}");
 
       return ApiResponse<bool>.SuccessResult(true, "Đã từ chối gia sư");
@@ -212,18 +207,14 @@ namespace EduMatch.Services
       _dbContext.Classes.Add(newClass);
       await _dbContext.SaveChangesAsync();
 
-      await CreateNotificationsAsync(
+      await _notificationService.SendToMultipleAsync(
         new[] { application.TutorRequest.StudentId, application.Tutor.UserId },
+        "Ứng tuyển được duyệt",
         "Ứng tuyển đã được admin duyệt",
+        NotificationType.ApplicationApproved,
+        "Application",
+        application.Id,
         $"/applications/{application.Id}");
-
-      await _hubContext.Clients.Users(new[] { application.TutorRequest.StudentId.ToString(), application.Tutor.UserId.ToString() })
-        .SendAsync("ApplicationApproved", new
-        {
-          applicationId = application.Id,
-          requestId = application.TutorRequestId,
-          tutorProfileId = application.TutorId
-        });
 
       return ApiResponse<bool>.SuccessResult(true, "Admin đã duyệt ứng tuyển");
     }
@@ -244,16 +235,14 @@ namespace EduMatch.Services
       application.Status = ApplicationStatus.AdminRejected;
       await _applicationRepository.UpdateAsync(application);
 
-      await CreateNotificationsAsync(
-        new[] { application.Tutor.UserId },
+      await _notificationService.SendAsync(
+        application.Tutor.UserId,
+        "Ứng tuyển bị từ chối",
         "Ứng tuyển của bạn đã bị admin từ chối",
+        NotificationType.ApplicationRejected,
+        "Application",
+        application.Id,
         $"/applications/{application.Id}");
-
-      await _hubContext.Clients.User(application.Tutor.UserId.ToString()).SendAsync("ApplicationRejected", new
-      {
-        applicationId = application.Id,
-        requestId = application.TutorRequestId
-      });
 
       return ApiResponse<bool>.SuccessResult(true, "Admin đã từ chối ứng tuyển");
     }
@@ -298,18 +287,14 @@ namespace EduMatch.Services
       application.Tutor = tutorProfile;
       application.TutorRequest = request;
 
-      await CreateNotificationsAsync(
+      await _notificationService.SendToMultipleAsync(
         new[] { request.StudentId, tutorProfile.UserId },
+        "Ghép lớp mới",
         "Admin đã tạo ghép lớp mới",
+        NotificationType.AdminMatched,
+        "Application",
+        application.Id,
         $"/applications/{application.Id}");
-
-      await _hubContext.Clients.Users(new[] { request.StudentId.ToString(), tutorProfile.UserId.ToString() })
-        .SendAsync("AdminMatched", new
-        {
-          applicationId = application.Id,
-          requestId,
-          tutorProfileId
-        });
 
       return ApiResponse<ApplicationResponseDto>.SuccessResult(MapApplication(application), "Admin ghép lớp thành công");
     }
@@ -394,18 +379,14 @@ namespace EduMatch.Services
 
         _logger.LogInformation("Class created for matched Application {AppId}, DepositAmount {Deposit}", application.Id, application.DepositAmount);
 
-        await CreateNotificationsAsync(
+        await _notificationService.SendToMultipleAsync(
           new[] { application.TutorRequest.StudentId, application.Tutor.UserId },
+          "Ghép lớp thành công",
           "Ghép lớp đã được cả hai bên chấp nhận",
+          NotificationType.MatchAccepted,
+          "Application",
+          application.Id,
           $"/applications/{application.Id}");
-
-        await _hubContext.Clients.Users(new[] { application.TutorRequest.StudentId.ToString(), application.Tutor.UserId.ToString() })
-          .SendAsync("MatchAccepted", new
-          {
-            applicationId = application.Id,
-            requestId = application.TutorRequestId,
-            tutorProfileId = application.TutorId
-          });
       }
 
       await _applicationRepository.UpdateAsync(application);
@@ -464,27 +445,6 @@ namespace EduMatch.Services
         .Where(x => x.Role == UserRole.Admin)
         .Select(x => x.Id)
         .ToListAsync();
-    }
-
-    private async Task CreateNotificationsAsync(IEnumerable<long> userIds, string content, string? actionUrl)
-    {
-      var notifications = userIds
-        .Distinct()
-        .Select(userId => new EduMatch.Models.Notification
-        {
-          UserId = userId,
-          Content = content,
-          ActionUrl = actionUrl
-        })
-        .ToList();
-
-      if (notifications.Count == 0)
-      {
-        return;
-      }
-
-      await _dbContext.Notifications.AddRangeAsync(notifications);
-      await _dbContext.SaveChangesAsync();
     }
   }
 }

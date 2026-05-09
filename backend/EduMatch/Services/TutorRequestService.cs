@@ -1,4 +1,3 @@
-using EduMatch.Configuration;
 using EduMatch.Data;
 using EduMatch.DTOs;
 using EduMatch.DTOs.TutorRequests;
@@ -7,7 +6,6 @@ using EduMatch.Exception;
 using EduMatch.Models;
 using EduMatch.Repositories.Interfaces;
 using EduMatch.Services.Interfaces;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace EduMatch.Services
@@ -16,18 +14,18 @@ namespace EduMatch.Services
   {
     private readonly ITutorRequestRepository _tutorRequestRepository;
     private readonly AppDbContext _dbContext;
-    private readonly IHubContext<NotificationHub> _hubContext;
+    private readonly INotificationService _notificationService;
     private readonly ILogger<TutorRequestService> _logger;
 
     public TutorRequestService(
       ITutorRequestRepository tutorRequestRepository,
       AppDbContext dbContext,
-      IHubContext<NotificationHub> hubContext,
+      INotificationService notificationService,
       ILogger<TutorRequestService> logger)
     {
       _tutorRequestRepository = tutorRequestRepository;
       _dbContext = dbContext;
-      _hubContext = hubContext;
+      _notificationService = notificationService;
       _logger = logger;
     }
 
@@ -78,19 +76,14 @@ namespace EduMatch.Services
         .Select(x => x.Id)
         .ToListAsync();
 
-      await CreateNotificationsAsync(
+      await _notificationService.SendToMultipleAsync(
         adminIds,
+        "Bài đăng mới",
         $"Có bài đăng tìm gia sư mới cho môn {subject.Name}",
+        NotificationType.TutorRequestCreated,
+        "TutorRequest",
+        request.Id,
         $"/admin/tutor-requests/{request.Id}");
-
-      await _hubContext.Clients.Group("Admin").SendAsync("NewTutorRequest", new
-      {
-        requestId = request.Id,
-        studentId = request.StudentId,
-        subjectId = request.SubjectId,
-        subjectName = subject.Name,
-        expiresAt = request.ExpiresAt
-      });
 
       _logger.LogInformation("Student {StudentId} created TutorRequest {RequestId}, expires {ExpiresAt}", studentId, request.Id, request.ExpiresAt);
 
@@ -236,25 +229,6 @@ namespace EduMatch.Services
       return dateTime.Kind == DateTimeKind.Utc ? dateTime : dateTime.ToUniversalTime();
     }
 
-    private async Task CreateNotificationsAsync(IEnumerable<long> userIds, string content, string? actionUrl)
-    {
-      var notifications = userIds
-        .Distinct()
-        .Select(userId => new Notification
-        {
-          UserId = userId,
-          Content = content,
-          ActionUrl = actionUrl
-        })
-        .ToList();
 
-      if (notifications.Count == 0)
-      {
-        return;
-      }
-
-      await _dbContext.Notifications.AddRangeAsync(notifications);
-      await _dbContext.SaveChangesAsync();
-    }
   }
 }

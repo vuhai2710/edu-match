@@ -1,11 +1,8 @@
 using EduMatch.DTOs.Chat;
+using EduMatch.Enums;
 using EduMatch.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace EduMatch.Configurations
 {
@@ -16,11 +13,13 @@ namespace EduMatch.Configurations
     private static readonly object _lock = new();
 
     private readonly IMessageService _messageService;
+    private readonly INotificationService _notificationService;
     private readonly ILogger<ChatHub> _logger;
 
-    public ChatHub(IMessageService messageService, ILogger<ChatHub> logger)
+    public ChatHub(IMessageService messageService, INotificationService notificationService, ILogger<ChatHub> logger)
     {
       _messageService = messageService;
+      _notificationService = notificationService;
       _logger = logger;
     }
 
@@ -61,6 +60,18 @@ namespace EduMatch.Configurations
       await DeliverToUser(dto.ReceiverId, "ReceiveMessage", message);
 
       await DeliverToUser(senderId, "ReceiveMessage", message);
+
+      if (!IsOnline(dto.ReceiverId))
+      {
+        await _notificationService.SendAsync(
+          dto.ReceiverId,
+          "Tin nhắn mới",
+          $"{message.SenderName} đã gửi tin nhắn cho bạn",
+          NotificationType.NewMessage,
+          "Message",
+          message.Id,
+          $"/chat/{senderId}");
+      }
     }
 
     public async Task MarkAsRead(long partnerId)

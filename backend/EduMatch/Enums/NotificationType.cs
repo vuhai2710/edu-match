@@ -5,7 +5,13 @@ namespace EduMatch.Enums
         ApplicationCreated,
         ApplicationApproved,
         ApplicationRejected,
+        StudentConfirmed,
+        StudentRejected,
+        AdminMatched,
+        MatchAccepted,
+        TutorRequestCreated,
         NewMessage,
+        PaymentCreated,
         PaymentSuccess
     }
 }

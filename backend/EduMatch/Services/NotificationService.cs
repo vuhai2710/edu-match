@@ -105,5 +105,13 @@ namespace EduMatch.Services
                 _logger.LogError(ex, "Failed to send notification to user {UserId}", userId);
             }
         }
+
+        public async Task SendToMultipleAsync(IEnumerable<long> userIds, string title, string content, NotificationType type, string? referenceType = null, long? referenceId = null, string? actionUrl = null)
+        {
+            foreach (var userId in userIds.Distinct())
+            {
+                await SendAsync(userId, title, content, type, referenceType, referenceId, actionUrl);
+            }
+        }
     }
 }

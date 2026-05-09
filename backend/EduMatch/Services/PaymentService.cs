@@ -16,6 +16,7 @@ namespace EduMatch.Services
     {
         private readonly IPaymentRepository _paymentRepo;
         private readonly IClassRepository _classRepo;
+        private readonly INotificationService _notificationService;
         private readonly HttpClient _httpClient;
         private readonly PayOSSettings _settings;
         private readonly ILogger<PaymentService> _logger;
@@ -23,12 +24,14 @@ namespace EduMatch.Services
         public PaymentService(
             IPaymentRepository paymentRepo,
             IClassRepository classRepo,
+            INotificationService notificationService,
             HttpClient httpClient,
             IOptions<PayOSSettings> options,
             ILogger<PaymentService> logger)
         {
             _paymentRepo = paymentRepo;
             _classRepo = classRepo;
+            _notificationService = notificationService;
             _httpClient = httpClient;
             _settings = options.Value;
             _logger = logger;
@@ -117,6 +120,16 @@ namespace EduMatch.Services
 
             _logger.LogInformation("Create payment for class {ClassId}", dto.ClassId);
 
+            // Notify the student that a payment has been created for their class
+            await _notificationService.SendAsync(
+                @class.StudentId,
+                "Yêu cầu thanh toán",
+                $"Gia sư đã tạo yêu cầu thanh toán đặt cọc cho lớp học #{dto.ClassId}",
+                NotificationType.PaymentCreated,
+                "Payment",
+                payment.Id,
+                $"/classes/{dto.ClassId}/payment");
+
             return new PaymentResponseDto
             {
                 OrderCode = orderCode,
@@ -177,6 +190,19 @@ namespace EduMatch.Services
                 await _paymentRepo.SaveChangesAsync();
                 
                 _logger.LogInformation("Webhook received for order {OrderCode}", dto.Data.OrderCode);
+
+                // Notify both student and tutor about successful payment
+                if (payment.Class != null)
+                {
+                    await _notificationService.SendToMultipleAsync(
+                        new[] { payment.Class.StudentId, payment.TutorId },
+                        "Thanh toán thành công",
+                        $"Đặt cọc cho lớp học #{payment.ClassId} đã được thanh toán thành công. Lớp học đã được kích hoạt.",
+                        NotificationType.PaymentSuccess,
+                        "Payment",
+                        payment.Id,
+                        $"/classes/{payment.ClassId}");
+                }
             }
         }
 

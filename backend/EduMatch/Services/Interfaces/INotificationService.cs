@@ -22,5 +22,14 @@ namespace EduMatch.Services.Interfaces
         Task<int> GetUnreadCountAsync(long userId);
 
         Task MarkAsReadAsync(long notificationId, long userId);
+
+        Task SendToMultipleAsync(
+            IEnumerable<long> userIds,
+            string title,
+            string content,
+            NotificationType type,
+            string? referenceType = null,
+            long? referenceId = null,
+            string? actionUrl = null);
     }
 }
