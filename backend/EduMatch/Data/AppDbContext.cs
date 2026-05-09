@@ -20,6 +20,8 @@ public class AppDbContext : DbContext
   public DbSet<TutorSubject> TutorSubjects => Set<TutorSubject>();
   public DbSet<Address> Addresses => Set<Address>();
   public DbSet<File> Files => Set<File>();
+  public DbSet<Class> Classes => Set<Class>();
+  public DbSet<Payment> Payments => Set<Payment>();
   #endregion
 
   protected override void OnModelCreating(ModelBuilder modelBuilder)

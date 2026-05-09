@@ -1,4 +1,4 @@
-﻿using EduMatch.Models;
+using EduMatch.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -29,6 +29,10 @@ namespace EduMatch.Data.Configurations
       builder.Property(x => x.TutorAcceptedMatch)
         .HasDefaultValue(false)
         .IsRequired();
+
+      builder.Property(x => x.DepositAmount)
+        .HasColumnType("decimal(18,2)")
+        .IsRequired(false);
 
       builder.HasOne(x => x.Tutor)
         .WithMany(x => x.Applications)

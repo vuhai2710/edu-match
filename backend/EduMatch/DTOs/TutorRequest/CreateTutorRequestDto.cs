@@ -12,18 +12,20 @@ namespace EduMatch.DTOs.TutorRequests
 
     [Required]
     [Range(0, 10_000_000)]
-    public decimal BudgetMax { get; set; }
+    public decimal PricePerSession { get; set; }
 
     [Required]
     public DateTime ExpiresAt { get; set; }
 
     public string? PreferredSchedule { get; set; }
 
+    [Required]
     [Range(1, 7)]
-    public int? SessionsPerWeek { get; set; }
+    public int SessionsPerWeek { get; set; }
 
+    [Required]
     [Range(30, 240)]
-    public int? MinutesPerSession { get; set; }
+    public int MinutesPerSession { get; set; }
 
     public int? ProvinceId { get; set; }
     public string? ProvinceName { get; set; }

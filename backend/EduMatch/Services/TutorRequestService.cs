@@ -60,7 +60,7 @@ namespace EduMatch.Services
         SubjectId = dto.SubjectId,
         Note = string.IsNullOrWhiteSpace(dto.Note) ? null : dto.Note.Trim(),
         Status = TutorRequestStatus.Open,
-        BudgetMax = dto.BudgetMax,
+        PricePerSession = dto.PricePerSession,
         ExpiresAt = ToUtc(dto.ExpiresAt),
         PreferredSchedule = dto.PreferredSchedule,
         SessionsPerWeek = dto.SessionsPerWeek,
@@ -176,12 +176,13 @@ namespace EduMatch.Services
         Note = request.Note,
         Status = request.Status.ToString(),
         IsExpired = request.ExpiresAt.HasValue && request.ExpiresAt.Value < utcNow,
-        BudgetMax = request.BudgetMax,
+        PricePerSession = request.PricePerSession,
         FullAddress = request.Address?.FullAddress,
         ExpiresAt = request.ExpiresAt,
         PreferredSchedule = request.PreferredSchedule,
         SessionsPerWeek = request.SessionsPerWeek,
         MinutesPerSession = request.MinutesPerSession,
+        SessionsPerMonth = request.SessionsPerWeek * 4,
         ApplicationCount = request.Applications?.Count(x => !x.IsDeleted) ?? 0,
         CreatedAt = request.CreatedAt
       };

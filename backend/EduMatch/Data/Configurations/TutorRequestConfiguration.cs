@@ -11,7 +11,7 @@ namespace EduMatch.Data.Configurations
       builder.HasQueryFilter(e => !e.IsDeleted);
 
 
-      builder.Property(x => x.BudgetMax)
+      builder.Property(x => x.PricePerSession)
         .HasColumnType("decimal(18,2)")
         .IsRequired();
 
@@ -32,10 +32,10 @@ namespace EduMatch.Data.Configurations
         .IsRequired(false);
 
       builder.Property(x => x.SessionsPerWeek)
-        .IsRequired(false);
+        .IsRequired();
 
       builder.Property(x => x.MinutesPerSession)
-        .IsRequired(false);
+        .IsRequired();
 
       builder.HasOne(x => x.Student)
         .WithMany()

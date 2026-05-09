@@ -49,14 +49,14 @@ namespace EduMatch.Repositories
         query = query.Where(x => x.Status == filter.Status.Value);
       }
 
-      if (filter.BudgetMin.HasValue)
+      if (filter.PricePerSessionMin.HasValue)
       {
-        query = query.Where(x => x.BudgetMax >= filter.BudgetMin.Value);
+        query = query.Where(x => x.PricePerSession >= filter.PricePerSessionMin.Value);
       }
 
-      if (filter.BudgetMax.HasValue)
+      if (filter.PricePerSessionMax.HasValue)
       {
-        query = query.Where(x => x.BudgetMax <= filter.BudgetMax.Value);
+        query = query.Where(x => x.PricePerSession <= filter.PricePerSessionMax.Value);
       }
 
       if (!string.IsNullOrWhiteSpace(filter.Area))

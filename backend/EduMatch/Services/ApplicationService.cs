@@ -177,7 +177,7 @@ namespace EduMatch.Services
       return ApiResponse<bool>.SuccessResult(true, "Gia sư đã chấp nhận ghép lớp");
     }
 
-    public async Task<ApiResponse<bool>> AdminApproveAsync(long applicationId)
+    public async Task<ApiResponse<bool>> AdminApproveAsync(long applicationId, decimal depositAmount)
     {
       var application = await _applicationRepository.GetByIdAsync(applicationId);
       if (application == null)
@@ -197,7 +197,20 @@ namespace EduMatch.Services
       await _applicationRepository.UpdateAsync(application);
 
       _logger.LogInformation("Admin approved Application {AppId}, created Class", applicationId);
-      _logger.LogInformation("TODO: create Class entity for Application {AppId}", applicationId);
+      
+      var newClass = new EduMatch.Models.Class
+      {
+         StudentId = application.TutorRequest.StudentId,
+         TutorId = application.TutorId,
+         RequestId = application.TutorRequestId,
+         ApplicationId = application.Id,
+         DepositAmount = depositAmount,
+         Status = EduMatch.Enums.ClassStatus.PendingPayment,
+         StartDate = DateTime.UtcNow
+      };
+
+      _dbContext.Classes.Add(newClass);
+      await _dbContext.SaveChangesAsync();
 
       await CreateNotificationsAsync(
         new[] { application.TutorRequest.StudentId, application.Tutor.UserId },
@@ -245,7 +258,7 @@ namespace EduMatch.Services
       return ApiResponse<bool>.SuccessResult(true, "Admin đã từ chối ứng tuyển");
     }
 
-    public async Task<ApiResponse<ApplicationResponseDto>> AdminMatchAsync(long requestId, long tutorProfileId)
+    public async Task<ApiResponse<ApplicationResponseDto>> AdminMatchAsync(long requestId, long tutorProfileId, decimal depositAmount)
     {
       var request = await _tutorRequestRepository.GetByIdAsync(requestId);
       if (request == null)
@@ -276,7 +289,8 @@ namespace EduMatch.Services
         TutorRequestId = requestId,
         Status = ApplicationStatus.AdminMatched,
         StudentAcceptedMatch = false,
-        TutorAcceptedMatch = false
+        TutorAcceptedMatch = false,
+        DepositAmount = depositAmount
       };
 
       await _applicationRepository.CreateAsync(application);
@@ -366,7 +380,19 @@ namespace EduMatch.Services
 
         await RejectOtherApplicationsAsync(application.TutorRequestId, application.Id);
 
-        _logger.LogInformation("TODO: create Class entity for matched Application {AppId}", application.Id);
+        var newClass = new EduMatch.Models.Class
+        {
+          StudentId = application.TutorRequest.StudentId,
+          TutorId = application.TutorId,
+          RequestId = application.TutorRequestId,
+          ApplicationId = application.Id,
+          DepositAmount = application.DepositAmount ?? 0,
+          Status = EduMatch.Enums.ClassStatus.PendingPayment,
+          StartDate = DateTime.UtcNow
+        };
+        _dbContext.Classes.Add(newClass);
+
+        _logger.LogInformation("Class created for matched Application {AppId}, DepositAmount {Deposit}", application.Id, application.DepositAmount);
 
         await CreateNotificationsAsync(
           new[] { application.TutorRequest.StudentId, application.Tutor.UserId },

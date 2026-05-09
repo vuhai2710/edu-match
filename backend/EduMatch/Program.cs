@@ -125,6 +125,10 @@ builder.Services.AddScoped<IApplicationService, ApplicationService>();
 builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<EduMatch.Repositories.Interfaces.INotificationRepository, EduMatch.Repositories.NotificationRepository>();
 builder.Services.AddScoped<EduMatch.Services.Interfaces.INotificationService, EduMatch.Services.NotificationService>();
+builder.Services.AddScoped<IClassRepository, ClassRepository>();
+builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
+builder.Services.Configure<PayOSSettings>(builder.Configuration.GetSection("PayOS"));
+builder.Services.AddHttpClient<IPaymentService, PaymentService>();
 builder.Services.AddHostedService<RequestExpiryBackgroundService>();
 #endregion
 
