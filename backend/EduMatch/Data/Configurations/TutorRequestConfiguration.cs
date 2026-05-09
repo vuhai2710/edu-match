@@ -10,6 +10,8 @@ namespace EduMatch.Data.Configurations
     {
       builder.HasQueryFilter(e => !e.IsDeleted);
 
+      builder.Property(x => x.Code).IsRequired().HasMaxLength(20);
+      builder.HasIndex(x => x.Code).IsUnique();
 
       builder.Property(x => x.PricePerSession)
         .HasColumnType("decimal(18,2)")

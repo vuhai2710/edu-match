@@ -26,7 +26,9 @@ namespace EduMatch.Repositories
       if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
       {
           var searchTerm = parameters.SearchTerm.ToLower().Trim();
+          var exactTerm = parameters.SearchTerm.Trim();
           query = query.Where(s => 
+              s.Code == exactTerm ||
               (s.User.FullName != null && s.User.FullName.ToLower().Contains(searchTerm)) ||
               (s.GradeLevel != null && s.GradeLevel.ToLower().Contains(searchTerm)));
       }

@@ -3,7 +3,7 @@ namespace EduMatch.Enums
     public enum PaymentStatus
     {
         Pending,
-        Paid,
+        Success,
         Failed,
         Cancelled
     }

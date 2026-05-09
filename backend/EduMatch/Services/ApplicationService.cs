@@ -18,6 +18,7 @@ namespace EduMatch.Services
     private readonly AppDbContext _dbContext;
     private readonly INotificationService _notificationService;
     private readonly ILogger<ApplicationService> _logger;
+    private readonly ICodeGeneratorService _codeGenerator;
 
     public ApplicationService(
       IApplicationRepository applicationRepository,
@@ -25,7 +26,8 @@ namespace EduMatch.Services
       ITutorRepository tutorRepository,
       AppDbContext dbContext,
       INotificationService notificationService,
-      ILogger<ApplicationService> logger)
+      ILogger<ApplicationService> logger,
+      ICodeGeneratorService codeGenerator)
     {
       _applicationRepository = applicationRepository;
       _tutorRequestRepository = tutorRequestRepository;
@@ -33,6 +35,7 @@ namespace EduMatch.Services
       _dbContext = dbContext;
       _notificationService = notificationService;
       _logger = logger;
+      _codeGenerator = codeGenerator;
     }
 
     public async Task<ApiResponse<ApplicationResponseDto>> ApplyAsync(long tutorUserId, long requestId, ApplyToRequestDto dto)
@@ -207,6 +210,9 @@ namespace EduMatch.Services
       _dbContext.Classes.Add(newClass);
       await _dbContext.SaveChangesAsync();
 
+      newClass.Code = _codeGenerator.GenerateClassCode(newClass.Id);
+      await _dbContext.SaveChangesAsync();
+
       await _notificationService.SendToMultipleAsync(
         new[] { application.TutorRequest.StudentId, application.Tutor.UserId },
         "Ứng tuyển được duyệt",
@@ -376,6 +382,10 @@ namespace EduMatch.Services
           StartDate = DateTime.UtcNow
         };
         _dbContext.Classes.Add(newClass);
+        await _dbContext.SaveChangesAsync();
+        
+        newClass.Code = _codeGenerator.GenerateClassCode(newClass.Id);
+        await _dbContext.SaveChangesAsync();
 
         _logger.LogInformation("Class created for matched Application {AppId}, DepositAmount {Deposit}", application.Id, application.DepositAmount);
 

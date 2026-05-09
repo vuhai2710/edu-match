@@ -3,6 +3,7 @@ namespace EduMatch.DTOs.TutorRequests
   public class TutorRequestResponseDto
   {
     public long Id { get; set; }
+    public string Code { get; set; } = string.Empty;
     public long StudentId { get; set; }
     public string StudentName { get; set; } = string.Empty;
     public string StudentAvatar { get; set; } = string.Empty;

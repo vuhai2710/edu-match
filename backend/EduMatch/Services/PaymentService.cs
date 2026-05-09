@@ -167,14 +167,14 @@ namespace EduMatch.Services
                 throw new System.Exception("Invalid amount");
             }
 
-            if (payment.Status == PaymentStatus.Paid)
+            if (payment.Status == PaymentStatus.Success)
             {
                 return;
             }
 
             if (dto.Code == "00" && dto.Data.Code == "00") 
             {
-                payment.Status = PaymentStatus.Paid;
+                payment.Status = PaymentStatus.Success;
                 payment.TransactionId = dto.Data.Reference;
                 payment.PaidAt = DateTime.UtcNow;
                 payment.RawWebhookData = dataJson;

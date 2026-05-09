@@ -5,6 +5,7 @@ namespace EduMatch.DTOs.Tutor
   public class TutorDto
   {
     public long Id { get; set; }
+    public string Code { get; set; } = string.Empty;
     public long UserId { get; set; }
     public string FullName { get; set; } = string.Empty;
     public string? AvatarUrl { get; set; }

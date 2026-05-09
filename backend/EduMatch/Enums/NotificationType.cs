@@ -12,6 +12,7 @@ namespace EduMatch.Enums
         TutorRequestCreated,
         NewMessage,
         PaymentCreated,
-        PaymentSuccess
+        PaymentSuccess,
+        ReviewCreated
     }
 }

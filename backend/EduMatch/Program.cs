@@ -6,7 +6,6 @@ using EduMatch.Repositories;
 using EduMatch.Repositories.Interfaces;
 using EduMatch.Services;
 using EduMatch.Services.Interfaces;
-using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -128,21 +127,29 @@ builder.Services.AddScoped<EduMatch.Repositories.Interfaces.INotificationReposit
 builder.Services.AddScoped<EduMatch.Services.Interfaces.INotificationService, EduMatch.Services.NotificationService>();
 builder.Services.AddScoped<IClassRepository, ClassRepository>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
+builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
 builder.Services.Configure<PayOSSettings>(builder.Configuration.GetSection("PayOS"));
 builder.Services.AddHttpClient<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddHostedService<RequestExpiryBackgroundService>();
 
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Email"));
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
 builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
+
+builder.Services.AddSingleton<ICodeGeneratorService, CodeGeneratorService>();
 #endregion
 
 builder.Services.AddCors(options =>
 {
-  options.AddPolicy("DevPolicy", policy =>
+  options.AddPolicy("AllowAngular", policy =>
   {
-    policy.WithOrigins("http://localhost:4200")
+    policy
+      .WithOrigins(
+        "https://localhost:4200",
+        "http://localhost:4200"
+      )
       .AllowAnyHeader()
       .AllowAnyMethod()
       .AllowCredentials();
@@ -165,7 +172,9 @@ if (app.Environment.IsDevelopment())
   app.UseSwaggerUI();
 }
 
-app.UseCors("DevPolicy");
+app.UseHttpsRedirection();
+
+app.UseCors("AllowAngular");
 
 app.UseAuthentication();
 app.UseAuthorization();

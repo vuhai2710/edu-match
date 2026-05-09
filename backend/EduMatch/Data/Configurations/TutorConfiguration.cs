@@ -1,4 +1,4 @@
-﻿using EduMatch.Models;
+using EduMatch.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -9,6 +9,9 @@ namespace EduMatch.Data.Configurations
     public void Configure(EntityTypeBuilder<Tutor> builder)
     {
       builder.HasQueryFilter(e => !e.IsDeleted);
+
+      builder.Property(x => x.Code).IsRequired().HasMaxLength(20);
+      builder.HasIndex(x => x.Code).IsUnique();
 
       builder.Property(x => x.Bio)
         .HasMaxLength(2000)

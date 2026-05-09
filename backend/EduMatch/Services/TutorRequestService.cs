@@ -16,17 +16,20 @@ namespace EduMatch.Services
     private readonly AppDbContext _dbContext;
     private readonly INotificationService _notificationService;
     private readonly ILogger<TutorRequestService> _logger;
+    private readonly ICodeGeneratorService _codeGenerator;
 
     public TutorRequestService(
       ITutorRequestRepository tutorRequestRepository,
       AppDbContext dbContext,
       INotificationService notificationService,
-      ILogger<TutorRequestService> logger)
+      ILogger<TutorRequestService> logger,
+      ICodeGeneratorService codeGenerator)
     {
       _tutorRequestRepository = tutorRequestRepository;
       _dbContext = dbContext;
       _notificationService = notificationService;
       _logger = logger;
+      _codeGenerator = codeGenerator;
     }
 
     public async Task<ApiResponse<TutorRequestResponseDto>> CreateAsync(long studentId, CreateTutorRequestDto dto)
@@ -67,6 +70,9 @@ namespace EduMatch.Services
       };
 
       await _tutorRequestRepository.CreateAsync(request);
+      
+      request.Code = _codeGenerator.GenerateClassRequestCode(request.Id);
+      await _tutorRequestRepository.UpdateAsync(request);
 
       request.Student = student;
       request.Subject = subject;
@@ -161,6 +167,7 @@ namespace EduMatch.Services
       return new TutorRequestResponseDto
       {
         Id = request.Id,
+        Code = request.Code,
         StudentId = request.StudentId,
         StudentName = request.Student?.FullName ?? string.Empty,
         StudentAvatar = request.Student?.AvatarFile?.FilePath ?? string.Empty,

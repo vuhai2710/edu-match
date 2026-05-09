@@ -5,6 +5,7 @@ namespace EduMatch.Models
 {
     public class Class : BaseEntity
     {
+        public string Code { get; set; } = null!;
         public long StudentId { get; set; }
         public User Student { get; set; } = null!;
 

@@ -4,6 +4,7 @@ namespace EduMatch.Models
 {
   public class Tutor : BaseEntity
   {
+    public string Code { get; set; } = null!;
     public long UserId { get; set; }
     public long? CvFileId { get; set; }
     public string Bio { get; set; } = string.Empty;

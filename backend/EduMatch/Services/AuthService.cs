@@ -23,14 +23,16 @@ public class AuthService
   private readonly IUserRepository _userRepository;
   private readonly ILogger<AuthService> _logger;
   private readonly IMapper _mapper;
+  private readonly ICodeGeneratorService _codeGenerator;
 
-  public AuthService(IUserRepository userRepository, IFileService fileService, IConfiguration config, ILogger<AuthService> logger, IMapper mapper)
+  public AuthService(IUserRepository userRepository, IFileService fileService, IConfiguration config, ILogger<AuthService> logger, IMapper mapper, ICodeGeneratorService codeGenerator)
   {
     _userRepository = userRepository;
     _fileService = fileService;
     _config = config;
     _logger = logger;
     _mapper = mapper;
+    _codeGenerator = codeGenerator;
   }
 
   public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto)
@@ -60,6 +62,9 @@ public class AuthService
     };
 
     await _userRepository.AddAsync(user);
+    await _userRepository.SaveChangesAsync();
+
+    user.StudentProfile.Code = _codeGenerator.GenerateStudentCode(user.StudentProfile.Id);
     await _userRepository.SaveChangesAsync();
 
     _logger.LogInformation("User registered: {Email} | Id: {Id}", user.Email, user.Id);
@@ -116,6 +121,9 @@ public class AuthService
       };
 
       await _userRepository.AddAsync(user);
+      await _userRepository.SaveChangesAsync();
+
+      user.StudentProfile.Code = _codeGenerator.GenerateStudentCode(user.StudentProfile.Id);
       await _userRepository.SaveChangesAsync();
 
       _logger.LogInformation("New user created via Google: {Email} | Id: {Id}", user.Email, user.Id);
@@ -193,6 +201,9 @@ public class AuthService
     };
 
     _userRepository.Update(user);
+    await _userRepository.SaveChangesAsync();
+
+    user.TutorProfile.Code = _codeGenerator.GenerateTutorCode(user.TutorProfile.Id);
     await _userRepository.SaveChangesAsync();
 
     return await BuildAuthResponseAsync(user);

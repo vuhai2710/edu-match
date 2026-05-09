@@ -68,7 +68,9 @@ namespace EduMatch.Repositories
       if (!string.IsNullOrWhiteSpace(filter.Keyword))
       {
         var keyword = filter.Keyword.Trim();
-        query = query.Where(x => x.Note != null && EF.Functions.ILike(x.Note, $"%{keyword}%"));
+        query = query.Where(x => 
+            x.Code == keyword ||
+            (x.Note != null && EF.Functions.ILike(x.Note, $"%{keyword}%")));
       }
 
       if (filter.ExcludeExpired)

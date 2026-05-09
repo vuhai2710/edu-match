@@ -9,6 +9,8 @@ namespace EduMatch.Data.Configurations
     public void Configure(EntityTypeBuilder<Student> builder)
     {
       builder.HasKey(s => s.Id);
+      builder.Property(x => x.Code).IsRequired().HasMaxLength(20);
+      builder.HasIndex(x => x.Code).IsUnique();
 
       builder.HasOne(s => s.User)
           .WithOne(u => u.StudentProfile)

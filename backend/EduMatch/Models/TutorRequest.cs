@@ -4,6 +4,7 @@ namespace EduMatch.Models
 {
   public class TutorRequest : BaseEntity
   {
+    public string Code { get; set; } = null!;
     public long StudentId { get; set; }
     public long SubjectId { get; set; }
     public decimal PricePerSession { get; set; }
