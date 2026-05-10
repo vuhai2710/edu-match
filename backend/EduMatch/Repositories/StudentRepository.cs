@@ -58,25 +58,35 @@ namespace EduMatch.Repositories
 
       var totalRecords = await query.CountAsync();
       var data = await query
-          .Skip((parameters.PageNumber - 1) * parameters.PageSize)
+          .Skip((parameters.Page - 1) * parameters.PageSize)
           .Take(parameters.PageSize)
           .ToListAsync();
 
       return new PagedResult<Student>
       {
           Items = data,
-          Page = parameters.PageNumber,
+          Page = parameters.Page,
           PageSize = parameters.PageSize,
           TotalCount = totalRecords,
           TotalPages = totalRecords == 0 ? 0 : (int)Math.Ceiling(totalRecords / (double)parameters.PageSize)
       };
     }
 
-    public async Task<Student?> GetStudentDetailAsync(long userId)
+    public async Task<Student?> GetStudentDetailByIdAsync(long studentId)
     {
       return await _dbSet
           .Include(s => s.User)
             .ThenInclude(u => u.AvatarFile)
+          .Include(s => s.Address)
+          .FirstOrDefaultAsync(s => s.Id == studentId && s.User.IsActive);
+    }
+
+    public async Task<Student?> GetStudentDetailByUserIdAsync(long userId)
+    {
+      return await _dbSet
+          .Include(s => s.User)
+            .ThenInclude(u => u.AvatarFile)
+          .Include(s => s.Address)
           .FirstOrDefaultAsync(s => s.UserId == userId && s.User.IsActive);
     }
   }

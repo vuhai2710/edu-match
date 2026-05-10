@@ -1,6 +1,7 @@
+using Swashbuckle.AspNetCore.Annotations;
 using EduMatch.DTOs;
 using EduMatch.DTOs.TutorRequests;
-using EduMatch.Exception;
+using EduMatch.Common.Exception;
 using EduMatch.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -21,6 +22,7 @@ namespace EduMatch.Controllers
 
     [HttpGet]
     [AllowAnonymous]
+    [SwaggerOperation(OperationId = "getTutorRequests")]
     public async Task<ActionResult<ApiResponse<PagedResult<TutorRequestResponseDto>>>> GetAll([FromQuery] TutorRequestFilterDto filter)
     {
       return Ok(await _tutorRequestService.GetAllAsync(filter));
@@ -28,6 +30,7 @@ namespace EduMatch.Controllers
 
     [HttpGet("{id:long}")]
     [AllowAnonymous]
+    [SwaggerOperation(OperationId = "getTutorRequestById")]
     public async Task<ActionResult<ApiResponse<TutorRequestResponseDto>>> GetById(long id)
     {
       return Ok(await _tutorRequestService.GetByIdAsync(id));
@@ -35,6 +38,7 @@ namespace EduMatch.Controllers
 
     [HttpGet("my")]
     [Authorize(Roles = "Student")]
+    [SwaggerOperation(OperationId = "getMyTutorRequests")]
     public async Task<ActionResult<ApiResponse<PagedResult<TutorRequestResponseDto>>>> GetMyRequests([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
       return Ok(await _tutorRequestService.GetMyRequestsAsync(GetCurrentUserId(), page, pageSize));
@@ -42,6 +46,7 @@ namespace EduMatch.Controllers
 
     [HttpPost]
     [Authorize(Roles = "Student")]
+    [SwaggerOperation(OperationId = "createTutorRequest")]
     public async Task<ActionResult<ApiResponse<TutorRequestResponseDto>>> Create([FromBody] CreateTutorRequestDto dto)
     {
       return Ok(await _tutorRequestService.CreateAsync(GetCurrentUserId(), dto));
@@ -49,6 +54,7 @@ namespace EduMatch.Controllers
 
     [HttpPut("{id:long}")]
     [Authorize(Roles = "Student")]
+    [SwaggerOperation(OperationId = "updateTutorRequest")]
     public async Task<ActionResult<ApiResponse<TutorRequestResponseDto>>> Update(long id, [FromBody] UpdateTutorRequestDto dto)
     {
       return Ok(await _tutorRequestService.UpdateAsync(id, GetCurrentUserId(), dto));
@@ -56,6 +62,7 @@ namespace EduMatch.Controllers
 
     [HttpPut("{id:long}/close")]
     [Authorize(Roles = "Student")]
+    [SwaggerOperation(OperationId = "closeTutorRequest")]
     public async Task<ActionResult<ApiResponse<bool>>> Close(long id)
     {
       return Ok(await _tutorRequestService.CloseAsync(id, GetCurrentUserId()));

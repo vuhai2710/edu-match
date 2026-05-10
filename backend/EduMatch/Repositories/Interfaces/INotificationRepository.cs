@@ -1,20 +1,24 @@
+using EduMatch.DTOs;
 using EduMatch.Models;
 
 namespace EduMatch.Repositories.Interfaces
 {
-    public interface INotificationRepository
-    {
-        Task AddAsync(Notification notification);
+  public interface INotificationRepository
+  {
+    Task AddAsync(Notification notification);
 
-        Task<List<Notification>> GetUserNotificationsAsync(
-            long userId,
-            int page,
-            int pageSize);
+    Task<PagedResult<Notification>> GetUserNotificationsAsync(
+      long userId,
+      int page,
+      int pageSize,
+      bool? isRead);
 
-        Task<int> CountUnreadAsync(long userId);
+    Task<int> CountUnreadAsync(long userId);
 
-        Task<Notification?> GetByIdAsync(long id);
+    Task<Notification?> GetByIdAsync(long id);
 
-        Task SaveChangesAsync();
-    }
+    Task<int> MarkAllAsReadAsync(long userId);
+
+    Task SaveChangesAsync();
+  }
 }

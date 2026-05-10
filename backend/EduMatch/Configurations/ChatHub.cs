@@ -1,5 +1,5 @@
+using EduMatch.Common.Enums;
 using EduMatch.DTOs.Chat;
-using EduMatch.Enums;
 using EduMatch.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;

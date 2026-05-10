@@ -1,9 +1,9 @@
 using AutoMapper;
+using EduMatch.Common.Enums;
 using EduMatch.DTOs.Auth;
 using EduMatch.DTOs.Student;
 using EduMatch.DTOs.User;
-using EduMatch.Enums;
-using EduMatch.Exception;
+using EduMatch.Common.Exception;
 using EduMatch.Models;
 using EduMatch.Repositories;
 using EduMatch.Repositories.Interfaces;
@@ -19,6 +19,7 @@ namespace EduMatch.Services;
 
 public class AuthService
 {
+  private static readonly TimeSpan RefreshTokenLifetime = TimeSpan.FromDays(7);
   private readonly IConfiguration _config;
   private readonly IFileService _fileService;
   private readonly IUserRepository _userRepository;
@@ -48,7 +49,7 @@ public class AuthService
     _notificationService = notificationService;
   }
 
-  public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto)
+  public async Task<LoginResponseDto> RegisterAsync(RegisterDto dto)
   {
     var emailExists = await _userRepository.ExistsAsync(u => u.Email == dto.Email.ToLower().Trim());
 
@@ -63,12 +64,14 @@ public class AuthService
     {
       FullName = dto.FullName,
       Email = dto.Email.ToLower().Trim(),
+      PhoneNumber = dto.PhoneNumber,
       Password = hashedPassword,
       Role = UserRole.Student
     };
 
     user.StudentProfile = new Student
     {
+      Code = _codeGenerator.GenerateTemporaryCode("STU"),
       Bio = string.Empty,
       School = string.Empty,
       GradeLevel = null
@@ -82,7 +85,7 @@ public class AuthService
 
     _logger.LogInformation("User registered: {Email} | Id: {Id}", user.Email, user.Id);
 
-    return await BuildAuthResponseAsync(user);
+    return await IssueTokenPairAsync(user);
   }
 
   public async Task<GoogleAuthResponseDto> GoogleLoginAsync(GoogleLoginRequestDto dto)
@@ -128,6 +131,7 @@ public class AuthService
 
       user.StudentProfile = new Student
       {
+        Code = _codeGenerator.GenerateTemporaryCode("STU"),
         Bio = string.Empty,
         School = string.Empty,
         GradeLevel = null
@@ -155,7 +159,7 @@ public class AuthService
     };
   }
 
-  public async Task<AuthResponseDto> LoginAsync(LoginDto dto)
+  public async Task<LoginResponseDto> LoginAsync(LoginDto dto)
   {
     var user = await _userRepository.GetByEmailWithProfilesAsync(dto.Email);
 
@@ -166,10 +170,10 @@ public class AuthService
 
     _logger.LogInformation("User logged in: {Email} | Id: {Id}", user!.Email, user.Id);
 
-    return await BuildAuthResponseAsync(user);
+    return await IssueTokenPairAsync(user);
   }
 
-  public async Task<AuthResponseDto> RefreshTokenAsync(RefreshTokenDto dto)
+  public async Task<LoginResponseDto> RefreshTokenAsync(RefreshTokenDto dto)
   {
     var principal = GetPrincipalFromExpiredToken(dto.AccessToken);
     if (principal == null)
@@ -183,14 +187,32 @@ public class AuthService
       throw new AppException("Invalid token payload", 400);
     }
 
-    var user = await _userRepository.GetByEmailWithProfilesAsync(email);
+    var user = await _userRepository.GetByRefreshTokenWithProfilesAsync(dto.RefreshToken);
 
-    if (user == null || user.RefreshToken != dto.RefreshToken || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
+    if (user == null || user.RefreshTokenExpiryTime == null || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
     {
       throw new AppException("Invalid access token or refresh token", 400);
     }
 
-    return await BuildAuthResponseAsync(user);
+    if (!string.Equals(user.Email, email, StringComparison.OrdinalIgnoreCase))
+    {
+      throw new AppException("Invalid access token or refresh token", 400);
+    }
+
+    return await IssueTokenPairAsync(user, dto.RefreshToken);
+  }
+
+  public async Task LogoutAsync(LogoutDto dto)
+  {
+    var user = await _userRepository.GetByRefreshTokenWithProfilesAsync(dto.RefreshToken);
+    if (user == null)
+    {
+      _logger.LogInformation("Logout requested with unknown refresh token");
+      return;
+    }
+
+    await InvalidateRefreshTokenAsync(user);
+    _logger.LogInformation("Refresh token invalidated for UserId={UserId}", user.Id);
   }
 
   public async Task BecomeTutorAsync(long userId, BecomeTutorDto dto)
@@ -208,10 +230,11 @@ public class AuthService
 
     var tutorProfile = new Tutor
     {
+      Code           = _codeGenerator.GenerateTemporaryCode("TUT"),
       UserId         = userId,
       Bio            = dto.Bio,
       HourlyRate     = dto.HourlyRate,
-      ApprovalStatus = Enums.ApprovalStatus.Pending
+      ApprovalStatus = ApprovalStatus.Pending
     };
 
     await _tutorProfileRepository.AddAsync(tutorProfile);
@@ -223,7 +246,7 @@ public class AuthService
     _logger.LogInformation("BecomeTutor request submitted by UserId={UserId}, TutorProfileId={TutorProfileId}",
       userId, tutorProfile.Id);
 
-    var adminIds = await _userRepository.FindAsync(u => u.Role == Enums.UserRole.Admin && !u.IsDeleted);
+    var adminIds = await _userRepository.FindAsync(u => u.Role == UserRole.Admin && !u.IsDeleted);
     var adminUserIds = adminIds.Select(a => a.Id).ToList();
 
     if (adminUserIds.Count > 0)
@@ -232,32 +255,45 @@ public class AuthService
         adminUserIds,
         "Yêu cầu gia sư mới",
         $"{user.FullName} đã gửi yêu cầu trở thành Gia sư.",
-        Enums.NotificationType.BecomeTutorRequest,
+        NotificationType.BecomeTutorRequest,
         referenceType: "TutorProfile",
         referenceId: tutorProfile.Id,
         actionUrl: "/admin/tutors/pending");
     }
   }
 
-  private async Task<AuthResponseDto> BuildAuthResponseAsync(User user)
+  private async Task<LoginResponseDto> IssueTokenPairAsync(User user, string? currentRefreshToken = null)
   {
-    var accessToken = GenerateJwtToken(user);
-    var refreshToken = GenerateRefreshToken();
+    if (!string.IsNullOrWhiteSpace(currentRefreshToken) &&
+        !string.Equals(user.RefreshToken, currentRefreshToken, StringComparison.Ordinal))
+    {
+      throw new AppException("Invalid access token or refresh token", 400);
+    }
 
-    user.RefreshToken = refreshToken;
-    user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+    var accessToken = GenerateJwtToken(user);
+    var newRefreshToken = GenerateRefreshToken();
+
+    user.RefreshToken = newRefreshToken;
+    user.RefreshTokenExpiryTime = DateTime.UtcNow.Add(RefreshTokenLifetime);
 
     _userRepository.Update(user);
     await _userRepository.SaveChangesAsync();
 
-    return new AuthResponseDto
+    return new LoginResponseDto
     {
       AccessToken = accessToken,
-      RefreshToken = refreshToken,
-      Role = user.Role.ToString(),
-      UserId = user.Id,
-      FullName = user.FullName
+      RefreshToken = newRefreshToken,
+      User = _mapper.Map<UserDto>(user)
     };
+  }
+
+  private async Task InvalidateRefreshTokenAsync(User user)
+  {
+    user.RefreshToken = null;
+    user.RefreshTokenExpiryTime = null;
+
+    _userRepository.Update(user);
+    await _userRepository.SaveChangesAsync();
   }
 
   private string GenerateJwtToken(User user)

@@ -1,3 +1,4 @@
+using Swashbuckle.AspNetCore.Annotations;
 using EduMatch.DTOs;
 using EduMatch.DTOs.Chat;
 using EduMatch.Services.Interfaces;
@@ -22,6 +23,7 @@ namespace EduMatch.Controllers
 
     [HttpGet("conversations")]
     [ProducesResponseType(typeof(ApiResponse<List<ConversationSummaryDto>>), StatusCodes.Status200OK)]
+    [SwaggerOperation(OperationId = "getConversations")]
     public async Task<ActionResult<ApiResponse<List<ConversationSummaryDto>>>> GetConversations()
     {
       var userId = GetUserId();
@@ -31,6 +33,7 @@ namespace EduMatch.Controllers
 
     [HttpGet("history/{partnerId}")]
     [ProducesResponseType(typeof(ApiResponse<List<MessageDto>>), StatusCodes.Status200OK)]
+    [SwaggerOperation(OperationId = "getChatHistory")]
     public async Task<ActionResult<ApiResponse<List<MessageDto>>>> GetHistory(
         long partnerId,
         [FromQuery] int page = 1,

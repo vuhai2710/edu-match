@@ -9,6 +9,7 @@ namespace EduMatch.Repositories.Interfaces
     Task<User?> GetByEmailAsync(string email);
     Task<User?> GetByEmailWithProfilesAsync(string email);
     Task<User?> GetByIdWithProfilesAsync(long id);
+    Task<User?> GetByRefreshTokenWithProfilesAsync(string refreshToken);
     Task<PagedResult<User>> GetUsersWithPaginationAsync(UserQueryParameters parameters);
   }
 }

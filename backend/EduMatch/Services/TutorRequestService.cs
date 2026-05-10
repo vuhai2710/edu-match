@@ -1,8 +1,8 @@
+using EduMatch.Common.Enums;
 using EduMatch.Data;
 using EduMatch.DTOs;
 using EduMatch.DTOs.TutorRequests;
-using EduMatch.Enums;
-using EduMatch.Exception;
+using EduMatch.Common.Exception;
 using EduMatch.Models;
 using EduMatch.Repositories.Interfaces;
 using EduMatch.Services.Interfaces;
@@ -57,6 +57,7 @@ namespace EduMatch.Services
 
       var request = new TutorRequest
       {
+        Code = _codeGenerator.GenerateTemporaryCode("REQ"),
         StudentId = studentId,
         SubjectId = dto.SubjectId,
         Note = string.IsNullOrWhiteSpace(dto.Note) ? null : dto.Note.Trim(),

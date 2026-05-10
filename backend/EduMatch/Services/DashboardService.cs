@@ -1,6 +1,7 @@
+using EduMatch.Common.Enums;
+using EduMatch.Common.Exception;
 using EduMatch.Data;
 using EduMatch.DTOs.Dashboard;
-using EduMatch.Enums;
 using EduMatch.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -126,7 +127,7 @@ namespace EduMatch.Services
       var profile = await profileTask;
 
       if (profile == null)
-        throw new Exception.NotFoundException("Tutor profile not found.");
+        throw new NotFoundException("Tutor profile not found.");
 
       var recentApps = await appQuery
         .OrderByDescending(a => a.CreatedAt)

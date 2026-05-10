@@ -1,20 +1,56 @@
+using EduMatch.Common.Exception;
+using EduMatch.Common.Extensions;
+using EduMatch.Common.Middleware;
 using EduMatch.Configuration;
 using EduMatch.Configurations;
 using EduMatch.Data;
-using EduMatch.Exception;
+using EduMatch.DTOs;
 using EduMatch.Repositories;
 using EduMatch.Repositories.Interfaces;
 using EduMatch.Services;
 using EduMatch.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using System.Text;
+using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+  .AddJsonOptions(options =>
+  {
+    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+  });
+
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+  options.InvalidModelStateResponseFactory = context =>
+  {
+    var errorEntries = context.ModelState
+      .Where(entry => entry.Value?.Errors.Count > 0)
+      .Select(entry => new { entry.Key, Errors = entry.Value?.Errors ?? [] })
+      .ToList();
+
+    var errors = errorEntries
+      .SelectMany(entry => entry.Errors.Select(error =>
+        string.IsNullOrWhiteSpace(error.ErrorMessage)
+          ? $"Giá trị của trường '{entry.Key}' không hợp lệ."
+          : error.ErrorMessage))
+      .ToList();
+
+    var message = errors.Count > 0
+      ? string.Join(" ", errors)
+      : "Dữ liệu gửi lên không hợp lệ.";
+
+    return new BadRequestObjectResult(ErrorResponse.Create(message, "VALIDATION_ERROR"));
+  };
+});
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddAutoMapper(cfg => cfg.AddMaps(typeof(Program)));
 builder.Services.AddSignalR();
@@ -26,7 +62,10 @@ builder.Services.AddSwaggerGen(options =>
     Title = "EduMatch API",
     Version = "v1"
   });
+
+  options.EnableAnnotations();
   options.OperationFilter<FileUploadOperationFilter>();
+  options.DocumentFilter<SchemaCleanupFilter>();
 
   options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
   {
@@ -45,7 +84,8 @@ builder.Services.AddSwaggerGen(options =>
   });
 });
 
-builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<AppDbContext>(options =>
+  options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 var jwtKey = builder.Configuration["Jwt:Key"]!;
 var jwtIssuer = builder.Configuration["Jwt:Issuer"]!;
@@ -83,11 +123,83 @@ builder.Services.AddAuthentication(options =>
         }
 
         return Task.CompletedTask;
+      },
+      OnChallenge = async context =>
+      {
+        if (context.Response.HasStarted)
+        {
+          return;
+        }
+
+        context.HandleResponse();
+        await context.Response.WriteErrorResponseAsync(
+          StatusCodes.Status401Unauthorized,
+          "Phiên đăng nhập hết hạn",
+          "UNAUTHORIZED");
+      },
+      OnForbidden = async context =>
+      {
+        if (context.Response.HasStarted)
+        {
+          return;
+        }
+
+        await context.Response.WriteErrorResponseAsync(
+          StatusCodes.Status403Forbidden,
+          "Bạn không có quyền thực hiện thao tác này",
+          "FORBIDDEN");
       }
     };
   });
 
 builder.Services.AddAuthorization();
+builder.Services.AddRateLimiter(options =>
+{
+  options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+  options.OnRejected = async (context, _) =>
+  {
+    if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+    {
+      context.HttpContext.Response.Headers["Retry-After"] =
+        ((int)Math.Ceiling(retryAfter.TotalSeconds)).ToString();
+    }
+
+    await context.HttpContext.Response.WriteErrorResponseAsync(
+      StatusCodes.Status429TooManyRequests,
+      "Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau.",
+      "RATE_LIMIT_EXCEEDED");
+  };
+
+  options.AddPolicy("auth-login", httpContext =>
+  {
+    var partitionKey = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+    return RateLimitPartition.GetFixedWindowLimiter(
+      partitionKey,
+      _ => new FixedWindowRateLimiterOptions
+      {
+        PermitLimit = 5,
+        Window = TimeSpan.FromMinutes(1),
+        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+        QueueLimit = 0,
+        AutoReplenishment = true
+      });
+  });
+
+  options.AddPolicy("auth-forgot-password", httpContext =>
+  {
+    var partitionKey = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+    return RateLimitPartition.GetFixedWindowLimiter(
+      partitionKey,
+      _ => new FixedWindowRateLimiterOptions
+      {
+        PermitLimit = 3,
+        Window = TimeSpan.FromMinutes(15),
+        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+        QueueLimit = 0,
+        AutoReplenishment = true
+      });
+  });
+});
 
 builder.Services.AddScoped<AuthService>();
 
@@ -127,9 +239,9 @@ builder.Services.AddScoped<EduMatch.Repositories.Interfaces.INotificationReposit
 builder.Services.AddScoped<EduMatch.Services.Interfaces.INotificationService, EduMatch.Services.NotificationService>();
 builder.Services.AddScoped<IClassRepository, ClassRepository>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
-builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
 builder.Services.Configure<PayOSSettings>(builder.Configuration.GetSection("PayOS"));
 builder.Services.AddHttpClient<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddHostedService<RequestExpiryBackgroundService>();
 
@@ -150,8 +262,7 @@ builder.Services.AddCors(options =>
     policy
       .WithOrigins(
         "https://localhost:4200",
-        "http://localhost:4200"
-      )
+        "http://localhost:4200")
       .AllowAnyHeader()
       .AllowAnyMethod()
       .AllowCredentials();
@@ -167,6 +278,7 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseMiddleware<GlobalExceptionMiddleware>();
+app.UseMiddleware<RequestLoggingMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
@@ -175,9 +287,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 app.UseCors("AllowAngular");
-
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 

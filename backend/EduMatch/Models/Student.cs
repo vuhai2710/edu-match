@@ -1,3 +1,5 @@
+using EduMatch.Common.Enums;
+
 namespace EduMatch.Models
 {
   public class Student : BaseEntity
@@ -6,7 +8,7 @@ namespace EduMatch.Models
     public long UserId { get; set; }
     public string Bio { get; set; } = string.Empty;
     public string School { get; set; } = string.Empty;
-    public Enums.Grade? GradeLevel { get; set; }
+    public Grade? GradeLevel { get; set; }
 
     public long? AddressId { get; set; }
     public Address? Address { get; set; }

@@ -1,5 +1,5 @@
 using System;
-using EduMatch.Enums;
+using EduMatch.Common.Enums;
 
 namespace EduMatch.Models
 {

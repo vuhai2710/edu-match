@@ -1,7 +1,7 @@
 using AutoMapper;
+using EduMatch.Common.Exception;
 using EduMatch.DTOs;
 using EduMatch.DTOs.StudentProfile;
-using EduMatch.Exception;
 using EduMatch.Models;
 using EduMatch.Repositories.Interfaces;
 using EduMatch.Services.Interfaces;
@@ -35,12 +35,12 @@ namespace EduMatch.Services
       };
     }
 
-    public async Task<StudentDetailDto> GetStudentByIdAsync(long id)
+    public async Task<StudentDetailDto> GetStudentByIdAsync(long studentId)
     {
-      var profile = await _studentRepository.GetStudentDetailAsync(id);
+      var profile = await _studentRepository.GetStudentDetailByIdAsync(studentId);
       if (profile == null)
       {
-        throw new AppException("Không tìm thấy thông tin học sinh", 404);
+        throw new NotFoundException("Không tìm thấy thông tin học sinh.");
       }
 
       return _mapper.Map<StudentDetailDto>(profile);
@@ -48,10 +48,10 @@ namespace EduMatch.Services
 
     public async Task<StudentDetailDto> GetMyProfileAsync(long currentUserId)
     {
-      var profile = await _studentRepository.GetStudentDetailAsync(currentUserId);
+      var profile = await _studentRepository.GetStudentDetailByUserIdAsync(currentUserId);
       if (profile == null)
       {
-        throw new AppException("Không tìm thấy thông tin học sinh", 404);
+        throw new NotFoundException("Không tìm thấy thông tin học sinh.");
       }
 
       return _mapper.Map<StudentDetailDto>(profile);
@@ -59,18 +59,19 @@ namespace EduMatch.Services
 
     public async Task<StudentDetailDto> UpdateMyProfileAsync(long currentUserId, UpdateStudentDto dto)
     {
-      var profile = await _studentRepository.GetStudentDetailAsync(currentUserId);
+      var profile = await _studentRepository.GetStudentDetailByUserIdAsync(currentUserId);
       if (profile == null)
       {
-        throw new AppException("Không tìm thấy thông tin học sinh", 404);
+        throw new NotFoundException("Không tìm thấy thông tin học sinh.");
       }
 
-      profile.User.FullName = dto.FullName;
-      profile.User.Gender = dto.Gender;
-      
+      var user = profile.User ?? throw new InvalidOperationException("Student user was not loaded.");
+      user.FullName = dto.FullName;
+      user.Gender = dto.Gender;
+
       if (dto.PhoneNumber != null)
       {
-        profile.User.PhoneNumber = dto.PhoneNumber;
+        user.PhoneNumber = dto.PhoneNumber;
       }
 
       _mapper.Map(dto, profile);

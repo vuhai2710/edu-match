@@ -1,3 +1,4 @@
+using Swashbuckle.AspNetCore.Annotations;
 using EduMatch.DTOs;
 using EduMatch.DTOs.Dashboard;
 using EduMatch.Services.Interfaces;
@@ -19,6 +20,7 @@ namespace EduMatch.Controllers
     }
 
     [HttpGet("pending")]
+    [SwaggerOperation(OperationId = "getPendingTutors")]
     public async Task<IActionResult> GetPendingTutors(
       [FromQuery] int page = 1,
       [FromQuery] int pageSize = 10)
@@ -28,6 +30,7 @@ namespace EduMatch.Controllers
     }
 
     [HttpPut("{tutorProfileId:long}/approve")]
+    [SwaggerOperation(OperationId = "approveTutor")]
     public async Task<IActionResult> Approve(long tutorProfileId)
     {
       await _svc.ApproveAsync(tutorProfileId);
@@ -35,6 +38,7 @@ namespace EduMatch.Controllers
     }
 
     [HttpPut("{tutorProfileId:long}/reject")]
+    [SwaggerOperation(OperationId = "rejectTutor")]
     public async Task<IActionResult> Reject(long tutorProfileId)
     {
       await _svc.RejectAsync(tutorProfileId);

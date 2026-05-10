@@ -1,4 +1,4 @@
-using EduMatch.Exception;
+using EduMatch.Common.Exception;
 using EduMatch.Models;
 using EduMatch.Repositories.Interfaces;
 using EduMatch.Services.Interfaces;

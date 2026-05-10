@@ -1,5 +1,5 @@
+using EduMatch.Common.Enums;
 using EduMatch.DTOs;
-using EduMatch.Enums;
 using EduMatch.Models;
 
 namespace EduMatch.Repositories.Interfaces

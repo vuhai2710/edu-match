@@ -1,3 +1,4 @@
+using EduMatch.Common.Exception;
 using EduMatch.Repositories.Interfaces;
 using EduMatch.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
@@ -72,7 +73,7 @@ namespace EduMatch.Services
       var file = await _fileRepository.GetByIdAsync(fileId);
       if (file == null || file.IsDeleted)
       {
-        throw new EduMatch.Exception.NotFoundException("File không tồn tại");
+        throw new NotFoundException("File không tồn tại");
       }
 
       file.IsDeleted = true;

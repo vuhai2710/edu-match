@@ -1,8 +1,7 @@
 using AutoMapper;
+using EduMatch.Common.Exception;
 using EduMatch.DTOs;
 using EduMatch.DTOs.Tutor;
-using EduMatch.Enums;
-using EduMatch.Exception;
 using EduMatch.Models;
 using EduMatch.Repositories;
 using EduMatch.Services.Interfaces;
@@ -18,6 +17,7 @@ public class TutorService : ITutorService
   private readonly IRepository<User> _userRepository;
   private readonly IFileService _fileService;
   private readonly IMapper _mapper;
+  private readonly ICodeGeneratorService _codeGenerator;
 
   public TutorService(
     ITutorRepository tutorRepository,
@@ -25,7 +25,8 @@ public class TutorService : ITutorService
     IRepository<Subject> subjectRepository,
     IRepository<TutorSubject> tutorSubjectRepository,
     IFileService fileService,
-    IMapper mapper)
+    IMapper mapper,
+    ICodeGeneratorService codeGenerator)
   {
     _tutorRepository = tutorRepository;
     _userRepository = userRepository;
@@ -33,6 +34,7 @@ public class TutorService : ITutorService
     _tutorSubjectRepository = tutorSubjectRepository;
     _fileService = fileService;
     _mapper = mapper;
+    _codeGenerator = codeGenerator;
   }
 
   public async Task<PagedResult<TutorDto>> GetTutorsAsync(TutorQueryParameters parameters)
@@ -52,7 +54,10 @@ public class TutorService : ITutorService
   public async Task<TutorDetailDto> GetTutorByIdAsync(long id)
   {
     var profile = await _tutorRepository.GetTutorProfileDetailAsync(id);
-    if (profile == null) throw new AppException("Tutor profile not found.", 404);
+    if (profile == null)
+    {
+      throw new NotFoundException("Không tìm thấy hồ sơ gia sư.", "TUTOR_PROFILE_NOT_FOUND");
+    }
 
     return _mapper.Map<TutorDetailDto>(profile);
   }
@@ -60,7 +65,10 @@ public class TutorService : ITutorService
   public async Task<TutorDetailDto> GetTutorByUserIdAsync(long userId)
   {
     var profile = await _tutorRepository.GetTutorProfileByUserIdAsync(userId);
-    if (profile == null) throw new AppException("Tutor profile not found for this user.", 404);
+    if (profile == null)
+    {
+      throw new NotFoundException("Không tìm thấy hồ sơ gia sư của người dùng này.", "TUTOR_PROFILE_NOT_FOUND");
+    }
 
     return _mapper.Map<TutorDetailDto>(profile);
   }
@@ -72,7 +80,13 @@ public class TutorService : ITutorService
     if (profile == null)
     {
       var user = await _userRepository.GetByIdAsync(userId);
-      if (user == null) throw new AppException("User not found.", 404);
+      if (user == null)
+      {
+        throw new NotFoundException("Không tìm thấy người dùng.", "USER_NOT_FOUND");
+      }
+
+      user.FullName = dto.FullName;
+      user.Gender = dto.Gender;
 
       if (dto.PhoneNumber != null)
       {
@@ -81,26 +95,32 @@ public class TutorService : ITutorService
 
       profile = new Tutor
       {
+        Code = _codeGenerator.GenerateTemporaryCode("TUT"),
         UserId = userId
       };
       _mapper.Map(dto, profile);
-      
+
       if (dto.Address != null)
       {
         profile.Address = _mapper.Map<Address>(dto.Address);
       }
-      
+
       await _tutorRepository.AddAsync(profile);
     }
     else
     {
+      var user = profile.User ?? throw new InvalidOperationException("Tutor user was not loaded.");
+
+      user.FullName = dto.FullName;
+      user.Gender = dto.Gender;
+
       if (dto.PhoneNumber != null)
       {
-        profile.User.PhoneNumber = dto.PhoneNumber;
+        user.PhoneNumber = dto.PhoneNumber;
       }
 
       _mapper.Map(dto, profile);
-      
+
       if (dto.Address != null)
       {
         if (profile.Address == null)
@@ -112,34 +132,57 @@ public class TutorService : ITutorService
           _mapper.Map(dto.Address, profile.Address);
         }
       }
-      
+
       _tutorRepository.Update(profile);
 
-      if (profile.TutorSubjects.Any()) _tutorSubjectRepository.RemoveRange(profile.TutorSubjects);
+      if (profile.TutorSubjects.Any())
+      {
+        _tutorSubjectRepository.RemoveRange(profile.TutorSubjects);
+      }
     }
 
     if (dto.Subjects != null && dto.Subjects.Any())
     {
-      var subjectIds = dto.Subjects.Select(s => s.SubjectId).ToList();
-      var validSubjects = await _subjectRepository.FindAsync(s => subjectIds.Contains(s.Id));
+      var subjectIds = dto.Subjects.Select(subject => subject.SubjectId).ToList();
+      var validSubjects = await _subjectRepository.FindAsync(subject => subjectIds.Contains(subject.Id));
+      var validSubjectIds = validSubjects.Select(subject => subject.Id).ToHashSet();
+      var invalidSubjectIds = subjectIds.Where(subjectId => !validSubjectIds.Contains(subjectId)).Distinct().ToArray();
+
+      if (invalidSubjectIds.Length > 0)
+      {
+        throw new ValidationException(
+          new Dictionary<string, string[]>
+          {
+            [nameof(dto.Subjects)] = new[]
+            {
+              $"Các môn học không tồn tại: {string.Join(", ", invalidSubjectIds)}."
+            }
+          },
+          "INVALID_TUTOR_SUBJECTS");
+      }
 
       foreach (var subDto in dto.Subjects)
-        if (validSubjects.Any(vs => vs.Id == subDto.SubjectId))
+      {
+        var tutorSubject = new TutorSubject
         {
-          var tutorSubject = new TutorSubject
-          {
-            Tutor = profile,
-            SubjectId = subDto.SubjectId,
-            Level = subDto.Level
-          };
-          await _tutorSubjectRepository.AddAsync(tutorSubject);
-        }
+          Tutor = profile,
+          SubjectId = subDto.SubjectId,
+          Level = subDto.Level
+        };
+
+        await _tutorSubjectRepository.AddAsync(tutorSubject);
+      }
     }
 
     await _tutorRepository.SaveChangesAsync();
 
     var updatedProfile = await _tutorRepository.GetTutorProfileByUserIdAsync(userId);
-    return _mapper.Map<TutorDetailDto>(updatedProfile!);
+    if (updatedProfile == null)
+    {
+      throw new NotFoundException("Không tìm thấy hồ sơ gia sư sau khi cập nhật.", "TUTOR_PROFILE_NOT_FOUND");
+    }
+
+    return _mapper.Map<TutorDetailDto>(updatedProfile);
   }
 
   public async Task<FileDto> UpdateCvAsync(long userId, IFormFile file)
@@ -147,7 +190,7 @@ public class TutorService : ITutorService
     var profile = await _tutorRepository.GetTutorProfileByUserIdAsync(userId);
     if (profile == null || profile.IsDeleted)
     {
-      throw new NotFoundException("Không tìm thấy hồ sơ gia sư");
+      throw new NotFoundException("Không tìm thấy hồ sơ gia sư.", "TUTOR_PROFILE_NOT_FOUND");
     }
 
     if (profile.CvFileId.HasValue)
@@ -170,12 +213,12 @@ public class TutorService : ITutorService
     var profile = await _tutorRepository.GetTutorProfileByUserIdAsync(userId);
     if (profile == null || profile.IsDeleted)
     {
-      throw new NotFoundException("Không tìm thấy hồ sơ gia sư");
+      throw new NotFoundException("Không tìm thấy hồ sơ gia sư.", "TUTOR_PROFILE_NOT_FOUND");
     }
 
     if (!profile.CvFileId.HasValue)
     {
-      throw new AppException("Tutor chưa có CV", 400);
+      throw new ValidationException("Gia sư chưa có CV.", "TUTOR_CV_NOT_FOUND");
     }
 
     await _fileService.DeleteFileRecordAsync(profile.CvFileId.Value);

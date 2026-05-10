@@ -45,6 +45,15 @@ namespace EduMatch.Repositories
         .FirstOrDefaultAsync(u => u.Id == id);
     }
 
+    public async Task<User?> GetByRefreshTokenWithProfilesAsync(string refreshToken)
+    {
+      return await _dbSet
+        .Include(u => u.AvatarFile)
+        .Include(u => u.TutorProfile)
+        .Include(u => u.StudentProfile)
+        .FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
+    }
+
     public async Task<PagedResult<User>> GetUsersWithPaginationAsync(UserQueryParameters parameters)
     {
       var query = _dbSet
@@ -89,7 +98,7 @@ namespace EduMatch.Repositories
       var totalCount = await query.CountAsync();
 
       var users = await query
-        .Skip((parameters.PageNumber - 1) * parameters.PageSize)
+        .Skip((parameters.Page - 1) * parameters.PageSize)
         .Take(parameters.PageSize)
         .ToListAsync();
 
@@ -97,7 +106,7 @@ namespace EduMatch.Repositories
       {
         Items = users,
         TotalCount = totalCount,
-        Page = parameters.PageNumber,
+        Page = parameters.Page,
         PageSize = parameters.PageSize,
         TotalPages = totalCount == 0 ? 0 : (int)Math.Ceiling(totalCount / (double)parameters.PageSize)
       };

@@ -1,9 +1,10 @@
 using EduMatch.DTOs;
 using EduMatch.DTOs.Dashboard;
-using EduMatch.Exception;
+using EduMatch.Common.Exception;
 using EduMatch.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 using System.Security.Claims;
 
 namespace EduMatch.Controllers
@@ -22,6 +23,8 @@ namespace EduMatch.Controllers
 
     [HttpGet("admin")]
     [Authorize(Roles = "Admin")]
+    [SwaggerOperation(OperationId = "getAdminDashboard")]
+    [ProducesResponseType(typeof(ApiResponse<AdminDashboardDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAdminDashboard()
     {
       var data = await _svc.GetAdminDashboardAsync();
@@ -30,6 +33,8 @@ namespace EduMatch.Controllers
 
     [HttpGet("tutor")]
     [Authorize(Roles = "Tutor")]
+    [SwaggerOperation(OperationId = "getTutorDashboard")]
+    [ProducesResponseType(typeof(ApiResponse<TutorDashboardDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetTutorDashboard()
     {
       var tutorIdClaim = User.FindFirstValue("tutorId");
@@ -42,6 +47,8 @@ namespace EduMatch.Controllers
 
     [HttpGet("student")]
     [Authorize(Roles = "Student")]
+    [SwaggerOperation(OperationId = "getStudentDashboard")]
+    [ProducesResponseType(typeof(ApiResponse<StudentDashboardDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetStudentDashboard()
     {
       var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);

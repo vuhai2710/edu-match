@@ -1,4 +1,4 @@
-using EduMatch.Enums;
+using EduMatch.Common.Enums;
 using EduMatch.Models;
 using Microsoft.EntityFrameworkCore;
 

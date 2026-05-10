@@ -67,7 +67,7 @@ namespace EduMatch.Repositories
       var totalCount = await query.CountAsync();
 
       var items = await query
-        .Skip((parameters.PageNumber - 1) * parameters.PageSize)
+        .Skip((parameters.Page - 1) * parameters.PageSize)
         .Take(parameters.PageSize)
         .ToListAsync();
 
@@ -75,7 +75,7 @@ namespace EduMatch.Repositories
       {
         Items = items,
         TotalCount = totalCount,
-        Page = parameters.PageNumber,
+        Page = parameters.Page,
         PageSize = parameters.PageSize,
         TotalPages = totalCount == 0 ? 0 : (int)Math.Ceiling(totalCount / (double)parameters.PageSize)
       };

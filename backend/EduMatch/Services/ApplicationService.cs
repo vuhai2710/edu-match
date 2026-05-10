@@ -1,8 +1,8 @@
+using EduMatch.Common.Enums;
+using EduMatch.Common.Exception;
 using EduMatch.Data;
 using EduMatch.DTOs;
 using EduMatch.DTOs.Applications;
-using EduMatch.Enums;
-using EduMatch.Exception;
 using EduMatch.Repositories;
 using EduMatch.Repositories.Interfaces;
 using EduMatch.Services.Interfaces;
@@ -43,24 +43,24 @@ namespace EduMatch.Services
       var tutorProfile = await _tutorRepository.GetTutorProfileByUserIdAsync(tutorUserId);
       if (tutorProfile == null)
       {
-        throw new AppException("Không tìm thấy hồ sơ gia sư", 404);
+        throw new NotFoundException("Không tìm thấy hồ sơ gia sư.", "TUTOR_PROFILE_NOT_FOUND");
       }
 
       var request = await _tutorRequestRepository.GetByIdAsync(requestId);
       if (request == null)
       {
-        throw new AppException("Không tìm thấy bài đăng", 404);
+        throw new NotFoundException("Không tìm thấy bài đăng.", "TUTOR_REQUEST_NOT_FOUND");
       }
 
       if (!CanApplyToRequest(request))
       {
-        throw new AppException("Bài đăng đã hết hạn ứng tuyển", 400);
+        throw new ValidationException("Bài đăng không còn mở để ứng tuyển.", "REQUEST_NOT_OPEN");
       }
 
       var existingApplication = await _applicationRepository.GetByTutorAndRequestAsync(tutorProfile.Id, requestId);
       if (existingApplication != null)
       {
-        throw new AppException("Gia sư không thể apply cùng một bài đăng hai lần", 400);
+        throw new ConflictException("Gia sư đã ứng tuyển bài đăng này rồi.", "APPLICATION_ALREADY_EXISTS");
       }
 
       var application = new EduMatch.Models.Application
@@ -73,13 +73,14 @@ namespace EduMatch.Services
 
       await _applicationRepository.CreateAsync(application);
 
+      var tutorUser = tutorProfile.User ?? throw new InvalidOperationException("Tutor user was not loaded.");
       application.Tutor = tutorProfile;
       application.TutorRequest = request;
 
       await _notificationService.SendAsync(
         request.StudentId,
         "Ứng tuyển mới",
-        $"{tutorProfile.User.FullName} vừa ứng tuyển bài đăng của bạn",
+        $"{tutorUser.FullName} vừa ứng tuyển bài đăng của bạn",
         NotificationType.ApplicationCreated,
         "Application",
         application.Id,
@@ -90,12 +91,33 @@ namespace EduMatch.Services
       return ApiResponse<ApplicationResponseDto>.SuccessResult(MapApplication(application), "Ứng tuyển thành công");
     }
 
+    public async Task<ApiResponse<ApplicationResponseDto>> GetByIdAsync(long applicationId, long currentUserId, bool isAdmin)
+    {
+      var application = await _applicationRepository.GetByIdAsync(applicationId);
+      if (application == null)
+      {
+        throw new NotFoundException("Không tìm thấy ứng tuyển.", "APPLICATION_NOT_FOUND");
+      }
+
+      var tutor = EnsureTutorLoaded(application);
+      var tutorRequest = EnsureTutorRequestLoaded(application);
+
+      if (!isAdmin
+        && tutor.UserId != currentUserId
+        && tutorRequest.StudentId != currentUserId)
+      {
+        throw new ForbiddenException("Bạn không có quyền xem ứng tuyển này.", "APPLICATION_VIEW_FORBIDDEN");
+      }
+
+      return ApiResponse<ApplicationResponseDto>.SuccessResult(MapApplication(application));
+    }
+
     public async Task<ApiResponse<bool>> StudentConfirmAsync(long applicationId, long studentId)
     {
       var application = await GetOwnedApplicationAsync(applicationId, studentId);
       if (application.Status != ApplicationStatus.Pending)
       {
-        throw new AppException("Ứng tuyển không ở trạng thái chờ xác nhận", 400);
+        throw new ConflictException("Ứng tuyển không ở trạng thái chờ xác nhận.", "APPLICATION_INVALID_STATUS");
       }
 
       application.Status = ApplicationStatus.StudentConfirmed;
@@ -119,14 +141,15 @@ namespace EduMatch.Services
       var application = await GetOwnedApplicationAsync(applicationId, studentId);
       if (application.Status is ApplicationStatus.AdminApproved or ApplicationStatus.BothAccepted)
       {
-        throw new AppException("Không thể từ chối ứng tuyển này", 400);
+        throw new ConflictException("Không thể từ chối ứng tuyển ở trạng thái hiện tại.", "APPLICATION_INVALID_STATUS");
       }
 
+      var tutor = EnsureTutorLoaded(application);
       application.Status = ApplicationStatus.StudentRejected;
       await _applicationRepository.UpdateAsync(application);
 
       await _notificationService.SendAsync(
-        application.Tutor.UserId,
+        tutor.UserId,
         "Ứng tuyển bị từ chối",
         "Ứng tuyển của bạn đã bị học sinh từ chối",
         NotificationType.StudentRejected,
@@ -142,7 +165,7 @@ namespace EduMatch.Services
       var application = await GetOwnedApplicationAsync(applicationId, studentId);
       if (application.Status != ApplicationStatus.AdminMatched)
       {
-        throw new AppException("Yêu cầu ghép này không hợp lệ", 400);
+        throw new ConflictException("Yêu cầu ghép lớp này không ở trạng thái có thể chấp nhận.", "APPLICATION_INVALID_STATUS");
       }
 
       application.StudentAcceptedMatch = true;
@@ -156,17 +179,18 @@ namespace EduMatch.Services
       var application = await _applicationRepository.GetByIdAsync(applicationId);
       if (application == null)
       {
-        throw new AppException("Không tìm thấy ứng tuyển", 404);
+        throw new NotFoundException("Không tìm thấy ứng tuyển.", "APPLICATION_NOT_FOUND");
       }
 
-      if (application.Tutor.UserId != tutorUserId)
+      var tutor = EnsureTutorLoaded(application);
+      if (tutor.UserId != tutorUserId)
       {
-        throw new AppException("Bạn không có quyền thao tác ứng tuyển này", 403);
+        throw new ForbiddenException("Bạn không có quyền thao tác ứng tuyển này.", "APPLICATION_ACTION_FORBIDDEN");
       }
 
       if (application.Status != ApplicationStatus.AdminMatched)
       {
-        throw new AppException("Yêu cầu ghép này không hợp lệ", 400);
+        throw new ConflictException("Yêu cầu ghép lớp này không ở trạng thái có thể chấp nhận.", "APPLICATION_INVALID_STATUS");
       }
 
       application.TutorAcceptedMatch = true;
@@ -180,31 +204,40 @@ namespace EduMatch.Services
       var application = await _applicationRepository.GetByIdAsync(applicationId);
       if (application == null)
       {
-        throw new AppException("Không tìm thấy ứng tuyển", 404);
+        throw new NotFoundException("Không tìm thấy ứng tuyển.", "APPLICATION_NOT_FOUND");
+      }
+
+      if (application.Status == ApplicationStatus.AdminApproved)
+      {
+        throw new ConflictException("Ứng tuyển này đã được duyệt rồi.", "APPLICATION_ALREADY_APPROVED");
       }
 
       if (application.Status != ApplicationStatus.StudentConfirmed)
       {
-        throw new AppException("Ứng tuyển chưa được học sinh xác nhận", 400);
+        throw new ConflictException("Ứng tuyển không ở trạng thái có thể duyệt.", "APPLICATION_INVALID_STATUS");
       }
 
+      var tutor = EnsureTutorLoaded(application);
+      var tutorRequest = EnsureTutorRequestLoaded(application);
+
       application.Status = ApplicationStatus.AdminApproved;
-      application.TutorRequest.Status = TutorRequestStatus.Assigned;
+      tutorRequest.Status = TutorRequestStatus.Assigned;
 
       await RejectOtherApplicationsAsync(application.TutorRequestId, application.Id);
       await _applicationRepository.UpdateAsync(application);
 
       _logger.LogInformation("Admin approved Application {AppId}, created Class", applicationId);
-      
+
       var newClass = new EduMatch.Models.Class
       {
-         StudentId = application.TutorRequest.StudentId,
-         TutorId = application.TutorId,
-         RequestId = application.TutorRequestId,
-         ApplicationId = application.Id,
-         DepositAmount = depositAmount,
-         Status = EduMatch.Enums.ClassStatus.PendingPayment,
-         StartDate = DateTime.UtcNow
+        Code = _codeGenerator.GenerateTemporaryCode("CLS"),
+        StudentId = tutorRequest.StudentId,
+        TutorId = application.TutorId,
+        RequestId = application.TutorRequestId,
+        ApplicationId = application.Id,
+        DepositAmount = depositAmount,
+        Status = ClassStatus.PendingPayment,
+        StartDate = DateTime.UtcNow
       };
 
       _dbContext.Classes.Add(newClass);
@@ -214,7 +247,7 @@ namespace EduMatch.Services
       await _dbContext.SaveChangesAsync();
 
       await _notificationService.SendToMultipleAsync(
-        new[] { application.TutorRequest.StudentId, application.Tutor.UserId },
+        new[] { tutorRequest.StudentId, tutor.UserId },
         "Ứng tuyển được duyệt",
         "Ứng tuyển đã được admin duyệt",
         NotificationType.ApplicationApproved,
@@ -230,19 +263,20 @@ namespace EduMatch.Services
       var application = await _applicationRepository.GetByIdAsync(applicationId);
       if (application == null)
       {
-        throw new AppException("Không tìm thấy ứng tuyển", 404);
+        throw new NotFoundException("Không tìm thấy ứng tuyển.", "APPLICATION_NOT_FOUND");
       }
 
       if (application.Status is ApplicationStatus.AdminApproved or ApplicationStatus.BothAccepted)
       {
-        throw new AppException("Không thể từ chối ứng tuyển này", 400);
+        throw new ConflictException("Không thể từ chối ứng tuyển ở trạng thái hiện tại.", "APPLICATION_INVALID_STATUS");
       }
 
+      var tutor = EnsureTutorLoaded(application);
       application.Status = ApplicationStatus.AdminRejected;
       await _applicationRepository.UpdateAsync(application);
 
       await _notificationService.SendAsync(
-        application.Tutor.UserId,
+        tutor.UserId,
         "Ứng tuyển bị từ chối",
         "Ứng tuyển của bạn đã bị admin từ chối",
         NotificationType.ApplicationRejected,
@@ -258,24 +292,24 @@ namespace EduMatch.Services
       var request = await _tutorRequestRepository.GetByIdAsync(requestId);
       if (request == null)
       {
-        throw new AppException("Không tìm thấy bài đăng", 404);
+        throw new NotFoundException("Không tìm thấy bài đăng.", "TUTOR_REQUEST_NOT_FOUND");
       }
 
       if (!CanApplyToRequest(request))
       {
-        throw new AppException("Bài đăng đã hết hạn ứng tuyển", 400);
+        throw new ValidationException("Bài đăng không còn mở để ghép lớp.", "REQUEST_NOT_OPEN");
       }
 
       var tutorProfile = await _tutorRepository.GetTutorProfileDetailAsync(tutorProfileId);
       if (tutorProfile == null)
       {
-        throw new AppException("Không tìm thấy gia sư", 404);
+        throw new NotFoundException("Không tìm thấy gia sư.", "TUTOR_PROFILE_NOT_FOUND");
       }
 
       var existingApplication = await _applicationRepository.GetByTutorAndRequestAsync(tutorProfileId, requestId);
       if (existingApplication != null)
       {
-        throw new AppException("Gia sư đã có kết nối với bài đăng này", 400);
+        throw new ConflictException("Gia sư đã có kết nối với bài đăng này.", "APPLICATION_ALREADY_EXISTS");
       }
 
       var application = new EduMatch.Models.Application
@@ -310,12 +344,12 @@ namespace EduMatch.Services
       var request = await _tutorRequestRepository.GetByIdAsync(requestId);
       if (request == null)
       {
-        throw new AppException("Không tìm thấy bài đăng", 404);
+        throw new NotFoundException("Không tìm thấy bài đăng.", "TUTOR_REQUEST_NOT_FOUND");
       }
 
       if (request.StudentId != studentId)
       {
-        throw new AppException("Bạn không có quyền xem danh sách ứng tuyển này", 403);
+        throw new ForbiddenException("Bạn không có quyền xem danh sách ứng tuyển này.", "APPLICATION_VIEW_FORBIDDEN");
       }
 
       var pagedApplications = await _applicationRepository.GetByRequestIdAsync(requestId, page, pageSize);
@@ -327,16 +361,16 @@ namespace EduMatch.Services
       var tutorProfile = await _tutorRepository.GetTutorProfileByUserIdAsync(tutorUserId);
       if (tutorProfile == null)
       {
-        throw new AppException("Không tìm thấy hồ sơ gia sư", 404);
+        throw new NotFoundException("Không tìm thấy hồ sơ gia sư.", "TUTOR_PROFILE_NOT_FOUND");
       }
 
       var pagedApplications = await _applicationRepository.GetByTutorProfileIdAsync(tutorProfile.Id, page, pageSize);
       return ApiResponse<PagedResult<ApplicationResponseDto>>.SuccessResult(MapPagedApplications(pagedApplications));
     }
 
-    public async Task<ApiResponse<PagedResult<ApplicationResponseDto>>> GetAllForAdminAsync(int page, int pageSize, ApplicationStatus? status)
+    public async Task<ApiResponse<PagedResult<ApplicationResponseDto>>> GetAllForAdminAsync(ApplicationQueryParameters parameters)
     {
-      var pagedApplications = await _applicationRepository.GetAllAsync(page, pageSize, status);
+      var pagedApplications = await _applicationRepository.GetAllAsync(parameters.Page, parameters.PageSize, parameters.Status);
       return ApiResponse<PagedResult<ApplicationResponseDto>>.SuccessResult(MapPagedApplications(pagedApplications));
     }
 
@@ -351,12 +385,13 @@ namespace EduMatch.Services
       var application = await _applicationRepository.GetByIdAsync(applicationId);
       if (application == null)
       {
-        throw new AppException("Không tìm thấy ứng tuyển", 404);
+        throw new NotFoundException("Không tìm thấy ứng tuyển.", "APPLICATION_NOT_FOUND");
       }
 
-      if (application.TutorRequest.StudentId != studentId)
+      var tutorRequest = EnsureTutorRequestLoaded(application);
+      if (tutorRequest.StudentId != studentId)
       {
-        throw new AppException("Bạn không có quyền thao tác ứng tuyển này", 403);
+        throw new ForbiddenException("Bạn không có quyền thao tác ứng tuyển này.", "APPLICATION_ACTION_FORBIDDEN");
       }
 
       return application;
@@ -366,31 +401,39 @@ namespace EduMatch.Services
     {
       if (application.StudentAcceptedMatch && application.TutorAcceptedMatch)
       {
+        var tutor = EnsureTutorLoaded(application);
+        var tutorRequest = EnsureTutorRequestLoaded(application);
+
         application.Status = ApplicationStatus.BothAccepted;
-        application.TutorRequest.Status = TutorRequestStatus.Assigned;
+        tutorRequest.Status = TutorRequestStatus.Assigned;
 
         await RejectOtherApplicationsAsync(application.TutorRequestId, application.Id);
 
         var newClass = new EduMatch.Models.Class
         {
-          StudentId = application.TutorRequest.StudentId,
+          Code = _codeGenerator.GenerateTemporaryCode("CLS"),
+          StudentId = tutorRequest.StudentId,
           TutorId = application.TutorId,
           RequestId = application.TutorRequestId,
           ApplicationId = application.Id,
           DepositAmount = application.DepositAmount ?? 0,
-          Status = EduMatch.Enums.ClassStatus.PendingPayment,
+          Status = ClassStatus.PendingPayment,
           StartDate = DateTime.UtcNow
         };
+
         _dbContext.Classes.Add(newClass);
         await _dbContext.SaveChangesAsync();
-        
+
         newClass.Code = _codeGenerator.GenerateClassCode(newClass.Id);
         await _dbContext.SaveChangesAsync();
 
-        _logger.LogInformation("Class created for matched Application {AppId}, DepositAmount {Deposit}", application.Id, application.DepositAmount);
+        _logger.LogInformation(
+          "Class created for matched Application {AppId}, DepositAmount {Deposit}",
+          application.Id,
+          application.DepositAmount);
 
         await _notificationService.SendToMultipleAsync(
-          new[] { application.TutorRequest.StudentId, application.Tutor.UserId },
+          new[] { tutorRequest.StudentId, tutor.UserId },
           "Ghép lớp thành công",
           "Ghép lớp đã được cả hai bên chấp nhận",
           NotificationType.MatchAccepted,
@@ -419,6 +462,16 @@ namespace EduMatch.Services
       {
         await _applicationRepository.SaveChangesAsync();
       }
+    }
+
+    private static EduMatch.Models.Tutor EnsureTutorLoaded(EduMatch.Models.Application application)
+    {
+      return application.Tutor ?? throw new InvalidOperationException("Application tutor was not loaded.");
+    }
+
+    private static EduMatch.Models.TutorRequest EnsureTutorRequestLoaded(EduMatch.Models.Application application)
+    {
+      return application.TutorRequest ?? throw new InvalidOperationException("Application tutor request was not loaded.");
     }
 
     private static ApplicationResponseDto MapApplication(EduMatch.Models.Application application)

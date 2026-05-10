@@ -1,5 +1,5 @@
+using EduMatch.Common.Enums;
 using EduMatch.DTOs.Address;
-using EduMatch.Enums;
 using System.ComponentModel.DataAnnotations;
 
 namespace EduMatch.DTOs.Tutor
@@ -12,6 +12,8 @@ namespace EduMatch.DTOs.Tutor
 
   public class UpdateTutorDto
   {
+    public string FullName { get; set; } = string.Empty;
+    public Gender Gender { get; set; }
     public string Bio { get; set; } = string.Empty;
     public decimal HourlyRate { get; set; }
     

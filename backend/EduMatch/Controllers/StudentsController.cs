@@ -1,11 +1,13 @@
+using EduMatch.Common.Exception;
+using EduMatch.Common.Extensions;
 using EduMatch.DTOs;
-using EduMatch.DTOs.Auth;
 using EduMatch.DTOs.Student;
 using EduMatch.DTOs.StudentProfile;
 using EduMatch.Services;
 using EduMatch.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 using System.Security.Claims;
 
 namespace EduMatch.Controllers
@@ -24,59 +26,77 @@ namespace EduMatch.Controllers
     }
 
     [HttpGet]
+    [SwaggerOperation(OperationId = "getStudents")]
+    [ProducesResponseType(typeof(ApiResponse<PagedResult<StudentDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ApiResponse<PagedResult<StudentDto>>>> GetStudents([FromQuery] StudentQueryParameters parameters)
     {
       var result = await _studentService.GetStudentsAsync(parameters);
-      return Ok(ApiResponse<PagedResult<StudentDto>>.SuccessResult(result));
+      return this.OkResponse(ApiResponse<PagedResult<StudentDto>>.SuccessResult(result));
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<ApiResponse<StudentDetailDto>>> GetStudentById(long id)
+    [SwaggerOperation(
+      OperationId = "getStudentById",
+      Summary = "Get student profile by student ID",
+      Description = "The route parameter {id} is the Student profile ID.")]
+    [ProducesResponseType(typeof(ApiResponse<StudentDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<StudentDetailDto>>> GetStudentById([FromRoute(Name = "id")] long studentId)
     {
-      var result = await _studentService.GetStudentByIdAsync(id);
-      return Ok(ApiResponse<StudentDetailDto>.SuccessResult(result));
+      var result = await _studentService.GetStudentByIdAsync(studentId);
+      return this.OkResponse(ApiResponse<StudentDetailDto>.SuccessResult(result));
     }
 
     [HttpGet("me")]
     [Authorize(Roles = "Student")]
+    [SwaggerOperation(OperationId = "getMyStudentProfile")]
+    [ProducesResponseType(typeof(ApiResponse<StudentDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<StudentDetailDto>>> GetMyProfile()
     {
-      var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-      if (!long.TryParse(userIdClaim, out var userId))
-      {
-        return Unauthorized(ApiResponse.Fail("Không thể xác thực người dùng"));
-      }
-
-      var result = await _studentService.GetMyProfileAsync(userId);
-      return Ok(ApiResponse<StudentDetailDto>.SuccessResult(result));
+      var result = await _studentService.GetMyProfileAsync(GetCurrentUserId());
+      return this.OkResponse(ApiResponse<StudentDetailDto>.SuccessResult(result));
     }
 
     [HttpPut("me")]
     [Authorize(Roles = "Student")]
+    [SwaggerOperation(OperationId = "updateMyStudentProfile")]
+    [ProducesResponseType(typeof(ApiResponse<StudentDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<StudentDetailDto>>> UpdateMyProfile([FromBody] UpdateStudentDto dto)
     {
-      var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-      if (!long.TryParse(userIdClaim, out var userId))
-      {
-        return Unauthorized(ApiResponse.Fail("Không thể xác thực người dùng"));
-      }
-
-      var result = await _studentService.UpdateMyProfileAsync(userId, dto);
-      return Ok(ApiResponse<StudentDetailDto>.SuccessResult(result, "Cập nhật hồ sơ thành công"));
+      var result = await _studentService.UpdateMyProfileAsync(GetCurrentUserId(), dto);
+      return this.OkResponse(ApiResponse<StudentDetailDto>.SuccessResult(result, "Cập nhật hồ sơ thành công"));
     }
 
     [HttpPost("become-tutor")]
     [Authorize(Roles = "Student")]
+    [SwaggerOperation(OperationId = "becomeTutor")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<ApiResponse>> BecomeTutor([FromBody] BecomeTutorDto dto)
     {
-      var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-      if (userIdClaim == null || !long.TryParse(userIdClaim, out var userId))
+      await _authService.BecomeTutorAsync(GetCurrentUserId(), dto);
+      return this.OkResponse(ApiResponse.Ok("Yêu cầu trở thành Gia sư đã được gửi. Vui lòng chờ Admin xét duyệt."));
+    }
+
+    private long GetCurrentUserId()
+    {
+      var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+      if (!long.TryParse(userIdClaim, out var userId))
       {
-        return Unauthorized(ApiResponse.Fail("Unauthorized"));
+        throw new UnauthorizedException("Không thể xác thực người dùng.");
       }
 
-      await _authService.BecomeTutorAsync(userId, dto);
-      return Ok(ApiResponse.Ok("Yêu cầu trở thành Gia sư đã được gửi. Vui lòng chờ Admin xét duyệt."));
+      return userId;
     }
   }
 }

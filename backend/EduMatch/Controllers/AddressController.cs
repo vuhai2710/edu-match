@@ -1,3 +1,4 @@
+using Swashbuckle.AspNetCore.Annotations;
 using EduMatch.DTOs;
 using EduMatch.DTOs.Address;
 using EduMatch.Services.Interfaces;
@@ -17,6 +18,7 @@ namespace EduMatch.Controllers
     }
 
     [HttpGet("provinces")]
+    [SwaggerOperation(OperationId = "getProvinces")]
     public async Task<ActionResult<ApiResponse<List<ProvinceDto>>>> GetProvinces(CancellationToken ct)
     {
       var result = await _addressService.GetProvincesAsync(ct);
@@ -24,6 +26,7 @@ namespace EduMatch.Controllers
     }
 
     [HttpGet("wards/{provinceId}")]
+    [SwaggerOperation(OperationId = "getWards")]
     public async Task<ActionResult<ApiResponse<List<WardDto>>>> GetWards(int provinceId, CancellationToken ct)
     {
       var result = await _addressService.GetWardsAsync(provinceId, ct);

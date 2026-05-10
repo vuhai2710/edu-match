@@ -1,3 +1,4 @@
+using Swashbuckle.AspNetCore.Annotations;
 using System.Security.Claims;
 using EduMatch.DTOs;
 using EduMatch.DTOs.Payment;
@@ -20,6 +21,7 @@ namespace EduMatch.Controllers
 
         [HttpPost("create")]
         [Authorize(Roles = "Tutor")]
+        [SwaggerOperation(OperationId = "createPayment")]
         public async Task<ActionResult<ApiResponse<PaymentResponseDto>>> CreatePayment([FromBody] CreatePaymentRequestDto dto)
         {
             var tutorIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -40,6 +42,7 @@ namespace EduMatch.Controllers
         }
 
         [HttpGet("status/{orderCode}")]
+        [SwaggerOperation(OperationId = "getPaymentStatus")]
         public async Task<ActionResult<ApiResponse<PaymentStatusDto>>> GetStatus(long orderCode)
         {
             try
@@ -54,6 +57,7 @@ namespace EduMatch.Controllers
         }
 
         [HttpPost("webhook")]
+        [SwaggerOperation(OperationId = "handlePaymentWebhook")]
         public async Task<IActionResult> Webhook([FromBody] PayOSWebhookDto dto)
         {
             try

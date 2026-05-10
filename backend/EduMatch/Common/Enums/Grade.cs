@@ -1,5 +1,8 @@
-namespace EduMatch.Enums
+using System.Text.Json.Serialization;
+
+namespace EduMatch.Common.Enums
 {
+  [JsonConverter(typeof(JsonStringEnumConverter))]
   public enum Grade
   {
     Grade1 = 1,

@@ -1,6 +1,6 @@
+using EduMatch.Common.Enums;
 using EduMatch.DTOs.Review;
-using EduMatch.Enums;
-using EduMatch.Exception;
+using EduMatch.Common.Exception;
 using EduMatch.Models;
 using EduMatch.Repositories;
 using EduMatch.Repositories.Interfaces;
@@ -37,24 +37,24 @@ namespace EduMatch.Services
 
       if (classEntity.StudentId != userId)
       {
-        throw new AppException("Bạn không có quyền đánh giá lớp học này.", 403);
+        throw new ForbiddenException("Bạn không có quyền đánh giá lớp học này.");
       }
 
       if (classEntity.TutorId == 0)
       {
-        throw new AppException("Lớp học không có gia sư hợp lệ.", 400);
+        throw new ValidationException("Lớp học không có gia sư hợp lệ.");
       }
 
       var daysSinceCreation = (DateTime.UtcNow - classEntity.CreatedAt).TotalDays;
       if (daysSinceCreation < 7)
       {
-        throw new AppException("Chỉ được phép đánh giá sau 7 ngày kể từ khi lớp học được tạo.", 400);
+        throw new ValidationException("Chỉ được phép đánh giá sau 7 ngày kể từ khi lớp học được tạo.");
       }
 
       var alreadyReviewed = await _reviewRepository.ExistsByClassIdAsync(dto.ClassId);
       if (alreadyReviewed)
       {
-        throw new AppException("Bạn đã đánh giá lớp học này rồi.", 409);
+        throw new ConflictException("Bạn đã đánh giá lớp học này rồi.");
       }
 
       var tutor = await _tutorRepository.GetByIdAsync(classEntity.TutorId);

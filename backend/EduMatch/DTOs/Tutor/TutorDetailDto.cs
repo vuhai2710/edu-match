@@ -1,3 +1,4 @@
+using EduMatch.Common.Enums;
 using EduMatch.DTOs.Address;
 
 namespace EduMatch.DTOs.Tutor
@@ -9,7 +10,9 @@ namespace EduMatch.DTOs.Tutor
     public long UserId { get; set; }
     public string FullName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
+    public string? PhoneNumber { get; set; }
     public string? AvatarUrl { get; set; }
+    public Gender Gender { get; set; }
     public string? CvUrl { get; set; }
     public string Bio { get; set; } = string.Empty;
     public decimal HourlyRate { get; set; }
@@ -19,4 +22,3 @@ namespace EduMatch.DTOs.Tutor
     public List<TutorSubjectDto> Subjects { get; set; } = [];
   }
 }
-

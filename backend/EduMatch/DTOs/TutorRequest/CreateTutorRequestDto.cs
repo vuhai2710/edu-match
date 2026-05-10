@@ -1,3 +1,4 @@
+using EduMatch.Common.Enums;
 using System.ComponentModel.DataAnnotations;
 
 namespace EduMatch.DTOs.TutorRequests
@@ -27,8 +28,8 @@ namespace EduMatch.DTOs.TutorRequests
     [Range(30, 240)]
     public int MinutesPerSession { get; set; }
 
-    public Enums.Grade? GradeLevel { get; set; }
-    public Enums.EducationLevel? EducationLevel { get; set; }
+    public Grade? GradeLevel { get; set; }
+    public EducationLevel? EducationLevel { get; set; }
 
     public int? ProvinceId { get; set; }
     public string? ProvinceName { get; set; }

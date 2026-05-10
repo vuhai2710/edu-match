@@ -11,12 +11,15 @@ public class TutorMapper : Profile
     CreateMap<Tutor, TutorDto>()
       .ForMember(d => d.FullName, opt => opt.MapFrom(s => s.User != null ? s.User.FullName : string.Empty))
       .ForMember(d => d.AvatarUrl, opt => opt.MapFrom(s => s.User != null && s.User.AvatarFile != null ? s.User.AvatarFile.FilePath : null))
+      .ForMember(d => d.Gender, opt => opt.MapFrom(s => s.User != null ? s.User.Gender : default))
       .ForMember(d => d.Subjects, opt => opt.MapFrom(s => s.TutorSubjects));
 
     CreateMap<Tutor, TutorDetailDto>()
       .ForMember(d => d.FullName, opt => opt.MapFrom(s => s.User != null ? s.User.FullName : string.Empty))
       .ForMember(d => d.Email, opt => opt.MapFrom(s => s.User != null ? s.User.Email : string.Empty))
+      .ForMember(d => d.PhoneNumber, opt => opt.MapFrom(s => s.User != null ? s.User.PhoneNumber : null))
       .ForMember(d => d.AvatarUrl, opt => opt.MapFrom(s => s.User != null && s.User.AvatarFile != null ? s.User.AvatarFile.FilePath : null))
+      .ForMember(d => d.Gender, opt => opt.MapFrom(s => s.User != null ? s.User.Gender : default))
       .ForMember(d => d.CvUrl, opt => opt.MapFrom(s => s.CvFile != null ? s.CvFile.FilePath : null))
       .ForMember(d => d.Subjects, opt => opt.MapFrom(s => s.TutorSubjects));
 

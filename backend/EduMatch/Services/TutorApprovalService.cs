@@ -1,8 +1,8 @@
+using EduMatch.Common.Enums;
+using EduMatch.Common.Exception;
 using EduMatch.Data;
 using EduMatch.DTOs;
 using EduMatch.DTOs.Dashboard;
-using EduMatch.Enums;
-using EduMatch.Exception;
 using EduMatch.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,7 +28,7 @@ namespace EduMatch.Services
     {
       var query = _db.TutorProfiles
         .Where(t => t.ApprovalStatus == ApprovalStatus.Pending && !t.IsDeleted)
-        .OrderBy(t => t.CreatedAt); 
+        .OrderBy(t => t.CreatedAt);
 
       var total = await query.CountAsync();
       var items = await query
@@ -37,20 +37,20 @@ namespace EduMatch.Services
         .Select(t => new PendingTutorItemDto
         {
           TutorProfileId = t.Id,
-          FullName       = t.User.FullName,
-          AvatarUrl      = t.User.AvatarFile != null ? t.User.AvatarFile.FilePath : null,
-          Bio            = t.Bio,
-          HourlyRate     = t.HourlyRate,
-          RequestedAt    = t.CreatedAt
+          FullName = t.User.FullName,
+          AvatarUrl = t.User.AvatarFile != null ? t.User.AvatarFile.FilePath : null,
+          Bio = t.Bio,
+          HourlyRate = t.HourlyRate,
+          RequestedAt = t.CreatedAt
         })
         .ToListAsync();
 
       return new PagedResult<PendingTutorItemDto>
       {
-        Items      = items,
+        Items = items,
         TotalCount = total,
-        Page       = page,
-        PageSize   = pageSize,
+        Page = page,
+        PageSize = pageSize,
         TotalPages = (int)Math.Ceiling(total / (double)pageSize)
       };
     }
@@ -63,10 +63,13 @@ namespace EduMatch.Services
         ?? throw new NotFoundException("TutorProfile not found");
 
       if (profile.ApprovalStatus != ApprovalStatus.Pending)
-        throw new AppException("Tutor request is not pending.", 400);
+      {
+        throw new AppException("Tutor request is not pending.", StatusCodes.Status400BadRequest);
+      }
 
+      var user = profile.User ?? throw new InvalidOperationException("Tutor user was not loaded.");
       profile.ApprovalStatus = ApprovalStatus.Approved;
-      profile.User.Role      = UserRole.Tutor;
+      user.Role = UserRole.Tutor;
 
       await _db.SaveChangesAsync();
 
@@ -90,7 +93,9 @@ namespace EduMatch.Services
         ?? throw new NotFoundException("TutorProfile not found");
 
       if (profile.ApprovalStatus != ApprovalStatus.Pending)
-        throw new AppException("Tutor request is not pending.", 400);
+      {
+        throw new AppException("Tutor request is not pending.", StatusCodes.Status400BadRequest);
+      }
 
       profile.ApprovalStatus = ApprovalStatus.Rejected;
 

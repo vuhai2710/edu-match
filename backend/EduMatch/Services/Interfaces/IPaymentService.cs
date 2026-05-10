@@ -1,6 +1,6 @@
+using EduMatch.Common.Enums;
 using EduMatch.DTOs;
 using EduMatch.DTOs.Payment;
-using EduMatch.Enums;
 using EduMatch.Models;
 
 namespace EduMatch.Services.Interfaces

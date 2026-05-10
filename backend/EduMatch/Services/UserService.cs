@@ -1,9 +1,7 @@
 using AutoMapper;
 using EduMatch.DTOs;
 using EduMatch.DTOs.User;
-using EduMatch.Enums;
-using EduMatch.Exception;
-using EduMatch.Models;
+using EduMatch.Common.Exception;
 using EduMatch.Repositories.Interfaces;
 using EduMatch.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
@@ -43,7 +41,7 @@ namespace EduMatch.Services
 
       if (user == null)
       {
-        throw new AppException("Không tìm thấy người dùng", 404);
+        throw new NotFoundException("Không tìm thấy người dùng.");
       }
 
       return _mapper.Map<UserDto>(user);
@@ -55,11 +53,11 @@ namespace EduMatch.Services
 
       if (user == null)
       {
-        throw new AppException("Không tìm thấy người dùng", 404);
+        throw new NotFoundException("Không tìm thấy người dùng.");
       }
 
       user.IsDeleted = true;
-      
+
       _userRepository.Update(user);
       await _userRepository.SaveChangesAsync();
 
@@ -71,7 +69,7 @@ namespace EduMatch.Services
       var user = await _userRepository.GetByIdAsync(userId);
       if (user == null || user.IsDeleted)
       {
-        throw new NotFoundException("Không tìm thấy người dùng");
+        throw new NotFoundException("Không tìm thấy người dùng.");
       }
 
       if (user.AvatarFileId.HasValue)
@@ -94,12 +92,12 @@ namespace EduMatch.Services
       var user = await _userRepository.GetByIdAsync(userId);
       if (user == null || user.IsDeleted)
       {
-        throw new NotFoundException("Không tìm thấy người dùng");
+        throw new NotFoundException("Không tìm thấy người dùng.");
       }
 
       if (!user.AvatarFileId.HasValue)
       {
-        throw new AppException("User chưa có avatar", 400);
+        throw new ValidationException("Người dùng chưa có avatar.");
       }
 
       await _fileService.DeleteFileRecordAsync(user.AvatarFileId.Value);

@@ -1,10 +1,12 @@
+using EduMatch.Common.Enums;
+using EduMatch.Common.Extensions;
 using EduMatch.DTOs;
 using EduMatch.DTOs.Applications;
 using EduMatch.DTOs.TutorRequests;
-using EduMatch.Enums;
 using EduMatch.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace EduMatch.Controllers
 {
@@ -25,56 +27,110 @@ namespace EduMatch.Controllers
     }
 
     [HttpGet("applications")]
-    public async Task<ActionResult<ApiResponse<PagedResult<ApplicationResponseDto>>>> GetAllApplications([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] ApplicationStatus? status = null)
+    [SwaggerOperation(OperationId = "getAllApplicationsForAdmin")]
+    [ProducesResponseType(typeof(ApiResponse<PagedResult<ApplicationResponseDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<ApiResponse<PagedResult<ApplicationResponseDto>>>> GetAllApplications([FromQuery] ApplicationQueryParameters parameters)
     {
-      return Ok(await _applicationService.GetAllForAdminAsync(page, pageSize, status));
+      var response = await _applicationService.GetAllForAdminAsync(parameters);
+      return this.OkResponse(response);
     }
 
     [HttpGet("tutor-requests")]
+    [SwaggerOperation(OperationId = "getAllRequestsForAdmin")]
+    [ProducesResponseType(typeof(ApiResponse<PagedResult<TutorRequestResponseDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<ApiResponse<PagedResult<TutorRequestResponseDto>>>> GetAllRequests([FromQuery] TutorRequestFilterDto filter)
     {
-      return Ok(await _tutorRequestService.GetAllAsync(filter));
+      var response = await _tutorRequestService.GetAllAsync(filter);
+      return this.OkResponse(response);
     }
 
     [HttpPut("applications/{id:long}/approve")]
+    [SwaggerOperation(OperationId = "adminApproveApplication")]
+    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<ApiResponse<bool>>> AdminApprove(long id, [FromBody] AdminApproveRequestDto dto)
     {
-      return Ok(await _applicationService.AdminApproveAsync(id, dto.DepositAmount));
+      var response = await _applicationService.AdminApproveAsync(id, dto.DepositAmount);
+      return this.OkResponse(response);
     }
 
     [HttpPut("applications/{id:long}/reject")]
+    [SwaggerOperation(OperationId = "adminRejectApplication")]
+    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<ApiResponse<bool>>> AdminReject(long id)
     {
-      return Ok(await _applicationService.AdminRejectAsync(id));
+      var response = await _applicationService.AdminRejectAsync(id);
+      return this.OkResponse(response);
     }
 
     [HttpPost("requests/{requestId:long}/match")]
+    [SwaggerOperation(OperationId = "adminMatchRequest")]
+    [ProducesResponseType(typeof(ApiResponse<ApplicationResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<ApiResponse<ApplicationResponseDto>>> AdminMatch(long requestId, [FromBody] AdminMatchRequestDto dto)
     {
-      return Ok(await _applicationService.AdminMatchAsync(requestId, dto.TutorProfileId, dto.DepositAmount));
+      var response = await _applicationService.AdminMatchAsync(requestId, dto.TutorProfileId, dto.DepositAmount);
+      return this.OkResponse(response);
     }
 
     [HttpPost("tutor-requests/{studentId:long}")]
+    [SwaggerOperation(OperationId = "adminCreateRequestForStudent")]
+    [ProducesResponseType(typeof(ApiResponse<TutorRequestResponseDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<TutorRequestResponseDto>>> AdminCreateTutorRequest(long studentId, [FromBody] CreateTutorRequestDto dto)
     {
-      return Ok(await _tutorRequestService.CreateAsync(studentId, dto));
+      var response = await _tutorRequestService.CreateAsync(studentId, dto);
+      return this.CreatedResponse($"/api/tutorrequests/{response.Data?.Id}", response);
     }
 
     [HttpGet("payments")]
+    [SwaggerOperation(OperationId = "getAllPayments")]
+    [ProducesResponseType(typeof(ApiResponse<PagedResult<EduMatch.Models.Payment>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<ApiResponse<PagedResult<EduMatch.Models.Payment>>>> GetAllPayments([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] PaymentStatus? status = null)
     {
-      return Ok(ApiResponse<PagedResult<EduMatch.Models.Payment>>.SuccessResult(await _paymentService.GetPagedAsync(page, pageSize, status)));
+      return this.OkResponse(ApiResponse<PagedResult<EduMatch.Models.Payment>>.SuccessResult(await _paymentService.GetPagedAsync(page, pageSize, status)));
     }
 
     [HttpGet("payments/{id:long}")]
+    [SwaggerOperation(OperationId = "getPaymentById")]
+    [ProducesResponseType(typeof(ApiResponse<EduMatch.Models.Payment>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<EduMatch.Models.Payment>>> GetPaymentById(long id)
     {
       var payment = await _paymentService.GetByIdAsync(id);
       if (payment == null)
       {
-          return NotFound(ApiResponse.Fail("Payment not found"));
+        return NotFound(ApiResponse.Fail("Payment not found", StatusCodes.Status404NotFound));
       }
-      return Ok(ApiResponse<EduMatch.Models.Payment>.SuccessResult(payment));
+
+      return this.OkResponse(ApiResponse<EduMatch.Models.Payment>.SuccessResult(payment));
     }
   }
 }
