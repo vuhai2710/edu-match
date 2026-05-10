@@ -22,12 +22,15 @@ namespace EduMatch.Controllers
         [HttpPost("create")]
         [Authorize(Roles = "Tutor")]
         [SwaggerOperation(OperationId = "createPayment")]
+        [ProducesResponseType(typeof(ApiResponse<PaymentResponseDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<ApiResponse<PaymentResponseDto>>> CreatePayment([FromBody] CreatePaymentRequestDto dto)
         {
             var tutorIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(tutorIdStr) || !long.TryParse(tutorIdStr, out long tutorId))
             {
-                return Unauthorized(ApiResponse.Fail("Invalid token"));
+                return Unauthorized(ErrorResponse.Create("Invalid token", "UNAUTHORIZED"));
             }
 
             try
@@ -37,12 +40,14 @@ namespace EduMatch.Controllers
             }
             catch (System.Exception ex)
             {
-                return BadRequest(ApiResponse.Fail(ex.Message));
+                return BadRequest(ErrorResponse.Create(ex.Message, "PAYMENT_CREATE_FAILED"));
             }
         }
 
         [HttpGet("status/{orderCode}")]
         [SwaggerOperation(OperationId = "getPaymentStatus")]
+        [ProducesResponseType(typeof(ApiResponse<PaymentStatusDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<ApiResponse<PaymentStatusDto>>> GetStatus(long orderCode)
         {
             try
@@ -52,24 +57,24 @@ namespace EduMatch.Controllers
             }
             catch (System.Exception ex)
             {
-                return BadRequest(ApiResponse.Fail(ex.Message));
+                return BadRequest(ErrorResponse.Create(ex.Message, "PAYMENT_STATUS_FAILED"));
             }
         }
 
         [HttpPost("webhook")]
         [SwaggerOperation(OperationId = "handlePaymentWebhook")]
-        public async Task<IActionResult> Webhook([FromBody] PayOSWebhookDto dto)
+        [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<ApiResponse>> Webhook([FromBody] PayOSWebhookDto dto)
         {
             try
             {
                 await _paymentService.HandleWebhookAsync(dto);
-                var rs = new { success = true, data = new object(), message = "" };
-                return Ok(rs);
+                return Ok(ApiResponse.Ok("Webhook processed"));
             }
             catch
             {
-                var rs = new { success = false, message = "Webhook handling failed" };
-                return BadRequest(rs);
+                return BadRequest(ErrorResponse.Create("Webhook handling failed", "WEBHOOK_HANDLE_FAILED"));
             }
         }
     }

@@ -218,14 +218,42 @@ namespace EduMatch.Services
             };
         }
 
-        public async Task<PagedResult<Payment>> GetPagedAsync(int page, int pageSize, PaymentStatus? status)
+        public async Task<PagedResult<PaymentAdminDto>> GetPagedAsync(int page, int pageSize, PaymentStatus? status)
         {
-            return await _paymentRepo.GetPagedAsync(page, pageSize, status);
+            var pagedPayments = await _paymentRepo.GetPagedAsync(page, pageSize, status);
+
+            return new PagedResult<PaymentAdminDto>
+            {
+                Items = pagedPayments.Items.Select(MapPayment).ToList(),
+                TotalCount = pagedPayments.TotalCount,
+                Page = pagedPayments.Page,
+                PageSize = pagedPayments.PageSize,
+                TotalPages = pagedPayments.TotalPages
+            };
         }
 
-        public async Task<Payment?> GetByIdAsync(long id)
+        public async Task<PaymentAdminDto?> GetByIdAsync(long id)
         {
-            return await _paymentRepo.GetByIdAsync(id);
+            var payment = await _paymentRepo.GetByIdAsync(id);
+            return payment == null ? null : MapPayment(payment);
+        }
+
+        private static PaymentAdminDto MapPayment(Payment payment)
+        {
+            return new PaymentAdminDto
+            {
+                Id = payment.Id,
+                ClassId = payment.ClassId,
+                TutorId = payment.TutorId,
+                OrderCode = payment.OrderCode,
+                Amount = payment.Amount,
+                Description = payment.Description,
+                Status = payment.Status,
+                CheckoutUrl = payment.CheckoutUrl,
+                TransactionId = payment.TransactionId,
+                PaidAt = payment.PaidAt,
+                CreatedAt = payment.CreatedAt
+            };
         }
 
         private string GenerateSignature(string data, string key)

@@ -8,7 +8,7 @@ namespace EduMatch.Configuration
     private static readonly string[] HiddenSchemas =
     [
       "Tutor", "Application", "TutorRequest", "User", "Message",
-      "Notification", "Class", "Payment", "TutorSubject", "Address",
+      "Notification", "Class", "TutorSubject", "Address",
       "Subject", "Student", "PasswordResetToken", "File"
     ];
 

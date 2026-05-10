@@ -38,7 +38,7 @@ namespace EduMatch.Services
       if (user == null)
       {
         _logger.LogInformation("Forgot password requested for non-existing email: {Email}", email);
-        return;
+        throw new AppException("Email chưa được đăng ký");
       }
 
       if (user.IsGoogleAccount)

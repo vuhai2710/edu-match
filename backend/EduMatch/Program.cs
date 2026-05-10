@@ -65,22 +65,15 @@ builder.Services.AddSwaggerGen(options =>
 
   options.EnableAnnotations();
   options.OperationFilter<FileUploadOperationFilter>();
+  options.OperationFilter<AuthorizeOperationFilter>();
   options.DocumentFilter<SchemaCleanupFilter>();
 
   options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
   {
-    Name = "Authorization",
-    Type = SecuritySchemeType.ApiKey,
-    In = ParameterLocation.Header,
+    Type = SecuritySchemeType.Http,
+    Scheme = "bearer",
+    BearerFormat = "JWT",
     Description = "Nhập: Bearer {token}"
-  });
-
-  options.AddSecurityRequirement(doc => new OpenApiSecurityRequirement
-  {
-    {
-      new OpenApiSecuritySchemeReference("Bearer", doc, null),
-      new List<string>()
-    }
   });
 });
 

@@ -28,7 +28,7 @@ namespace EduMatch.Controllers
     [HttpGet]
     [SwaggerOperation(OperationId = "getStudents")]
     [ProducesResponseType(typeof(ApiResponse<PagedResult<StudentDto>>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ApiResponse<PagedResult<StudentDto>>>> GetStudents([FromQuery] StudentQueryParameters parameters)
     {
       var result = await _studentService.GetStudentsAsync(parameters);
@@ -41,7 +41,7 @@ namespace EduMatch.Controllers
       Summary = "Get student profile by student ID",
       Description = "The route parameter {id} is the Student profile ID.")]
     [ProducesResponseType(typeof(ApiResponse<StudentDetailDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<StudentDetailDto>>> GetStudentById([FromRoute(Name = "id")] long studentId)
     {
       var result = await _studentService.GetStudentByIdAsync(studentId);

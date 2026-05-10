@@ -40,7 +40,7 @@ namespace EduMatch.Controllers
     [HttpGet("tutor/{tutorId}")]
     [SwaggerOperation(OperationId = "getReviewsByTutorId")]
     [ProducesResponseType(typeof(ApiResponse<List<ReviewDto>>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<List<ReviewDto>>>> GetReviewsByTutorId(long tutorId)
     {
       var result = await _reviewService.GetReviewsByTutorIdAsync(tutorId);

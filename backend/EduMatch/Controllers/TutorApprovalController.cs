@@ -1,9 +1,9 @@
-using Swashbuckle.AspNetCore.Annotations;
 using EduMatch.DTOs;
 using EduMatch.DTOs.Dashboard;
 using EduMatch.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace EduMatch.Controllers
 {
@@ -21,7 +21,10 @@ namespace EduMatch.Controllers
 
     [HttpGet("pending")]
     [SwaggerOperation(OperationId = "getPendingTutors")]
-    public async Task<IActionResult> GetPendingTutors(
+    [ProducesResponseType(typeof(ApiResponse<PagedResult<PendingTutorItemDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<ApiResponse<PagedResult<PendingTutorItemDto>>>> GetPendingTutors(
       [FromQuery] int page = 1,
       [FromQuery] int pageSize = 10)
     {
@@ -31,7 +34,12 @@ namespace EduMatch.Controllers
 
     [HttpPut("{tutorProfileId:long}/approve")]
     [SwaggerOperation(OperationId = "approveTutor")]
-    public async Task<IActionResult> Approve(long tutorProfileId)
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse>> Approve(long tutorProfileId)
     {
       await _svc.ApproveAsync(tutorProfileId);
       return Ok(ApiResponse.Ok("Đã duyệt thành công"));
@@ -39,7 +47,12 @@ namespace EduMatch.Controllers
 
     [HttpPut("{tutorProfileId:long}/reject")]
     [SwaggerOperation(OperationId = "rejectTutor")]
-    public async Task<IActionResult> Reject(long tutorProfileId)
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse>> Reject(long tutorProfileId)
     {
       await _svc.RejectAsync(tutorProfileId);
       return Ok(ApiResponse.Ok("Đã từ chối"));

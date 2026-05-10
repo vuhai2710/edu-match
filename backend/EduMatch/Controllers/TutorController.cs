@@ -24,7 +24,7 @@ namespace EduMatch.Controllers
     [HttpGet]
     [SwaggerOperation(OperationId = "getTutors")]
     [ProducesResponseType(typeof(ApiResponse<PagedResult<TutorDto>>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ApiResponse<PagedResult<TutorDto>>>> GetTutors([FromQuery] TutorQueryParameters parameters)
     {
       var result = await _tutorService.GetTutorsAsync(parameters);
@@ -34,7 +34,7 @@ namespace EduMatch.Controllers
     [HttpGet("{id}")]
     [SwaggerOperation(OperationId = "getTutorById")]
     [ProducesResponseType(typeof(ApiResponse<TutorDetailDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<TutorDetailDto>>> GetTutorById(long id)
     {
       var result = await _tutorService.GetTutorByIdAsync(id);

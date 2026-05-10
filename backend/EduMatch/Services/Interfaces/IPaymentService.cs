@@ -1,7 +1,6 @@
 using EduMatch.Common.Enums;
 using EduMatch.DTOs;
 using EduMatch.DTOs.Payment;
-using EduMatch.Models;
 
 namespace EduMatch.Services.Interfaces
 {
@@ -10,7 +9,7 @@ namespace EduMatch.Services.Interfaces
         Task<PaymentResponseDto> CreatePaymentAsync(long tutorId, CreatePaymentRequestDto dto);
         Task HandleWebhookAsync(PayOSWebhookDto dto);
         Task<PaymentStatusDto> GetStatusAsync(long orderCode);
-        Task<PagedResult<Payment>> GetPagedAsync(int page, int pageSize, PaymentStatus? status);
-        Task<Payment?> GetByIdAsync(long id);
+        Task<PagedResult<PaymentAdminDto>> GetPagedAsync(int page, int pageSize, PaymentStatus? status);
+        Task<PaymentAdminDto?> GetByIdAsync(long id);
     }
 }

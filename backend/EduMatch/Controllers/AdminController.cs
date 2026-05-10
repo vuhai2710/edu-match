@@ -2,6 +2,7 @@ using EduMatch.Common.Enums;
 using EduMatch.Common.Extensions;
 using EduMatch.DTOs;
 using EduMatch.DTOs.Applications;
+using EduMatch.DTOs.Payment;
 using EduMatch.DTOs.TutorRequests;
 using EduMatch.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -107,30 +108,30 @@ namespace EduMatch.Controllers
 
     [HttpGet("payments")]
     [SwaggerOperation(OperationId = "getAllPayments")]
-    [ProducesResponseType(typeof(ApiResponse<PagedResult<EduMatch.Models.Payment>>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult<ApiResponse<PagedResult<EduMatch.Models.Payment>>>> GetAllPayments([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] PaymentStatus? status = null)
+    [ProducesResponseType(typeof(ApiResponse<PagedResult<PaymentAdminDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<ApiResponse<PagedResult<PaymentAdminDto>>>> GetAllPayments([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] PaymentStatus? status = null)
     {
-      return this.OkResponse(ApiResponse<PagedResult<EduMatch.Models.Payment>>.SuccessResult(await _paymentService.GetPagedAsync(page, pageSize, status)));
+      return this.OkResponse(ApiResponse<PagedResult<PaymentAdminDto>>.SuccessResult(await _paymentService.GetPagedAsync(page, pageSize, status)));
     }
 
     [HttpGet("payments/{id:long}")]
     [SwaggerOperation(OperationId = "getPaymentById")]
-    [ProducesResponseType(typeof(ApiResponse<EduMatch.Models.Payment>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ApiResponse<EduMatch.Models.Payment>>> GetPaymentById(long id)
+    [ProducesResponseType(typeof(ApiResponse<PaymentAdminDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<PaymentAdminDto>>> GetPaymentById(long id)
     {
       var payment = await _paymentService.GetByIdAsync(id);
       if (payment == null)
       {
-        return NotFound(ApiResponse.Fail("Payment not found", StatusCodes.Status404NotFound));
+        return NotFound(ErrorResponse.Create("Payment not found", "PAYMENT_NOT_FOUND"));
       }
 
-      return this.OkResponse(ApiResponse<EduMatch.Models.Payment>.SuccessResult(payment));
+      return this.OkResponse(ApiResponse<PaymentAdminDto>.SuccessResult(payment));
     }
   }
 }
