@@ -1,8 +1,8 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { map, Observable, tap } from 'rxjs';
 
-import { AuthApi, LoginDto, LoginResponseDto, UserDto, UserRole } from '../../generated';
-import { unwrapApiResponse } from '../../data-access/api-response.utils';
+import { AuthApi, LoginDto, LoginResponseDto, UserDto, UserRole } from '../../../api/generated';
+import { unwrapApiResponse } from '../../shared/utils/api-response.utils';
 import { AuthSession } from './auth-session.models';
 import { TokenStorageService } from './token-storage.service';
 

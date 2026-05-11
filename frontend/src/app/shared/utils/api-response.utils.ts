@@ -1,4 +1,4 @@
-import { PagedCollection } from '../shared/paged-view';
+import { PagedCollection } from '../types/paged-collection';
 
 interface ApiResponseLike<T> {
   success?: boolean;

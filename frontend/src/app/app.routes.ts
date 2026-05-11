@@ -10,23 +10,27 @@ export const routes: Routes = [
   {
     path: 'auth/login',
     loadComponent: () =>
-      import('./features/auth/login-page.component').then((m) => m.LoginPageComponent)
+      import('./features/auth/pages/login/login-page.component').then((m) => m.LoginPageComponent)
   },
   {
     path: 'tutors',
     loadComponent: () =>
-      import('./features/tutors/tutor-list-page.component').then((m) => m.TutorListPageComponent)
+      import('./features/tutors/pages/tutor-list/tutor-list-page.component').then((m) => m.TutorListPageComponent)
   },
   {
     path: 'tutor-requests',
     loadComponent: () =>
-      import('./features/tutor-requests/tutor-request-list-page.component').then((m) => m.TutorRequestListPageComponent)
+      import('./features/tutor-requests/pages/tutor-request-list/tutor-request-list-page.component').then(
+        (m) => m.TutorRequestListPageComponent
+      )
   },
   {
     path: 'admin/payments',
     canActivate: [adminOnlyGuard],
     loadComponent: () =>
-      import('./features/admin-payments/admin-payments-page.component').then((m) => m.AdminPaymentsPageComponent)
+      import('./features/admin/payments/pages/admin-payments/admin-payments-page.component').then(
+        (m) => m.AdminPaymentsPageComponent
+      )
   },
   {
     path: '**',

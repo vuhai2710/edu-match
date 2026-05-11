@@ -4,8 +4,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
-import { AuthSessionService } from '../../core/auth/auth-session.service';
-import { extractHttpErrorMessage } from '../../core/http/http-error.utils';
+import { AuthSessionService } from '../../../../core/auth/auth-session.service';
+import { extractHttpErrorMessage } from '../../../../core/http/http-error.utils';
 
 @Component({
   selector: 'app-login-page',

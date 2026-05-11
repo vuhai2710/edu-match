@@ -5,7 +5,7 @@ import { provideRouter } from '@angular/router';
 import { environment } from '../environments/environment';
 import { apiErrorInterceptor } from './core/http/api-error.interceptor';
 import { authTokenInterceptor } from './core/http/auth-token.interceptor';
-import { BASE_PATH } from './generated';
+import { BASE_PATH } from '../api/generated';
 import { routes } from './app.routes';
 
 export const appConfig: ApplicationConfig = {

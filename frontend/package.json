@@ -8,7 +8,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "api:download": "node ./scripts/download-swagger.mjs",
-    "api:generate": "npm run api:download && openapi-generator-cli generate -g typescript-angular -i openapi/edumatch.openapi.json -o src/app/generated --skip-validate-spec --global-property=apiDocs=false,modelDocs=false,apiTests=false,modelTests=false --additional-properties=ngVersion=21.0.0,providedIn=root,stringEnums=true,useSingleRequestParameter=true,serviceSuffix=Api,fileNaming=kebab-case"
+    "api:generate": "npm run api:download && openapi-generator-cli generate -g typescript-angular -i openapi/edumatch.openapi.json -o src/api/generated --skip-validate-spec --global-property=apiDocs=false,modelDocs=false,apiTests=false,modelTests=false --additional-properties=ngVersion=21.0.0,providedIn=root,stringEnums=true,useSingleRequestParameter=true,serviceSuffix=Api,fileNaming=kebab-case"
   },
   "private": true,
   "packageManager": "npm@10.9.2",

@@ -1,9 +1,9 @@
 import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 
-import { AdminApi, GetAllPaymentsRequestParams, PaymentAdminDto } from '../generated';
-import { unwrapPagedResponse } from './api-response.utils';
-import { PagedCollection } from '../shared/paged-view';
+import { AdminApi, GetAllPaymentsRequestParams, PaymentAdminDto } from '../../../../../api/generated';
+import { PagedCollection } from '../../../../shared/types/paged-collection';
+import { unwrapPagedResponse } from '../../../../shared/utils/api-response.utils';
 
 export interface PaymentListItemVm {
   id: number;

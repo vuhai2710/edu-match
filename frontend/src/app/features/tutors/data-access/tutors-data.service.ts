@@ -1,9 +1,9 @@
 import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 
-import { GetTutorsRequestParams, TutorDto, TutorsApi } from '../generated';
-import { unwrapPagedResponse } from './api-response.utils';
-import { PagedCollection } from '../shared/paged-view';
+import { GetTutorsRequestParams, TutorDto, TutorsApi } from '../../../../api/generated';
+import { PagedCollection } from '../../../shared/types/paged-collection';
+import { unwrapPagedResponse } from '../../../shared/utils/api-response.utils';
 
 export interface TutorListItemVm {
   id: number;

@@ -2,9 +2,9 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
+import { extractHttpErrorMessage } from '../../../../core/http/http-error.utils';
 import { TutorListItemVm, TutorsDataService } from '../../data-access/tutors-data.service';
-import { extractHttpErrorMessage } from '../../core/http/http-error.utils';
-import { PagedCollection } from '../../shared/paged-view';
+import { PagedCollection } from '../../../../shared/types/paged-collection';
 
 @Component({
   selector: 'app-tutor-list-page',

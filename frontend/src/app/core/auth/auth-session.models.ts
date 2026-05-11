@@ -1,4 +1,4 @@
-import { UserDto } from '../../generated';
+import { UserDto } from '../../../api/generated';
 
 export interface AuthSession {
   accessToken: string;

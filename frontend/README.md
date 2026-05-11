@@ -13,10 +13,9 @@ Angular standalone frontend for EduMatch, generated from the backend OpenAPI con
 ## Project Structure
 
 - `src/app/core`: auth session, token storage, guards, interceptors, API error state
-- `src/app/shared`: shared view types
-- `src/app/features`: page-level standalone components
-- `src/app/generated`: OpenAPI-generated Angular client
-- `src/app/data-access`: DTO unwrap + frontend view-model mapping
+- `src/app/shared`: shared types and reusable utils
+- `src/app/features`: feature-first folders with `pages/` and feature-local `data-access/`
+- `src/api/generated`: OpenAPI-generated Angular client
 
 ## Run Backend
 
@@ -60,7 +59,7 @@ npm run api:generate
 Notes:
 
 - `api:download` prefers live Swagger from backend and falls back to local `swagger.json` / `swagger-check.json` if present.
-- `api:generate` writes the Angular client into `src/app/generated`.
+- `api:generate` writes the Angular client into `src/api/generated`.
 
 ## Auth / Admin Flow
 
