@@ -1,0 +1,79 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">Generated Flow</span>
+      <h1>Tutor Requests</h1>
+      <p>Rendered from <code>TutorRequestsApi.getTutorRequests()</code> with frontend-only mapping.</p>
+    </div>
+    <button type="button" class="ghost-button" (click)="load()">Refresh</button>
+  </header>
+
+  @if (loading()) {
+    <section class="state-card">Loading tutor requests from the real API...</section>
+  } @else if (errorMessage()) {
+    <section class="state-card error">
+      <strong>Could not load tutor requests.</strong>
+      <p>{{ errorMessage() }}</p>
+    </section>
+  } @else if (!page()?.items?.length) {
+    <section class="state-card">The backend returned no tutor requests for the current query.</section>
+  } @else {
+    <section class="summary-strip">
+      <div>
+        <span>Total requests</span>
+        <strong>{{ page()?.totalCount }}</strong>
+      </div>
+      <div>
+        <span>Current page</span>
+        <strong>{{ page()?.page }} / {{ page()?.totalPages }}</strong>
+      </div>
+      <div>
+        <span>Visible items</span>
+        <strong>{{ page()?.items?.length }}</strong>
+      </div>
+    </section>
+
+    <section class="request-list">
+      @for (request of page()?.items; track request.id) {
+        <article class="request-card">
+          <div class="headline">
+            <div>
+              <span class="code">{{ request.code }}</span>
+              <h2>{{ request.subjectName }}</h2>
+            </div>
+            <span class="status">{{ request.status }}</span>
+          </div>
+
+          <dl>
+            <div>
+              <dt>Student</dt>
+              <dd>{{ request.studentName }}</dd>
+            </div>
+            <div>
+              <dt>Price / Session</dt>
+              <dd>{{ request.priceLabel }}</dd>
+            </div>
+            <div>
+              <dt>Schedule</dt>
+              <dd>{{ request.scheduleSummary }}</dd>
+            </div>
+            <div>
+              <dt>Location</dt>
+              <dd>{{ request.locationSummary }}</dd>
+            </div>
+            <div>
+              <dt>Applications</dt>
+              <dd>{{ request.applicationCount }}</dd>
+            </div>
+            <div>
+              <dt>Expires</dt>
+              <dd>{{ request.expiresAt }}</dd>
+            </div>
+          </dl>
+
+          <footer>Created {{ request.createdAt }}</footer>
+        </article>
+      }
+    </section>
+  }
+</section>

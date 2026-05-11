@@ -1,0 +1,42 @@
+<div class="app-shell">
+  <header class="topbar">
+    <div class="brand-block">
+      <a class="brand" routerLink="/tutors">EduMatch Frontend</a>
+      <p class="tagline">Angular standalone app backed by generated OpenAPI services.</p>
+    </div>
+
+    <nav class="main-nav" aria-label="Primary">
+      <a routerLink="/tutors" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Tutors</a>
+      <a routerLink="/tutor-requests" routerLinkActive="active">Tutor Requests</a>
+      <a routerLink="/admin/payments" routerLinkActive="active">Admin Payments</a>
+      <a routerLink="/auth/login" routerLinkActive="active">Login</a>
+    </nav>
+
+    <div class="session-panel">
+      <span class="api-chip">{{ apiBaseUrl }}</span>
+      @if (isAuthenticated()) {
+        <div class="session-meta">
+          <strong>{{ currentUser()?.fullName || currentUser()?.email }}</strong>
+          <span>{{ currentUser()?.role }}</span>
+        </div>
+        <button class="ghost-button" type="button" (click)="logout()">Logout</button>
+      } @else {
+        <span class="session-hint">No access token stored</span>
+      }
+    </div>
+  </header>
+
+  @if (lastApiError(); as message) {
+    <section class="api-banner" aria-live="polite">
+      <div>
+        <strong>Latest API issue</strong>
+        <p>{{ message }}</p>
+      </div>
+      <button class="ghost-button" type="button" (click)="clearApiError()">Dismiss</button>
+    </section>
+  }
+
+  <main class="page-shell">
+    <router-outlet />
+  </main>
+</div>

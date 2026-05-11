@@ -29,6 +29,11 @@ namespace EduMatch.Data.Configurations
         .HasDefaultValue(0)
         .IsRequired();
 
+      builder.Property(x => x.ApprovalStatus)
+        .HasConversion<string>()
+        .HasMaxLength(20)
+        .IsRequired();
+
       builder.HasOne(x => x.User)
         .WithOne(u => u.TutorProfile)
         .HasForeignKey<Tutor>(x => x.UserId)

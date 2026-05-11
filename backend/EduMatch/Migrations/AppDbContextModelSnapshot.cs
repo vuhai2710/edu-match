@@ -565,8 +565,10 @@ namespace EduMatch.Migrations
                     b.Property<long?>("AddressId")
                         .HasColumnType("bigint");
 
-                    b.Property<int>("ApprovalStatus")
-                        .HasColumnType("integer");
+                    b.Property<string>("ApprovalStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<string>("Bio")
                         .HasMaxLength(2000)

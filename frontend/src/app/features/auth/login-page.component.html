@@ -1,0 +1,59 @@
+<section class="page-grid">
+  <article class="hero-card">
+    <span class="eyebrow">Auth Integration</span>
+    <h1>Sign in with the real EduMatch API.</h1>
+    <p>
+      This page uses the generated <code>AuthApi</code> client, persists the access token locally,
+      and prepares the app for protected endpoints such as admin payments.
+    </p>
+
+    <dl class="facts">
+      <div>
+        <dt>Generated service</dt>
+        <dd><code>AuthApi.login()</code></dd>
+      </div>
+      <div>
+        <dt>Token storage</dt>
+        <dd><code>localStorage</code> via <code>TokenStorageService</code></dd>
+      </div>
+      <div>
+        <dt>Expected admin seed</dt>
+        <dd><code>admin@gmail.com / 123456</code></dd>
+      </div>
+    </dl>
+  </article>
+
+  <article class="form-card">
+    <h2>Login</h2>
+    <p class="subtle">Use the backend seed admin account to verify bearer token flow and guarded admin pages.</p>
+
+    <form [formGroup]="loginForm" (ngSubmit)="submit()" novalidate>
+      <label>
+        <span>Email</span>
+        <input type="email" formControlName="email" placeholder="admin@gmail.com" />
+      </label>
+
+      <label>
+        <span>Password</span>
+        <input type="password" formControlName="password" placeholder="123456" />
+      </label>
+
+      @if (errorMessage()) {
+        <p class="feedback error">{{ errorMessage() }}</p>
+      }
+
+      @if (isAuthenticated()) {
+        <p class="feedback success">
+          Token already stored.
+          @if (isAdmin()) {
+            You can go straight to <a routerLink="/admin/payments">Admin Payments</a>.
+          }
+        </p>
+      }
+
+      <button type="submit" [disabled]="loading()">
+        {{ loading() ? 'Signing in...' : 'Sign in' }}
+      </button>
+    </form>
+  </article>
+</section>

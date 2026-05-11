@@ -1,0 +1,145 @@
+.page-section {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.page-header,
+.summary-strip,
+.state-card,
+.table-shell {
+  border-radius: 24px;
+  border: 1px solid var(--border-color);
+  background: var(--surface-color);
+  box-shadow: var(--shadow-md);
+}
+
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.4rem 1.5rem;
+}
+
+.eyebrow {
+  display: inline-block;
+  margin-bottom: 0.75rem;
+  color: var(--accent-color);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+h1 {
+  margin: 0;
+  color: var(--text-strong);
+  font-family: var(--font-display);
+}
+
+.page-header p {
+  margin: 0.35rem 0 0;
+  color: var(--text-muted);
+}
+
+.ghost-button {
+  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.84);
+  color: var(--text-strong);
+  border-radius: 999px;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+}
+
+.summary-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  padding: 1rem 1.2rem;
+}
+
+.summary-strip span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.summary-strip strong {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--text-strong);
+  font-size: 1.2rem;
+}
+
+.table-shell {
+  overflow: hidden;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead {
+  background: rgba(8, 44, 94, 0.06);
+}
+
+th,
+td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(8, 44, 94, 0.08);
+  vertical-align: top;
+}
+
+th {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+td {
+  color: var(--text-strong);
+}
+
+.muted {
+  margin-top: 0.25rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.status {
+  display: inline-flex;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(15, 90, 198, 0.08);
+  color: var(--accent-color);
+  font-weight: 700;
+  font-size: 0.82rem;
+}
+
+.state-card {
+  padding: 1.2rem 1.3rem;
+  color: var(--text-muted);
+}
+
+.state-card.error {
+  border-color: rgba(193, 78, 32, 0.18);
+  background: rgba(255, 244, 238, 0.92);
+  color: #7d3112;
+}
+
+@media (max-width: 900px) {
+  .page-header {
+    flex-direction: column;
+  }
+
+  .summary-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .table-shell {
+    overflow-x: auto;
+  }
+}

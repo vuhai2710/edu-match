@@ -1,0 +1,71 @@
+<section class="page-section">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">Protected Flow</span>
+      <h1>Admin Payments</h1>
+      <p>Guarded route using stored bearer token, rendered from <code>AdminApi.getAllPayments()</code>.</p>
+    </div>
+    <button type="button" class="ghost-button" (click)="load()">Refresh</button>
+  </header>
+
+  @if (loading()) {
+    <section class="state-card">Loading payments from the admin API...</section>
+  } @else if (errorMessage()) {
+    <section class="state-card error">
+      <strong>Could not load payments.</strong>
+      <p>{{ errorMessage() }}</p>
+    </section>
+  } @else if (!page()?.items?.length) {
+    <section class="state-card">The backend returned no payments for the current query.</section>
+  } @else {
+    <section class="summary-strip">
+      <div>
+        <span>Total payments</span>
+        <strong>{{ page()?.totalCount }}</strong>
+      </div>
+      <div>
+        <span>Current page</span>
+        <strong>{{ page()?.page }} / {{ page()?.totalPages }}</strong>
+      </div>
+      <div>
+        <span>Visible rows</span>
+        <strong>{{ page()?.items?.length }}</strong>
+      </div>
+    </section>
+
+    <section class="table-shell">
+      <table>
+        <thead>
+          <tr>
+            <th>Order</th>
+            <th>Status</th>
+            <th>Amount</th>
+            <th>Tutor / Class</th>
+            <th>Transaction</th>
+            <th>Created</th>
+            <th>Paid</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (payment of page()?.items; track payment.id) {
+            <tr>
+              <td>
+                <strong>#{{ payment.orderCode }}</strong>
+                <div class="muted">{{ payment.description }}</div>
+              </td>
+              <td><span class="status">{{ payment.status }}</span></td>
+              <td>{{ payment.amountLabel }}</td>
+              <td>
+                Tutor {{ payment.tutorId }}
+                <div class="muted">Class {{ payment.classId }}</div>
+              </td>
+              <td>{{ payment.transactionId }}</td>
+              <td>{{ payment.createdAt }}</td>
+              <td>{{ payment.paidAt }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+  }
+</section>
