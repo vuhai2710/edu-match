@@ -1,0 +1,19 @@
+@use '../../shared/auth-page';
+
+:host {
+  display: block;
+}
+
+.register-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.register-content__inner {
+  width: 100%;
+}
+
+.register-content__inner > .auth-brand {
+  margin-bottom: 1.5rem;
+}

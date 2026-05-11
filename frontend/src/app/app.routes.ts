@@ -4,13 +4,31 @@ import { adminOnlyGuard } from './core/auth/admin-only.guard';
 export const routes: Routes = [
   {
     path: '',
-    pathMatch: 'full',
-    redirectTo: 'tutors'
+    loadComponent: () => import('./features/home/pages/home/home-page.component').then((m) => m.HomePageComponent)
   },
   {
     path: 'auth/login',
     loadComponent: () =>
       import('./features/auth/pages/login/login-page.component').then((m) => m.LoginPageComponent)
+  },
+  {
+    path: 'auth/register',
+    loadComponent: () =>
+      import('./features/auth/pages/register/register-page.component').then((m) => m.RegisterPageComponent)
+  },
+  {
+    path: 'auth/forgot-password',
+    loadComponent: () =>
+      import('./features/auth/pages/forgot-password/forgot-password-page.component').then(
+        (m) => m.ForgotPasswordPageComponent
+      )
+  },
+  {
+    path: 'auth/reset-password',
+    loadComponent: () =>
+      import('./features/auth/pages/reset-password/reset-password-page.component').then(
+        (m) => m.ResetPasswordPageComponent
+      )
   },
   {
     path: 'tutors',
@@ -34,6 +52,6 @@ export const routes: Routes = [
   },
   {
     path: '**',
-    redirectTo: 'tutors'
+    redirectTo: ''
   }
 ];

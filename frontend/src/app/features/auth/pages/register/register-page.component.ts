@@ -9,14 +9,14 @@ import { extractHttpErrorMessage } from '../../../../core/http/http-error.utils'
 import { GoogleAuthButtonComponent } from '../../shared/google-auth-button.component';
 
 @Component({
-  selector: 'app-login-page',
+  selector: 'app-register-page',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink, GoogleAuthButtonComponent],
-  templateUrl: './login-page.component.html',
-  styleUrl: './login-page.component.scss',
+  templateUrl: './register-page.component.html',
+  styleUrl: './register-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class LoginPageComponent {
+export class RegisterPageComponent {
   private readonly fb = inject(FormBuilder);
   private readonly authSession = inject(AuthSessionService);
   private readonly router = inject(Router);
@@ -26,35 +26,36 @@ export class LoginPageComponent {
   protected readonly loading = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly passwordVisible = signal(false);
-  protected readonly isAuthenticated = this.authSession.isAuthenticated;
-  protected readonly isAdmin = this.authSession.isAdmin;
 
-  protected readonly loginForm = this.fb.nonNullable.group({
+  protected readonly registerForm = this.fb.nonNullable.group({
+    fullName: ['', [Validators.required, Validators.minLength(2)]],
     email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required]],
-    rememberMe: [true]
+    phoneNumber: ['', [Validators.pattern(/^[0-9+\s()-]{9,20}$/)]],
+    password: ['', [Validators.required, Validators.minLength(6)]]
   });
 
   protected submit(): void {
-    if (this.loginForm.invalid) {
-      this.loginForm.markAllAsTouched();
+    if (this.registerForm.invalid) {
+      this.registerForm.markAllAsTouched();
       return;
     }
 
-    const { email, password, rememberMe } = this.loginForm.getRawValue();
+    const { fullName, email, phoneNumber, password } = this.registerForm.getRawValue();
 
     this.loading.set(true);
     this.errorMessage.set(null);
 
     this.authSession
-      .login({ email, password }, rememberMe)
+      .register({
+        fullName: fullName.trim(),
+        email: email.trim(),
+        phoneNumber: phoneNumber.trim() || undefined,
+        password
+      })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
-          const redirectUrl =
-            this.route.snapshot.queryParamMap.get('redirect') ||
-            (this.authSession.isAdmin() ? '/admin/payments' : '/tutors');
-
+          const redirectUrl = this.route.snapshot.queryParamMap.get('redirect') || '/tutors';
           this.loading.set(false);
           void this.router.navigateByUrl(redirectUrl);
         },
@@ -69,20 +70,39 @@ export class LoginPageComponent {
     this.passwordVisible.update((visible) => !visible);
   }
 
-  protected showError(controlName: 'email' | 'password'): boolean {
-    const control = this.loginForm.controls[controlName];
+  protected showError(controlName: 'fullName' | 'email' | 'phoneNumber' | 'password'): boolean {
+    const control = this.registerForm.controls[controlName];
     return control.invalid && (control.dirty || control.touched);
   }
 
-  protected getErrorMessage(controlName: 'email' | 'password'): string {
-    const control = this.loginForm.controls[controlName];
+  protected getErrorMessage(controlName: 'fullName' | 'email' | 'phoneNumber' | 'password'): string {
+    const control = this.registerForm.controls[controlName];
 
     if (control.hasError('required')) {
-      return controlName === 'email' ? 'Vui lòng nhập email.' : 'Vui lòng nhập mật khẩu.';
+      switch (controlName) {
+        case 'fullName':
+          return 'Vui lòng nhập họ và tên.';
+        case 'email':
+          return 'Vui lòng nhập email.';
+        case 'password':
+          return 'Vui lòng nhập mật khẩu.';
+        default:
+          return 'Trường này là bắt buộc.';
+      }
     }
 
     if (control.hasError('email')) {
       return 'Email không đúng định dạng.';
+    }
+
+    if (control.hasError('minlength')) {
+      return controlName === 'password'
+        ? 'Mật khẩu cần ít nhất 6 ký tự.'
+        : 'Họ và tên cần ít nhất 2 ký tự.';
+    }
+
+    if (control.hasError('pattern')) {
+      return 'Số điện thoại không hợp lệ.';
     }
 
     return 'Giá trị không hợp lệ.';

@@ -11,6 +11,8 @@ export interface TutorRequestListItemVm {
   studentName: string;
   subjectName: string;
   status: string;
+  notePreview: string;
+  pricePerSession: number;
   priceLabel: string;
   scheduleSummary: string;
   locationSummary: string;
@@ -49,6 +51,8 @@ export class TutorRequestsDataService {
       studentName: request.studentName ?? 'Unknown student',
       subjectName: request.subjectName ?? 'Unknown subject',
       status: request.status ?? 'Unknown',
+      notePreview: request.note?.trim() || 'Chưa có ghi chú bổ sung cho yêu cầu này.',
+      pricePerSession: request.pricePerSession ?? 0,
       priceLabel: new Intl.NumberFormat('vi-VN', {
         style: 'currency',
         currency: 'VND',

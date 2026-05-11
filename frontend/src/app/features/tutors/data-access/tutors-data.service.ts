@@ -9,8 +9,11 @@ export interface TutorListItemVm {
   id: number;
   code: string;
   fullName: string;
+  hourlyRate: number;
   hourlyRateLabel: string;
+  rating: number;
   ratingLabel: string;
+  totalReviews: number;
   totalReviewsLabel: string;
   subjectSummary: string;
   locationSummary: string;
@@ -44,18 +47,20 @@ export class TutorsDataService {
       id: tutor.id ?? 0,
       code: tutor.code ?? 'N/A',
       fullName: tutor.fullName ?? 'Unnamed tutor',
+      hourlyRate: tutor.hourlyRate ?? 0,
       hourlyRateLabel: new Intl.NumberFormat('vi-VN', {
         style: 'currency',
         currency: 'VND',
         maximumFractionDigits: 0
       }).format(tutor.hourlyRate ?? 0),
+      rating: tutor.rating ?? 0,
       ratingLabel: (tutor.rating ?? 0).toFixed(1),
-      totalReviewsLabel: `${tutor.totalReviews ?? 0} reviews`,
+      totalReviews: tutor.totalReviews ?? 0,
+      totalReviewsLabel: `${tutor.totalReviews ?? 0} đánh giá`,
       subjectSummary:
         tutor.subjects?.map((subject) => `${subject.subjectName ?? 'Unknown'}${subject.level ? ` (${subject.level})` : ''}`).join(', ') ||
         'No subjects attached',
-      locationSummary:
-        [tutor.address?.provinceName, tutor.address?.wardName].filter(Boolean).join(' • ') || 'Location unavailable',
+      locationSummary: [tutor.address?.provinceName, tutor.address?.wardName].filter(Boolean).join(', ') || 'Location unavailable',
       avatarUrl: tutor.avatarUrl ?? null
     };
   }
