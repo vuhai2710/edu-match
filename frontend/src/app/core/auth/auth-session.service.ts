@@ -1,15 +1,17 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
-import { map, Observable, tap } from 'rxjs';
+import { catchError, map, Observable, of, switchMap, tap } from 'rxjs';
 
 import {
   ApiResponse,
   AuthApi,
+  BecomeTutorDto,
   ForgotPasswordRequestDto,
   GoogleAuthResponseDto,
   LoginDto,
   LoginResponseDto,
   ResetPasswordRequestDto,
   RegisterDto,
+  StudentsApi,
   UserDto,
   UserRole
 } from '../../../api/generated';
@@ -22,6 +24,7 @@ import { TokenStorageService } from './token-storage.service';
 })
 export class AuthSessionService {
   private readonly authApi = inject(AuthApi);
+  private readonly studentsApi = inject(StudentsApi);
   private readonly tokenStorage = inject(TokenStorageService);
 
   private readonly sessionState = signal<AuthSession | null>(this.tokenStorage.load());
@@ -68,6 +71,18 @@ export class AuthSessionService {
   resetPassword(payload: ResetPasswordRequestDto): Observable<string> {
     return this.authApi.resetPassword({ resetPasswordRequestDto: payload }).pipe(
       map((response) => this.resolveApiMessage(response, 'Mat khau da duoc dat lai thanh cong.'))
+    );
+  }
+
+  becomeTutor(payload: BecomeTutorDto = {}): Observable<string> {
+    return this.studentsApi.becomeTutor({ becomeTutorDto: payload }).pipe(
+      map((response) => this.resolveApiMessage(response, 'Yeu cau tro thanh gia su da duoc gui thanh cong.')),
+      switchMap((message) =>
+        this.refreshCurrentUser().pipe(
+          map(() => message),
+          catchError(() => of(message))
+        )
+      )
     );
   }
 

@@ -7,34 +7,72 @@
         <a class="site-brand" routerLink="/">EduMatch</a>
 
         <nav class="site-nav" aria-label="Primary">
-          <a routerLink="/tutors" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Tìm Gia sư</a>
-          <a routerLink="/tutor-requests" routerLinkActive="active">Yêu cầu</a>
-          <a href="" (click)="$event.preventDefault()">Tài liệu</a>
+          <a
+            routerLink="/tutors"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: true }"
+            >Tìm gia sư</a
+          >
+          <a routerLink="/tutor-requests" routerLinkActive="active">Tìm học viên</a>
         </nav>
 
         <div class="site-actions">
-          <button class="icon-button" type="button" aria-label="Thông báo">
+          <button
+            class="icon-button"
+            type="button"
+            aria-label="Notifications"
+            [disabled]="!isAuthenticated()"
+          >
             <span class="material-symbols-outlined" aria-hidden="true">notifications</span>
           </button>
-          <button class="icon-button" type="button" aria-label="Trò chuyện">
+          <button
+            class="icon-button"
+            type="button"
+            aria-label="Messages"
+            [disabled]="!isAuthenticated()"
+          >
             <span class="material-symbols-outlined" aria-hidden="true">chat</span>
           </button>
-          <button class="icon-button" type="button" [attr.aria-label]="isAuthenticated() ? 'Tài khoản' : 'Đăng nhập'">
-            <span class="material-symbols-outlined" aria-hidden="true">account_circle</span>
-          </button>
+
+          <div class="user-menu">
+            <button
+              class="icon-button"
+              type="button"
+              [attr.aria-label]="isAuthenticated() ? 'Account' : 'Open account menu'"
+              [attr.aria-expanded]="userMenuOpen()"
+              (click)="toggleUserMenu()"
+            >
+              <span class="material-symbols-outlined" aria-hidden="true">account_circle</span>
+            </button>
+
+            @if (userMenuOpen()) {
+              <div class="user-menu__panel">
+                @if (isAuthenticated()) {
+                  <div class="user-menu__identity">
+                    <strong>{{ currentUser()?.fullName || currentUser()?.email }}</strong>
+                    <span>{{ currentUser()?.role }}</span>
+                  </div>
+                  <button class="user-menu__action" type="button" (click)="logout()">
+                    Đăng xuất
+                  </button>
+                } @else {
+                  <button
+                    class="user-menu__action user-menu__action--primary"
+                    type="button"
+                    (click)="goToRegister()"
+                  >
+                    Đăng ký
+                  </button>
+                  <button class="user-menu__action" type="button" (click)="goToLogin()">
+                    Đăng nhập
+                  </button>
+                }
+              </div>
+            }
+          </div>
         </div>
       </div>
     </header>
-
-    @if (lastApiError(); as message) {
-      <section class="api-banner" aria-live="polite">
-        <div>
-          <strong>Lỗi API gần nhất</strong>
-          <p>{{ message }}</p>
-        </div>
-        <button class="dismiss-button" type="button" (click)="clearApiError()">Đóng</button>
-      </section>
-    }
 
     <main class="page-shell">
       <router-outlet />
@@ -44,13 +82,10 @@
       <div class="site-footer__inner">
         <div class="site-footer__brand">EduMatch</div>
         <nav class="site-footer__nav" aria-label="Footer">
-          <a href="" (click)="$event.preventDefault()">Về chúng tôi</a>
-          <a href="" (click)="$event.preventDefault()">Liên hệ hỗ trợ</a>
-          <a href="" (click)="$event.preventDefault()">Chính sách bảo mật</a>
+          <a href="" (click)="$event.preventDefault()">Liên hệ với chúng tôi</a>
+          <a href="" (click)="$event.preventDefault()">Hỗ trợ</a>
           <a href="" (click)="$event.preventDefault()">Điều khoản dịch vụ</a>
-          <a href="" (click)="$event.preventDefault()">Trở thành Gia sư</a>
         </nav>
-        <div class="site-footer__copyright">© 2024 EduMatch. Đã đăng ký bản quyền.</div>
       </div>
     </footer>
   </div>

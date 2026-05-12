@@ -131,7 +131,7 @@
 
         <p class="auth-footer">
           Chưa có tài khoản?
-          <a class="auth-link" routerLink="/auth/register">Tạo tài khoản mới</a>
+          <a class="auth-link" routerLink="/auth/register" [queryParams]="authQueryParams()">Tạo tài khoản mới</a>
         </p>
       </div>
     </article>

@@ -18,7 +18,10 @@ export interface TutorRequestListItemVm {
   locationSummary: string;
   expiresAt: string;
   createdAt: string;
+  createdAtRaw: string | null;
   applicationCount: number;
+  educationLevel: string;
+  gradeLevel: string;
 }
 
 @Injectable({
@@ -48,8 +51,8 @@ export class TutorRequestsDataService {
     return {
       id: request.id ?? 0,
       code: request.code ?? 'N/A',
-      studentName: request.studentName ?? 'Unknown student',
-      subjectName: request.subjectName ?? 'Unknown subject',
+      studentName: request.studentName ?? 'Học sinh chưa xác định',
+      subjectName: request.subjectName ?? 'Môn học chưa xác định',
       status: request.status ?? 'Unknown',
       notePreview: request.note?.trim() || 'Chưa có ghi chú bổ sung cho yêu cầu này.',
       pricePerSession: request.pricePerSession ?? 0,
@@ -58,15 +61,18 @@ export class TutorRequestsDataService {
         currency: 'VND',
         maximumFractionDigits: 0
       }).format(request.pricePerSession ?? 0),
-      scheduleSummary: request.preferredSchedule ?? `${request.sessionsPerWeek ?? 0} sessions/week`,
-      locationSummary: request.fullAddress ?? 'Location unavailable',
+      scheduleSummary: request.preferredSchedule ?? `${request.sessionsPerWeek ?? 0} buổi / tuần`,
+      locationSummary: request.fullAddress ?? 'Trực tuyến',
       expiresAt: request.expiresAt
         ? new Intl.DateTimeFormat('vi-VN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(request.expiresAt))
-        : 'No expiry',
+        : 'Không giới hạn',
+      createdAtRaw: request.createdAt ?? null,
       createdAt: request.createdAt
         ? new Intl.DateTimeFormat('vi-VN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(request.createdAt))
-        : 'Unknown',
-      applicationCount: request.applicationCount ?? 0
+        : 'Không xác định',
+      applicationCount: request.applicationCount ?? 0,
+      educationLevel: request.educationLevel ?? 'Tất cả cấp độ',
+      gradeLevel: request.gradeLevel ?? 'Linh hoạt'
     };
   }
 }

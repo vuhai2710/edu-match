@@ -15,6 +15,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { environment } from '../../../../environments/environment';
+import { UserRole } from '../../../../api/generated';
 import { AuthSessionService } from '../../../core/auth/auth-session.service';
 import { extractHttpErrorMessage } from '../../../core/http/http-error.utils';
 
@@ -170,11 +171,34 @@ export class GoogleAuthButtonComponent implements AfterViewInit {
       .googleLogin(response.credential, this.rememberSession())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
+        next: () => this.completePostAuthFlow(),
+        error: (error: unknown) => {
+          this.loading.set(false);
+          this.errorMessage.set(extractHttpErrorMessage(error));
+        }
+      });
+  }
+
+  private completePostAuthFlow(): void {
+    const redirectUrl =
+      this.route.snapshot.queryParamMap.get('redirect') ||
+      (this.authSession.isAdmin() ? '/admin/payments' : this.redirectFallback());
+    const intent = this.route.snapshot.queryParamMap.get('intent');
+    const role = this.authSession.currentUser()?.role;
+    const shouldBecomeTutor = intent === 'become-tutor' && role !== UserRole.Tutor && role !== UserRole.Admin;
+
+    if (!shouldBecomeTutor) {
+      this.loading.set(false);
+      void this.router.navigateByUrl(redirectUrl);
+      return;
+    }
+
+    this.authSession
+      .becomeTutor()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
         next: () => {
           this.loading.set(false);
-          const redirectUrl =
-            this.route.snapshot.queryParamMap.get('redirect') ||
-            (this.authSession.isAdmin() ? '/admin/payments' : this.redirectFallback());
           void this.router.navigateByUrl(redirectUrl);
         },
         error: (error: unknown) => {

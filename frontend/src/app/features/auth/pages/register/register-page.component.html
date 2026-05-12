@@ -3,8 +3,8 @@
     <div class="auth-hero__content">
       <h1 class="auth-hero__title">Hành trình học tập với mạng lưới gia sư chuyên nghiệp.</h1>
       <p class="auth-hero__description">
-        EduMatch kết nối học viên với chuyên gia giảng dạy phù hợp, thông qua quy trình xác thực rõ ràng,
-        lịch học minh bạch và các công cụ vận hành đáng tin cậy.
+        EduMatch kết nối học viên với chuyên gia giảng dạy phù hợp, thông qua quy trình xác thực rõ ràng, lịch học minh
+        bạch và các công cụ vận hành đáng tin cậy.
       </p>
 
       <div class="auth-hero__stats">
@@ -152,7 +152,7 @@
 
           <p class="auth-footer">
             Đã có tài khoản?
-            <a class="auth-link" routerLink="/auth/login">Đăng nhập tại đây</a>
+            <a class="auth-link" routerLink="/auth/login" [queryParams]="authQueryParams()">Đăng nhập tại đây</a>
           </p>
         </div>
       </article>

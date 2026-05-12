@@ -1,63 +1,140 @@
-<section class="page-section">
-  <header class="page-header">
-    <div>
-      <span class="eyebrow">Generated Flow</span>
-      <h1>Tutor Directory</h1>
-      <p>Powered by <code>TutorsApi.getTutors()</code> with frontend-side DTO to view-model mapping.</p>
+<section class="tutors-page">
+  <section class="search-panel">
+    <div class="search-panel__heading">
+      <h1>Tìm Gia sư phù hợp</h1>
     </div>
-    <button type="button" class="ghost-button" (click)="load()">Refresh</button>
-  </header>
+
+    <div class="search-panel__toolbar">
+      <label class="search-input" for="tutor-search">
+        <span class="material-symbols-outlined" aria-hidden="true">search</span>
+        <span class="sr-only">Tìm kiếm gia sư theo môn học hoặc tên</span>
+        <input
+          id="tutor-search"
+          type="text"
+          [value]="searchTerm()"
+          placeholder="Toán học, Tiếng Anh, Vật lý..."
+          (input)="updateSearchTerm(($any($event.target).value ?? '').toString())"
+        />
+      </label>
+
+      <button class="filter-button" type="button" [class.is-active]="featuredOnly()" (click)="toggleFeaturedOnly()">
+        <span class="material-symbols-outlined" aria-hidden="true">tune</span>
+        Lọc kết quả
+      </button>
+    </div>
+
+    <div class="search-panel__meta">
+      <span>{{ filteredTutors().length }} gia sư</span>
+      @if (featuredOnly()) {
+        <button class="meta-pill" type="button" (click)="toggleFeaturedOnly()">Đánh giá từ 4.5+</button>
+      }
+      @if (searchTerm()) {
+        <button class="meta-pill meta-pill--muted" type="button" (click)="clearFilters()">Xóa tìm kiếm</button>
+      }
+    </div>
+  </section>
 
   @if (loading()) {
-    <section class="state-card">Loading tutors from the real API...</section>
-  } @else if (errorMessage()) {
-    <section class="state-card error">
-      <strong>Could not load tutors.</strong>
-      <p>{{ errorMessage() }}</p>
-    </section>
-  } @else if (!page()?.items?.length) {
-    <section class="state-card">The backend returned no tutors for the current query.</section>
-  } @else {
-    <section class="summary-strip">
-      <div>
-        <span>Total tutors</span>
-        <strong>{{ page()?.totalCount }}</strong>
-      </div>
-      <div>
-        <span>Page</span>
-        <strong>{{ page()?.page }} / {{ page()?.totalPages }}</strong>
-      </div>
-      <div>
-        <span>Page size</span>
-        <strong>{{ page()?.pageSize }}</strong>
-      </div>
-    </section>
-
-    <section class="card-grid">
-      @for (tutor of page()?.items; track tutor.id) {
-        <article class="entity-card">
-          <div class="entity-topline">
-            <span class="code">{{ tutor.code }}</span>
-            <span class="metric">{{ tutor.ratingLabel }} ★</span>
+    <section class="tutor-grid" aria-label="Đang tải danh sách gia sư">
+      @for (item of skeletonCards; track item) {
+        <article class="tutor-card tutor-card--skeleton" aria-hidden="true">
+          <div class="tutor-card__hero">
+            <div class="rating-badge skeleton-box"></div>
+            <div class="avatar avatar--placeholder skeleton-box"></div>
+            <div class="skeleton-line skeleton-line--title"></div>
+            <div class="skeleton-line skeleton-line--subtitle"></div>
           </div>
-          <h2>{{ tutor.fullName }}</h2>
-          <p class="subjects">{{ tutor.subjectSummary }}</p>
-          <dl>
-            <div>
-              <dt>Hourly Rate</dt>
-              <dd>{{ tutor.hourlyRateLabel }}</dd>
+
+          <div class="tutor-card__body">
+            <div class="tag-row">
+              <span class="tag skeleton-box"></span>
+              <span class="tag skeleton-box"></span>
             </div>
-            <div>
-              <dt>Location</dt>
-              <dd>{{ tutor.locationSummary }}</dd>
+            <div class="skeleton-line"></div>
+            <div class="skeleton-line"></div>
+            <div class="tutor-card__footer">
+              <div class="price-block">
+                <div class="skeleton-line skeleton-line--price"></div>
+              </div>
             </div>
-            <div>
-              <dt>Reviews</dt>
-              <dd>{{ tutor.totalReviewsLabel }}</dd>
+            <div class="action-row">
+              <span class="action-button skeleton-box"></span>
+              <span class="action-button skeleton-box"></span>
             </div>
-          </dl>
+          </div>
         </article>
       }
     </section>
+  } @else {
+    @if (errorMessage()) {
+      <section class="notice-banner notice-banner--warning">
+        <strong>Không thể tải dữ liệu thời gian thực.</strong>
+        <p>{{ errorMessage() }}</p>
+        <span>Đang hiển thị danh sách gia sư nổi bật mẫu để bạn tiếp tục xem giao diện.</span>
+      </section>
+    } @else if (showingFallback()) {
+      <section class="notice-banner">
+        <strong>Chưa có dữ liệu từ hệ thống.</strong>
+        <p>Đang hiển thị danh sách gia sư nổi bật mẫu theo thiết kế để hoàn thiện luồng trải nghiệm.</p>
+      </section>
+    }
+
+    @if (!filteredTutors().length) {
+      <section class="empty-state">
+        <strong>Không tìm thấy gia sư phù hợp.</strong>
+        <p>Thử đổi từ khóa tìm kiếm hoặc bỏ bộ lọc để xem thêm kết quả.</p>
+        <button class="empty-state__button" type="button" (click)="clearFilters()">Xóa bộ lọc</button>
+      </section>
+    } @else {
+      <section class="tutor-grid">
+        @for (tutor of filteredTutors(); track tutor.id) {
+          <article class="tutor-card">
+            <div class="tutor-card__hero">
+              <div class="rating-badge">
+                <span class="material-symbols-outlined" aria-hidden="true">star</span>
+                {{ tutor.ratingLabel }}
+              </div>
+
+              @if (tutor.avatarUrl) {
+                <img class="avatar" [src]="tutor.avatarUrl" [alt]="tutor.fullName" loading="lazy" />
+              } @else {
+                <div class="avatar avatar--placeholder" aria-hidden="true">{{ tutor.initials }}</div>
+              }
+
+              <h2>
+                {{ tutor.fullName }}
+                @if (tutor.isVerified) {
+                  <span class="material-symbols-outlined tutor-card__verified" title="Verified" aria-hidden="true">verified</span>
+                }
+              </h2>
+
+              <p>{{ tutor.locationSummary }}</p>
+            </div>
+
+            <div class="tutor-card__body">
+              <div class="tag-row">
+                @for (subject of tutor.subjectTags; track subject) {
+                  <span class="tag">{{ subject }}</span>
+                }
+              </div>
+
+              <p class="tutor-card__summary">{{ tutor.profileSummary }}</p>
+
+              <div class="tutor-card__footer">
+                <div class="price-block">
+                  <strong>{{ tutor.hourlyRateCompactLabel }}</strong>
+                  <span>/giờ</span>
+                </div>
+              </div>
+
+              <div class="action-row">
+                <button class="action-button action-button--secondary" type="button">Xem hồ sơ</button>
+                <button class="action-button action-button--primary" type="button">Đặt lịch ngay</button>
+              </div>
+            </div>
+          </article>
+        }
+      </section>
+    }
   }
 </section>

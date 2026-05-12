@@ -1,11 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject } from '@angular/core';
+import { Component, HostListener, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
 
 import { AuthSessionService } from './core/auth/auth-session.service';
-import { ApiErrorService } from './core/http/api-error.service';
 
 @Component({
   selector: 'app-root',
@@ -15,7 +14,6 @@ import { ApiErrorService } from './core/http/api-error.service';
 })
 export class App {
   private readonly authSession = inject(AuthSessionService);
-  private readonly apiErrors = inject(ApiErrorService);
   private readonly router = inject(Router);
 
   private readonly currentUrl = toSignal(
@@ -28,10 +26,40 @@ export class App {
   );
 
   protected readonly isAuthenticated = this.authSession.isAuthenticated;
+  protected readonly currentUser = this.authSession.currentUser;
   protected readonly isAuthRoute = computed(() => this.currentUrl().startsWith('/auth/'));
-  protected readonly lastApiError = this.apiErrors.lastError;
+  protected readonly userMenuOpen = signal(false);
 
-  protected clearApiError(): void {
-    this.apiErrors.clear();
+  @HostListener('document:keydown.escape')
+  protected closeUserMenu(): void {
+    this.userMenuOpen.set(false);
+  }
+
+  protected toggleUserMenu(): void {
+    this.userMenuOpen.update((open) => !open);
+  }
+
+  protected goToLogin(): void {
+    this.userMenuOpen.set(false);
+    void this.router.navigate(['/auth/login'], {
+      queryParams: {
+        redirect: this.currentUrl()
+      }
+    });
+  }
+
+  protected goToRegister(): void {
+    this.userMenuOpen.set(false);
+    void this.router.navigate(['/auth/register'], {
+      queryParams: {
+        redirect: this.currentUrl()
+      }
+    });
+  }
+
+  protected logout(): void {
+    this.authSession.logout();
+    this.userMenuOpen.set(false);
+    void this.router.navigateByUrl('/');
   }
 }

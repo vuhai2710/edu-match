@@ -1,79 +1,129 @@
-<section class="page-section">
-  <header class="page-header">
-    <div>
-      <span class="eyebrow">Generated Flow</span>
-      <h1>Tutor Requests</h1>
-      <p>Rendered from <code>TutorRequestsApi.getTutorRequests()</code> with frontend-only mapping.</p>
+<section class="requests-page">
+  <div class="requests-hero">
+    <div class="requests-hero__copy">
+      <h1>Yêu cầu tìm gia sư</h1>
+      <p>Duyệt các yêu cầu hiện tại từ học sinh. Đăng nhập để xem thông tin chi tiết và ứng tuyển dạy.</p>
     </div>
-    <button type="button" class="ghost-button" (click)="load()">Refresh</button>
-  </header>
+
+    <div class="requests-hero__actions">
+      <button class="gradient-button" type="button" (click)="registerToTeach()" [disabled]="becomeTutorLoading()">
+        {{ becomeTutorLoading() ? 'Đang xử lý...' : 'Đăng ký dạy' }}
+      </button>
+    </div>
+  </div>
+
+  <section class="filters-panel">
+    <div class="filters-panel__search">
+      <label>Tìm môn học</label>
+      <div class="search-control">
+        <span class="material-symbols-outlined" aria-hidden="true">search</span>
+        <input
+          type="text"
+          placeholder="vd: Giải tích, Vật lý AP"
+          [value]="keyword()"
+          (input)="updateKeyword(($any($event.target).value || '').toString())"
+        />
+      </div>
+    </div>
+
+    <div class="filters-panel__field">
+      <label>Cấp độ</label>
+      <select [value]="educationFilter()" (change)="updateEducationFilter(($any($event.target).value || '').toString())">
+        <option value="all">Tất cả cấp độ</option>
+        <option value="trung học">Trung học</option>
+        <option value="đại học">Đại học</option>
+        <option value="sau đại học">Sau đại học</option>
+      </select>
+    </div>
+
+    <div class="filters-panel__field">
+      <label>Mức phí (Tối thiểu)</label>
+      <select [value]="minPriceFilter()" (change)="updateMinPriceFilter(($any($event.target).value || '').toString())">
+        <option value="all">Mọi mức phí</option>
+        <option value="200000">200.000đ +</option>
+        <option value="400000">400.000đ +</option>
+        <option value="600000">600.000đ +</option>
+      </select>
+    </div>
+
+    <div class="filters-panel__button">
+      <button type="button">
+        <span class="material-symbols-outlined" aria-hidden="true">filter_list</span>
+        Tìm kiếm
+      </button>
+    </div>
+  </section>
 
   @if (loading()) {
-    <section class="state-card">Loading tutor requests from the real API...</section>
+    <section class="state-card">Đang tải yêu cầu từ API...</section>
   } @else if (errorMessage()) {
-    <section class="state-card error">
-      <strong>Could not load tutor requests.</strong>
+    <section class="state-card state-card--error">
+      <strong>Không tải được danh sách yêu cầu.</strong>
       <p>{{ errorMessage() }}</p>
     </section>
-  } @else if (!page()?.items?.length) {
-    <section class="state-card">The backend returned no tutor requests for the current query.</section>
+  } @else if (!filteredRequests().length) {
+    <section class="state-card">Không có yêu cầu nào phù hợp với bộ lọc hiện tại.</section>
   } @else {
-    <section class="summary-strip">
-      <div>
-        <span>Total requests</span>
-        <strong>{{ page()?.totalCount }}</strong>
-      </div>
-      <div>
-        <span>Current page</span>
-        <strong>{{ page()?.page }} / {{ page()?.totalPages }}</strong>
-      </div>
-      <div>
-        <span>Visible items</span>
-        <strong>{{ page()?.items?.length }}</strong>
-      </div>
-    </section>
-
-    <section class="request-list">
-      @for (request of page()?.items; track request.id) {
-        <article class="request-card">
-          <div class="headline">
-            <div>
-              <span class="code">{{ request.code }}</span>
-              <h2>{{ request.subjectName }}</h2>
+    <section class="requests-grid">
+      @for (request of visibleRequests(); track request.id) {
+        <article class="request-card" [class]="requestToneClass(request.status)">
+          @if (!isAuthenticated() && request.status.toLowerCase() === 'open') {
+            <div class="request-card__overlay">
+              <p>Đăng nhập để xem chi tiết và ứng tuyển</p>
+              <button class="gradient-button" type="button" (click)="loginToViewDetails()">Đăng nhập</button>
             </div>
-            <span class="status">{{ request.status }}</span>
+          }
+
+          <div class="request-card__header">
+            <span class="request-card__level">
+              {{ request.educationLevel }}
+              @if (request.gradeLevel !== 'Linh hoạt') {
+                / {{ request.gradeLevel }}
+              }
+            </span>
+
+            <span [class]="statusClass(request.status)">
+              @if (request.status.toLowerCase() === 'open') {
+                <span class="status-badge__dot"></span>
+              } @else if (request.status.toLowerCase() === 'assigned') {
+                <span class="material-symbols-outlined status-badge__lock" aria-hidden="true">lock</span>
+              }
+              {{ statusLabel(request.status) }}
+            </span>
           </div>
 
-          <dl>
-            <div>
-              <dt>Student</dt>
-              <dd>{{ request.studentName }}</dd>
-            </div>
-            <div>
-              <dt>Price / Session</dt>
-              <dd>{{ request.priceLabel }}</dd>
-            </div>
-            <div>
-              <dt>Schedule</dt>
-              <dd>{{ request.scheduleSummary }}</dd>
-            </div>
-            <div>
-              <dt>Location</dt>
-              <dd>{{ request.locationSummary }}</dd>
-            </div>
-            <div>
-              <dt>Applications</dt>
-              <dd>{{ request.applicationCount }}</dd>
-            </div>
-            <div>
-              <dt>Expires</dt>
-              <dd>{{ request.expiresAt }}</dd>
-            </div>
-          </dl>
+          <div class="request-card__body">
+            <h2>{{ request.subjectName }}</h2>
+            <p>{{ request.notePreview }}</p>
 
-          <footer>Created {{ request.createdAt }}</footer>
+            <div class="request-card__meta">
+              <div>
+                <span class="material-symbols-outlined" aria-hidden="true">payments</span>
+                <span>{{ request.priceLabel }} / buổi</span>
+              </div>
+              <div>
+                <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
+                <span>{{ request.scheduleSummary }}</span>
+              </div>
+              <div>
+                <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
+                <span>{{ request.locationSummary }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="request-card__footer">
+            <span>{{ timeAgo(request.createdAtRaw) }}</span>
+            <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+          </div>
         </article>
       }
     </section>
+
+    @if (canLoadMore()) {
+      <div class="requests-pagination">
+        <button type="button" (click)="loadMore()">Tải thêm yêu cầu</button>
+      </div>
+    }
   }
 </section>
