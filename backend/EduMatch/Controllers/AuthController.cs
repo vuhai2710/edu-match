@@ -26,14 +26,26 @@ namespace EduMatch.Controllers
       _userService = userService;
     }
 
-    [HttpPost("register")]
-    [SwaggerOperation(OperationId = "register")]
+    [HttpPost("register/student")]
+    [Consumes("multipart/form-data")]
+    [SwaggerOperation(OperationId = "registerStudent")]
     [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Register([FromBody] RegisterDto dto)
+    public async Task<IActionResult> RegisterStudent([FromForm] RegisterStudentDto dto)
     {
-      var data = await _authService.RegisterAsync(dto);
-      return Ok(ApiResponse<LoginResponseDto>.SuccessResult(data, "Đăng ký thành công"));
+      var data = await _authService.RegisterStudentAsync(dto);
+      return Ok(ApiResponse<LoginResponseDto>.SuccessResult(data, "Đăng ký học viên thành công"));
+    }
+
+    [HttpPost("register/tutor")]
+    [Consumes("multipart/form-data")]
+    [SwaggerOperation(OperationId = "registerTutor")]
+    [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> RegisterTutor([FromForm] RegisterTutorDto dto)
+    {
+      var data = await _authService.RegisterTutorAsync(dto);
+      return Ok(ApiResponse<LoginResponseDto>.SuccessResult(data, "Đăng ký gia sư thành công"));
     }
 
     [HttpPost("login")]

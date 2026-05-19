@@ -1,4 +1,4 @@
-﻿using EduMatch.Models;
+using EduMatch.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -12,11 +12,6 @@ namespace EduMatch.Data.Configurations
 
       builder.HasIndex(x => new { TutorProfileId = x.TutorId, x.SubjectId })
         .IsUnique();
-
-      builder.Property(x => x.Level)
-        .HasConversion<string>()
-        .HasMaxLength(20)
-        .IsRequired();
 
       builder.HasOne(x => x.Tutor)
         .WithMany(x => x.TutorSubjects)

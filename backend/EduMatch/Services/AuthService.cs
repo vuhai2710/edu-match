@@ -1,9 +1,8 @@
 using AutoMapper;
 using EduMatch.Common.Enums;
-using EduMatch.DTOs.Auth;
-using EduMatch.DTOs.Student;
-using EduMatch.DTOs.User;
 using EduMatch.Common.Exception;
+using EduMatch.DTOs.Auth;
+using EduMatch.DTOs.User;
 using EduMatch.Models;
 using EduMatch.Repositories;
 using EduMatch.Repositories.Interfaces;
@@ -14,6 +13,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using FileEntity = EduMatch.Models.File;
 
 namespace EduMatch.Services;
 
@@ -23,69 +23,43 @@ public class AuthService
   private readonly IConfiguration _config;
   private readonly IFileService _fileService;
   private readonly IUserRepository _userRepository;
-  private readonly ITutorRepository _tutorProfileRepository;
-  private readonly INotificationService _notificationService;
+  private readonly IRepository<Subject> _subjectRepository;
+  private readonly IRepository<TutorSubject> _tutorSubjectRepository;
+  private readonly IRepository<TutorTeachingLevel> _tutorTeachingLevelRepository;
   private readonly ILogger<AuthService> _logger;
   private readonly IMapper _mapper;
   private readonly ICodeGeneratorService _codeGenerator;
 
   public AuthService(
     IUserRepository userRepository,
+    IRepository<Subject> subjectRepository,
+    IRepository<TutorSubject> tutorSubjectRepository,
+    IRepository<TutorTeachingLevel> tutorTeachingLevelRepository,
     IFileService fileService,
     IConfiguration config,
     ILogger<AuthService> logger,
     IMapper mapper,
-    ICodeGeneratorService codeGenerator,
-    ITutorRepository tutorProfileRepository,
-    INotificationService notificationService)
+    ICodeGeneratorService codeGenerator)
   {
     _userRepository = userRepository;
+    _subjectRepository = subjectRepository;
+    _tutorSubjectRepository = tutorSubjectRepository;
+    _tutorTeachingLevelRepository = tutorTeachingLevelRepository;
     _fileService = fileService;
     _config = config;
     _logger = logger;
     _mapper = mapper;
     _codeGenerator = codeGenerator;
-    _tutorProfileRepository = tutorProfileRepository;
-    _notificationService = notificationService;
   }
 
-  public async Task<LoginResponseDto> RegisterAsync(RegisterDto dto)
+  public Task<LoginResponseDto> RegisterStudentAsync(RegisterStudentDto dto)
   {
-    var emailExists = await _userRepository.ExistsAsync(u => u.Email == dto.Email.ToLower().Trim());
+    return RegisterAsync(dto, null);
+  }
 
-    if (emailExists)
-    {
-      throw new AppException("Email đã được sử dụng");
-    }
-
-    var hashedPassword = BCrypt.Net.BCrypt.HashPassword(dto.Password, workFactor: 12);
-
-    var user = new User
-    {
-      FullName = dto.FullName,
-      Email = dto.Email.ToLower().Trim(),
-      PhoneNumber = dto.PhoneNumber,
-      Password = hashedPassword,
-      Role = UserRole.Student
-    };
-
-    user.StudentProfile = new Student
-    {
-      Code = _codeGenerator.GenerateTemporaryCode("STU"),
-      Bio = string.Empty,
-      School = string.Empty,
-      GradeLevel = null
-    };
-
-    await _userRepository.AddAsync(user);
-    await _userRepository.SaveChangesAsync();
-
-    user.StudentProfile.Code = _codeGenerator.GenerateStudentCode(user.StudentProfile.Id);
-    await _userRepository.SaveChangesAsync();
-
-    _logger.LogInformation("User registered: {Email} | Id: {Id}", user.Email, user.Id);
-
-    return await IssueTokenPairAsync(user);
+  public Task<LoginResponseDto> RegisterTutorAsync(RegisterTutorDto dto)
+  {
+    return RegisterAsync(dto, dto);
   }
 
   public async Task<GoogleAuthResponseDto> GoogleLoginAsync(GoogleLoginRequestDto dto)
@@ -119,7 +93,8 @@ public class AuthService
         Email = payload.Email,
         Role = UserRole.Student,
         IsGoogleAccount = true,
-        IsActive = true
+        IsActive = true,
+        StudentProfile = CreateStudentProfile(null)
       };
 
       if (!string.IsNullOrWhiteSpace(payload.Picture))
@@ -129,18 +104,10 @@ public class AuthService
         user.AvatarFile = avatarFile;
       }
 
-      user.StudentProfile = new Student
-      {
-        Code = _codeGenerator.GenerateTemporaryCode("STU"),
-        Bio = string.Empty,
-        School = string.Empty,
-        GradeLevel = null
-      };
-
       await _userRepository.AddAsync(user);
       await _userRepository.SaveChangesAsync();
 
-      user.StudentProfile.Code = _codeGenerator.GenerateStudentCode(user.StudentProfile.Id);
+      AssignProfileCode(user);
       await _userRepository.SaveChangesAsync();
 
       _logger.LogInformation("New user created via Google: {Email} | Id: {Id}", user.Email, user.Id);
@@ -168,7 +135,7 @@ public class AuthService
       throw new AppException("Email hoặc mật khẩu không đúng", 401);
     }
 
-    _logger.LogInformation("User logged in: {Email} | Id: {Id}", user!.Email, user.Id);
+    _logger.LogInformation("User logged in: {Email} | Id: {Id}", user.Email, user.Id);
 
     return await IssueTokenPairAsync(user);
   }
@@ -215,50 +182,236 @@ public class AuthService
     _logger.LogInformation("Refresh token invalidated for UserId={UserId}", user.Id);
   }
 
-  public async Task BecomeTutorAsync(long userId, BecomeTutorDto dto)
+  private async Task<LoginResponseDto> RegisterAsync(RegisterDto dto, RegisterTutorDto? tutorDto)
   {
-    var user = await _userRepository.GetByIdWithProfilesAsync(userId);
-    if (user == null)
+    var role = tutorDto == null ? UserRole.Student : UserRole.Tutor;
+
+    ValidateRegisterDto(dto, tutorDto);
+
+    var normalizedEmail = dto.Email.ToLower().Trim();
+    var normalizedPhoneNumber = dto.PhoneNumber.Trim();
+
+    if (await _userRepository.ExistsAsync(u => u.Email == normalizedEmail))
     {
-      throw new AppException("User not found", 404);
+      throw new AppException("Email đã được sử dụng");
+    }
+
+    if (await _userRepository.ExistsAsync(u => u.PhoneNumber == normalizedPhoneNumber))
+    {
+      throw new AppException("Số điện thoại đã được sử dụng");
+    }
+
+    var hashedPassword = BCrypt.Net.BCrypt.HashPassword(dto.Password, workFactor: 12);
+
+    FileEntity? avatarFile = null;
+    FileEntity? cvFile = null;
+
+    if (dto is RegisterStudentDto studentDto && studentDto.Avatar != null)
+    {
+      avatarFile = await _fileService.UploadAvatarAsync(studentDto.Avatar);
+    }
+    else if (tutorDto != null)
+    {
+      avatarFile = await _fileService.UploadAvatarAsync(tutorDto.Avatar!);
+      cvFile = await _fileService.UploadCvAsync(tutorDto.Cv!);
+    }
+
+    var user = new User
+    {
+      FullName = dto.FullName.Trim(),
+      Email = normalizedEmail,
+      PhoneNumber = normalizedPhoneNumber,
+      Password = hashedPassword,
+      Role = role,
+      Gender = dto.Gender!.Value,
+      IsActive = true,
+      AvatarFileId = avatarFile?.Id,
+      AvatarFile = avatarFile
+    };
+
+    switch (role)
+    {
+      case UserRole.Student:
+        user.StudentProfile = CreateStudentProfile(dto.Address);
+        break;
+      case UserRole.Tutor:
+        user.TutorProfile = CreateTutorProfile(tutorDto!, cvFile);
+        break;
+      default:
+        throw new AppException("Unsupported registration role", 400);
+    }
+
+    await _userRepository.AddAsync(user);
+    await _userRepository.SaveChangesAsync();
+
+    AssignProfileCode(user);
+    await _userRepository.SaveChangesAsync();
+
+    if (tutorDto != null && user.TutorProfile != null)
+    {
+      await CreateTutorSubjectsAsync(user.TutorProfile, tutorDto.SubjectIds);
+      await CreateTutorTeachingLevelsAsync(user.TutorProfile, tutorDto.TeachingLevels);
+      await _userRepository.SaveChangesAsync();
+    }
+
+    _logger.LogInformation("{Role} registered: {Email} | Id: {Id}", role, user.Email, user.Id);
+
+    return await IssueTokenPairAsync(user);
+  }
+
+  private void ValidateRegisterDto(RegisterDto dto, RegisterTutorDto? tutorDto)
+  {
+    var errors = new Dictionary<string, string[]>();
+
+    if (dto.Gender == null)
+    {
+      errors[nameof(dto.Gender)] = ["Giới tính là bắt buộc."];
+    }
+
+    if (dto.Address == null)
+    {
+      errors[nameof(dto.Address)] = ["Địa chỉ là bắt buộc."];
+    }
+
+    if (tutorDto != null)
+    {
+      if (tutorDto.Avatar == null)
+      {
+        errors[nameof(tutorDto.Avatar)] = ["Ảnh đại diện là bắt buộc."];
+      }
+
+      if (tutorDto.Cv == null)
+      {
+        errors[nameof(tutorDto.Cv)] = ["CV là bắt buộc."];
+      }
+
+      if (string.IsNullOrWhiteSpace(tutorDto.Bio))
+      {
+        errors[nameof(tutorDto.Bio)] = ["Mô tả kinh nghiệm là bắt buộc."];
+      }
+
+      if (tutorDto.HourlyRate <= 0)
+      {
+        errors[nameof(tutorDto.HourlyRate)] = ["Mức lương phải lớn hơn 0."];
+      }
+
+      if (tutorDto.SubjectIds == null || tutorDto.SubjectIds.Count == 0)
+      {
+        errors[nameof(tutorDto.SubjectIds)] = ["Phải chọn ít nhất một môn dạy."];
+      }
+
+      if (tutorDto.TeachingLevels == null || tutorDto.TeachingLevels.Count == 0)
+      {
+        errors[nameof(tutorDto.TeachingLevels)] = ["Phải chọn ít nhất một lớp dạy."];
+      }
+
+      if (tutorDto.CareerStatus == null)
+      {
+        errors[nameof(tutorDto.CareerStatus)] = ["Trạng thái gia sư là bắt buộc."];
+      }
+
+      if (string.IsNullOrWhiteSpace(tutorDto.Major))
+      {
+        errors[nameof(tutorDto.Major)] = ["Ngành học là bắt buộc."];
+      }
+
+      if (tutorDto.AcademicDegree == null)
+      {
+        errors[nameof(tutorDto.AcademicDegree)] = ["Trình độ học vấn là bắt buộc."];
+      }
+    }
+
+    if (errors.Count > 0)
+    {
+      throw new ValidationException(errors);
+    }
+  }
+
+  private Student CreateStudentProfile(DTOs.Address.CreateAddressDto? addressDto)
+  {
+    return new Student
+    {
+      Code = _codeGenerator.GenerateTemporaryCode("STU"),
+      Bio = string.Empty,
+      School = string.Empty,
+      GradeLevel = null,
+      Address = addressDto == null ? null : _mapper.Map<Address>(addressDto)
+    };
+  }
+
+  private Tutor CreateTutorProfile(RegisterTutorDto dto, FileEntity? cvFile)
+  {
+    return new Tutor
+    {
+      Code = _codeGenerator.GenerateTemporaryCode("TUT"),
+      Bio = dto.Bio.Trim(),
+      HourlyRate = dto.HourlyRate,
+      CareerStatus = dto.CareerStatus,
+      Major = dto.Major.Trim(),
+      AcademicDegree = dto.AcademicDegree,
+      Address = dto.Address == null ? null : _mapper.Map<Address>(dto.Address),
+      CvFileId = cvFile?.Id,
+      CvFile = cvFile
+    };
+  }
+
+  private async Task CreateTutorSubjectsAsync(Tutor tutorProfile, IEnumerable<long> subjectIds)
+  {
+    var distinctSubjectIds = subjectIds
+      .Distinct()
+      .ToList();
+
+    var validSubjects = await _subjectRepository.FindAsync(subject => distinctSubjectIds.Contains(subject.Id));
+    var validSubjectIds = validSubjects
+      .Select(subject => subject.Id)
+      .ToHashSet();
+
+    var invalidSubjectIds = distinctSubjectIds
+      .Where(subjectId => !validSubjectIds.Contains(subjectId))
+      .ToArray();
+
+    if (invalidSubjectIds.Length > 0)
+    {
+      throw new ValidationException(
+        new Dictionary<string, string[]>
+        {
+          [nameof(RegisterTutorDto.SubjectIds)] = [$"Các môn học không tồn tại: {string.Join(", ", invalidSubjectIds)}."]
+        },
+        "INVALID_TUTOR_SUBJECTS");
+    }
+
+    foreach (var subjectId in distinctSubjectIds)
+    {
+      await _tutorSubjectRepository.AddAsync(new TutorSubject
+      {
+        TutorId = tutorProfile.Id,
+        SubjectId = subjectId
+      });
+    }
+  }
+
+  private async Task CreateTutorTeachingLevelsAsync(Tutor tutorProfile, IEnumerable<EducationLevel> teachingLevels)
+  {
+    foreach (var teachingLevel in teachingLevels.Distinct())
+    {
+      await _tutorTeachingLevelRepository.AddAsync(new TutorTeachingLevel
+      {
+        TutorId = tutorProfile.Id,
+        TeachingLevel = teachingLevel
+      });
+    }
+  }
+
+  private void AssignProfileCode(User user)
+  {
+    if (user.StudentProfile != null)
+    {
+      user.StudentProfile.Code = _codeGenerator.GenerateStudentCode(user.StudentProfile.Id);
     }
 
     if (user.TutorProfile != null)
     {
-      throw new AppException("Bạn đã gửi yêu cầu trở thành Gia sư hoặc đã là Gia sư.", 400);
-    }
-
-    var tutorProfile = new Tutor
-    {
-      Code           = _codeGenerator.GenerateTemporaryCode("TUT"),
-      UserId         = userId,
-      Bio            = dto.Bio,
-      HourlyRate     = dto.HourlyRate,
-      ApprovalStatus = ApprovalStatus.Pending
-    };
-
-    await _tutorProfileRepository.AddAsync(tutorProfile);
-    await _tutorProfileRepository.SaveChangesAsync();
-
-    tutorProfile.Code = _codeGenerator.GenerateTutorCode(tutorProfile.Id);
-    await _tutorProfileRepository.SaveChangesAsync();
-
-    _logger.LogInformation("BecomeTutor request submitted by UserId={UserId}, TutorProfileId={TutorProfileId}",
-      userId, tutorProfile.Id);
-
-    var adminIds = await _userRepository.FindAsync(u => u.Role == UserRole.Admin && !u.IsDeleted);
-    var adminUserIds = adminIds.Select(a => a.Id).ToList();
-
-    if (adminUserIds.Count > 0)
-    {
-      await _notificationService.SendToMultipleAsync(
-        adminUserIds,
-        "Yêu cầu gia sư mới",
-        $"{user.FullName} đã gửi yêu cầu trở thành Gia sư.",
-        NotificationType.BecomeTutorRequest,
-        referenceType: "TutorProfile",
-        referenceId: tutorProfile.Id,
-        actionUrl: "/admin/tutors/pending");
+      user.TutorProfile.Code = _codeGenerator.GenerateTutorCode(user.TutorProfile.Id);
     }
   }
 
@@ -325,8 +478,7 @@ public class AuthService
       _config["Jwt:Audience"],
       claims,
       expires: DateTime.UtcNow.AddMinutes(expiry),
-      signingCredentials: credentials
-    );
+      signingCredentials: credentials);
 
     return new JwtSecurityTokenHandler().WriteToken(token);
   }
@@ -355,7 +507,8 @@ public class AuthService
     var tokenHandler = new JwtSecurityTokenHandler();
     var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken securityToken);
 
-    if (securityToken is not JwtSecurityToken jwtSecurityToken || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
+    if (securityToken is not JwtSecurityToken jwtSecurityToken ||
+        !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
     {
       throw new SecurityTokenException("Invalid token");
     }

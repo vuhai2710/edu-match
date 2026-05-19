@@ -18,7 +18,11 @@ namespace EduMatch.DTOs.Tutor
     public decimal HourlyRate { get; set; }
     public double Rating { get; set; }
     public long TotalReviews { get; set; }
+    public TutorCareerStatus? CareerStatus { get; set; }
+    public string Major { get; set; } = string.Empty;
+    public AcademicDegree? AcademicDegree { get; set; }
     public AddressDto? Address { get; set; }
+    public List<EducationLevel> TeachingLevels { get; set; } = [];
     public List<TutorSubjectDto> Subjects { get; set; } = [];
   }
 }

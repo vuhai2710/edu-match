@@ -60,6 +60,19 @@ namespace EduMatch.Controllers
       return this.NoContentResponse();
     }
 
+    [HttpPut("me/password")]
+    [Authorize]
+    [SwaggerOperation(OperationId = "changeMyPassword")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse>> ChangeMyPassword([FromBody] ChangePasswordDto dto)
+    {
+      await _userService.ChangePasswordAsync(GetCurrentUserId(), dto);
+      return this.OkResponse(ApiResponse.Ok("Đổi mật khẩu thành công"));
+    }
+
     [HttpPut("me/avatar")]
     [Authorize]
     [Consumes("multipart/form-data")]

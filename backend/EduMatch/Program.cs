@@ -245,7 +245,6 @@ builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
 
 builder.Services.AddSingleton<ICodeGeneratorService, CodeGeneratorService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
-builder.Services.AddScoped<ITutorApprovalService, TutorApprovalService>();
 #endregion
 
 builder.Services.AddCors(options =>

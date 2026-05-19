@@ -3,17 +3,20 @@ using System;
 using EduMatch.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace EduMatch.Migrations
+namespace EduMatch.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260517130849_Update_Email_Admin")]
+    partial class Update_Email_Admin
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -562,20 +565,15 @@ namespace EduMatch.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
-                    b.Property<string>("AcademicDegree")
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
-
                     b.Property<long?>("AddressId")
                         .HasColumnType("bigint");
+
+                    b.Property<int>("ApprovalStatus")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Bio")
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
-
-                    b.Property<string>("CareerStatus")
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
 
                     b.Property<string>("Code")
                         .IsRequired()
@@ -593,10 +591,6 @@ namespace EduMatch.Migrations
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
-
-                    b.Property<string>("Major")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
 
                     b.Property<double>("Rating")
                         .ValueGeneratedOnAdd()
@@ -719,6 +713,11 @@ namespace EduMatch.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("Level")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
                     b.Property<long>("SubjectId")
                         .HasColumnType("bigint");
 
@@ -736,39 +735,6 @@ namespace EduMatch.Migrations
                         .IsUnique();
 
                     b.ToTable("TutorSubjects");
-                });
-
-            modelBuilder.Entity("EduMatch.Models.TutorTeachingLevel", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("TeachingLevel")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<long>("TutorId")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TutorId", "TeachingLevel")
-                        .IsUnique();
-
-                    b.ToTable("TutorTeachingLevels");
                 });
 
             modelBuilder.Entity("EduMatch.Models.User", b =>
@@ -1070,17 +1036,6 @@ namespace EduMatch.Migrations
                     b.Navigation("Tutor");
                 });
 
-            modelBuilder.Entity("EduMatch.Models.TutorTeachingLevel", b =>
-                {
-                    b.HasOne("EduMatch.Models.Tutor", "Tutor")
-                        .WithMany("TeachingLevels")
-                        .HasForeignKey("TutorId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Tutor");
-                });
-
             modelBuilder.Entity("EduMatch.Models.User", b =>
                 {
                     b.HasOne("EduMatch.Models.File", "AvatarFile")
@@ -1099,8 +1054,6 @@ namespace EduMatch.Migrations
             modelBuilder.Entity("EduMatch.Models.Tutor", b =>
                 {
                     b.Navigation("Applications");
-
-                    b.Navigation("TeachingLevels");
 
                     b.Navigation("TutorSubjects");
                 });

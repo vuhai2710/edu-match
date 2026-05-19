@@ -4,15 +4,15 @@ using System.Text.Json.Serialization;
 namespace EduMatch.Common.Enums
 {
   [JsonConverter(typeof(JsonStringEnumConverter))]
-  public enum UserRole
+  public enum TutorCareerStatus
   {
-    [Display(Name = "Học viên")]
+    [Display(Name = "Sinh viên")]
     Student = 0,
 
-    [Display(Name = "Gia sư")]
-    Tutor = 1,
+    [Display(Name = "Đã tốt nghiệp")]
+    Graduated = 1,
 
-    [Display(Name = "Quản trị viên")]
-    Admin = 2
+    [Display(Name = "Giáo viên")]
+    Teacher = 2
   }
 }

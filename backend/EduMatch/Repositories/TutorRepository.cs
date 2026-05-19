@@ -18,6 +18,7 @@ namespace EduMatch.Repositories
         .Include(t => t.User)
           .ThenInclude(u => u.AvatarFile)
         .Include(t => t.Address)
+        .Include(t => t.TeachingLevels)
         .Include(t => t.TutorSubjects)
           .ThenInclude(ts => ts.Subject)
         .AsQueryable();
@@ -29,7 +30,8 @@ namespace EduMatch.Repositories
         query = query.Where(t =>
             t.Code == exactTerm ||
             (t.User.FullName != null && t.User.FullName.ToLower().Contains(searchTerm)) ||
-            (t.Bio != null && t.Bio.ToLower().Contains(searchTerm)));
+            (t.Bio != null && t.Bio.ToLower().Contains(searchTerm)) ||
+            (t.Major != null && t.Major.ToLower().Contains(searchTerm)));
       }
 
       if (parameters.ProvinceId.HasValue)
@@ -88,9 +90,10 @@ namespace EduMatch.Repositories
           .ThenInclude(u => u.AvatarFile)
         .Include(t => t.Address)
         .Include(t => t.CvFile)
+        .Include(t => t.TeachingLevels)
         .Include(t => t.TutorSubjects)
           .ThenInclude(ts => ts.Subject)
-        .FirstOrDefaultAsync(t => t.Id == id);
+        .FirstOrDefaultAsync(t => t.Id == id && !t.IsDeleted);
     }
 
     public async Task<Tutor?> GetTutorProfileByUserIdAsync(long userId)
@@ -100,6 +103,7 @@ namespace EduMatch.Repositories
           .ThenInclude(u => u.AvatarFile)
         .Include(t => t.Address)
         .Include(t => t.CvFile)
+        .Include(t => t.TeachingLevels)
         .Include(t => t.TutorSubjects)
           .ThenInclude(ts => ts.Subject)
         .FirstOrDefaultAsync(t => t.UserId == userId);

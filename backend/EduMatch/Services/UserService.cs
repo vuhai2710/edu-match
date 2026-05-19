@@ -64,6 +64,38 @@ namespace EduMatch.Services
       return true;
     }
 
+    public async Task ChangePasswordAsync(long userId, ChangePasswordDto dto)
+    {
+      var user = await _userRepository.GetByIdAsync(userId);
+      if (user == null || user.IsDeleted)
+      {
+        throw new NotFoundException("Không tìm thấy người dùng.");
+      }
+
+      if (user.IsGoogleAccount)
+      {
+        throw new ValidationException("Tài khoản Google không hỗ trợ đổi mật khẩu.");
+      }
+
+      if (!BCrypt.Net.BCrypt.Verify(dto.CurrentPassword, user.Password))
+      {
+        throw new ValidationException("Mật khẩu hiện tại không đúng.");
+      }
+
+      if (BCrypt.Net.BCrypt.Verify(dto.NewPassword, user.Password))
+      {
+        throw new ValidationException("Mật khẩu mới phải khác mật khẩu hiện tại.");
+      }
+
+      user.Password = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword, workFactor: 12);
+      user.RefreshToken = null;
+      user.RefreshTokenExpiryTime = null;
+      user.UpdatedAt = DateTime.UtcNow;
+
+      _userRepository.Update(user);
+      await _userRepository.SaveChangesAsync();
+    }
+
     public async Task<string> UpdateAvatarAsync(long userId, IFormFile file)
     {
       var user = await _userRepository.GetByIdAsync(userId);

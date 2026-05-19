@@ -11,7 +11,9 @@ namespace EduMatch.Models
     public decimal HourlyRate { get; set; }
     public double Rating { get; set; } = 0;
     public long TotalReviews { get; set; } = 0;
-    public ApprovalStatus ApprovalStatus { get; set; } = ApprovalStatus.Pending;
+    public TutorCareerStatus? CareerStatus { get; set; }
+    public string Major { get; set; } = string.Empty;
+    public AcademicDegree? AcademicDegree { get; set; }
 
     public long? AddressId { get; set; }
     public Address? Address { get; set; }
@@ -19,6 +21,7 @@ namespace EduMatch.Models
 
     public User User { get; set; } = null!;
     public ICollection<TutorSubject> TutorSubjects { get; set; } = [];
+    public ICollection<TutorTeachingLevel> TeachingLevels { get; set; } = [];
     public ICollection<Application> Applications { get; set; } = [];
   }
 }

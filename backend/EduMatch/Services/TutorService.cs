@@ -14,6 +14,7 @@ public class TutorService : ITutorService
   private readonly IRepository<Subject> _subjectRepository;
   private readonly ITutorRepository _tutorRepository;
   private readonly IRepository<TutorSubject> _tutorSubjectRepository;
+  private readonly IRepository<TutorTeachingLevel> _tutorTeachingLevelRepository;
   private readonly IRepository<User> _userRepository;
   private readonly IFileService _fileService;
   private readonly IMapper _mapper;
@@ -24,6 +25,7 @@ public class TutorService : ITutorService
     IRepository<User> userRepository,
     IRepository<Subject> subjectRepository,
     IRepository<TutorSubject> tutorSubjectRepository,
+    IRepository<TutorTeachingLevel> tutorTeachingLevelRepository,
     IFileService fileService,
     IMapper mapper,
     ICodeGeneratorService codeGenerator)
@@ -32,6 +34,7 @@ public class TutorService : ITutorService
     _userRepository = userRepository;
     _subjectRepository = subjectRepository;
     _tutorSubjectRepository = tutorSubjectRepository;
+    _tutorTeachingLevelRepository = tutorTeachingLevelRepository;
     _fileService = fileService;
     _mapper = mapper;
     _codeGenerator = codeGenerator;
@@ -139,11 +142,16 @@ public class TutorService : ITutorService
       {
         _tutorSubjectRepository.RemoveRange(profile.TutorSubjects);
       }
+
+      if (profile.TeachingLevels.Any())
+      {
+        _tutorTeachingLevelRepository.RemoveRange(profile.TeachingLevels);
+      }
     }
 
     if (dto.Subjects != null && dto.Subjects.Any())
     {
-      var subjectIds = dto.Subjects.Select(subject => subject.SubjectId).ToList();
+      var subjectIds = dto.Subjects.Select(subject => subject.SubjectId).Distinct().ToList();
       var validSubjects = await _subjectRepository.FindAsync(subject => subjectIds.Contains(subject.Id));
       var validSubjectIds = validSubjects.Select(subject => subject.Id).ToHashSet();
       var invalidSubjectIds = subjectIds.Where(subjectId => !validSubjectIds.Contains(subjectId)).Distinct().ToArray();
@@ -153,24 +161,30 @@ public class TutorService : ITutorService
         throw new ValidationException(
           new Dictionary<string, string[]>
           {
-            [nameof(dto.Subjects)] = new[]
-            {
-              $"Các môn học không tồn tại: {string.Join(", ", invalidSubjectIds)}."
-            }
+            [nameof(dto.Subjects)] = [$"Các môn học không tồn tại: {string.Join(", ", invalidSubjectIds)}."]
           },
           "INVALID_TUTOR_SUBJECTS");
       }
 
       foreach (var subDto in dto.Subjects)
       {
-        var tutorSubject = new TutorSubject
+        await _tutorSubjectRepository.AddAsync(new TutorSubject
         {
           Tutor = profile,
-          SubjectId = subDto.SubjectId,
-          Level = subDto.Level
-        };
+          SubjectId = subDto.SubjectId
+        });
+      }
+    }
 
-        await _tutorSubjectRepository.AddAsync(tutorSubject);
+    if (dto.TeachingLevels != null && dto.TeachingLevels.Any())
+    {
+      foreach (var teachingLevel in dto.TeachingLevels.Distinct())
+      {
+        await _tutorTeachingLevelRepository.AddAsync(new TutorTeachingLevel
+        {
+          Tutor = profile,
+          TeachingLevel = teachingLevel
+        });
       }
     }
 
