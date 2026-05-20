@@ -6,6 +6,9 @@ namespace EduMatch.Common.Enums
   [JsonConverter(typeof(JsonStringEnumConverter))]
   public enum Grade
   {
+    [Display(Name = "Mầm non")]
+    Grade0 = 0,
+
     [Display(Name = "Lớp 1")]
     Grade1 = 1,
 

@@ -4,6 +4,7 @@ using EduMatch.Common.Middleware;
 using EduMatch.Configuration;
 using EduMatch.Configurations;
 using EduMatch.Data;
+using EduMatch.Domain.Booking;
 using EduMatch.DTOs;
 using EduMatch.Repositories;
 using EduMatch.Repositories.Interfaces;
@@ -54,6 +55,7 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddAutoMapper(cfg => cfg.AddMaps(typeof(Program)));
 builder.Services.AddSignalR();
+builder.Services.AddBookingDomainServices();
 
 builder.Services.AddSwaggerGen(options =>
 {
@@ -245,6 +247,9 @@ builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
 
 builder.Services.AddSingleton<ICodeGeneratorService, CodeGeneratorService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+
+builder.Services.AddScoped<ISubjectRepository, SubjectRepository>();
+builder.Services.AddScoped<ISubjectService, SubjectService>();
 #endregion
 
 builder.Services.AddCors(options =>

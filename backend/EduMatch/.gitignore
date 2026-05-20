@@ -4,6 +4,7 @@
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
+[Dd]ocs/
 
 appsettings.Development.json
 appsettings.Production.json
