@@ -20,6 +20,24 @@ namespace EduMatch.Repositories
                 .FirstOrDefaultAsync(p => p.OrderCode == orderCode);
         }
 
+        public async Task<Payment?> GetByOrderCodeWithLearningRequestAsync(long orderCode)
+        {
+            return await _context.Payments
+                .Include(p => p.LearningRequest)
+                    .ThenInclude(lr => lr!.ScheduleProposal)
+                .Include(p => p.LearningRequest)
+                    .ThenInclude(lr => lr!.TutorProfile)
+                .Include(p => p.Class)
+                .FirstOrDefaultAsync(p => p.OrderCode == orderCode);
+        }
+
+        public async Task<bool> HasPendingPaymentForLearningRequestAsync(long learningRequestId)
+        {
+            return await _context.Payments
+                .AnyAsync(p => p.LearningRequestId == learningRequestId
+                    && p.Status == Common.Enums.PaymentStatus.Pending);
+        }
+
         public async Task<PagedResult<Payment>> GetPagedAsync(int page, int pageSize, PaymentStatus? status)
         {
             var query = _context.Payments

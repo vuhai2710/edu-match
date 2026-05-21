@@ -236,7 +236,7 @@ namespace EduMatch.Services
         RequestId = application.TutorRequestId,
         ApplicationId = application.Id,
         DepositAmount = depositAmount,
-        Status = ClassStatus.PendingPayment,
+        Status = ClassStatus.PendingStart,
         StartDate = DateTime.UtcNow
       };
 
@@ -417,7 +417,7 @@ namespace EduMatch.Services
           RequestId = application.TutorRequestId,
           ApplicationId = application.Id,
           DepositAmount = application.DepositAmount ?? 0,
-          Status = ClassStatus.PendingPayment,
+          Status = ClassStatus.PendingStart,
           StartDate = DateTime.UtcNow
         };
 

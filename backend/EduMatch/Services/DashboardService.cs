@@ -30,7 +30,7 @@ namespace EduMatch.Services
       var tOpenReqs = _db.TutorRequests.CountAsync(r => r.Status == TutorRequestStatus.Open && !r.IsDeleted);
       var tPendingApps = _db.Applications.CountAsync(a => a.Status == ApplicationStatus.Pending && !a.IsDeleted);
       var tActiveClass = _db.Classes.CountAsync(c => c.Status == ClassStatus.Active && !c.IsDeleted);
-      var tCompletedCls = _db.Classes.CountAsync(c => c.Status == ClassStatus.Completed && !c.IsDeleted);
+      var tCompletedCls = _db.Classes.CountAsync(c => c.Status == ClassStatus.PendingStart && !c.IsDeleted);
       var tRevTotal = _db.Payments
                               .Where(p => p.Status == PaymentStatus.Success && !p.IsDeleted)
                               .SumAsync(p => (decimal?)p.Amount);
@@ -94,7 +94,7 @@ namespace EduMatch.Services
                                                 && c.Status == ClassStatus.Active
                                                 && !c.IsDeleted);
       var tCompleted = _db.Classes.CountAsync(c => c.TutorId == tutorProfileId
-                                                && c.Status == ClassStatus.Completed
+                                                && c.Status == ClassStatus.PendingStart
                                                 && !c.IsDeleted);
       var tDeposits = _db.Payments
                           .Where(p => p.TutorId == tutorProfileId
@@ -162,7 +162,7 @@ namespace EduMatch.Services
                                                && c.Status == ClassStatus.Active
                                                && !c.IsDeleted);
       var tCompleted = _db.Classes.CountAsync(c => c.StudentId == studentUserId
-                                               && c.Status == ClassStatus.Completed
+                                               && c.Status == ClassStatus.PendingStart
                                                && !c.IsDeleted);
 
       await Task.WhenAll(tTotal, tOpen, tClosed, tAppsTotal, tAppsPend, tActive, tCompleted);

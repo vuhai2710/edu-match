@@ -6,16 +6,19 @@ namespace EduMatch.Common.Enums
   [JsonConverter(typeof(JsonStringEnumConverter))]
   public enum ClassStatus
   {
-    [Display(Name = "Chờ thanh toán")]
-    PendingPayment,
+    [Display(Name = "Chờ bắt đầu")]
+    PendingStart,
 
-    [Display(Name = "Lớp đã được tạo")]
+    [Display(Name = "Đang hoạt động")]
     Active,
 
-    [Display(Name = "Hoàn thành")]
-    Completed,
+    [Display(Name = "Học viên hủy")]
+    CancelledByStudent,
 
-    [Display(Name = "Đã hủy")]
-    Cancelled
+    [Display(Name = "Admin hủy")]
+    CancelledByAdmin,
+
+    [Display(Name = "Gia sư hủy")]
+    CancelledByTutor
   }
 }

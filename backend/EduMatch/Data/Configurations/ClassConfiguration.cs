@@ -8,7 +8,6 @@ namespace EduMatch.Data.Configurations
   {
     public void Configure(EntityTypeBuilder<Class> builder)
     {
-
       builder.HasQueryFilter(x => !x.IsDeleted);
 
       builder.HasKey(c => c.Id);
@@ -34,6 +33,31 @@ namespace EduMatch.Data.Configurations
           .WithMany()
           .HasForeignKey(c => c.ApplicationId)
           .OnDelete(DeleteBehavior.Restrict);
+
+      builder.HasOne(c => c.LearningRequest)
+          .WithMany()
+          .HasForeignKey(c => c.LearningRequestId)
+          .OnDelete(DeleteBehavior.Restrict);
+
+      builder.HasOne(c => c.Subject)
+          .WithMany()
+          .HasForeignKey(c => c.SubjectId)
+          .OnDelete(DeleteBehavior.Restrict);
+
+      builder.HasOne(c => c.AcceptedScheduleProposal)
+          .WithMany()
+          .HasForeignKey(c => c.AcceptedScheduleProposalId)
+          .OnDelete(DeleteBehavior.Restrict);
+
+      builder.Property(c => c.TimeSlotsJson)
+          .HasColumnType("jsonb");
+
+      builder.Property(c => c.AcceptedScheduleSource)
+          .HasConversion<string>()
+          .HasMaxLength(10);
+
+      builder.Property(c => c.DepositAmountSnapshot)
+          .HasColumnType("decimal(18,2)");
 
       builder.Property(c => c.DepositAmount)
           .HasColumnType("decimal(18,2)");

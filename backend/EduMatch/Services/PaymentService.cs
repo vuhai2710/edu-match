@@ -12,6 +12,7 @@ using Microsoft.Extensions.Options;
 
 namespace EduMatch.Services
 {
+    [Obsolete("Legacy payment service. Use DepositPaymentService for v2 deposit booking flow.")]
     public class PaymentService : IPaymentService
     {
         private readonly IPaymentRepository _paymentRepo;
@@ -49,9 +50,9 @@ namespace EduMatch.Services
                 throw new System.Exception("Class not found or unauthorized.");
             }
 
-            if (@class.Status != ClassStatus.PendingPayment)
+            if (@class.Status != ClassStatus.PendingStart)
             {
-                throw new System.Exception("Class is not in pending payment status.");
+                throw new System.Exception("Class is not in pending start status.");
             }
 
             long orderCode = long.Parse(DateTime.Now.ToString("yyMMddHHmmss") + new Random().Next(100, 999).ToString());
@@ -120,7 +121,6 @@ namespace EduMatch.Services
 
             _logger.LogInformation("Create payment for class {ClassId}", dto.ClassId);
 
-            // Notify the student that a payment has been created for their class
             await _notificationService.SendAsync(
                 @class.StudentId,
                 "Yêu cầu thanh toán",
@@ -132,6 +132,7 @@ namespace EduMatch.Services
 
             return new PaymentResponseDto
             {
+                LearningRequestId = 0, 
                 OrderCode = orderCode,
                 CheckoutUrl = checkoutUrl,
                 Status = payment.Status
@@ -191,11 +192,10 @@ namespace EduMatch.Services
                 
                 _logger.LogInformation("Webhook received for order {OrderCode}", dto.Data.OrderCode);
 
-                // Notify both student and tutor about successful payment
-                if (payment.Class != null)
+                if (payment.Class != null && payment.TutorId.HasValue)
                 {
                     await _notificationService.SendToMultipleAsync(
-                        new[] { payment.Class.StudentId, payment.TutorId },
+                        new[] { payment.Class.StudentId, payment.TutorId.Value },
                         "Thanh toán thành công",
                         $"Đặt cọc cho lớp học #{payment.ClassId} đã được thanh toán thành công. Lớp học đã được kích hoạt.",
                         NotificationType.PaymentSuccess,
@@ -214,7 +214,10 @@ namespace EduMatch.Services
             return new PaymentStatusDto
             {
                 OrderCode = payment.OrderCode,
-                Status = payment.Status
+                LearningRequestId = payment.LearningRequestId,
+                Amount = payment.Amount,
+                Status = payment.Status,
+                PaidAt = payment.PaidAt
             };
         }
 
@@ -243,6 +246,8 @@ namespace EduMatch.Services
             return new PaymentAdminDto
             {
                 Id = payment.Id,
+                LearningRequestId = payment.LearningRequestId,
+                PaidByUserId = payment.PaidByUserId,
                 ClassId = payment.ClassId,
                 TutorId = payment.TutorId,
                 OrderCode = payment.OrderCode,

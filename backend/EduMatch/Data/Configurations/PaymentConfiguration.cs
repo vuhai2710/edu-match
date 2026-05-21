@@ -12,6 +12,16 @@ namespace EduMatch.Data.Configurations
 
       builder.HasKey(p => p.Id);
 
+      builder.HasOne(p => p.PaidByUser)
+          .WithMany()
+          .HasForeignKey(p => p.PaidByUserId)
+          .OnDelete(DeleteBehavior.Restrict);
+
+      builder.HasOne(p => p.LearningRequest)
+          .WithMany()
+          .HasForeignKey(p => p.LearningRequestId)
+          .OnDelete(DeleteBehavior.Restrict);
+
       builder.HasOne(p => p.Tutor)
           .WithMany()
           .HasForeignKey(p => p.TutorId)

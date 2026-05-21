@@ -4,6 +4,7 @@ using EduMatch.DTOs.Payment;
 
 namespace EduMatch.Services.Interfaces
 {
+    [Obsolete("Legacy payment service. Use IDepositPaymentService for v2 deposit booking flow.")]
     public interface IPaymentService
     {
         Task<PaymentResponseDto> CreatePaymentAsync(long tutorId, CreatePaymentRequestDto dto);

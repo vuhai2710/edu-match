@@ -67,6 +67,15 @@ namespace EduMatch.Common.Enums
     ScheduleProposalAccepted,
 
     [Display(Name = "Học viên đã từ chối đề xuất lịch học")]
-    ScheduleProposalRejected
+    ScheduleProposalRejected,
+
+    [Display(Name = "Yêu cầu thanh toán đặt cọc")]
+    DepositPaymentCreated,
+
+    [Display(Name = "Thanh toán đặt cọc thành công")]
+    DepositPaymentSuccess,
+
+    [Display(Name = "Lớp học đã được tạo")]
+    ClassCreated
   }
 }
