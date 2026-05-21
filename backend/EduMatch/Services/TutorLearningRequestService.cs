@@ -14,18 +14,18 @@ namespace EduMatch.Services
   {
     private readonly ILearningRequestRepository _learningRequestRepository;
     private readonly IBookingScheduleService _bookingScheduleService;
-    private readonly IBookingConflictService _bookingConflictService;
+    private readonly IBookingOrchestrator _bookingOrchestrator;
     private readonly INotificationService _notificationService;
 
     public TutorLearningRequestService(
       ILearningRequestRepository learningRequestRepository,
       IBookingScheduleService bookingScheduleService,
-      IBookingConflictService bookingConflictService,
+      IBookingOrchestrator bookingOrchestrator,
       INotificationService notificationService)
     {
       _learningRequestRepository = learningRequestRepository;
       _bookingScheduleService = bookingScheduleService;
-      _bookingConflictService = bookingConflictService;
+      _bookingOrchestrator = bookingOrchestrator;
       _notificationService = notificationService;
     }
 
@@ -53,13 +53,9 @@ namespace EduMatch.Services
       EnsurePendingStatus(request, "Không thể chấp nhận yêu cầu học tập ở trạng thái hiện tại.");
 
       var requestedSlots = _bookingScheduleService.ParseAndValidate(request.TimeSlots, request.HoursPerSession);
-      await _bookingConflictService.CheckForConflictsAsync(tutorProfileId, requestedSlots);
-
-      request.Status = LearningRequestStatus.SoftBooked;
-      request.PaymentExpiresAt = DateTime.UtcNow.AddHours(24);
-
-      _learningRequestRepository.Update(request);
-      await _learningRequestRepository.SaveChangesAsync();
+      await _bookingOrchestrator.SoftBookAsync(request.Id, tutorProfileId, requestedSlots);
+      request = await GetOwnedRequestAsync(id, tutorProfileId);
+      requestedSlots = _bookingScheduleService.ParseAndValidate(request.TimeSlots, request.HoursPerSession);
 
       await _notificationService.SendAsync(
         request.StudentId,

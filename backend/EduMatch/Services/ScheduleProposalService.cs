@@ -24,7 +24,7 @@ namespace EduMatch.Services
     private readonly IDepositPolicyRepository _depositPolicyRepository;
     private readonly INotificationService _notificationService;
     private readonly IBookingScheduleService _bookingScheduleService;
-    private readonly IBookingConflictService _bookingConflictService;
+    private readonly IBookingOrchestrator _bookingOrchestrator;
     private readonly IDepositCalculator _depositCalculator;
 
     public ScheduleProposalService(
@@ -33,7 +33,7 @@ namespace EduMatch.Services
       IDepositPolicyRepository depositPolicyRepository,
       INotificationService notificationService,
       IBookingScheduleService bookingScheduleService,
-      IBookingConflictService bookingConflictService,
+      IBookingOrchestrator bookingOrchestrator,
       IDepositCalculator depositCalculator)
     {
       _learningRequestRepository = learningRequestRepository;
@@ -41,7 +41,7 @@ namespace EduMatch.Services
       _depositPolicyRepository = depositPolicyRepository;
       _notificationService = notificationService;
       _bookingScheduleService = bookingScheduleService;
-      _bookingConflictService = bookingConflictService;
+      _bookingOrchestrator = bookingOrchestrator;
       _depositCalculator = depositCalculator;
     }
 
@@ -132,15 +132,13 @@ namespace EduMatch.Services
       var proposal = await GetProposalForStudentActionAsync(id, currentUserId);
       var requestedSlots = _bookingScheduleService.ParseAndValidate(proposal.TimeSlots, proposal.HoursPerSession);
 
-      await _bookingConflictService.CheckForConflictsAsync(proposal.ProposedBy, requestedSlots);
-
-      proposal.Status = ScheduleProposalStatus.Accepted;
-      proposal.LearningRequest.Status = LearningRequestStatus.SoftBooked;
-      proposal.LearningRequest.PaymentExpiresAt = DateTime.UtcNow.AddHours(24);
-
-      _scheduleProposalRepository.Update(proposal);
-      _learningRequestRepository.Update(proposal.LearningRequest);
-      await _scheduleProposalRepository.SaveChangesAsync();
+      await _bookingOrchestrator.SoftBookAsync(
+        proposal.LearningRequest.Id,
+        proposal.ProposedBy,
+        requestedSlots,
+        proposal.Id);
+      proposal = await ReloadAcceptedProposalAsync(id);
+      requestedSlots = _bookingScheduleService.ParseAndValidate(proposal.TimeSlots, proposal.HoursPerSession);
 
       await _notificationService.SendAsync(
         proposal.Tutor.UserId,
@@ -200,6 +198,28 @@ namespace EduMatch.Services
         proposal.LearningRequest,
         LearningRequestStatus.Negotiating,
         "Yêu cầu học tập không còn ở trạng thái thương lượng.");
+
+      return proposal;
+    }
+
+    private async Task<ScheduleProposal> GetAcceptedProposalAsync(long id)
+    {
+      var proposal = await _scheduleProposalRepository.GetByIdWithDetailsAsync(id);
+      if (proposal == null)
+      {
+        throw new NotFoundException("Không tìm thấy đề xuất lịch học.", "SCHEDULE_PROPOSAL_NOT_FOUND");
+      }
+
+      return proposal;
+    }
+
+    private async Task<ScheduleProposal> ReloadAcceptedProposalAsync(long id)
+    {
+      var proposal = await _scheduleProposalRepository.GetByIdWithDetailsAsync(id);
+      if (proposal == null)
+      {
+        throw new NotFoundException("Không tìm thấy đề xuất lịch học.", "SCHEDULE_PROPOSAL_NOT_FOUND");
+      }
 
       return proposal;
     }

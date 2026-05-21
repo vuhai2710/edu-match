@@ -234,6 +234,7 @@ builder.Services.AddScoped<ILearningRequestService, LearningRequestService>();
 builder.Services.AddScoped<ITutorLearningRequestService, TutorLearningRequestService>();
 builder.Services.AddScoped<IScheduleProposalService, ScheduleProposalService>();
 builder.Services.AddScoped<IBookingConflictService, BookingConflictService>();
+builder.Services.AddScoped<IBookingOrchestrator, BookingOrchestrator>();
 builder.Services.AddScoped<IApplicationService, ApplicationService>();
 builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<EduMatch.Repositories.Interfaces.INotificationRepository, EduMatch.Repositories.NotificationRepository>();

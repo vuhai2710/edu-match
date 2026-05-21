@@ -19,11 +19,18 @@ namespace EduMatch.Services
       _bookingScheduleService = bookingScheduleService;
     }
 
-    public async Task CheckForConflictsAsync(long tutorProfileId, IReadOnlyList<BookingTimeSlot> requestedSlots)
+    public async Task CheckForConflictsAsync(
+      long tutorProfileId,
+      IReadOnlyList<BookingTimeSlot> requestedSlots,
+      long? excludeLearningRequestId = null)
     {
+      var now = DateTime.UtcNow;
       var softBookedRequests = await _learningRequestRepository.FindAsync(x =>
         x.TutorProfileId == tutorProfileId
-        && x.Status == LearningRequestStatus.SoftBooked);
+        && x.Status == LearningRequestStatus.SoftBooked
+        && x.PaymentExpiresAt.HasValue
+        && x.PaymentExpiresAt > now
+        && (!excludeLearningRequestId.HasValue || x.Id != excludeLearningRequestId.Value));
 
       foreach (var softBookedRequest in softBookedRequests)
       {
@@ -38,6 +45,8 @@ namespace EduMatch.Services
             "LEARNING_REQUEST_SCHEDULE_CONFLICT");
         }
       }
+
+      // TODO: add Class conflict source when Class schema is upgraded with TimeSlotsJson and v2 statuses.
     }
 
     private bool HasOverlap(IEnumerable<BookingTimeSlot> requestedSlots, IEnumerable<BookingTimeSlot> existingSlots)
