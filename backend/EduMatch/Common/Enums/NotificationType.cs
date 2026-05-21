@@ -76,6 +76,15 @@ namespace EduMatch.Common.Enums
     DepositPaymentSuccess,
 
     [Display(Name = "Lớp học đã được tạo")]
-    ClassCreated
+    ClassCreated,
+
+    [Display(Name = "Yêu cầu hết hạn lịch")]
+    LearningRequestScheduleExpired,
+
+    [Display(Name = "Yêu cầu hết hạn thanh toán")]
+    LearningRequestPaymentExpired,
+
+    [Display(Name = "Lớp học đã bắt đầu")]
+    ClassActivated
   }
 }

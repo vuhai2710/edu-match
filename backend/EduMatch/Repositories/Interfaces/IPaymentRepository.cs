@@ -10,5 +10,7 @@ namespace EduMatch.Repositories.Interfaces
         Task<Payment?> GetByOrderCodeWithLearningRequestAsync(long orderCode);
         Task<bool> HasPendingPaymentForLearningRequestAsync(long learningRequestId);
         Task<PagedResult<Payment>> GetPagedAsync(int page, int pageSize, PaymentStatus? status);
+        Task<Payment?> GetSuccessfulPaymentByClassIdAsync(long classId);
+        Task<Dictionary<long, Payment>> GetSuccessfulPaymentsByClassIdsAsync(IEnumerable<long> classIds);
     }
 }

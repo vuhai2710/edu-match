@@ -240,6 +240,7 @@ builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<EduMatch.Repositories.Interfaces.INotificationRepository, EduMatch.Repositories.NotificationRepository>();
 builder.Services.AddScoped<EduMatch.Services.Interfaces.INotificationService, EduMatch.Services.NotificationService>();
 builder.Services.AddScoped<IClassRepository, ClassRepository>();
+builder.Services.AddScoped<IClassReadService, ClassReadService>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 builder.Services.AddScoped<IDepositPolicyRepository, DepositPolicyRepository>();
 builder.Services.Configure<PayOSSettings>(builder.Configuration.GetSection("PayOS"));
@@ -249,6 +250,11 @@ builder.Services.AddScoped<IDepositPolicyService, DepositPolicyService>();
 builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddHostedService<RequestExpiryBackgroundService>();
+builder.Services.Configure<BackgroundJobSettings>(
+  builder.Configuration.GetSection(BackgroundJobSettings.SectionName));
+builder.Services.AddHostedService<ScheduleExpiryBackgroundService>();
+builder.Services.AddHostedService<PaymentExpiryBackgroundService>();
+builder.Services.AddHostedService<ClassActivationBackgroundService>();
 
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Email"));
 builder.Services.AddScoped<IEmailService, EmailService>();

@@ -67,5 +67,53 @@ namespace EduMatch.Repositories
                 TotalPages = (int)Math.Ceiling(totalItems / (double)pageSize)
             };
         }
+
+        public async Task<Payment?> GetSuccessfulPaymentByClassIdAsync(long classId)
+        {
+            return await _context.Payments
+                .Include(p => p.PaidByUser)
+                .Where(p => p.ClassId == classId && p.Status == PaymentStatus.Success)
+                .OrderByDescending(p => p.PaidAt ?? p.CreatedAt)
+                .FirstOrDefaultAsync();
+        }
+
+        public async Task<Dictionary<long, Payment>> GetSuccessfulPaymentsByClassIdsAsync(IEnumerable<long> classIds)
+        {
+            var normalizedClassIds = classIds
+                .Distinct()
+                .ToList();
+
+            if (normalizedClassIds.Count == 0)
+            {
+                return [];
+            }
+
+            var latestPayments = await _context.Payments
+                .Where(p => p.ClassId.HasValue
+                    && normalizedClassIds.Contains(p.ClassId.Value)
+                    && p.Status == PaymentStatus.Success)
+                .GroupBy(p => p.ClassId!.Value)
+                .Select(group => group
+                    .OrderByDescending(p => p.PaidAt ?? p.CreatedAt)
+                    .First())
+                .Select(p => new { p.Id, ClassId = p.ClassId!.Value })
+                .ToListAsync();
+
+            var paymentIds = latestPayments
+                .Select(item => item.Id)
+                .ToList();
+
+            if (paymentIds.Count == 0)
+            {
+                return [];
+            }
+
+            var payments = await _context.Payments
+                .Include(p => p.PaidByUser)
+                .Where(p => paymentIds.Contains(p.Id))
+                .ToListAsync();
+
+            return payments.ToDictionary(p => p.ClassId!.Value);
+        }
     }
 }

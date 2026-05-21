@@ -2,6 +2,7 @@ using EduMatch.Common.Enums;
 using EduMatch.Common.Extensions;
 using EduMatch.DTOs;
 using EduMatch.DTOs.Applications;
+using EduMatch.DTOs.Classes;
 using EduMatch.DTOs.Payment;
 using EduMatch.DTOs.TutorRequests;
 using EduMatch.Services.Interfaces;
@@ -19,12 +20,18 @@ namespace EduMatch.Controllers
     private readonly IApplicationService _applicationService;
     private readonly ITutorRequestService _tutorRequestService;
     private readonly IPaymentService _paymentService;
+    private readonly IClassReadService _classReadService;
 
-    public AdminController(IApplicationService applicationService, ITutorRequestService tutorRequestService, IPaymentService paymentService)
+    public AdminController(
+      IApplicationService applicationService,
+      ITutorRequestService tutorRequestService,
+      IPaymentService paymentService,
+      IClassReadService classReadService)
     {
       _applicationService = applicationService;
       _tutorRequestService = tutorRequestService;
       _paymentService = paymentService;
+      _classReadService = classReadService;
     }
 
     [HttpGet("applications")]
@@ -132,6 +139,30 @@ namespace EduMatch.Controllers
       }
 
       return this.OkResponse(ApiResponse<PaymentAdminDto>.SuccessResult(payment));
+    }
+
+    [HttpGet("classes")]
+    [SwaggerOperation(OperationId = "getAllClasses")]
+    [ProducesResponseType(typeof(ApiResponse<PagedResult<ClassDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<ApiResponse<PagedResult<ClassDto>>>> GetAllClasses([FromQuery] ClassQueryParameters parameters)
+    {
+      var result = await _classReadService.GetAdminClassesAsync(parameters);
+      return this.OkResponse(ApiResponse<PagedResult<ClassDto>>.SuccessResult(result));
+    }
+
+    [HttpGet("classes/{id:long}")]
+    [SwaggerOperation(OperationId = "getClassByIdForAdmin")]
+    [ProducesResponseType(typeof(ApiResponse<ClassDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<ClassDto>>> GetClassById(long id)
+    {
+      var result = await _classReadService.GetByIdAsync(id, 0, true);
+      return this.OkResponse(ApiResponse<ClassDto>.SuccessResult(result));
     }
   }
 }
