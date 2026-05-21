@@ -1,6 +1,6 @@
 namespace EduMatch.Domain.Booking.Payments;
 
-internal sealed class DepositCalculationRequest
+public sealed class DepositCalculationRequest
 {
   public decimal TotalAmount { get; init; }
   public decimal? FixedAmount { get; init; }

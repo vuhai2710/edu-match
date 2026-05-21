@@ -1,6 +1,6 @@
 namespace EduMatch.Domain.Booking.Payments;
 
-internal sealed class DepositCalculationResult
+public sealed class DepositCalculationResult
 {
   public DepositCalculationResult(decimal totalAmount, decimal depositAmount)
   {

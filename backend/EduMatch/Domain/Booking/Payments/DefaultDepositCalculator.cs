@@ -2,7 +2,7 @@ using EduMatch.Common.Exception;
 
 namespace EduMatch.Domain.Booking.Payments;
 
-internal sealed class DefaultDepositCalculator : IDepositCalculator
+public sealed class DefaultDepositCalculator : IDepositCalculator
 {
   public DepositCalculationResult Calculate(DepositCalculationRequest request)
   {

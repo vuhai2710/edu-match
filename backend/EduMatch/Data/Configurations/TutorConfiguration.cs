@@ -44,7 +44,7 @@ namespace EduMatch.Data.Configurations
         .IsRequired(false);
 
       builder.HasOne(x => x.User)
-        .WithOne(u => u.TutorProfile)
+        .WithOne(u => u.Tutor)
         .HasForeignKey<Tutor>(x => x.UserId)
         .IsRequired()
         .OnDelete(DeleteBehavior.Cascade);

@@ -4,7 +4,7 @@ using EduMatch.Common.Exception;
 
 namespace EduMatch.Domain.Booking.Scheduling;
 
-internal sealed class BookingScheduleService : IBookingScheduleService
+public sealed class BookingScheduleService : IBookingScheduleService
 {
   private const decimal MinimumHoursPerSession = 0.5m;
   private const decimal MaximumHoursPerSession = 3m;

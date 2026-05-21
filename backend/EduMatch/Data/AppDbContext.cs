@@ -14,6 +14,8 @@ public class AppDbContext : DbContext
   public DbSet<Tutor> Tutors => Set<Tutor>();
   public DbSet<Student> Students => Set<Student>();
   public DbSet<TutorRequest> TutorRequests => Set<TutorRequest>();
+  public DbSet<LearningRequest> LearningRequests => Set<LearningRequest>();
+  public DbSet<ScheduleProposal> ScheduleProposals => Set<ScheduleProposal>();
   public DbSet<Message> Messages => Set<Message>();
   public DbSet<Notification> Notifications => Set<Notification>();
   public DbSet<Subject> Subjects => Set<Subject>();
@@ -24,6 +26,7 @@ public class AppDbContext : DbContext
   public DbSet<Class> Classes => Set<Class>();
   public DbSet<Payment> Payments => Set<Payment>();
   public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
+  public DbSet<DepositPolicy> DepositPolicies => Set<DepositPolicy>();
   public DbSet<Review> Reviews => Set<Review>();
   #endregion
 

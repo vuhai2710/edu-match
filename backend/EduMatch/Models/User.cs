@@ -13,8 +13,8 @@ namespace EduMatch.Models
     public Gender Gender { get; set; }
     public bool IsActive { get; set; } = true;
     public File? AvatarFile { get; set; }
-    public Tutor? TutorProfile { get; set; }
-    public Student? StudentProfile { get; set; }
+    public Tutor? Tutor { get; set; }
+    public Student? Student { get; set; }
     public ICollection<Message> SentMessages { get; set; } = [];
     public ICollection<Message> ReceivedMessages { get; set; } = [];
     public ICollection<Notification> Notifications { get; set; } = [];

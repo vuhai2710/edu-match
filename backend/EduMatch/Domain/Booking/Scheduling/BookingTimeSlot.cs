@@ -1,6 +1,6 @@
 namespace EduMatch.Domain.Booking.Scheduling;
 
-internal sealed class BookingTimeSlot
+public sealed class BookingTimeSlot
 {
   public BookingTimeSlot(DayOfWeek day, TimeOnly startTime, TimeOnly endTime)
   {

@@ -49,6 +49,24 @@ namespace EduMatch.Common.Enums
     TutorApproved,
 
     [Display(Name = "Gia sư bị từ chối")]
-    TutorRejected
+    TutorRejected,
+
+    [Display(Name = "Yêu cầu học tập đã được tạo")]
+    LearningRequestCreated,
+
+    [Display(Name = "Gia sư chấp nhận yêu cầu")]
+    LearningRequestAccepted,
+
+    [Display(Name = "Gia sư từ chối yêu cầu")]
+    LearningRequestRejected,
+
+    [Display(Name = "Gia sư đã đề xuất lịch học mới")]
+    ScheduleProposalCreated,
+
+    [Display(Name = "Học viên đã chấp nhận đề xuất lịch học")]
+    ScheduleProposalAccepted,
+
+    [Display(Name = "Học viên đã từ chối đề xuất lịch học")]
+    ScheduleProposalRejected
   }
 }

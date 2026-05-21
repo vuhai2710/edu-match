@@ -1,6 +1,6 @@
 namespace EduMatch.Domain.Booking.Scheduling;
 
-internal interface IBookingScheduleService
+public interface IBookingScheduleService
 {
   IReadOnlyList<BookingTimeSlot> ParseAndValidate(string timeSlotsJson, decimal hoursPerSession);
   IReadOnlyList<BookingTimeSlot> Validate(IEnumerable<BookingTimeSlotInput>? timeSlots, decimal hoursPerSession);

@@ -31,8 +31,8 @@ namespace EduMatch.Repositories
     {
       return await _dbSet
         .Include(u => u.AvatarFile)
-        .Include(u => u.TutorProfile)
-        .Include(u => u.StudentProfile)
+        .Include(u => u.Tutor)
+        .Include(u => u.Student)
         .FirstOrDefaultAsync(u => u.Email == email.ToLower().Trim());
     }
 
@@ -40,8 +40,8 @@ namespace EduMatch.Repositories
     {
       return await _dbSet
         .Include(u => u.AvatarFile)
-        .Include(u => u.TutorProfile)
-        .Include(u => u.StudentProfile)
+        .Include(u => u.Tutor)
+        .Include(u => u.Student)
         .FirstOrDefaultAsync(u => u.Id == id);
     }
 
@@ -49,8 +49,8 @@ namespace EduMatch.Repositories
     {
       return await _dbSet
         .Include(u => u.AvatarFile)
-        .Include(u => u.TutorProfile)
-        .Include(u => u.StudentProfile)
+        .Include(u => u.Tutor)
+        .Include(u => u.Student)
         .FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
     }
 

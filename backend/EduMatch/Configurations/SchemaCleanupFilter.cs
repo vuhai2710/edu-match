@@ -9,7 +9,8 @@ namespace EduMatch.Configuration
     [
       "Tutor", "Application", "TutorRequest", "User", "Message",
       "Notification", "Class", "TutorSubject", "Address",
-      "Subject", "Student", "PasswordResetToken", "File"
+      "Subject", "Student", "PasswordResetToken", "File",
+      "LearningRequest"
     ];
 
     public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)

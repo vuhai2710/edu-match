@@ -94,7 +94,7 @@ public class AuthService
         Role = UserRole.Student,
         IsGoogleAccount = true,
         IsActive = true,
-        StudentProfile = CreateStudentProfile(null)
+        Student = CreateStudentProfile(null)
       };
 
       if (!string.IsNullOrWhiteSpace(payload.Picture))
@@ -232,10 +232,10 @@ public class AuthService
     switch (role)
     {
       case UserRole.Student:
-        user.StudentProfile = CreateStudentProfile(dto.Address);
+        user.Student = CreateStudentProfile(dto.Address);
         break;
       case UserRole.Tutor:
-        user.TutorProfile = CreateTutorProfile(tutorDto!, cvFile);
+        user.Tutor = CreateTutorProfile(tutorDto!, cvFile);
         break;
       default:
         throw new AppException("Unsupported registration role", 400);
@@ -247,10 +247,10 @@ public class AuthService
     AssignProfileCode(user);
     await _userRepository.SaveChangesAsync();
 
-    if (tutorDto != null && user.TutorProfile != null)
+    if (tutorDto != null && user.Tutor != null)
     {
-      await CreateTutorSubjectsAsync(user.TutorProfile, tutorDto.SubjectIds);
-      await CreateTutorTeachingLevelsAsync(user.TutorProfile, tutorDto.TeachingLevels);
+      await CreateTutorSubjectsAsync(user.Tutor, tutorDto.SubjectIds);
+      await CreateTutorTeachingLevelsAsync(user.Tutor, tutorDto.TeachingLevels);
       await _userRepository.SaveChangesAsync();
     }
 
@@ -404,14 +404,14 @@ public class AuthService
 
   private void AssignProfileCode(User user)
   {
-    if (user.StudentProfile != null)
+    if (user.Student != null)
     {
-      user.StudentProfile.Code = _codeGenerator.GenerateStudentCode(user.StudentProfile.Id);
+      user.Student.Code = _codeGenerator.GenerateStudentCode(user.Student.Id);
     }
 
-    if (user.TutorProfile != null)
+    if (user.Tutor != null)
     {
-      user.TutorProfile.Code = _codeGenerator.GenerateTutorCode(user.TutorProfile.Id);
+      user.Tutor.Code = _codeGenerator.GenerateTutorCode(user.Tutor.Id);
     }
   }
 
@@ -459,14 +459,14 @@ public class AuthService
       new Claim(ClaimTypes.Name, user.FullName)
     };
 
-    if (user.StudentProfile != null)
+    if (user.Student != null)
     {
-      claims.Add(new Claim("studentId", user.StudentProfile.Id.ToString()));
+      claims.Add(new Claim("studentId", user.Student.Id.ToString()));
     }
 
-    if (user.TutorProfile != null)
+    if (user.Tutor != null)
     {
-      claims.Add(new Claim("tutorId", user.TutorProfile.Id.ToString()));
+      claims.Add(new Claim("tutorId", user.Tutor.Id.ToString()));
     }
 
     var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
