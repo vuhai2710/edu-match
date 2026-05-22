@@ -1,10 +1,12 @@
 using Swashbuckle.AspNetCore.Annotations;
+using EduMatch.Common.Exception;
 using EduMatch.DTOs;
 using EduMatch.DTOs.Chat;
 using EduMatch.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace EduMatch.Controllers
@@ -47,12 +49,12 @@ namespace EduMatch.Controllers
 
     private long GetUserId()
     {
-      var claim = User.FindFirst("userId");
-      if (claim == null)
+      var claim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+      if (string.IsNullOrEmpty(claim) || !long.TryParse(claim, out var userId))
       {
-        throw new System.Exception("User ID not found in claims.");
+        throw new UnauthorizedException("Cannot authenticate user.");
       }
-      return long.Parse(claim.Value);
+      return userId;
     }
   }
 }

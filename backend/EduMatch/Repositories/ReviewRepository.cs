@@ -16,6 +16,11 @@ namespace EduMatch.Repositories
       return await _dbSet.AnyAsync(r => r.ClassId == classId);
     }
 
+    public async Task<bool> ExistsByClassAndStudentAsync(long classId, long studentId)
+    {
+      return await _dbSet.AnyAsync(r => r.ClassId == classId && r.StudentId == studentId);
+    }
+
     public async Task<List<Review>> GetByTutorIdAsync(long tutorId)
     {
       return await _dbSet

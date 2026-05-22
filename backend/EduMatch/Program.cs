@@ -111,7 +111,9 @@ builder.Services.AddAuthentication(options =>
         var accessToken = context.Request.Query["access_token"];
         var path = context.HttpContext.Request.Path;
 
-        if (!string.IsNullOrWhiteSpace(accessToken) && path.StartsWithSegments("/hubs/notifications"))
+        if (!string.IsNullOrWhiteSpace(accessToken)
+            && (path.StartsWithSegments("/hubs/notifications")
+                || path.StartsWithSegments("/hubs/chat")))
         {
           context.Token = accessToken;
         }
@@ -248,9 +250,7 @@ builder.Services.AddHttpClient<IDepositPaymentService, DepositPaymentService>();
 builder.Services.AddScoped<IDepositPolicyService, DepositPolicyService>();
 builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
-builder.Services.AddHostedService<RequestExpiryBackgroundService>();
-builder.Services.Configure<BackgroundJobSettings>(
-  builder.Configuration.GetSection(BackgroundJobSettings.SectionName));
+builder.Services.Configure<BackgroundJobSettings>(builder.Configuration.GetSection(BackgroundJobSettings.SectionName));
 builder.Services.AddHostedService<ScheduleExpiryBackgroundService>();
 builder.Services.AddHostedService<PaymentExpiryBackgroundService>();
 builder.Services.AddHostedService<ClassActivationBackgroundService>();

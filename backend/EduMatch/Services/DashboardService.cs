@@ -30,7 +30,12 @@ namespace EduMatch.Services
       var tOpenReqs = _db.TutorRequests.CountAsync(r => r.Status == TutorRequestStatus.Open && !r.IsDeleted);
       var tPendingApps = _db.Applications.CountAsync(a => a.Status == ApplicationStatus.Pending && !a.IsDeleted);
       var tActiveClass = _db.Classes.CountAsync(c => c.Status == ClassStatus.Active && !c.IsDeleted);
-      var tCompletedCls = _db.Classes.CountAsync(c => c.Status == ClassStatus.PendingStart && !c.IsDeleted);
+      var tPendingCls = _db.Classes.CountAsync(c => c.Status == ClassStatus.PendingStart && !c.IsDeleted);
+      var tCancelledCls = _db.Classes.CountAsync(c =>
+        (c.Status == ClassStatus.CancelledByStudent
+         || c.Status == ClassStatus.CancelledByTutor
+         || c.Status == ClassStatus.CancelledByAdmin)
+        && !c.IsDeleted);
       var tRevTotal = _db.Payments
                               .Where(p => p.Status == PaymentStatus.Success && !p.IsDeleted)
                               .SumAsync(p => (decimal?)p.Amount);
@@ -43,7 +48,7 @@ namespace EduMatch.Services
       await Task.WhenAll(
         tTotalUsers, tStudents, tTutors,
         tTotalReqs, tOpenReqs, tPendingApps,
-        tActiveClass, tCompletedCls,
+        tActiveClass, tPendingCls, tCancelledCls,
         tRevTotal, tRevMonth);
 
       var recentApps = await _db.Applications
@@ -72,7 +77,8 @@ namespace EduMatch.Services
         OpenRequests = await tOpenReqs,
         PendingApplications = await tPendingApps,
         ActiveClasses = await tActiveClass,
-        CompletedClasses = await tCompletedCls,
+        PendingClasses = await tPendingCls,
+        CancelledClasses = await tCancelledCls,
         TotalRevenue = await tRevTotal ?? 0m,
         RevenueThisMonth = await tRevMonth ?? 0m,
         RecentApplications = recentApps,
@@ -93,8 +99,13 @@ namespace EduMatch.Services
       var tActive = _db.Classes.CountAsync(c => c.TutorId == tutorProfileId
                                                 && c.Status == ClassStatus.Active
                                                 && !c.IsDeleted);
-      var tCompleted = _db.Classes.CountAsync(c => c.TutorId == tutorProfileId
+      var tPendingCls = _db.Classes.CountAsync(c => c.TutorId == tutorProfileId
                                                 && c.Status == ClassStatus.PendingStart
+                                                && !c.IsDeleted);
+      var tCancelledCls = _db.Classes.CountAsync(c => c.TutorId == tutorProfileId
+                                                && (c.Status == ClassStatus.CancelledByStudent
+                                                    || c.Status == ClassStatus.CancelledByTutor
+                                                    || c.Status == ClassStatus.CancelledByAdmin)
                                                 && !c.IsDeleted);
       var tDeposits = _db.Payments
                           .Where(p => p.TutorId == tutorProfileId
@@ -107,7 +118,7 @@ namespace EduMatch.Services
         .FirstOrDefaultAsync(t => t.Id == tutorProfileId && !t.IsDeleted);
 
       await Task.WhenAll(tTotal, tPending, tAccepted, tRejected,
-                         tActive, tCompleted, tDeposits);
+                         tActive, tPendingCls, tCancelledCls, tDeposits);
       var profile = await profileTask;
 
       if (profile == null)
@@ -134,7 +145,8 @@ namespace EduMatch.Services
         AcceptedApplications = await tAccepted,
         RejectedApplications = await tRejected,
         ActiveClasses = await tActive,
-        CompletedClasses = await tCompleted,
+        PendingClasses = await tPendingCls,
+        CancelledClasses = await tCancelledCls,
         TotalDeposits = await tDeposits ?? 0m,
         AverageRating = profile.Rating,
         TotalReviews = profile.TotalReviews,
@@ -161,11 +173,16 @@ namespace EduMatch.Services
       var tActive = _db.Classes.CountAsync(c => c.StudentId == studentUserId
                                                && c.Status == ClassStatus.Active
                                                && !c.IsDeleted);
-      var tCompleted = _db.Classes.CountAsync(c => c.StudentId == studentUserId
+      var tPendingCls = _db.Classes.CountAsync(c => c.StudentId == studentUserId
                                                && c.Status == ClassStatus.PendingStart
                                                && !c.IsDeleted);
+      var tCancelledCls = _db.Classes.CountAsync(c => c.StudentId == studentUserId
+                                               && (c.Status == ClassStatus.CancelledByStudent
+                                                   || c.Status == ClassStatus.CancelledByTutor
+                                                   || c.Status == ClassStatus.CancelledByAdmin)
+                                               && !c.IsDeleted);
 
-      await Task.WhenAll(tTotal, tOpen, tClosed, tAppsTotal, tAppsPend, tActive, tCompleted);
+      await Task.WhenAll(tTotal, tOpen, tClosed, tAppsTotal, tAppsPend, tActive, tPendingCls, tCancelledCls);
 
       var recentReqs = await reqQuery
         .OrderByDescending(r => r.CreatedAt)
@@ -190,7 +207,8 @@ namespace EduMatch.Services
         TotalApplicationsReceived = await tAppsTotal,
         PendingApplicationsReceived = await tAppsPend,
         ActiveClasses = await tActive,
-        CompletedClasses = await tCompleted,
+        PendingClasses = await tPendingCls,
+        CancelledClasses = await tCancelledCls,
         RecentRequests = recentReqs
       };
     }

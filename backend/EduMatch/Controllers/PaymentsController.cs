@@ -14,19 +14,9 @@ namespace EduMatch.Controllers
   {
     private readonly IDepositPaymentService _depositPaymentService;
 
-#pragma warning disable CS0618
-    private readonly IPaymentService _legacyPaymentService;
-#pragma warning restore CS0618
-
-    public PaymentsController(
-      IDepositPaymentService depositPaymentService,
-#pragma warning disable CS0618
-      IPaymentService legacyPaymentService
-#pragma warning restore CS0618
-    )
+    public PaymentsController(IDepositPaymentService depositPaymentService)
     {
       _depositPaymentService = depositPaymentService;
-      _legacyPaymentService = legacyPaymentService;
     }
 
     [HttpPost("deposit")]
@@ -70,35 +60,19 @@ namespace EduMatch.Controllers
       return Ok(ApiResponse.Ok("Webhook processed"));
     }
 
-    // Legacy Endpoints (Deprecated)
+    // Legacy Endpoints (Disabled — 410 Gone after v2 cutover)
 
     [Obsolete("Use POST /api/payments/deposit instead")]
     [HttpPost("create")]
-    [Authorize(Roles = "Tutor")]
     [SwaggerOperation(OperationId = "createPayment")]
-    [ProducesResponseType(typeof(ApiResponse<PaymentResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<ApiResponse<PaymentResponseDto>>> CreatePayment(
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status410Gone)]
+    public ActionResult<ApiResponse<PaymentResponseDto>> CreatePayment(
       [FromBody] CreatePaymentRequestDto dto)
     {
-      var tutorIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-      if (string.IsNullOrEmpty(tutorIdStr) || !long.TryParse(tutorIdStr, out long tutorId))
-      {
-        return Unauthorized(ErrorResponse.Create("Invalid token", "UNAUTHORIZED"));
-      }
-
-      try
-      {
-#pragma warning disable CS0618
-        var result = await _legacyPaymentService.CreatePaymentAsync(tutorId, dto);
-#pragma warning restore CS0618
-        return Ok(ApiResponse<PaymentResponseDto>.SuccessResult(result));
-      }
-      catch (System.Exception ex)
-      {
-        return BadRequest(ErrorResponse.Create(ex.Message, "PAYMENT_CREATE_FAILED"));
-      }
+      return StatusCode(StatusCodes.Status410Gone,
+        ErrorResponse.Create(
+          "Endpoint đã ngừng sử dụng. Vui lòng dùng POST /api/payments/deposit.",
+          "LEGACY_FLOW_DISABLED"));
     }
   }
 }

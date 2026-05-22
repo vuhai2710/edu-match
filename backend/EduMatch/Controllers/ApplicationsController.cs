@@ -22,18 +22,11 @@ namespace EduMatch.Controllers
     }
 
     [HttpPost("/api/tutor-requests/{requestId:long}/apply")]
-    [Authorize(Roles = "Tutor")]
     [SwaggerOperation(OperationId = "applyToRequest")]
-    [ProducesResponseType(typeof(ApiResponse<ApplicationResponseDto>), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<ApiResponse<ApplicationResponseDto>>> Apply(long requestId, [FromBody] ApplyToRequestDto dto)
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status410Gone)]
+    public ActionResult<ApiResponse<ApplicationResponseDto>> Apply(long requestId, [FromBody] ApplyToRequestDto dto)
     {
-      var response = await _applicationService.ApplyAsync(GetCurrentUserId(), requestId, dto);
-      return this.CreatedAtRouteResponse("GetApplicationById", new { id = response.Data!.Id }, response);
+      return LegacyGone();
     }
 
     [HttpGet("{id:long}", Name = "GetApplicationById")]
@@ -78,63 +71,43 @@ namespace EduMatch.Controllers
     }
 
     [HttpPut("{id:long}/student-confirm")]
-    [Authorize(Roles = "Student")]
     [SwaggerOperation(OperationId = "studentConfirmApplication")]
-    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<ApiResponse<bool>>> StudentConfirm(long id)
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status410Gone)]
+    public ActionResult<ApiResponse<bool>> StudentConfirm(long id)
     {
-      var response = await _applicationService.StudentConfirmAsync(id, GetCurrentUserId());
-      return this.OkResponse(response);
+      return LegacyGone();
     }
 
     [HttpPut("{id:long}/student-reject")]
-    [Authorize(Roles = "Student")]
     [SwaggerOperation(OperationId = "studentRejectApplication")]
-    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<ApiResponse<bool>>> StudentReject(long id)
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status410Gone)]
+    public ActionResult<ApiResponse<bool>> StudentReject(long id)
     {
-      var response = await _applicationService.StudentRejectAsync(id, GetCurrentUserId());
-      return this.OkResponse(response);
+      return LegacyGone();
     }
 
     [HttpPut("{id:long}/student-accept-match")]
-    [Authorize(Roles = "Student")]
     [SwaggerOperation(OperationId = "studentAcceptMatch")]
-    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<ApiResponse<bool>>> StudentAcceptMatch(long id)
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status410Gone)]
+    public ActionResult<ApiResponse<bool>> StudentAcceptMatch(long id)
     {
-      var response = await _applicationService.StudentAcceptMatchAsync(id, GetCurrentUserId());
-      return this.OkResponse(response);
+      return LegacyGone();
     }
 
     [HttpPut("{id:long}/tutor-accept-match")]
-    [Authorize(Roles = "Tutor")]
     [SwaggerOperation(OperationId = "tutorAcceptMatch")]
-    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<ApiResponse<bool>>> TutorAcceptMatch(long id)
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status410Gone)]
+    public ActionResult<ApiResponse<bool>> TutorAcceptMatch(long id)
     {
-      var response = await _applicationService.TutorAcceptMatchAsync(id, GetCurrentUserId());
-      return this.OkResponse(response);
+      return LegacyGone();
+    }
+
+    private ObjectResult LegacyGone()
+    {
+      return StatusCode(StatusCodes.Status410Gone,
+        ErrorResponse.Create(
+          "Luồng booking cũ đã ngừng. Vui lòng dùng /api/learning-requests và /api/schedule-proposals.",
+          "LEGACY_FLOW_DISABLED"));
     }
 
     private long GetCurrentUserId()

@@ -66,57 +66,42 @@ namespace EduMatch.Controllers
 
     [HttpPut("applications/{id:long}/approve")]
     [SwaggerOperation(OperationId = "adminApproveApplication")]
-    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<ApiResponse<bool>>> AdminApprove(long id, [FromBody] AdminApproveRequestDto dto)
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status410Gone)]
+    public ActionResult<ApiResponse<bool>> AdminApprove(long id, [FromBody] AdminApproveRequestDto dto)
     {
-      var response = await _applicationService.AdminApproveAsync(id, dto.DepositAmount);
-      return this.OkResponse(response);
+      return LegacyGone();
     }
 
     [HttpPut("applications/{id:long}/reject")]
     [SwaggerOperation(OperationId = "adminRejectApplication")]
-    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<ApiResponse<bool>>> AdminReject(long id)
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status410Gone)]
+    public ActionResult<ApiResponse<bool>> AdminReject(long id)
     {
-      var response = await _applicationService.AdminRejectAsync(id);
-      return this.OkResponse(response);
+      return LegacyGone();
     }
 
     [HttpPost("requests/{requestId:long}/match")]
     [SwaggerOperation(OperationId = "adminMatchRequest")]
-    [ProducesResponseType(typeof(ApiResponse<ApplicationResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<ApiResponse<ApplicationResponseDto>>> AdminMatch(long requestId, [FromBody] AdminMatchRequestDto dto)
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status410Gone)]
+    public ActionResult<ApiResponse<ApplicationResponseDto>> AdminMatch(long requestId, [FromBody] AdminMatchRequestDto dto)
     {
-      var response = await _applicationService.AdminMatchAsync(requestId, dto.TutorProfileId, dto.DepositAmount);
-      return this.OkResponse(response);
+      return LegacyGone();
     }
 
     [HttpPost("tutor-requests/{studentId:long}")]
     [SwaggerOperation(OperationId = "adminCreateRequestForStudent")]
-    [ProducesResponseType(typeof(ApiResponse<TutorRequestResponseDto>), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ApiResponse<TutorRequestResponseDto>>> AdminCreateTutorRequest(long studentId, [FromBody] CreateTutorRequestDto dto)
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status410Gone)]
+    public ActionResult<ApiResponse<TutorRequestResponseDto>> AdminCreateTutorRequest(long studentId, [FromBody] CreateTutorRequestDto dto)
     {
-      var response = await _tutorRequestService.CreateAsync(studentId, dto);
-      return this.CreatedResponse($"/api/tutorrequests/{response.Data?.Id}", response);
+      return LegacyGone();
+    }
+
+    private ObjectResult LegacyGone()
+    {
+      return StatusCode(StatusCodes.Status410Gone,
+        ErrorResponse.Create(
+          "Luồng booking cũ đã ngừng. Vui lòng dùng /api/learning-requests và /api/schedule-proposals.",
+          "LEGACY_FLOW_DISABLED"));
     }
 
     [HttpGet("payments")]
