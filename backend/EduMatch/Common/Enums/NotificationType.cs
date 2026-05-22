@@ -85,6 +85,15 @@ namespace EduMatch.Common.Enums
     LearningRequestPaymentExpired,
 
     [Display(Name = "Lớp học đã bắt đầu")]
-    ClassActivated
+    ClassActivated,
+
+    [Display(Name = "Yêu cầu hủy lớp đã được tạo")]
+    CancellationRequestCreated,
+
+    [Display(Name = "Yêu cầu hủy lớp đã được xử lý")]
+    CancellationRequestResolved,
+
+    [Display(Name = "Lớp học đã bị hủy")]
+    ClassCancelled
   }
 }

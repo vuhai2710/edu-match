@@ -1,7 +1,10 @@
+using System.Security.Claims;
 using EduMatch.Common.Enums;
+using EduMatch.Common.Exception;
 using EduMatch.Common.Extensions;
 using EduMatch.DTOs;
 using EduMatch.DTOs.Applications;
+using EduMatch.DTOs.CancellationRequests;
 using EduMatch.DTOs.Classes;
 using EduMatch.DTOs.Payment;
 using EduMatch.DTOs.TutorRequests;
@@ -21,17 +24,20 @@ namespace EduMatch.Controllers
     private readonly ITutorRequestService _tutorRequestService;
     private readonly IPaymentService _paymentService;
     private readonly IClassReadService _classReadService;
+    private readonly ICancellationRequestService _cancellationRequestService;
 
     public AdminController(
       IApplicationService applicationService,
       ITutorRequestService tutorRequestService,
       IPaymentService paymentService,
-      IClassReadService classReadService)
+      IClassReadService classReadService,
+      ICancellationRequestService cancellationRequestService)
     {
       _applicationService = applicationService;
       _tutorRequestService = tutorRequestService;
       _paymentService = paymentService;
       _classReadService = classReadService;
+      _cancellationRequestService = cancellationRequestService;
     }
 
     [HttpGet("applications")]
@@ -163,6 +169,52 @@ namespace EduMatch.Controllers
     {
       var result = await _classReadService.GetByIdAsync(id, 0, true);
       return this.OkResponse(ApiResponse<ClassDto>.SuccessResult(result));
+    }
+
+    [HttpGet("cancellation-requests")]
+    [SwaggerOperation(OperationId = "getAllCancellationRequestsForAdmin")]
+    [ProducesResponseType(typeof(ApiResponse<PagedResult<CancellationRequestDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<ApiResponse<PagedResult<CancellationRequestDto>>>> GetAllCancellationRequests([FromQuery] CancellationRequestQueryParameters parameters)
+    {
+      return this.OkResponse(await _cancellationRequestService.GetAllForAdminAsync(parameters));
+    }
+
+    [HttpGet("cancellation-requests/{id:long}")]
+    [SwaggerOperation(OperationId = "getCancellationRequestByIdForAdmin")]
+    [ProducesResponseType(typeof(ApiResponse<CancellationRequestDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<CancellationRequestDto>>> GetCancellationRequestById(long id)
+    {
+      return this.OkResponse(await _cancellationRequestService.GetByIdAsync(id));
+    }
+
+    [HttpPut("cancellation-requests/{id:long}/resolve")]
+    [SwaggerOperation(OperationId = "resolveCancellationRequest")]
+    [ProducesResponseType(typeof(ApiResponse<CancellationRequestDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<ApiResponse<CancellationRequestDto>>> ResolveCancellationRequest(long id, [FromBody] ResolveCancellationRequestDto dto)
+    {
+      return this.OkResponse(await _cancellationRequestService.ResolveAsync(id, GetCurrentUserId(), dto));
+    }
+
+    private long GetCurrentUserId()
+    {
+      var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+      if (!long.TryParse(userIdClaim, out var userId))
+      {
+        throw new UnauthorizedException("Cannot authenticate user.");
+      }
+
+      return userId;
     }
   }
 }
