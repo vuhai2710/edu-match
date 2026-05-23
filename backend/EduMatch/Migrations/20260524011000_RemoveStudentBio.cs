@@ -7,8 +7,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace EduMatch.Migrations
 {
   [DbContext(typeof(AppDbContext))]
-  [Migration("20260524010000_RenameTutorBioToProfile")]
-  public partial class RenameTutorBioToProfile : Migration
+  [Migration("20260524011000_RemoveStudentBio")]
+  public partial class RemoveStudentBio : Migration
   {
     protected override void Up(MigrationBuilder migrationBuilder)
     {
@@ -20,16 +20,10 @@ namespace EduMatch.Migrations
             SELECT 1
             FROM information_schema.columns
             WHERE table_schema = 'public'
-              AND table_name = 'Tutors'
+              AND table_name = 'Students'
               AND column_name = 'Bio'
-          ) AND NOT EXISTS (
-            SELECT 1
-            FROM information_schema.columns
-            WHERE table_schema = 'public'
-              AND table_name = 'Tutors'
-              AND column_name = 'Profile'
           ) THEN
-            ALTER TABLE "Tutors" RENAME COLUMN "Bio" TO "Profile";
+            ALTER TABLE "Students" DROP COLUMN "Bio";
           END IF;
         END $$;
         """);
@@ -41,20 +35,14 @@ namespace EduMatch.Migrations
         """
         DO $$
         BEGIN
-          IF EXISTS (
+          IF NOT EXISTS (
             SELECT 1
             FROM information_schema.columns
             WHERE table_schema = 'public'
-              AND table_name = 'Tutors'
-              AND column_name = 'Profile'
-          ) AND NOT EXISTS (
-            SELECT 1
-            FROM information_schema.columns
-            WHERE table_schema = 'public'
-              AND table_name = 'Tutors'
+              AND table_name = 'Students'
               AND column_name = 'Bio'
           ) THEN
-            ALTER TABLE "Tutors" RENAME COLUMN "Profile" TO "Bio";
+            ALTER TABLE "Students" ADD COLUMN "Bio" text NOT NULL DEFAULT '';
           END IF;
         END $$;
         """);

@@ -9,7 +9,6 @@ namespace EduMatch.DTOs.StudentProfile
     public string FullName { get; set; } = string.Empty;
     public int? Birth { get; set; }
     public Gender Gender { get; set; }
-    public string Bio { get; set; } = string.Empty;
     public string? School { get; set; }
     public Grade? GradeLevel { get; set; }
     

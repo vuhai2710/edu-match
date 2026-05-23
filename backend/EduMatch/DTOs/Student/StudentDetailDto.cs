@@ -15,7 +15,6 @@ namespace EduMatch.DTOs.StudentProfile
     public string? School { get; set; }
     public string? AvatarUrl { get; set; }
     public Gender Gender { get; set; }
-    public string Bio { get; set; } = string.Empty;
     public Grade? GradeLevel { get; set; }
     public AddressDto? Address { get; set; }
   }

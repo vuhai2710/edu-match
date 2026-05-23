@@ -327,7 +327,6 @@ public class AuthService
     return new Student
     {
       Code = _codeGenerator.GenerateTemporaryCode("STU"),
-      Bio = string.Empty,
       GradeLevel = null,
       Address = addressDto == null ? null : _mapper.Map<Address>(addressDto)
     };
