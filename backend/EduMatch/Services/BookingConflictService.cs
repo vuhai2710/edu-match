@@ -26,7 +26,7 @@ namespace EduMatch.Services
     {
       var now = DateTime.UtcNow;
       var softBookedRequests = await _learningRequestRepository.FindAsync(x =>
-        x.TutorProfileId == tutorProfileId
+        x.TutorId == tutorProfileId
         && x.Status == LearningRequestStatus.SoftBooked
         && x.PaymentExpiresAt.HasValue
         && x.PaymentExpiresAt > now

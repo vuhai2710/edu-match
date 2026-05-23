@@ -5,7 +5,7 @@ namespace EduMatch.Models
   public class LearningRequest : BaseEntity
   {
     public long StudentId { get; set; }
-    public long TutorProfileId { get; set; }
+    public long TutorId { get; set; }
     public long SubjectId { get; set; }
     public string? Note { get; set; }
     public string TimeSlots { get; set; } = null!;
@@ -18,7 +18,7 @@ namespace EduMatch.Models
     public LearningRequestStatus Status { get; set; } = LearningRequestStatus.Pending;
 
     public User Student { get; set; } = null!;
-    public Tutor TutorProfile { get; set; } = null!;
+    public Tutor Tutor { get; set; } = null!;
     public Subject Subject { get; set; } = null!;
     public ScheduleProposal? ScheduleProposal { get; set; }
   }

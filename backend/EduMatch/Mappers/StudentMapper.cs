@@ -10,15 +10,19 @@ public class StudentMapper : Profile
   {
     CreateMap<Student, StudentDto>()
       .ForMember(d => d.FullName, opt => opt.MapFrom(s => s.User.FullName))
+      .ForMember(d => d.Birth, opt => opt.MapFrom(s => s.User.Birth))
       .ForMember(d => d.AvatarUrl, opt => opt.MapFrom(s => s.User.AvatarFile != null ? s.User.AvatarFile.FilePath : null))
-      .ForMember(d => d.Gender, opt => opt.MapFrom(s => s.User.Gender));
+      .ForMember(d => d.Gender, opt => opt.MapFrom(s => s.User.Gender))
+      .ForMember(d => d.School, opt => opt.MapFrom(s => s.User.School));
 
     CreateMap<Student, StudentDetailDto>()
       .ForMember(d => d.FullName, opt => opt.MapFrom(s => s.User.FullName))
+      .ForMember(d => d.Birth, opt => opt.MapFrom(s => s.User.Birth))
       .ForMember(d => d.Email, opt => opt.MapFrom(s => s.User.Email))
       .ForMember(d => d.PhoneNumber, opt => opt.MapFrom(s => s.User.PhoneNumber))
       .ForMember(d => d.AvatarUrl, opt => opt.MapFrom(s => s.User.AvatarFile != null ? s.User.AvatarFile.FilePath : null))
-      .ForMember(d => d.Gender, opt => opt.MapFrom(s => s.User.Gender));
+      .ForMember(d => d.Gender, opt => opt.MapFrom(s => s.User.Gender))
+      .ForMember(d => d.School, opt => opt.MapFrom(s => s.User.School));
 
     CreateMap<UpdateStudentDto, Student>()
       .ForMember(d => d.UserId, opt => opt.Ignore())

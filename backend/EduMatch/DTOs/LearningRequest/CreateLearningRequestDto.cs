@@ -5,7 +5,7 @@ namespace EduMatch.DTOs.LearningRequests
   public class CreateLearningRequestDto
   {
     [Required]
-    public long TutorProfileId { get; set; }
+    public long TutorId { get; set; }
 
     [Required]
     public long SubjectId { get; set; }

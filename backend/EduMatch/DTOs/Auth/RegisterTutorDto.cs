@@ -12,8 +12,7 @@ namespace EduMatch.DTOs.Auth
     [Required(ErrorMessage = "CV không được để trống")]
     public IFormFile? Cv { get; set; }
 
-    [Required(ErrorMessage = "Mô tả kinh nghiệm không được để trống")]
-    public string Bio { get; set; } = string.Empty;
+    public string? Bio { get; set; }
 
     [Range(0.01, double.MaxValue, ErrorMessage = "Mức lương phải lớn hơn 0")]
     public decimal HourlyRate { get; set; }

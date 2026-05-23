@@ -10,7 +10,7 @@ namespace EduMatch.DTOs.CancellationRequests
     public ClassStatus ClassStatus { get; set; }
     public long StudentId { get; set; }
     public string StudentName { get; set; } = string.Empty;
-    public long TutorProfileId { get; set; }
+    public long TutorId { get; set; }
     public long TutorUserId { get; set; }
     public string TutorName { get; set; } = string.Empty;
     public long RequestedByUserId { get; set; }

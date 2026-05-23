@@ -10,7 +10,7 @@ namespace EduMatch.Data.Configurations
     {
       builder.HasQueryFilter(x => !x.IsDeleted);
 
-      builder.HasIndex(x => new { TutorProfileId = x.TutorId, x.TutorRequestId })
+      builder.HasIndex(x => new { x.TutorId, x.TutorRequestId })
         .IsUnique();
 
       builder.Property(x => x.Message)

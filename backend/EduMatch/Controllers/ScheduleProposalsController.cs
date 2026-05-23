@@ -32,7 +32,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<ApiResponse<ScheduleProposalDto>>> Create([FromBody] CreateScheduleProposalDto dto)
     {
-      var result = await _scheduleProposalService.CreateAsync(GetCurrentTutorProfileId(), dto);
+      var result = await _scheduleProposalService.CreateAsync(GetCurrentTutorId(), dto);
       return this.CreatedResponse(
         $"/api/schedule-proposals/{result.Id}",
         ApiResponse<ScheduleProposalDto>.SuccessResult(result, "Tạo đề xuất lịch học thành công."));
@@ -77,15 +77,15 @@ namespace EduMatch.Controllers
       return userId;
     }
 
-    private long GetCurrentTutorProfileId()
+    private long GetCurrentTutorId()
     {
       var tutorIdClaim = User.FindFirstValue("tutorId");
-      if (!long.TryParse(tutorIdClaim, out var tutorProfileId))
+      if (!long.TryParse(tutorIdClaim, out var tutorId))
       {
         throw new UnauthorizedException("Không thể xác thực gia sư.");
       }
 
-      return tutorProfileId;
+      return tutorId;
     }
   }
 }

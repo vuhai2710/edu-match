@@ -89,7 +89,9 @@ public class TutorService : ITutorService
       }
 
       user.FullName = dto.FullName;
+      user.Birth = dto.Birth;
       user.Gender = dto.Gender;
+      user.School = string.IsNullOrWhiteSpace(dto.School) ? null : dto.School.Trim();
 
       if (dto.PhoneNumber != null)
       {
@@ -115,7 +117,9 @@ public class TutorService : ITutorService
       var user = profile.User ?? throw new InvalidOperationException("Tutor user was not loaded.");
 
       user.FullName = dto.FullName;
+      user.Birth = dto.Birth;
       user.Gender = dto.Gender;
+      user.School = string.IsNullOrWhiteSpace(dto.School) ? null : dto.School.Trim();
 
       if (dto.PhoneNumber != null)
       {

@@ -43,7 +43,7 @@ public class ClassesController : ControllerBase
   [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
   public async Task<ActionResult<ApiResponse<PagedResult<ClassDto>>>> GetTutorClasses([FromQuery] ClassQueryParameters parameters)
   {
-    var result = await _classReadService.GetTutorClassesAsync(GetCurrentTutorProfileId(), parameters);
+    var result = await _classReadService.GetTutorClassesAsync(GetCurrentTutorId(), parameters);
     return this.OkResponse(ApiResponse<PagedResult<ClassDto>>.SuccessResult(result));
   }
 
@@ -71,14 +71,14 @@ public class ClassesController : ControllerBase
     return userId;
   }
 
-  private long GetCurrentTutorProfileId()
+  private long GetCurrentTutorId()
   {
     var tutorIdClaim = User.FindFirstValue("tutorId");
-    if (!long.TryParse(tutorIdClaim, out var tutorProfileId))
+    if (!long.TryParse(tutorIdClaim, out var tutorId))
     {
       throw new UnauthorizedException("Khong the xac thuc gia su.");
     }
 
-    return tutorProfileId;
+    return tutorId;
   }
 }

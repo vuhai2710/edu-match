@@ -38,7 +38,7 @@ namespace EduMatch.Controllers
       var result = await _learningRequestService.CreateAsync(GetCurrentUserId(), dto);
       return this.CreatedResponse(
         $"/api/learning-requests/{result.Id}",
-        ApiResponse<LearningRequestDto>.SuccessResult(result, "Tao yeu cau hoc tap thanh cong."));
+        ApiResponse<LearningRequestDto>.SuccessResult(result, "Tạo yêu cầu học tập thành công."));
     }
 
     [HttpGet("me")]
@@ -74,7 +74,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<ApiResponse<PagedResult<LearningRequestDto>>>> GetIncomingRequests([FromQuery] LearningRequestQueryParameters parameters)
     {
-      var result = await _tutorLearningRequestService.GetIncomingRequestsAsync(GetCurrentTutorProfileId(), parameters);
+      var result = await _tutorLearningRequestService.GetIncomingRequestsAsync(GetCurrentTutorId(), parameters);
       return this.OkResponse(ApiResponse<PagedResult<LearningRequestDto>>.SuccessResult(result));
     }
 
@@ -88,7 +88,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<ApiResponse<LearningRequestDto>>> Accept(long id)
     {
-      var result = await _tutorLearningRequestService.AcceptAsync(id, GetCurrentTutorProfileId());
+      var result = await _tutorLearningRequestService.AcceptAsync(id, GetCurrentTutorId());
       return this.OkResponse(ApiResponse<LearningRequestDto>.SuccessResult(result, "Chấp nhận yêu cầu học tập thành công."));
     }
 
@@ -102,7 +102,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<ApiResponse<LearningRequestDto>>> Reject(long id)
     {
-      var result = await _tutorLearningRequestService.RejectAsync(id, GetCurrentTutorProfileId());
+      var result = await _tutorLearningRequestService.RejectAsync(id, GetCurrentTutorId());
       return this.OkResponse(ApiResponse<LearningRequestDto>.SuccessResult(result, "Từ chối yêu cầu học tập thành công."));
     }
 
@@ -117,15 +117,15 @@ namespace EduMatch.Controllers
       return userId;          
     }
 
-    private long GetCurrentTutorProfileId()
+    private long GetCurrentTutorId()
     {
       var tutorIdClaim = User.FindFirstValue("tutorId");
-      if (!long.TryParse(tutorIdClaim, out var tutorProfileId))
+      if (!long.TryParse(tutorIdClaim, out var tutorId))
       {
         throw new UnauthorizedException("Không thể xác thực gia sư.");
       }
 
-      return tutorProfileId;
+      return tutorId;
     }
   }
 }

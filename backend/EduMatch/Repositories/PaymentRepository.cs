@@ -26,7 +26,7 @@ namespace EduMatch.Repositories
                 .Include(p => p.LearningRequest)
                     .ThenInclude(lr => lr!.ScheduleProposal)
                 .Include(p => p.LearningRequest)
-                    .ThenInclude(lr => lr!.TutorProfile)
+                    .ThenInclude(lr => lr!.Tutor)
                 .Include(p => p.Class)
                 .FirstOrDefaultAsync(p => p.OrderCode == orderCode);
         }

@@ -9,7 +9,7 @@ namespace EduMatch.Repositories.Interfaces
     new Task<Application?> GetByIdAsync(long id);
     Task<Application?> GetByTutorAndRequestAsync(long tutorProfileId, long requestId);
     Task<PagedResult<Application>> GetByRequestIdAsync(long requestId, int page, int pageSize);
-    Task<PagedResult<Application>> GetByTutorProfileIdAsync(long tutorProfileId, int page, int pageSize);
+    Task<PagedResult<Application>> GetByTutorIdAsync(long tutorId, int page, int pageSize);
     Task<PagedResult<Application>> GetAllAsync(int page, int pageSize, ApplicationStatus? status);
     Task<Application> CreateAsync(Application application);
     Task UpdateAsync(Application application);

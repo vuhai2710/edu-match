@@ -61,7 +61,7 @@ namespace EduMatch.Services
 
       // Authorization: caller must be either the student or the tutor of this LearningRequest
       var isStudent = callerUserId == lr.StudentId;
-      var isTutor = callerUserId == lr.TutorProfile.UserId;
+      var isTutor = callerUserId == lr.Tutor.UserId;
       if (!isStudent && !isTutor)
       {
         throw new ForbiddenException(
@@ -172,7 +172,7 @@ namespace EduMatch.Services
 
       // Notify both student and tutor about deposit payment creation
       await _notificationService.SendToMultipleAsync(
-        new[] { lr.StudentId, lr.TutorProfile.UserId },
+        new[] { lr.StudentId, lr.Tutor.UserId },
         "Yêu cầu thanh toán đặt cọc",
         $"Yêu cầu thanh toán đặt cọc đã được tạo cho yêu cầu học tập #{dto.LearningRequestId}.",
         NotificationType.DepositPaymentCreated,
@@ -247,7 +247,7 @@ namespace EduMatch.Services
         if (payment.LearningRequest != null)
         {
           await _notificationService.SendToMultipleAsync(
-            new[] { payment.LearningRequest.StudentId, payment.LearningRequest.TutorProfile.UserId },
+            new[] { payment.LearningRequest.StudentId, payment.LearningRequest.Tutor.UserId },
             "Thanh toán đặt cọc thành công",
             $"Đặt cọc cho yêu cầu học tập #{payment.LearningRequestId} đã thanh toán thành công. Lớp học đã được tạo.",
             NotificationType.DepositPaymentSuccess,
@@ -338,7 +338,7 @@ namespace EduMatch.Services
       var newClass = new Class
       {
         StudentId = lr.StudentId,
-        TutorId = lr.TutorProfileId,
+        TutorId = lr.TutorId,
         LearningRequestId = lr.Id,
         SubjectId = lr.SubjectId,
         TimeSlotsJson = timeSlotsJson,

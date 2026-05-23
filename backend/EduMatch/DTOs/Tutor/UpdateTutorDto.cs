@@ -12,12 +12,14 @@ namespace EduMatch.DTOs.Tutor
   public class UpdateTutorDto
   {
     public string FullName { get; set; } = string.Empty;
+    public int? Birth { get; set; }
     public Gender Gender { get; set; }
-    public string Bio { get; set; } = string.Empty;
+    public string? Bio { get; set; }
     public decimal HourlyRate { get; set; }
 
     [RegularExpression(@"^0\d{9}$", ErrorMessage = "Số điện thoại phải bắt đầu bằng 0 và có đúng 10 chữ số")]
     public string? PhoneNumber { get; set; }
+    public string? School { get; set; }
 
     public CreateAddressDto? Address { get; set; }
     public TutorCareerStatus? CareerStatus { get; set; }

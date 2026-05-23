@@ -43,7 +43,7 @@ namespace EduMatch.Services
           throw new NotFoundException("Không tìm thấy yêu cầu học tập.", "LEARNING_REQUEST_NOT_FOUND");
         }
 
-        if (learningRequest.TutorProfileId != tutorProfileId)
+        if (learningRequest.TutorId != tutorProfileId)
         {
           throw new ForbiddenException("Bạn không có quyền thao tác yêu cầu học tập này.", "LEARNING_REQUEST_FORBIDDEN");
         }

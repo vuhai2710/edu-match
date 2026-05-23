@@ -10,15 +10,19 @@ public class TutorMapper : Profile
   {
     CreateMap<Tutor, TutorDto>()
       .ForMember(d => d.FullName, opt => opt.MapFrom(s => s.User != null ? s.User.FullName : string.Empty))
+      .ForMember(d => d.Birth, opt => opt.MapFrom(s => s.User != null ? s.User.Birth : null))
       .ForMember(d => d.AvatarUrl, opt => opt.MapFrom(s => s.User != null && s.User.AvatarFile != null ? s.User.AvatarFile.FilePath : null))
       .ForMember(d => d.Gender, opt => opt.MapFrom(s => s.User != null ? s.User.Gender : default))
+      .ForMember(d => d.School, opt => opt.MapFrom(s => s.User != null ? s.User.School : null))
       .ForMember(d => d.TeachingLevels, opt => opt.MapFrom(s => s.TeachingLevels.Select(x => x.TeachingLevel)))
       .ForMember(d => d.Subjects, opt => opt.MapFrom(s => s.TutorSubjects));
 
     CreateMap<Tutor, TutorDetailDto>()
       .ForMember(d => d.FullName, opt => opt.MapFrom(s => s.User != null ? s.User.FullName : string.Empty))
+      .ForMember(d => d.Birth, opt => opt.MapFrom(s => s.User != null ? s.User.Birth : null))
       .ForMember(d => d.Email, opt => opt.MapFrom(s => s.User != null ? s.User.Email : string.Empty))
       .ForMember(d => d.PhoneNumber, opt => opt.MapFrom(s => s.User != null ? s.User.PhoneNumber : null))
+      .ForMember(d => d.School, opt => opt.MapFrom(s => s.User != null ? s.User.School : null))
       .ForMember(d => d.AvatarUrl, opt => opt.MapFrom(s => s.User != null && s.User.AvatarFile != null ? s.User.AvatarFile.FilePath : null))
       .ForMember(d => d.Gender, opt => opt.MapFrom(s => s.User != null ? s.User.Gender : default))
       .ForMember(d => d.CvUrl, opt => opt.MapFrom(s => s.CvFile != null ? s.CvFile.FilePath : null))
@@ -29,6 +33,7 @@ public class TutorMapper : Profile
       .ForMember(d => d.SubjectName, opt => opt.MapFrom(s => s.Subject != null ? s.Subject.Name : string.Empty));
 
     CreateMap<UpdateTutorDto, Tutor>()
+      .ForMember(d => d.Bio, opt => opt.MapFrom(s => string.IsNullOrWhiteSpace(s.Bio) ? null : s.Bio.Trim()))
       .ForMember(d => d.UserId, opt => opt.Ignore())
       .ForMember(d => d.Rating, opt => opt.Ignore())
       .ForMember(d => d.TotalReviews, opt => opt.Ignore())

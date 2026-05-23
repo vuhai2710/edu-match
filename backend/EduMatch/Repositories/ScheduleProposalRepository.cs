@@ -17,7 +17,7 @@ namespace EduMatch.Repositories
         .Include(x => x.LearningRequest)
           .ThenInclude(x => x.Student)
         .Include(x => x.LearningRequest)
-          .ThenInclude(x => x.TutorProfile)
+          .ThenInclude(x => x.Tutor)
             .ThenInclude(x => x.User)
         .Include(x => x.LearningRequest)
           .ThenInclude(x => x.Subject)

@@ -59,7 +59,7 @@ namespace EduMatch.Services
         throw new NotFoundException("Không tìm thấy thông tin học viên.", "STUDENT_NOT_FOUND");
       }
 
-      var tutor = await _tutorRepository.GetTutorProfileDetailAsync(dto.TutorProfileId);
+      var tutor = await _tutorRepository.GetTutorProfileDetailAsync(dto.TutorId);
       if (tutor == null)
       {
         throw new NotFoundException("Không tìm thấy thông tin gia sư.", "TUTOR_NOT_FOUND");
@@ -96,7 +96,7 @@ namespace EduMatch.Services
       var entity = new LearningRequest
       {
         StudentId = currentUserId,
-        TutorProfileId = tutor.Id,
+        TutorId = tutor.Id,
         SubjectId = subject.Id,
         Note = string.IsNullOrWhiteSpace(dto.Note) ? null : dto.Note.Trim(),
         TimeSlots = SerializeTimeSlots(validatedTimeSlots),
@@ -112,7 +112,7 @@ namespace EduMatch.Services
       await _learningRequestRepository.SaveChangesAsync();
 
       entity.Student = student.User;
-      entity.TutorProfile = tutor;
+      entity.Tutor = tutor;
       entity.Subject = subject;
 
       await _notificationService.SendAsync(

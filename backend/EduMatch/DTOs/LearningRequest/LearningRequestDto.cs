@@ -7,7 +7,7 @@ namespace EduMatch.DTOs.LearningRequests
     public long Id { get; set; }
     public long StudentId { get; set; }
     public string StudentName { get; set; } = string.Empty;
-    public long TutorProfileId { get; set; }
+    public long TutorId { get; set; }
     public string TutorName { get; set; } = string.Empty;
     public long SubjectId { get; set; }
     public string SubjectName { get; set; } = string.Empty;

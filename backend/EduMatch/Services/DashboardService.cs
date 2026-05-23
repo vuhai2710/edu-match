@@ -136,7 +136,7 @@ namespace EduMatch.Services
         })
         .ToListAsync();
 
-      _logger.LogInformation("TutorDashboard fetched for TutorProfileId={Id}", tutorProfileId);
+      _logger.LogInformation("TutorDashboard fetched for TutorId={Id}", tutorProfileId);
 
       return new TutorDashboardDto
       {

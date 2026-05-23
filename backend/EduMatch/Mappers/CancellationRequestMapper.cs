@@ -15,7 +15,7 @@ namespace EduMatch.Mappers
         ClassStatus = entity.Class?.Status ?? default,
         StudentId = entity.Class?.StudentId ?? 0,
         StudentName = entity.Class?.Student?.FullName ?? string.Empty,
-        TutorProfileId = entity.Class?.TutorId ?? 0,
+        TutorId = entity.Class?.TutorId ?? 0,
         TutorUserId = entity.Class?.Tutor?.UserId ?? 0,
         TutorName = entity.Class?.Tutor?.User?.FullName ?? string.Empty,
         RequestedByUserId = entity.RequestedByUserId,

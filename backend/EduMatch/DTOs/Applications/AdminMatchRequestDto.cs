@@ -5,7 +5,7 @@ namespace EduMatch.DTOs.Applications
   public class AdminMatchRequestDto
   {
     [Required]
-    public long TutorProfileId { get; set; }
+    public long TutorId { get; set; }
 
     [Required]
     [Range(0, double.MaxValue)]

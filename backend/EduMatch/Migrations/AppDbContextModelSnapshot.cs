@@ -405,7 +405,7 @@ namespace EduMatch.Migrations
                         .IsRequired()
                         .HasColumnType("jsonb");
 
-                    b.Property<long>("TutorProfileId")
+                    b.Property<long>("TutorId")
                         .HasColumnType("bigint");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -419,7 +419,7 @@ namespace EduMatch.Migrations
 
                     b.HasIndex("SubjectId");
 
-                    b.HasIndex("TutorProfileId");
+                    b.HasIndex("TutorId");
 
                     b.ToTable("LearningRequests");
                 });
@@ -760,10 +760,6 @@ namespace EduMatch.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("School")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -1045,6 +1041,9 @@ namespace EduMatch.Migrations
                     b.Property<long?>("AvatarFileId")
                         .HasColumnType("bigint");
 
+                    b.Property<int?>("Birth")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -1088,6 +1087,10 @@ namespace EduMatch.Migrations
                     b.Property<string>("Role")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<string>("School")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1219,9 +1222,9 @@ namespace EduMatch.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("EduMatch.Models.Tutor", "TutorProfile")
+                    b.HasOne("EduMatch.Models.Tutor", "Tutor")
                         .WithMany()
-                        .HasForeignKey("TutorProfileId")
+                        .HasForeignKey("TutorId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -1229,7 +1232,7 @@ namespace EduMatch.Migrations
 
                     b.Navigation("Subject");
 
-                    b.Navigation("TutorProfile");
+                    b.Navigation("Tutor");
                 });
 
             modelBuilder.Entity("EduMatch.Models.Message", b =>

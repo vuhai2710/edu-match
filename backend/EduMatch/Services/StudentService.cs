@@ -67,7 +67,9 @@ namespace EduMatch.Services
 
       var user = profile.User ?? throw new InvalidOperationException("Student user was not loaded.");
       user.FullName = dto.FullName;
+      user.Birth = dto.Birth;
       user.Gender = dto.Gender;
+      user.School = string.IsNullOrWhiteSpace(dto.School) ? null : dto.School.Trim();
 
       if (dto.PhoneNumber != null)
       {

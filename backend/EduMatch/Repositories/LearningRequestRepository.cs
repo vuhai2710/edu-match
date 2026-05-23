@@ -17,7 +17,7 @@ namespace EduMatch.Repositories
     {
       return await _dbSet
         .Include(x => x.Student)
-        .Include(x => x.TutorProfile)
+        .Include(x => x.Tutor)
           .ThenInclude(x => x.User)
         .Include(x => x.Subject)
         .FirstOrDefaultAsync(x => x.Id == id);
@@ -27,7 +27,7 @@ namespace EduMatch.Repositories
     {
       var query = _dbSet
         .Include(x => x.Student)
-        .Include(x => x.TutorProfile)
+        .Include(x => x.Tutor)
           .ThenInclude(x => x.User)
         .Include(x => x.Subject)
         .Where(x => x.StudentId == studentId);
@@ -55,14 +55,14 @@ namespace EduMatch.Repositories
       };
     }
 
-    public async Task<PagedResult<LearningRequest>> GetByTutorProfileIdAsync(long tutorProfileId, LearningRequestQueryParameters parameters)
+    public async Task<PagedResult<LearningRequest>> GetByTutorIdAsync(long tutorId, LearningRequestQueryParameters parameters)
     {
       var query = _dbSet
         .Include(x => x.Student)
-        .Include(x => x.TutorProfile)
+        .Include(x => x.Tutor)
           .ThenInclude(x => x.User)
         .Include(x => x.Subject)
-        .Where(x => x.TutorProfileId == tutorProfileId);
+        .Where(x => x.TutorId == tutorId);
 
       if (parameters.Status.HasValue)
       {

@@ -39,7 +39,7 @@ namespace EduMatch.Data.Configurations
         .IsRequired(false);
 
       builder.HasIndex(x => x.StudentId);
-      builder.HasIndex(x => x.TutorProfileId);
+      builder.HasIndex(x => x.TutorId);
       builder.HasIndex(x => x.Status);
 
       builder.HasOne(x => x.Student)
@@ -47,9 +47,9 @@ namespace EduMatch.Data.Configurations
         .HasForeignKey(x => x.StudentId)
         .OnDelete(DeleteBehavior.Cascade);
 
-      builder.HasOne(x => x.TutorProfile)
+      builder.HasOne(x => x.Tutor)
         .WithMany()
-        .HasForeignKey(x => x.TutorProfileId)
+        .HasForeignKey(x => x.TutorId)
         .OnDelete(DeleteBehavior.Restrict);
 
       builder.HasOne(x => x.Subject)

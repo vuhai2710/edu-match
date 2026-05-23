@@ -31,7 +31,7 @@ namespace EduMatch.Services
 
     public async Task<PagedResult<LearningRequestDto>> GetIncomingRequestsAsync(long tutorProfileId, LearningRequestQueryParameters parameters)
     {
-      var pagedRequests = await _learningRequestRepository.GetByTutorProfileIdAsync(tutorProfileId, parameters);
+      var pagedRequests = await _learningRequestRepository.GetByTutorIdAsync(tutorProfileId, parameters);
 
       return new PagedResult<LearningRequestDto>
       {
@@ -60,7 +60,7 @@ namespace EduMatch.Services
       await _notificationService.SendAsync(
         request.StudentId,
         "Yêu cầu học tập được chấp nhận",
-        $"Gia sư {request.TutorProfile?.User?.FullName ?? string.Empty} đã chấp nhận yêu cầu học {request.Subject?.Name ?? string.Empty} của bạn.",
+        $"Gia sư {request.Tutor?.User?.FullName ?? string.Empty} đã chấp nhận yêu cầu học {request.Subject?.Name ?? string.Empty} của bạn.",
         NotificationType.LearningRequestAccepted,
         "LearningRequest",
         request.Id,
@@ -84,7 +84,7 @@ namespace EduMatch.Services
       await _notificationService.SendAsync(
         request.StudentId,
         "Yêu cầu học tập bị từ chối",
-        $"Gia sư {request.TutorProfile?.User?.FullName ?? string.Empty} đã từ chối yêu cầu học {request.Subject?.Name ?? string.Empty} của bạn.",
+        $"Gia sư {request.Tutor?.User?.FullName ?? string.Empty} đã từ chối yêu cầu học {request.Subject?.Name ?? string.Empty} của bạn.",
         NotificationType.LearningRequestRejected,
         "LearningRequest",
         request.Id,
@@ -101,7 +101,7 @@ namespace EduMatch.Services
         throw new NotFoundException("Không tìm thấy yêu cầu học tập.", "LEARNING_REQUEST_NOT_FOUND");
       }
 
-      if (request.TutorProfileId != tutorProfileId)
+      if (request.TutorId != tutorProfileId)
       {
         throw new ForbiddenException("Bạn không có quyền thao tác yêu cầu học tập này.", "LEARNING_REQUEST_FORBIDDEN");
       }

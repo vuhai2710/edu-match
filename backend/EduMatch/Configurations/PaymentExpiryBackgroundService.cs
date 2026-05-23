@@ -56,7 +56,7 @@ namespace EduMatch.Configurations
       var now = DateTime.UtcNow;
 
       var expiredRequests = await db.LearningRequests
-        .Include(lr => lr.TutorProfile)
+        .Include(lr => lr.Tutor)
         .Where(lr => lr.PaymentExpiresAt.HasValue
           && lr.PaymentExpiresAt.Value < now
           && lr.Status == LearningRequestStatus.SoftBooked)
@@ -96,7 +96,7 @@ namespace EduMatch.Configurations
       foreach (var lr in expiredRequests)
       {
         var studentUserId = lr.StudentId;
-        var tutorUserId = lr.TutorProfile.UserId;
+        var tutorUserId = lr.Tutor.UserId;
 
         await notificationService.SendToMultipleAsync(
           new[] { studentUserId, tutorUserId },

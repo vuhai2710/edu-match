@@ -128,6 +128,7 @@ namespace EduMatch.Services
       {
         TutorId = tutor.Id,
         FullName = tutor.User?.FullName ?? string.Empty,
+        Birth = tutor.User?.Birth,
         AvatarUrl = tutor.User?.AvatarFile?.FilePath,
         Gender = tutor.User?.Gender ?? default,
         Rating = tutor.Rating,
@@ -135,6 +136,7 @@ namespace EduMatch.Services
         HourlyRate = tutor.HourlyRate,
         Bio = tutor.Bio,
         Major = tutor.Major,
+        School = tutor.User?.School,
         Subjects = tutor.TutorSubjects
           .Where(ts => ts.Subject != null)
           .Select(ts => ts.Subject.Name)

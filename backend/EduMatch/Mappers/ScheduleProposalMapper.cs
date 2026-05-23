@@ -16,12 +16,12 @@ namespace EduMatch.Mappers
         LearningRequestId = entity.LearningRequestId,
         StudentId = entity.LearningRequest?.StudentId ?? 0,
         StudentName = entity.LearningRequest?.Student?.FullName ?? string.Empty,
-        TutorProfileId = entity.LearningRequest?.TutorProfileId ?? entity.ProposedBy,
-        TutorName = entity.LearningRequest?.TutorProfile?.User?.FullName ?? string.Empty,
+        TutorId = entity.LearningRequest?.TutorId ?? entity.ProposedBy,
+        TutorName = entity.LearningRequest?.Tutor?.User?.FullName ?? string.Empty,
         SubjectId = entity.LearningRequest?.SubjectId ?? 0,
         SubjectName = entity.LearningRequest?.Subject?.Name ?? string.Empty,
         ProposedBy = entity.ProposedBy,
-        ProposedByName = entity.Tutor?.User?.FullName ?? entity.LearningRequest?.TutorProfile?.User?.FullName ?? string.Empty,
+        ProposedByName = entity.Tutor?.User?.FullName ?? entity.LearningRequest?.Tutor?.User?.FullName ?? string.Empty,
         RoundNumber = entity.RoundNumber,
         TimeSlots = timeSlots
           .Select(slot => new TimeSlotDto

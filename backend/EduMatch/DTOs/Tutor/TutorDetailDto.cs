@@ -9,12 +9,14 @@ namespace EduMatch.DTOs.Tutor
     public string Code { get; set; } = string.Empty;
     public long UserId { get; set; }
     public string FullName { get; set; } = string.Empty;
+    public int? Birth { get; set; }
     public string Email { get; set; } = string.Empty;
     public string? PhoneNumber { get; set; }
+    public string? School { get; set; }
     public string? AvatarUrl { get; set; }
     public Gender Gender { get; set; }
     public string? CvUrl { get; set; }
-    public string Bio { get; set; } = string.Empty;
+    public string? Bio { get; set; }
     public decimal HourlyRate { get; set; }
     public double Rating { get; set; }
     public long TotalReviews { get; set; }

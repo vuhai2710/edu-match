@@ -53,7 +53,7 @@ namespace EduMatch.Services
         throw new NotFoundException("Không tìm thấy yêu cầu học tập.", "LEARNING_REQUEST_NOT_FOUND");
       }
 
-      if (request.TutorProfileId != tutorProfileId)
+      if (request.TutorId != tutorProfileId)
       {
         throw new ForbiddenException("Bạn không có quyền đề xuất lịch học cho yêu cầu này.", "SCHEDULE_PROPOSAL_FORBIDDEN");
       }
@@ -113,12 +113,12 @@ namespace EduMatch.Services
       await _scheduleProposalRepository.SaveChangesAsync();
 
       proposal.LearningRequest = request;
-      proposal.Tutor = request.TutorProfile;
+      proposal.Tutor = request.Tutor;
 
       await _notificationService.SendAsync(
         request.StudentId,
         "Gia sư đề xuất lịch học mới",
-        $"Gia sư {request.TutorProfile?.User?.FullName ?? string.Empty} đã gửi đề xuất lịch học mới cho môn {request.Subject?.Name ?? string.Empty}.",
+        $"Gia sư {request.Tutor?.User?.FullName ?? string.Empty} đã gửi đề xuất lịch học mới cho môn {request.Subject?.Name ?? string.Empty}.",
         NotificationType.ScheduleProposalCreated,
         "ScheduleProposal",
         proposal.Id,

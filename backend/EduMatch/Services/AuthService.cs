@@ -285,11 +285,6 @@ public class AuthService
         errors[nameof(tutorDto.Cv)] = ["CV là bắt buộc."];
       }
 
-      if (string.IsNullOrWhiteSpace(tutorDto.Bio))
-      {
-        errors[nameof(tutorDto.Bio)] = ["Mô tả kinh nghiệm là bắt buộc."];
-      }
-
       if (tutorDto.HourlyRate <= 0)
       {
         errors[nameof(tutorDto.HourlyRate)] = ["Mức lương phải lớn hơn 0."];
@@ -333,7 +328,6 @@ public class AuthService
     {
       Code = _codeGenerator.GenerateTemporaryCode("STU"),
       Bio = string.Empty,
-      School = string.Empty,
       GradeLevel = null,
       Address = addressDto == null ? null : _mapper.Map<Address>(addressDto)
     };
@@ -344,7 +338,7 @@ public class AuthService
     return new Tutor
     {
       Code = _codeGenerator.GenerateTemporaryCode("TUT"),
-      Bio = dto.Bio.Trim(),
+      Bio = string.IsNullOrWhiteSpace(dto.Bio) ? null : dto.Bio.Trim(),
       HourlyRate = dto.HourlyRate,
       CareerStatus = dto.CareerStatus,
       Major = dto.Major.Trim(),

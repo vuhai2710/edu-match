@@ -5,8 +5,10 @@ namespace EduMatch.Models
   public class User : BaseEntity
   {
     public string FullName { get; set; } = string.Empty;
+    public int? Birth { get; set; }
     public string Email { get; set; } = string.Empty;
     public string? PhoneNumber { get; set; }
+    public string? School { get; set; }
     public string Password { get; set; } = string.Empty;
     public UserRole Role { get; set; }
     public long? AvatarFileId { get; set; }

@@ -364,7 +364,7 @@ namespace EduMatch.Services
         throw new NotFoundException("Không tìm thấy hồ sơ gia sư.", "TUTOR_PROFILE_NOT_FOUND");
       }
 
-      var pagedApplications = await _applicationRepository.GetByTutorProfileIdAsync(tutorProfile.Id, page, pageSize);
+      var pagedApplications = await _applicationRepository.GetByTutorIdAsync(tutorProfile.Id, page, pageSize);
       return ApiResponse<PagedResult<ApplicationResponseDto>>.SuccessResult(MapPagedApplications(pagedApplications));
     }
 
@@ -479,7 +479,7 @@ namespace EduMatch.Services
       return new ApplicationResponseDto
       {
         Id = application.Id,
-        TutorProfileId = application.TutorId,
+        TutorId = application.TutorId,
         TutorName = application.Tutor?.User?.FullName ?? string.Empty,
         TutorAvatar = application.Tutor?.User?.AvatarFile?.FilePath ?? string.Empty,
         TutorRating = application.Tutor?.Rating ?? 0,

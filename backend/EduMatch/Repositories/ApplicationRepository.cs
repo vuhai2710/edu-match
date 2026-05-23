@@ -69,7 +69,7 @@ namespace EduMatch.Repositories
       };
     }
 
-    public async Task<PagedResult<Application>> GetByTutorProfileIdAsync(long tutorProfileId, int page, int pageSize)
+    public async Task<PagedResult<Application>> GetByTutorIdAsync(long tutorId, int page, int pageSize)
     {
       page = page <= 0 ? 1 : page;
       pageSize = pageSize <= 0 ? 10 : Math.Min(pageSize, 100);
@@ -83,7 +83,7 @@ namespace EduMatch.Repositories
             .ThenInclude(x => x.AvatarFile)
         .Include(x => x.TutorRequest)
           .ThenInclude(x => x.Subject)
-        .Where(x => x.TutorId == tutorProfileId)
+        .Where(x => x.TutorId == tutorId)
         .OrderByDescending(x => x.CreatedAt);
 
       var totalCount = await query.CountAsync();

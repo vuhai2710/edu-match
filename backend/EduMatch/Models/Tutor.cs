@@ -7,7 +7,7 @@ namespace EduMatch.Models
     public string Code { get; set; } = null!;
     public long UserId { get; set; }
     public long? CvFileId { get; set; }
-    public string Bio { get; set; } = string.Empty;
+    public string? Bio { get; set; }
     public decimal HourlyRate { get; set; }
     public double Rating { get; set; } = 0;
     public long TotalReviews { get; set; } = 0;
