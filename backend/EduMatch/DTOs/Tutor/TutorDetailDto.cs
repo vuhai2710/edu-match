@@ -16,7 +16,7 @@ namespace EduMatch.DTOs.Tutor
     public string? AvatarUrl { get; set; }
     public Gender Gender { get; set; }
     public string? CvUrl { get; set; }
-    public string? Bio { get; set; }
+    public string? Profile { get; set; }
     public decimal HourlyRate { get; set; }
     public double Rating { get; set; }
     public long TotalReviews { get; set; }

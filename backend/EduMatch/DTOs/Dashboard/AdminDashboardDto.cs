@@ -36,7 +36,7 @@ namespace EduMatch.DTOs.Dashboard
     public long TutorId { get; set; }
     public string FullName { get; set; } = default!;
     public string? AvatarUrl { get; set; }
-    public string? Bio { get; set; }
+    public string? Profile { get; set; }
     public decimal HourlyRate { get; set; }
     public DateTime RequestedAt { get; set; }
   }

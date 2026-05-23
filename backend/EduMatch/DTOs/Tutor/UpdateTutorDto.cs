@@ -14,7 +14,7 @@ namespace EduMatch.DTOs.Tutor
     public string FullName { get; set; } = string.Empty;
     public int? Birth { get; set; }
     public Gender Gender { get; set; }
-    public string? Bio { get; set; }
+    public string? Profile { get; set; }
     public decimal HourlyRate { get; set; }
 
     [RegularExpression(@"^0\d{9}$", ErrorMessage = "Số điện thoại phải bắt đầu bằng 0 và có đúng 10 chữ số")]

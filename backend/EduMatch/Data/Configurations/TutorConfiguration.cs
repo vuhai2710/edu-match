@@ -13,7 +13,7 @@ namespace EduMatch.Data.Configurations
       builder.Property(x => x.Code).IsRequired().HasMaxLength(20);
       builder.HasIndex(x => x.Code).IsUnique();
 
-      builder.Property(x => x.Bio)
+      builder.Property(x => x.Profile)
         .HasMaxLength(2000)
         .IsRequired(false);
 

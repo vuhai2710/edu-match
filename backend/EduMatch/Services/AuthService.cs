@@ -338,7 +338,7 @@ public class AuthService
     return new Tutor
     {
       Code = _codeGenerator.GenerateTemporaryCode("TUT"),
-      Bio = string.IsNullOrWhiteSpace(dto.Bio) ? null : dto.Bio.Trim(),
+      Profile = string.IsNullOrWhiteSpace(dto.Profile) ? null : dto.Profile.Trim(),
       HourlyRate = dto.HourlyRate,
       CareerStatus = dto.CareerStatus,
       Major = dto.Major.Trim(),

@@ -12,7 +12,7 @@ namespace EduMatch.DTOs.Subject
     public double Rating { get; set; }
     public long TotalReviews { get; set; }
     public decimal HourlyRate { get; set; }
-    public string? Bio { get; set; }
+    public string? Profile { get; set; }
     public string Major { get; set; } = string.Empty;
     public string? School { get; set; }
     public List<string> Subjects { get; set; } = [];

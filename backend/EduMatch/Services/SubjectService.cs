@@ -134,7 +134,7 @@ namespace EduMatch.Services
         Rating = tutor.Rating,
         TotalReviews = tutor.TotalReviews,
         HourlyRate = tutor.HourlyRate,
-        Bio = tutor.Bio,
+        Profile = tutor.Profile,
         Major = tutor.Major,
         School = tutor.User?.School,
         Subjects = tutor.TutorSubjects

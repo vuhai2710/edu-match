@@ -828,10 +828,6 @@ namespace EduMatch.Migrations
                     b.Property<long?>("AddressId")
                         .HasColumnType("bigint");
 
-                    b.Property<string>("Bio")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
                     b.Property<string>("CareerStatus")
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
@@ -856,6 +852,10 @@ namespace EduMatch.Migrations
                     b.Property<string>("Major")
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
+
+                    b.Property<string>("Profile")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
 
                     b.Property<double>("Rating")
                         .ValueGeneratedOnAdd()

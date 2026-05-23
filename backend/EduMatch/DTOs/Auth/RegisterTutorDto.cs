@@ -12,7 +12,7 @@ namespace EduMatch.DTOs.Auth
     [Required(ErrorMessage = "CV không được để trống")]
     public IFormFile? Cv { get; set; }
 
-    public string? Bio { get; set; }
+    public string? Profile { get; set; }
 
     [Range(0.01, double.MaxValue, ErrorMessage = "Mức lương phải lớn hơn 0")]
     public decimal HourlyRate { get; set; }

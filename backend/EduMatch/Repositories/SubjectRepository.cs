@@ -43,7 +43,7 @@ namespace EduMatch.Repositories
         var searchTerm = parameters.SearchTerm.ToLower().Trim();
         query = query.Where(t =>
             (t.User.FullName != null && t.User.FullName.ToLower().Contains(searchTerm)) ||
-            (t.Bio != null && t.Bio.ToLower().Contains(searchTerm)));
+            (t.Profile != null && t.Profile.ToLower().Contains(searchTerm)));
       }
 
       if (parameters.ProvinceId.HasValue)

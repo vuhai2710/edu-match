@@ -33,7 +33,7 @@ public class TutorMapper : Profile
       .ForMember(d => d.SubjectName, opt => opt.MapFrom(s => s.Subject != null ? s.Subject.Name : string.Empty));
 
     CreateMap<UpdateTutorDto, Tutor>()
-      .ForMember(d => d.Bio, opt => opt.MapFrom(s => string.IsNullOrWhiteSpace(s.Bio) ? null : s.Bio.Trim()))
+      .ForMember(d => d.Profile, opt => opt.MapFrom(s => string.IsNullOrWhiteSpace(s.Profile) ? null : s.Profile.Trim()))
       .ForMember(d => d.UserId, opt => opt.Ignore())
       .ForMember(d => d.Rating, opt => opt.Ignore())
       .ForMember(d => d.TotalReviews, opt => opt.Ignore())

@@ -30,7 +30,7 @@ namespace EduMatch.Repositories
         query = query.Where(t =>
             t.Code == exactTerm ||
             (t.User.FullName != null && t.User.FullName.ToLower().Contains(searchTerm)) ||
-            (t.Bio != null && t.Bio.ToLower().Contains(searchTerm)) ||
+            (t.Profile != null && t.Profile.ToLower().Contains(searchTerm)) ||
             (t.Major != null && t.Major.ToLower().Contains(searchTerm)));
       }
 
