@@ -66,7 +66,6 @@ builder.Services.AddSwaggerGen(options =>
 
   options.EnableAnnotations();
   options.OperationFilter<FileUploadOperationFilter>();
-  options.OperationFilter<AuthorizeOperationFilter>();
   options.DocumentFilter<SchemaCleanupFilter>();
 
   options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -74,7 +73,11 @@ builder.Services.AddSwaggerGen(options =>
     Type = SecuritySchemeType.Http,
     Scheme = "bearer",
     BearerFormat = "JWT",
-    Description = "Nhập: Bearer {token}"
+    Description = "Nhập: {token}"
+  });
+  options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+  {
+    [new OpenApiSecuritySchemeReference("Bearer", document)] = []
   });
 });
 
@@ -117,6 +120,21 @@ builder.Services.AddAuthentication(options =>
         {
           context.Token = accessToken;
         }
+
+        return Task.CompletedTask;
+      },
+      OnAuthenticationFailed = context =>
+      {
+        var logger = context.HttpContext.RequestServices
+          .GetRequiredService<ILoggerFactory>()
+          .CreateLogger("JwtBearer");
+
+        logger.LogWarning(
+          context.Exception,
+          "JWT authentication failed for [{Method}] {Path}: {Message}",
+          context.HttpContext.Request.Method,
+          context.HttpContext.Request.Path,
+          context.Exception.Message);
 
         return Task.CompletedTask;
       },

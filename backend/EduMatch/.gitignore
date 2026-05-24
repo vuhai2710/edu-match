@@ -6,6 +6,9 @@
 [Ll]ogs/
 [Dd]ocs/
 
+.dotnet/
+artifacts/
+
 appsettings.Development.json
 appsettings.Production.json
 appsettings.Staging.json
@@ -56,5 +59,3 @@ coverage.opencover.xml
 .DS_Store
 Thumbs.db
 desktop.ini
-
-ai-context/
