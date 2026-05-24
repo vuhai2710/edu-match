@@ -6,6 +6,22 @@ namespace EduMatch.Configuration
 {
   public class AuthorizeOperationFilter : IOperationFilter
   {
+    private static readonly OpenApiDocument BearerReferenceHostDocument = new()
+    {
+      Components = new OpenApiComponents
+      {
+        SecuritySchemes = new Dictionary<string, IOpenApiSecurityScheme>
+        {
+          ["Bearer"] = new OpenApiSecurityScheme
+          {
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT"
+          }
+        }
+      }
+    };
+
     public void Apply(OpenApiOperation operation, OperationFilterContext context)
     {
       var methodInfo = context.MethodInfo;
@@ -32,9 +48,7 @@ namespace EduMatch.Configuration
       operation.Security ??= [];
       operation.Security.Add(new OpenApiSecurityRequirement
       {
-        [
-          new OpenApiSecuritySchemeReference("Bearer", new OpenApiDocument(), null)
-        ] = []
+        [new OpenApiSecuritySchemeReference("Bearer", BearerReferenceHostDocument, null)] = []
       });
     }
   }

@@ -4,6 +4,7 @@ using EduMatch.Common.Middleware;
 using EduMatch.Configuration;
 using EduMatch.Configurations;
 using EduMatch.Data;
+using EduMatch.Domain.Booking;
 using EduMatch.DTOs;
 using EduMatch.Repositories;
 using EduMatch.Repositories.Interfaces;
@@ -11,7 +12,6 @@ using EduMatch.Services;
 using EduMatch.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
@@ -54,6 +54,7 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddAutoMapper(cfg => cfg.AddMaps(typeof(Program)));
 builder.Services.AddSignalR();
+builder.Services.AddBookingDomainServices();
 
 builder.Services.AddSwaggerGen(options =>
 {
@@ -65,7 +66,6 @@ builder.Services.AddSwaggerGen(options =>
 
   options.EnableAnnotations();
   options.OperationFilter<FileUploadOperationFilter>();
-  options.OperationFilter<AuthorizeOperationFilter>();
   options.DocumentFilter<SchemaCleanupFilter>();
 
   options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -73,7 +73,11 @@ builder.Services.AddSwaggerGen(options =>
     Type = SecuritySchemeType.Http,
     Scheme = "bearer",
     BearerFormat = "JWT",
-    Description = "Nhập: Bearer {token}"
+    Description = "Nhập: {token}"
+  });
+  options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+  {
+    [new OpenApiSecuritySchemeReference("Bearer", document)] = []
   });
 });
 
@@ -110,10 +114,27 @@ builder.Services.AddAuthentication(options =>
         var accessToken = context.Request.Query["access_token"];
         var path = context.HttpContext.Request.Path;
 
-        if (!string.IsNullOrWhiteSpace(accessToken) && path.StartsWithSegments("/hubs/notifications"))
+        if (!string.IsNullOrWhiteSpace(accessToken)
+            && (path.StartsWithSegments("/hubs/notifications")
+                || path.StartsWithSegments("/hubs/chat")))
         {
           context.Token = accessToken;
         }
+
+        return Task.CompletedTask;
+      },
+      OnAuthenticationFailed = context =>
+      {
+        var logger = context.HttpContext.RequestServices
+          .GetRequiredService<ILoggerFactory>()
+          .CreateLogger("JwtBearer");
+
+        logger.LogWarning(
+          context.Exception,
+          "JWT authentication failed for [{Method}] {Path}: {Message}",
+          context.HttpContext.Request.Method,
+          context.HttpContext.Request.Path,
+          context.Exception.Message);
 
         return Task.CompletedTask;
       },
@@ -224,19 +245,33 @@ builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("Cloudinary"));
 builder.Services.AddSingleton<ICloudinaryService, CloudinaryService>();
 builder.Services.AddScoped<ITutorRequestRepository, TutorRequestRepository>();
+builder.Services.AddScoped<ILearningRequestRepository, LearningRequestRepository>();
+builder.Services.AddScoped<IScheduleProposalRepository, ScheduleProposalRepository>();
 builder.Services.AddScoped<IApplicationRepository, ApplicationRepository>();
 builder.Services.AddScoped<ITutorRequestService, TutorRequestService>();
+builder.Services.AddScoped<ILearningRequestService, LearningRequestService>();
+builder.Services.AddScoped<ITutorLearningRequestService, TutorLearningRequestService>();
+builder.Services.AddScoped<IScheduleProposalService, ScheduleProposalService>();
+builder.Services.AddScoped<IBookingConflictService, BookingConflictService>();
+builder.Services.AddScoped<IBookingOrchestrator, BookingOrchestrator>();
 builder.Services.AddScoped<IApplicationService, ApplicationService>();
 builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<EduMatch.Repositories.Interfaces.INotificationRepository, EduMatch.Repositories.NotificationRepository>();
 builder.Services.AddScoped<EduMatch.Services.Interfaces.INotificationService, EduMatch.Services.NotificationService>();
 builder.Services.AddScoped<IClassRepository, ClassRepository>();
+builder.Services.AddScoped<IClassReadService, ClassReadService>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
+builder.Services.AddScoped<IDepositPolicyRepository, DepositPolicyRepository>();
 builder.Services.Configure<PayOSSettings>(builder.Configuration.GetSection("PayOS"));
 builder.Services.AddHttpClient<IPaymentService, PaymentService>();
+builder.Services.AddHttpClient<IDepositPaymentService, DepositPaymentService>();
+builder.Services.AddScoped<IDepositPolicyService, DepositPolicyService>();
 builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
-builder.Services.AddHostedService<RequestExpiryBackgroundService>();
+builder.Services.Configure<BackgroundJobSettings>(builder.Configuration.GetSection(BackgroundJobSettings.SectionName));
+builder.Services.AddHostedService<ScheduleExpiryBackgroundService>();
+builder.Services.AddHostedService<PaymentExpiryBackgroundService>();
+builder.Services.AddHostedService<ClassActivationBackgroundService>();
 
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Email"));
 builder.Services.AddScoped<IEmailService, EmailService>();
@@ -245,7 +280,9 @@ builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
 
 builder.Services.AddSingleton<ICodeGeneratorService, CodeGeneratorService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
-builder.Services.AddScoped<ITutorApprovalService, TutorApprovalService>();
+
+builder.Services.AddScoped<ISubjectRepository, SubjectRepository>();
+builder.Services.AddScoped<ISubjectService, SubjectService>();
 #endregion
 
 builder.Services.AddCors(options =>

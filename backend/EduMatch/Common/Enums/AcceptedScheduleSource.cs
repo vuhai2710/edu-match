@@ -3,10 +3,9 @@ using System.Text.Json.Serialization;
 namespace EduMatch.Common.Enums
 {
   [JsonConverter(typeof(JsonStringEnumConverter))]
-  public enum Level
+  public enum AcceptedScheduleSource
   {
-    Beginner = 0,
-    Medium = 1,
-    Advanced = 2
+    R1,
+    R2
   }
 }

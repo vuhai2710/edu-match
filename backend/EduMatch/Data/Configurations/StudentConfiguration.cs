@@ -13,7 +13,7 @@ namespace EduMatch.Data.Configurations
       builder.HasIndex(x => x.Code).IsUnique();
 
       builder.HasOne(s => s.User)
-          .WithOne(u => u.StudentProfile)
+          .WithOne(u => u.Student)
           .HasForeignKey<Student>(s => s.UserId)
           .OnDelete(DeleteBehavior.Cascade);
 

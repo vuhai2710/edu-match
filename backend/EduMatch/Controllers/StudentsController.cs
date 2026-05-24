@@ -1,9 +1,7 @@
 using EduMatch.Common.Exception;
 using EduMatch.Common.Extensions;
 using EduMatch.DTOs;
-using EduMatch.DTOs.Student;
 using EduMatch.DTOs.StudentProfile;
-using EduMatch.Services;
 using EduMatch.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,12 +15,10 @@ namespace EduMatch.Controllers
   public class StudentsController : ControllerBase
   {
     private readonly IStudentService _studentService;
-    private readonly AuthService _authService;
 
-    public StudentsController(IStudentService studentService, AuthService authService)
+    public StudentsController(IStudentService studentService)
     {
       _studentService = studentService;
-      _authService = authService;
     }
 
     [HttpGet]
@@ -73,19 +69,6 @@ namespace EduMatch.Controllers
     {
       var result = await _studentService.UpdateMyProfileAsync(GetCurrentUserId(), dto);
       return this.OkResponse(ApiResponse<StudentDetailDto>.SuccessResult(result, "Cập nhật hồ sơ thành công"));
-    }
-
-    [HttpPost("become-tutor")]
-    [Authorize(Roles = "Student")]
-    [SwaggerOperation(OperationId = "becomeTutor")]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult<ApiResponse>> BecomeTutor([FromBody] BecomeTutorDto dto)
-    {
-      await _authService.BecomeTutorAsync(GetCurrentUserId(), dto);
-      return this.OkResponse(ApiResponse.Ok("Yêu cầu trở thành Gia sư đã được gửi. Vui lòng chờ Admin xét duyệt."));
     }
 
     private long GetCurrentUserId()

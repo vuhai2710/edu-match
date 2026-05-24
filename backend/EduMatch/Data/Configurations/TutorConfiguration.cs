@@ -13,7 +13,7 @@ namespace EduMatch.Data.Configurations
       builder.Property(x => x.Code).IsRequired().HasMaxLength(20);
       builder.HasIndex(x => x.Code).IsUnique();
 
-      builder.Property(x => x.Bio)
+      builder.Property(x => x.Profile)
         .HasMaxLength(2000)
         .IsRequired(false);
 
@@ -29,8 +29,22 @@ namespace EduMatch.Data.Configurations
         .HasDefaultValue(0)
         .IsRequired();
 
+      builder.Property(x => x.Major)
+        .HasMaxLength(255)
+        .IsRequired(false);
+
+      builder.Property(x => x.CareerStatus)
+        .HasConversion<string>()
+        .HasMaxLength(30)
+        .IsRequired(false);
+
+      builder.Property(x => x.AcademicDegree)
+        .HasConversion<string>()
+        .HasMaxLength(30)
+        .IsRequired(false);
+
       builder.HasOne(x => x.User)
-        .WithOne(u => u.TutorProfile)
+        .WithOne(u => u.Tutor)
         .HasForeignKey<Tutor>(x => x.UserId)
         .IsRequired()
         .OnDelete(DeleteBehavior.Cascade);
@@ -42,6 +56,11 @@ namespace EduMatch.Data.Configurations
         .OnDelete(DeleteBehavior.NoAction);
 
       builder.HasMany(x => x.TutorSubjects)
+        .WithOne(x => x.Tutor)
+        .HasForeignKey(x => x.TutorId)
+        .OnDelete(DeleteBehavior.Cascade);
+
+      builder.HasMany(x => x.TeachingLevels)
         .WithOne(x => x.Tutor)
         .HasForeignKey(x => x.TutorId)
         .OnDelete(DeleteBehavior.Cascade);

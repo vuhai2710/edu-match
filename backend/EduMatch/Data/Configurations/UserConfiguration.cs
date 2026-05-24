@@ -20,6 +20,8 @@ namespace EduMatch.Data.Configurations
 
       builder.Property(u => u.FullName).HasMaxLength(100).IsRequired();
 
+      builder.Property(u => u.School).HasMaxLength(255);
+
       builder.Property(u => u.Password).IsRequired();
 
       builder.Property(u => u.Role).HasConversion<string>();

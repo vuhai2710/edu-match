@@ -1,6 +1,7 @@
 using EduMatch.Common.Enums;
 using EduMatch.Data;
 using EduMatch.DTOs;
+using EduMatch.DTOs.Classes;
 using EduMatch.Models;
 using EduMatch.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -51,6 +52,62 @@ namespace EduMatch.Repositories
                 PageSize = pageSize,
                 TotalPages = (int)Math.Ceiling(totalItems / (double)pageSize)
             };
+        }
+
+        public async Task<Class?> GetByIdWithDetailsAsync(long id)
+        {
+            return await BuildDetailsQuery()
+                .FirstOrDefaultAsync(c => c.Id == id);
+        }
+
+        public async Task<PagedResult<Class>> GetPagedWithDetailsAsync(
+            ClassQueryParameters parameters,
+            long? studentId = null,
+            long? tutorId = null)
+        {
+            var query = BuildDetailsQuery();
+
+            if (studentId.HasValue)
+            {
+                query = query.Where(c => c.StudentId == studentId.Value);
+            }
+
+            if (tutorId.HasValue)
+            {
+                query = query.Where(c => c.TutorId == tutorId.Value);
+            }
+
+            if (parameters.Status.HasValue)
+            {
+                query = query.Where(c => c.Status == parameters.Status.Value);
+            }
+
+            var totalItems = await query.CountAsync();
+
+            var items = await query
+                .OrderByDescending(c => c.CreatedAt)
+                .Skip((parameters.Page - 1) * parameters.PageSize)
+                .Take(parameters.PageSize)
+                .ToListAsync();
+
+            return new PagedResult<Class>
+            {
+                Items = items,
+                TotalCount = totalItems,
+                Page = parameters.Page,
+                PageSize = parameters.PageSize,
+                TotalPages = totalItems == 0 ? 0 : (int)Math.Ceiling(totalItems / (double)parameters.PageSize)
+            };
+        }
+
+        private IQueryable<Class> BuildDetailsQuery()
+        {
+            return _context.Classes
+                .Include(c => c.Student)
+                .Include(c => c.Tutor)
+                    .ThenInclude(t => t.User)
+                .Include(c => c.Subject)
+                .AsQueryable();
         }
     }
 }

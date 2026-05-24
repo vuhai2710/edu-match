@@ -1,7 +1,11 @@
+using System.Security.Claims;
 using EduMatch.Common.Enums;
+using EduMatch.Common.Exception;
 using EduMatch.Common.Extensions;
 using EduMatch.DTOs;
 using EduMatch.DTOs.Applications;
+using EduMatch.DTOs.CancellationRequests;
+using EduMatch.DTOs.Classes;
 using EduMatch.DTOs.Payment;
 using EduMatch.DTOs.TutorRequests;
 using EduMatch.Services.Interfaces;
@@ -19,12 +23,21 @@ namespace EduMatch.Controllers
     private readonly IApplicationService _applicationService;
     private readonly ITutorRequestService _tutorRequestService;
     private readonly IPaymentService _paymentService;
+    private readonly IClassReadService _classReadService;
+    private readonly ICancellationRequestService _cancellationRequestService;
 
-    public AdminController(IApplicationService applicationService, ITutorRequestService tutorRequestService, IPaymentService paymentService)
+    public AdminController(
+      IApplicationService applicationService,
+      ITutorRequestService tutorRequestService,
+      IPaymentService paymentService,
+      IClassReadService classReadService,
+      ICancellationRequestService cancellationRequestService)
     {
       _applicationService = applicationService;
       _tutorRequestService = tutorRequestService;
       _paymentService = paymentService;
+      _classReadService = classReadService;
+      _cancellationRequestService = cancellationRequestService;
     }
 
     [HttpGet("applications")]
@@ -53,57 +66,42 @@ namespace EduMatch.Controllers
 
     [HttpPut("applications/{id:long}/approve")]
     [SwaggerOperation(OperationId = "adminApproveApplication")]
-    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<ApiResponse<bool>>> AdminApprove(long id, [FromBody] AdminApproveRequestDto dto)
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status410Gone)]
+    public ActionResult<ApiResponse<bool>> AdminApprove(long id, [FromBody] AdminApproveRequestDto dto)
     {
-      var response = await _applicationService.AdminApproveAsync(id, dto.DepositAmount);
-      return this.OkResponse(response);
+      return LegacyGone();
     }
 
     [HttpPut("applications/{id:long}/reject")]
     [SwaggerOperation(OperationId = "adminRejectApplication")]
-    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<ApiResponse<bool>>> AdminReject(long id)
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status410Gone)]
+    public ActionResult<ApiResponse<bool>> AdminReject(long id)
     {
-      var response = await _applicationService.AdminRejectAsync(id);
-      return this.OkResponse(response);
+      return LegacyGone();
     }
 
     [HttpPost("requests/{requestId:long}/match")]
     [SwaggerOperation(OperationId = "adminMatchRequest")]
-    [ProducesResponseType(typeof(ApiResponse<ApplicationResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<ApiResponse<ApplicationResponseDto>>> AdminMatch(long requestId, [FromBody] AdminMatchRequestDto dto)
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status410Gone)]
+    public ActionResult<ApiResponse<ApplicationResponseDto>> AdminMatch(long requestId, [FromBody] AdminMatchRequestDto dto)
     {
-      var response = await _applicationService.AdminMatchAsync(requestId, dto.TutorProfileId, dto.DepositAmount);
-      return this.OkResponse(response);
+      return LegacyGone();
     }
 
     [HttpPost("tutor-requests/{studentId:long}")]
     [SwaggerOperation(OperationId = "adminCreateRequestForStudent")]
-    [ProducesResponseType(typeof(ApiResponse<TutorRequestResponseDto>), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ApiResponse<TutorRequestResponseDto>>> AdminCreateTutorRequest(long studentId, [FromBody] CreateTutorRequestDto dto)
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status410Gone)]
+    public ActionResult<ApiResponse<TutorRequestResponseDto>> AdminCreateTutorRequest(long studentId, [FromBody] CreateTutorRequestDto dto)
     {
-      var response = await _tutorRequestService.CreateAsync(studentId, dto);
-      return this.CreatedResponse($"/api/tutorrequests/{response.Data?.Id}", response);
+      return LegacyGone();
+    }
+
+    private ObjectResult LegacyGone()
+    {
+      return StatusCode(StatusCodes.Status410Gone,
+        ErrorResponse.Create(
+          "Luồng booking cũ đã ngừng. Vui lòng dùng /api/learning-requests và /api/schedule-proposals.",
+          "LEGACY_FLOW_DISABLED"));
     }
 
     [HttpGet("payments")]
@@ -132,6 +130,76 @@ namespace EduMatch.Controllers
       }
 
       return this.OkResponse(ApiResponse<PaymentAdminDto>.SuccessResult(payment));
+    }
+
+    [HttpGet("classes")]
+    [SwaggerOperation(OperationId = "getAllClasses")]
+    [ProducesResponseType(typeof(ApiResponse<PagedResult<ClassDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<ApiResponse<PagedResult<ClassDto>>>> GetAllClasses([FromQuery] ClassQueryParameters parameters)
+    {
+      var result = await _classReadService.GetAdminClassesAsync(parameters);
+      return this.OkResponse(ApiResponse<PagedResult<ClassDto>>.SuccessResult(result));
+    }
+
+    [HttpGet("classes/{id:long}")]
+    [SwaggerOperation(OperationId = "getClassByIdForAdmin")]
+    [ProducesResponseType(typeof(ApiResponse<ClassDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<ClassDto>>> GetClassById(long id)
+    {
+      var result = await _classReadService.GetByIdAsync(id, 0, true);
+      return this.OkResponse(ApiResponse<ClassDto>.SuccessResult(result));
+    }
+
+    [HttpGet("cancellation-requests")]
+    [SwaggerOperation(OperationId = "getAllCancellationRequestsForAdmin")]
+    [ProducesResponseType(typeof(ApiResponse<PagedResult<CancellationRequestDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<ApiResponse<PagedResult<CancellationRequestDto>>>> GetAllCancellationRequests([FromQuery] CancellationRequestQueryParameters parameters)
+    {
+      return this.OkResponse(await _cancellationRequestService.GetAllForAdminAsync(parameters));
+    }
+
+    [HttpGet("cancellation-requests/{id:long}")]
+    [SwaggerOperation(OperationId = "getCancellationRequestByIdForAdmin")]
+    [ProducesResponseType(typeof(ApiResponse<CancellationRequestDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<CancellationRequestDto>>> GetCancellationRequestById(long id)
+    {
+      return this.OkResponse(await _cancellationRequestService.GetByIdAsync(id));
+    }
+
+    [HttpPut("cancellation-requests/{id:long}/resolve")]
+    [SwaggerOperation(OperationId = "resolveCancellationRequest")]
+    [ProducesResponseType(typeof(ApiResponse<CancellationRequestDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<ApiResponse<CancellationRequestDto>>> ResolveCancellationRequest(long id, [FromBody] ResolveCancellationRequestDto dto)
+    {
+      return this.OkResponse(await _cancellationRequestService.ResolveAsync(id, GetCurrentUserId(), dto));
+    }
+
+    private long GetCurrentUserId()
+    {
+      var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+      if (!long.TryParse(userIdClaim, out var userId))
+      {
+        throw new UnauthorizedException("Cannot authenticate user.");
+      }
+
+      return userId;
     }
   }
 }

@@ -52,43 +52,35 @@ namespace EduMatch.Controllers
     }
 
     [HttpPost]
-    [Authorize(Roles = "Student")]
     [SwaggerOperation(OperationId = "createTutorRequest")]
-    [ProducesResponseType(typeof(ApiResponse<TutorRequestResponseDto>), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ApiResponse<TutorRequestResponseDto>>> Create([FromBody] CreateTutorRequestDto dto)
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status410Gone)]
+    public ActionResult<ApiResponse<TutorRequestResponseDto>> Create([FromBody] CreateTutorRequestDto dto)
     {
-      var response = await _tutorRequestService.CreateAsync(GetCurrentUserId(), dto);
-      return this.CreatedResponse($"/api/TutorRequests/{response.Data?.Id}", response);
+      return LegacyGone();
     }
 
     [HttpPut("{id:long}")]
-    [Authorize(Roles = "Student")]
     [SwaggerOperation(OperationId = "updateTutorRequest")]
-    [ProducesResponseType(typeof(ApiResponse<TutorRequestResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ApiResponse<TutorRequestResponseDto>>> Update(long id, [FromBody] UpdateTutorRequestDto dto)
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status410Gone)]
+    public ActionResult<ApiResponse<TutorRequestResponseDto>> Update(long id, [FromBody] UpdateTutorRequestDto dto)
     {
-      return this.OkResponse(await _tutorRequestService.UpdateAsync(id, GetCurrentUserId(), dto));
+      return LegacyGone();
     }
 
     [HttpPut("{id:long}/close")]
-    [Authorize(Roles = "Student")]
     [SwaggerOperation(OperationId = "closeTutorRequest")]
-    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ApiResponse<bool>>> Close(long id)
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status410Gone)]
+    public ActionResult<ApiResponse<bool>> Close(long id)
     {
-      return this.OkResponse(await _tutorRequestService.CloseAsync(id, GetCurrentUserId()));
+      return LegacyGone();
+    }
+
+    private ObjectResult LegacyGone()
+    {
+      return StatusCode(StatusCodes.Status410Gone,
+        ErrorResponse.Create(
+          "Luồng booking cũ đã ngừng. Vui lòng dùng /api/learning-requests và /api/schedule-proposals.",
+          "LEGACY_FLOW_DISABLED"));
     }
 
     private long GetCurrentUserId()

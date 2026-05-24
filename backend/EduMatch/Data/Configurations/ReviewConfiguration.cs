@@ -8,9 +8,11 @@ namespace EduMatch.Data.Configurations
   {
     public void Configure(EntityTypeBuilder<Review> builder)
     {
+      builder.HasQueryFilter(x => !x.IsDeleted);
+
       builder.HasKey(r => r.Id);
       builder.HasIndex(r => r.ClassId).IsUnique();
-      
+
       builder.Property(r => r.Rating).IsRequired();
       builder.Property(r => r.Comment).HasMaxLength(1000);
 

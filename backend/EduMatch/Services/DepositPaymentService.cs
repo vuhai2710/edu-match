@@ -1,0 +1,433 @@
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using EduMatch.Common.Enums;
+using EduMatch.Common.Exception;
+using EduMatch.Configurations;
+using EduMatch.Domain.Booking.Scheduling;
+using EduMatch.DTOs.Payment;
+using EduMatch.Models;
+using EduMatch.Repositories.Interfaces;
+using EduMatch.Services.Interfaces;
+using Microsoft.Extensions.Options;
+
+namespace EduMatch.Services
+{
+  public class DepositPaymentService : IDepositPaymentService
+  {
+    private readonly IPaymentRepository _paymentRepo;
+    private readonly IClassRepository _classRepo;
+    private readonly ILearningRequestRepository _learningRequestRepo;
+    private readonly INotificationService _notificationService;
+    private readonly ICodeGeneratorService _codeGeneratorService;
+    private readonly IBookingScheduleService _bookingScheduleService;
+    private readonly HttpClient _httpClient;
+    private readonly PayOSSettings _settings;
+    private readonly ILogger<DepositPaymentService> _logger;
+
+    public DepositPaymentService(
+      IPaymentRepository paymentRepo,
+      IClassRepository classRepo,
+      ILearningRequestRepository learningRequestRepo,
+      INotificationService notificationService,
+      ICodeGeneratorService codeGeneratorService,
+      IBookingScheduleService bookingScheduleService,
+      HttpClient httpClient,
+      IOptions<PayOSSettings> options,
+      ILogger<DepositPaymentService> logger)
+    {
+      _paymentRepo = paymentRepo;
+      _classRepo = classRepo;
+      _learningRequestRepo = learningRequestRepo;
+      _notificationService = notificationService;
+      _codeGeneratorService = codeGeneratorService;
+      _bookingScheduleService = bookingScheduleService;
+      _httpClient = httpClient;
+      _settings = options.Value;
+      _logger = logger;
+
+      _httpClient.BaseAddress = new Uri(_settings.BaseUrl);
+      _httpClient.DefaultRequestHeaders.Add("x-client-id", _settings.ClientId);
+      _httpClient.DefaultRequestHeaders.Add("x-api-key", _settings.ApiKey);
+    }
+
+    public async Task<PaymentResponseDto> CreateDepositAsync(long callerUserId, CreateDepositPaymentRequest dto)
+    {
+      var lr = await _learningRequestRepo.GetByIdWithDetailsAsync(dto.LearningRequestId);
+      if (lr == null)
+      {
+        throw new NotFoundException("Không tìm thấy yêu cầu học tập.", "LEARNING_REQUEST_NOT_FOUND");
+      }
+
+      // Authorization: caller must be either the student or the tutor of this LearningRequest
+      var isStudent = callerUserId == lr.StudentId;
+      var isTutor = callerUserId == lr.Tutor.UserId;
+      if (!isStudent && !isTutor)
+      {
+        throw new ForbiddenException(
+          "Bạn không có quyền thanh toán cho yêu cầu học tập này.",
+          "DEPOSIT_PAYMENT_FORBIDDEN");
+      }
+
+      if (lr.Status != LearningRequestStatus.SoftBooked)
+      {
+        throw new ConflictException(
+          "Chỉ có thể thanh toán đặt cọc khi yêu cầu học tập ở trạng thái SoftBooked.",
+          "LEARNING_REQUEST_NOT_SOFT_BOOKED");
+      }
+
+      if (lr.PaymentExpiresAt.HasValue && lr.PaymentExpiresAt.Value < DateTime.UtcNow)
+      {
+        throw new ConflictException(
+          "Thời hạn thanh toán đặt cọc đã hết hạn.",
+          "PAYMENT_WINDOW_EXPIRED");
+      }
+
+      // Prevent duplicate pending payments
+      var hasPending = await _paymentRepo.HasPendingPaymentForLearningRequestAsync(dto.LearningRequestId);
+      if (hasPending)
+      {
+        throw new ConflictException(
+          "Đã tồn tại một khoản thanh toán đang chờ cho yêu cầu học tập này.",
+          "DUPLICATE_PENDING_PAYMENT");
+      }
+
+      var depositAmount = lr.CalculatedDepositAmount;
+      if (depositAmount <= 0)
+      {
+        throw new ValidationException(
+          "Số tiền đặt cọc không hợp lệ.",
+          "INVALID_DEPOSIT_AMOUNT");
+      }
+
+      long orderCode = GenerateOrderCode();
+      string description = $"Dat coc LR#{dto.LearningRequestId}"
+        .Substring(0, Math.Min(25, $"Dat coc LR#{dto.LearningRequestId}".Length));
+
+      var payment = new Payment
+      {
+        LearningRequestId = dto.LearningRequestId,
+        PaidByUserId = callerUserId,
+        Amount = depositAmount,
+        OrderCode = orderCode,
+        Description = description,
+        Status = PaymentStatus.Pending
+      };
+
+      await _paymentRepo.AddAsync(payment);
+      await _paymentRepo.SaveChangesAsync();
+
+      // Call PayOS API
+      var reqData = new
+      {
+        orderCode,
+        amount = (int)depositAmount,
+        description,
+        cancelUrl = _settings.CancelUrl,
+        returnUrl = _settings.ReturnUrl + "?orderCode=" + orderCode
+      };
+
+      string signatureData = $"amount={reqData.amount}&cancelUrl={reqData.cancelUrl}&description={reqData.description}&orderCode={reqData.orderCode}&returnUrl={reqData.returnUrl}";
+      string signature = ComputeHmacSha256(signatureData, _settings.ChecksumKey);
+
+      var payOsPayload = new
+      {
+        reqData.orderCode,
+        reqData.amount,
+        reqData.description,
+        reqData.cancelUrl,
+        reqData.returnUrl,
+        signature
+      };
+
+      var response = await _httpClient.PostAsJsonAsync("/v2/payment-requests", payOsPayload);
+
+      if (!response.IsSuccessStatusCode)
+      {
+        var errorText = await response.Content.ReadAsStringAsync();
+        _logger.LogError("PayOS API Error: {Error}", errorText);
+        throw new AppException("Không thể tạo thanh toán với PayOS.", StatusCodes.Status502BadGateway, "PAYOS_API_ERROR");
+      }
+
+      var rsString = await response.Content.ReadAsStringAsync();
+      using var doc = JsonDocument.Parse(rsString);
+      var root = doc.RootElement;
+      var code = root.GetProperty("code").GetString();
+      if (code != "00")
+      {
+        _logger.LogError("PayOS API returned code {Code}, msg: {Msg}", code, root.GetProperty("desc").GetString());
+        throw new AppException("PayOS từ chối yêu cầu thanh toán.", StatusCodes.Status502BadGateway, "PAYOS_API_REJECTED");
+      }
+
+      var dataElem = root.GetProperty("data");
+      var checkoutUrl = dataElem.GetProperty("checkoutUrl").GetString()!;
+
+      payment.CheckoutUrl = checkoutUrl;
+      _paymentRepo.Update(payment);
+      await _paymentRepo.SaveChangesAsync();
+
+      _logger.LogInformation(
+        "Created deposit payment for LearningRequest {LearningRequestId}, orderCode={OrderCode}, paidBy={UserId}",
+        dto.LearningRequestId, orderCode, callerUserId);
+
+      // Notify both student and tutor about deposit payment creation
+      await _notificationService.SendToMultipleAsync(
+        new[] { lr.StudentId, lr.Tutor.UserId },
+        "Yêu cầu thanh toán đặt cọc",
+        $"Yêu cầu thanh toán đặt cọc đã được tạo cho yêu cầu học tập #{dto.LearningRequestId}.",
+        NotificationType.DepositPaymentCreated,
+        "Payment",
+        payment.Id,
+        $"/payments/deposit?orderCode={orderCode}");
+
+      return new PaymentResponseDto
+      {
+        LearningRequestId = dto.LearningRequestId,
+        OrderCode = orderCode,
+        CheckoutUrl = checkoutUrl,
+        Status = payment.Status
+      };
+    }
+
+    public async Task HandleWebhookAsync(PayOSWebhookDto dto)
+    {
+      if (dto.Data == null) return;
+
+      // Verify webhook signature
+      var isValid = VerifyWebhookSignature(dto);
+      if (!isValid)
+      {
+        _logger.LogWarning("Invalid webhook signature for order {OrderCode}", dto.Data.OrderCode);
+        throw new AppException("Chữ ký webhook không hợp lệ.", StatusCodes.Status400BadRequest, "INVALID_WEBHOOK_SIGNATURE");
+      }
+
+      var payment = await _paymentRepo.GetByOrderCodeWithLearningRequestAsync(dto.Data.OrderCode);
+      if (payment == null) return;
+
+      if (payment.Amount != dto.Data.Amount)
+      {
+        _logger.LogWarning(
+          "Amount mismatch for order {OrderCode}: expected={Expected}, received={Received}",
+          dto.Data.OrderCode, payment.Amount, dto.Data.Amount);
+        throw new AppException("Số tiền không khớp.", StatusCodes.Status400BadRequest, "AMOUNT_MISMATCH");
+      }
+
+      // Idempotency: skip if already processed
+      if (payment.Status == PaymentStatus.Success)
+      {
+        return;
+      }
+
+      var dataJson = JsonSerializer.Serialize(dto.Data);
+
+      if (dto.Code == "00" && dto.Data.Code == "00")
+      {
+        payment.Status = PaymentStatus.Success;
+        payment.TransactionId = dto.Data.Reference;
+        payment.PaidAt = DateTime.UtcNow;
+        payment.RawWebhookData = dataJson;
+
+        _paymentRepo.Update(payment);
+
+        // Finalize: create Class from LearningRequest
+        if (payment.LearningRequest != null)
+        {
+          var newClass = await FinalizeClassFromLearningRequest(payment);
+          payment.ClassId = newClass.Id;
+          _paymentRepo.Update(payment);
+        }
+
+        await _paymentRepo.SaveChangesAsync();
+
+        _logger.LogInformation(
+          "Webhook success for order {OrderCode}, LearningRequest {LearningRequestId}",
+          dto.Data.OrderCode, payment.LearningRequestId);
+
+        // Notify both student and tutor
+        if (payment.LearningRequest != null)
+        {
+          await _notificationService.SendToMultipleAsync(
+            new[] { payment.LearningRequest.StudentId, payment.LearningRequest.Tutor.UserId },
+            "Thanh toán đặt cọc thành công",
+            $"Đặt cọc cho yêu cầu học tập #{payment.LearningRequestId} đã thanh toán thành công. Lớp học đã được tạo.",
+            NotificationType.DepositPaymentSuccess,
+            "Payment",
+            payment.Id,
+            $"/classes");
+        }
+      }
+      else
+      {
+        payment.Status = PaymentStatus.Failed;
+        payment.RawWebhookData = dataJson;
+        _paymentRepo.Update(payment);
+        await _paymentRepo.SaveChangesAsync();
+
+        _logger.LogWarning(
+          "Webhook failed for order {OrderCode}, code={Code}, dataCode={DataCode}",
+          dto.Data.OrderCode, dto.Code, dto.Data.Code);
+      }
+    }
+
+    public async Task<PaymentStatusDto> GetStatusAsync(long orderCode)
+    {
+      var payment = await _paymentRepo.GetByOrderCodeAsync(orderCode);
+      if (payment == null)
+      {
+        throw new NotFoundException("Không tìm thấy thanh toán.", "PAYMENT_NOT_FOUND");
+      }
+
+      return new PaymentStatusDto
+      {
+        OrderCode = payment.OrderCode,
+        LearningRequestId = payment.LearningRequestId,
+        Amount = payment.Amount,
+        Status = payment.Status,
+        PaidAt = payment.PaidAt
+      };
+    }
+
+    // ──────────────── Private helpers ────────────────
+
+    private async Task<Class> FinalizeClassFromLearningRequest(Payment payment)
+    {
+      var lr = payment.LearningRequest!;
+
+      // Determine schedule source and time slots
+      string timeSlotsJson;
+      decimal hoursPerSession;
+      AcceptedScheduleSource scheduleSource;
+      long? acceptedProposalId = null;
+      decimal depositSnapshot;
+      DateTime startDate;
+
+      var acceptedProposal = lr.ScheduleProposal != null
+        && lr.ScheduleProposal.Status == ScheduleProposalStatus.Accepted
+          ? lr.ScheduleProposal
+          : null;
+
+      if (acceptedProposal != null)
+      {
+        // R2: copy from ScheduleProposal
+        scheduleSource = AcceptedScheduleSource.R2;
+        acceptedProposalId = acceptedProposal.Id;
+        hoursPerSession = acceptedProposal.HoursPerSession;
+        depositSnapshot = acceptedProposal.CalculatedDepositAmount;
+        startDate = acceptedProposal.DesiredStartDate;
+
+        // Normalize schedule through domain service
+        var normalizedSlots = _bookingScheduleService.ParseAndValidate(
+          acceptedProposal.TimeSlots, hoursPerSession);
+        timeSlotsJson = SerializeTimeSlots(normalizedSlots);
+      }
+      else
+      {
+        // R1: copy from LearningRequest
+        scheduleSource = AcceptedScheduleSource.R1;
+        hoursPerSession = lr.HoursPerSession;
+        depositSnapshot = lr.CalculatedDepositAmount;
+        startDate = lr.DesiredStartDate;
+
+        // Normalize schedule through domain service
+        var normalizedSlots = _bookingScheduleService.ParseAndValidate(
+          lr.TimeSlots, hoursPerSession);
+        timeSlotsJson = SerializeTimeSlots(normalizedSlots);
+      }
+
+      // Create class
+      var newClass = new Class
+      {
+        StudentId = lr.StudentId,
+        TutorId = lr.TutorId,
+        LearningRequestId = lr.Id,
+        SubjectId = lr.SubjectId,
+        TimeSlotsJson = timeSlotsJson,
+        AcceptedScheduleSource = scheduleSource,
+        AcceptedScheduleProposalId = acceptedProposalId,
+        DepositAmountSnapshot = depositSnapshot,
+        DepositAmount = payment.Amount,
+        StartDate = startDate,
+        Status = ClassStatus.PendingStart,
+        Code = _codeGeneratorService.GenerateTemporaryCode("CLS")
+      };
+
+      await _classRepo.AddAsync(newClass);
+      await _classRepo.SaveChangesAsync();
+
+      // Update class code with proper format
+      newClass.Code = _codeGeneratorService.GenerateClassCode(newClass.Id);
+      _classRepo.Update(newClass);
+
+      // Transition LearningRequest to ConvertedToClass
+      lr.Status = LearningRequestStatus.ConvertedToClass;
+      await _paymentRepo.SaveChangesAsync();
+
+      _logger.LogInformation(
+        "Created Class {ClassId} from LearningRequest {LearningRequestId}, source={Source}",
+        newClass.Id, lr.Id, scheduleSource);
+
+      return newClass;
+    }
+
+    private bool VerifyWebhookSignature(PayOSWebhookDto dto)
+    {
+      if (dto.Data == null || string.IsNullOrEmpty(dto.Signature))
+      {
+        return false;
+      }
+
+      // PayOS webhook signature: HMAC-SHA256 of sorted data fields
+      var sortedData = new SortedDictionary<string, string>(StringComparer.Ordinal)
+      {
+        ["accountNumber"] = dto.Data.AccountNumber ?? "",
+        ["amount"] = ((int)dto.Data.Amount).ToString(),
+        ["code"] = dto.Data.Code ?? "",
+        ["counterAccountBankId"] = dto.Data.CounterAccountBankId ?? "",
+        ["counterAccountBankName"] = dto.Data.CounterAccountBankName ?? "",
+        ["counterAccountName"] = dto.Data.CounterAccountName ?? "",
+        ["counterAccountNumber"] = dto.Data.CounterAccountNumber ?? "",
+        ["currency"] = dto.Data.Currency ?? "",
+        ["desc"] = dto.Data.Desc ?? "",
+        ["description"] = dto.Data.Description ?? "",
+        ["orderCode"] = dto.Data.OrderCode.ToString(),
+        ["paymentLinkId"] = dto.Data.PaymentLinkId ?? "",
+        ["reference"] = dto.Data.Reference ?? "",
+        ["transactionDateTime"] = dto.Data.TransactionDateTime ?? "",
+        ["virtualAccountName"] = dto.Data.VirtualAccountName ?? "",
+        ["virtualAccountNumber"] = dto.Data.VirtualAccountNumber ?? ""
+      };
+
+      var signatureData = string.Join("&", sortedData.Select(kv => $"{kv.Key}={kv.Value}"));
+      var expectedSignature = ComputeHmacSha256(signatureData, _settings.ChecksumKey);
+
+      return string.Equals(dto.Signature, expectedSignature, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string ComputeHmacSha256(string data, string key)
+    {
+      using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(key));
+      var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(data));
+      return BitConverter.ToString(hash).Replace("-", "").ToLower();
+    }
+
+    private static long GenerateOrderCode()
+    {
+      return long.Parse(DateTime.Now.ToString("yyMMddHHmmss") + new Random().Next(100, 999).ToString());
+    }
+
+    private static string SerializeTimeSlots(IReadOnlyList<BookingTimeSlot> slots)
+    {
+      var serializable = slots.Select(s => new
+      {
+        day = s.Day.ToString(),
+        startTime = s.StartTime.ToString("HH:mm"),
+        endTime = s.EndTime.ToString("HH:mm")
+      });
+
+      return JsonSerializer.Serialize(serializable, new JsonSerializerOptions
+      {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+      });
+    }
+  }
+}

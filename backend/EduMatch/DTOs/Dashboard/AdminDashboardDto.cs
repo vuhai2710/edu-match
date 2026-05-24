@@ -12,7 +12,8 @@ namespace EduMatch.DTOs.Dashboard
     public int PendingApplications { get; set; }
 
     public int ActiveClasses { get; set; }
-    public int CompletedClasses { get; set; }
+    public int PendingClasses { get; set; }
+    public int CancelledClasses { get; set; }
 
     public decimal TotalRevenue { get; set; }
     public decimal RevenueThisMonth { get; set; }
@@ -32,10 +33,10 @@ namespace EduMatch.DTOs.Dashboard
 
   public class PendingTutorItemDto
   {
-    public long TutorProfileId { get; set; }
+    public long TutorId { get; set; }
     public string FullName { get; set; } = default!;
     public string? AvatarUrl { get; set; }
-    public string? Bio { get; set; }
+    public string? Profile { get; set; }
     public decimal HourlyRate { get; set; }
     public DateTime RequestedAt { get; set; }
   }

@@ -11,19 +11,24 @@ public class AppDbContext : DbContext
   #region DbSets
   public DbSet<Application> Applications => Set<Application>();
   public DbSet<User> Users => Set<User>();
-  public DbSet<Tutor> TutorProfiles => Set<Tutor>();
-  public DbSet<Student> StudentProfiles => Set<Student>();
+  public DbSet<Tutor> Tutors => Set<Tutor>();
+  public DbSet<Student> Students => Set<Student>();
   public DbSet<TutorRequest> TutorRequests => Set<TutorRequest>();
+  public DbSet<LearningRequest> LearningRequests => Set<LearningRequest>();
+  public DbSet<ScheduleProposal> ScheduleProposals => Set<ScheduleProposal>();
   public DbSet<Message> Messages => Set<Message>();
   public DbSet<Notification> Notifications => Set<Notification>();
   public DbSet<Subject> Subjects => Set<Subject>();
   public DbSet<TutorSubject> TutorSubjects => Set<TutorSubject>();
+  public DbSet<TutorTeachingLevel> TutorTeachingLevels => Set<TutorTeachingLevel>();
   public DbSet<Address> Addresses => Set<Address>();
   public DbSet<File> Files => Set<File>();
   public DbSet<Class> Classes => Set<Class>();
   public DbSet<Payment> Payments => Set<Payment>();
   public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
+  public DbSet<DepositPolicy> DepositPolicies => Set<DepositPolicy>();
   public DbSet<Review> Reviews => Set<Review>();
+  public DbSet<CancellationRequest> CancellationRequests => Set<CancellationRequest>();
   #endregion
 
   protected override void OnModelCreating(ModelBuilder modelBuilder)

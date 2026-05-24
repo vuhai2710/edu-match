@@ -3,6 +3,7 @@ using EduMatch.DTOs.Chat;
 using EduMatch.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using System.Security.Claims;
 
 namespace EduMatch.Configurations
 {
@@ -100,7 +101,7 @@ namespace EduMatch.Configurations
 
     private long GetUserId()
     {
-      var claim = Context.User?.FindFirst("userId")?.Value
+      var claim = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier)
                   ?? throw new HubException("Unauthorized");
       return long.Parse(claim);
     }

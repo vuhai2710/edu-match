@@ -6,7 +6,9 @@ namespace EduMatch.DTOs.User
   {
     public long Id { get; set; }
     public string FullName { get; set; } = string.Empty;
+    public int? Birth { get; set; }
     public string Email { get; set; } = string.Empty;
+    public string? School { get; set; }
     public UserRole Role { get; set; }
     public string? AvatarUrl { get; set; }
     public Gender Gender { get; set; }

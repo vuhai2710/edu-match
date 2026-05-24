@@ -45,13 +45,28 @@ namespace EduMatch.Services
         throw new ValidationException("Lớp học không có gia sư hợp lệ.");
       }
 
-      var daysSinceCreation = (DateTime.UtcNow - classEntity.CreatedAt).TotalDays;
-      if (daysSinceCreation < 7)
+      if (classEntity.Status != ClassStatus.Active)
       {
-        throw new ValidationException("Chỉ được phép đánh giá sau 7 ngày kể từ khi lớp học được tạo.");
+        throw new ConflictException(
+          "Chỉ được đánh giá khi lớp học đang hoạt động.",
+          "REVIEW_CLASS_NOT_ACTIVE");
       }
 
-      var alreadyReviewed = await _reviewRepository.ExistsByClassIdAsync(dto.ClassId);
+      if (!classEntity.StartDate.HasValue)
+      {
+        throw new ValidationException(
+          "Lớp học chưa có ngày bắt đầu hợp lệ.",
+          "REVIEW_NO_START_DATE");
+      }
+
+      if (DateTime.UtcNow < classEntity.StartDate.Value.AddDays(7))
+      {
+        throw new ValidationException(
+          "Chỉ được phép đánh giá sau 7 ngày kể từ ngày bắt đầu lớp học.",
+          "REVIEW_TOO_EARLY");
+      }
+
+      var alreadyReviewed = await _reviewRepository.ExistsByClassAndStudentAsync(dto.ClassId, userId);
       if (alreadyReviewed)
       {
         throw new ConflictException("Bạn đã đánh giá lớp học này rồi.");

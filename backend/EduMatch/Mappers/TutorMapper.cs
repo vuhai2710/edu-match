@@ -10,32 +10,41 @@ public class TutorMapper : Profile
   {
     CreateMap<Tutor, TutorDto>()
       .ForMember(d => d.FullName, opt => opt.MapFrom(s => s.User != null ? s.User.FullName : string.Empty))
+      .ForMember(d => d.Birth, opt => opt.MapFrom(s => s.User != null ? s.User.Birth : null))
       .ForMember(d => d.AvatarUrl, opt => opt.MapFrom(s => s.User != null && s.User.AvatarFile != null ? s.User.AvatarFile.FilePath : null))
       .ForMember(d => d.Gender, opt => opt.MapFrom(s => s.User != null ? s.User.Gender : default))
+      .ForMember(d => d.School, opt => opt.MapFrom(s => s.User != null ? s.User.School : null))
+      .ForMember(d => d.TeachingLevels, opt => opt.MapFrom(s => s.TeachingLevels.Select(x => x.TeachingLevel)))
       .ForMember(d => d.Subjects, opt => opt.MapFrom(s => s.TutorSubjects));
 
     CreateMap<Tutor, TutorDetailDto>()
       .ForMember(d => d.FullName, opt => opt.MapFrom(s => s.User != null ? s.User.FullName : string.Empty))
+      .ForMember(d => d.Birth, opt => opt.MapFrom(s => s.User != null ? s.User.Birth : null))
       .ForMember(d => d.Email, opt => opt.MapFrom(s => s.User != null ? s.User.Email : string.Empty))
       .ForMember(d => d.PhoneNumber, opt => opt.MapFrom(s => s.User != null ? s.User.PhoneNumber : null))
+      .ForMember(d => d.School, opt => opt.MapFrom(s => s.User != null ? s.User.School : null))
       .ForMember(d => d.AvatarUrl, opt => opt.MapFrom(s => s.User != null && s.User.AvatarFile != null ? s.User.AvatarFile.FilePath : null))
       .ForMember(d => d.Gender, opt => opt.MapFrom(s => s.User != null ? s.User.Gender : default))
       .ForMember(d => d.CvUrl, opt => opt.MapFrom(s => s.CvFile != null ? s.CvFile.FilePath : null))
+      .ForMember(d => d.TeachingLevels, opt => opt.MapFrom(s => s.TeachingLevels.Select(x => x.TeachingLevel)))
       .ForMember(d => d.Subjects, opt => opt.MapFrom(s => s.TutorSubjects));
 
     CreateMap<TutorSubject, TutorSubjectDto>()
       .ForMember(d => d.SubjectName, opt => opt.MapFrom(s => s.Subject != null ? s.Subject.Name : string.Empty));
 
     CreateMap<UpdateTutorDto, Tutor>()
+      .ForMember(d => d.Profile, opt => opt.MapFrom(s => string.IsNullOrWhiteSpace(s.Profile) ? null : s.Profile.Trim()))
       .ForMember(d => d.UserId, opt => opt.Ignore())
       .ForMember(d => d.Rating, opt => opt.Ignore())
       .ForMember(d => d.TotalReviews, opt => opt.Ignore())
-      .ForMember(d => d.ApprovalStatus, opt => opt.Ignore())
       .ForMember(d => d.User, opt => opt.Ignore())
       .ForMember(d => d.TutorSubjects, opt => opt.Ignore())
+      .ForMember(d => d.TeachingLevels, opt => opt.Ignore())
       .ForMember(d => d.Applications, opt => opt.Ignore())
       .ForMember(d => d.AddressId, opt => opt.Ignore())
       .ForMember(d => d.Address, opt => opt.Ignore())
+      .ForMember(d => d.CvFileId, opt => opt.Ignore())
+      .ForMember(d => d.CvFile, opt => opt.Ignore())
       .ForMember(d => d.Id, opt => opt.Ignore())
       .ForMember(d => d.CreatedAt, opt => opt.Ignore())
       .ForMember(d => d.UpdatedAt, opt => opt.Ignore())

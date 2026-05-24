@@ -121,6 +121,71 @@ namespace EduMatch.Migrations
                     b.ToTable("Applications");
                 });
 
+            modelBuilder.Entity("EduMatch.Models.CancellationRequest", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<long>("ClassId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsRefunded")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<decimal?>("RefundAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("RefundNote")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("RequestedByRole")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<long>("RequestedByUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("ResolvedByUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RequestedByUserId");
+
+                    b.HasIndex("ResolvedByUserId");
+
+                    b.HasIndex("ClassId", "Status");
+
+                    b.ToTable("CancellationRequests");
+                });
+
             modelBuilder.Entity("EduMatch.Models.Class", b =>
                 {
                     b.Property<long>("Id")
@@ -129,7 +194,14 @@ namespace EduMatch.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
-                    b.Property<long>("ApplicationId")
+                    b.Property<long?>("AcceptedScheduleProposalId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("AcceptedScheduleSource")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<long?>("ApplicationId")
                         .HasColumnType("bigint");
 
                     b.Property<string>("Code")
@@ -143,13 +215,19 @@ namespace EduMatch.Migrations
                     b.Property<decimal>("DepositAmount")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<decimal?>("DepositAmountSnapshot")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<DateTime?>("EndDate")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<long>("RequestId")
+                    b.Property<long?>("LearningRequestId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("RequestId")
                         .HasColumnType("bigint");
 
                     b.Property<DateTime?>("StartDate")
@@ -163,6 +241,12 @@ namespace EduMatch.Migrations
                     b.Property<long>("StudentId")
                         .HasColumnType("bigint");
 
+                    b.Property<long?>("SubjectId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("TimeSlotsJson")
+                        .HasColumnType("jsonb");
+
                     b.Property<long>("TutorId")
                         .HasColumnType("bigint");
 
@@ -171,18 +255,59 @@ namespace EduMatch.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("AcceptedScheduleProposalId");
+
                     b.HasIndex("ApplicationId");
 
                     b.HasIndex("Code")
                         .IsUnique();
 
+                    b.HasIndex("LearningRequestId");
+
                     b.HasIndex("RequestId");
 
                     b.HasIndex("StudentId");
 
+                    b.HasIndex("SubjectId");
+
                     b.HasIndex("TutorId");
 
                     b.ToTable("Classes");
+                });
+
+            modelBuilder.Entity("EduMatch.Models.DepositPolicy", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime?>("ActiveFrom")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ActiveTo")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DepositSessionCount")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("DiscountPercent")
+                        .HasPrecision(5, 4)
+                        .HasColumnType("numeric(5,4)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("DepositPolicies", (string)null);
                 });
 
             modelBuilder.Entity("EduMatch.Models.File", b =>
@@ -227,6 +352,76 @@ namespace EduMatch.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Files");
+                });
+
+            modelBuilder.Entity("EduMatch.Models.LearningRequest", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<decimal>("BudgetPerHour")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("CalculatedDepositAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("DesiredStartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("HoursPerSession")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime?>("PaymentExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ScheduleExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<long>("StudentId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("SubjectId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("TimeSlots")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<long>("TutorId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("StudentId");
+
+                    b.HasIndex("SubjectId");
+
+                    b.HasIndex("TutorId");
+
+                    b.ToTable("LearningRequests");
                 });
 
             modelBuilder.Entity("EduMatch.Models.Message", b =>
@@ -374,10 +569,9 @@ namespace EduMatch.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("CheckoutUrl")
-                        .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<long>("ClassId")
+                    b.Property<long?>("ClassId")
                         .HasColumnType("bigint");
 
                     b.Property<DateTime>("CreatedAt")
@@ -391,11 +585,17 @@ namespace EduMatch.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
+                    b.Property<long?>("LearningRequestId")
+                        .HasColumnType("bigint");
+
                     b.Property<long>("OrderCode")
                         .HasColumnType("bigint");
 
                     b.Property<DateTime?>("PaidAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("PaidByUserId")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("RawWebhookData")
                         .HasColumnType("text");
@@ -408,7 +608,7 @@ namespace EduMatch.Migrations
                     b.Property<string>("TransactionId")
                         .HasColumnType("text");
 
-                    b.Property<long>("TutorId")
+                    b.Property<long?>("TutorId")
                         .HasColumnType("bigint");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -417,6 +617,10 @@ namespace EduMatch.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ClassId");
+
+                    b.HasIndex("LearningRequestId");
+
+                    b.HasIndex("PaidByUserId");
 
                     b.HasIndex("TutorId");
 
@@ -468,6 +672,65 @@ namespace EduMatch.Migrations
                     b.ToTable("Reviews");
                 });
 
+            modelBuilder.Entity("EduMatch.Models.ScheduleProposal", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<decimal>("CalculatedDepositAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("DesiredStartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("HourlyRate")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("HoursPerSession")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<long>("LearningRequestId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("ProposedBy")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("RoundNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("TimeSlots")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LearningRequestId")
+                        .IsUnique();
+
+                    b.HasIndex("ProposedBy");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("ScheduleProposals");
+                });
+
             modelBuilder.Entity("EduMatch.Models.Student", b =>
                 {
                     b.Property<long>("Id")
@@ -478,10 +741,6 @@ namespace EduMatch.Migrations
 
                     b.Property<long?>("AddressId")
                         .HasColumnType("bigint");
-
-                    b.Property<string>("Bio")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<string>("Code")
                         .IsRequired()
@@ -496,10 +755,6 @@ namespace EduMatch.Migrations
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
-
-                    b.Property<string>("School")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -517,7 +772,7 @@ namespace EduMatch.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("StudentProfiles");
+                    b.ToTable("Students");
                 });
 
             modelBuilder.Entity("EduMatch.Models.Subject", b =>
@@ -562,15 +817,16 @@ namespace EduMatch.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
+                    b.Property<string>("AcademicDegree")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
                     b.Property<long?>("AddressId")
                         .HasColumnType("bigint");
 
-                    b.Property<int>("ApprovalStatus")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Bio")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
+                    b.Property<string>("CareerStatus")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
 
                     b.Property<string>("Code")
                         .IsRequired()
@@ -588,6 +844,14 @@ namespace EduMatch.Migrations
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("Major")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("Profile")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
 
                     b.Property<double>("Rating")
                         .ValueGeneratedOnAdd()
@@ -618,7 +882,7 @@ namespace EduMatch.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("TutorProfiles");
+                    b.ToTable("Tutors");
                 });
 
             modelBuilder.Entity("EduMatch.Models.TutorRequest", b =>
@@ -710,11 +974,6 @@ namespace EduMatch.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("Level")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
                     b.Property<long>("SubjectId")
                         .HasColumnType("bigint");
 
@@ -734,6 +993,39 @@ namespace EduMatch.Migrations
                     b.ToTable("TutorSubjects");
                 });
 
+            modelBuilder.Entity("EduMatch.Models.TutorTeachingLevel", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("TeachingLevel")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<long>("TutorId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TutorId", "TeachingLevel")
+                        .IsUnique();
+
+                    b.ToTable("TutorTeachingLevels");
+                });
+
             modelBuilder.Entity("EduMatch.Models.User", b =>
                 {
                     b.Property<long>("Id")
@@ -744,6 +1036,9 @@ namespace EduMatch.Migrations
 
                     b.Property<long?>("AvatarFileId")
                         .HasColumnType("bigint");
+
+                    b.Property<int?>("Birth")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -789,6 +1084,10 @@ namespace EduMatch.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("School")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -825,23 +1124,97 @@ namespace EduMatch.Migrations
                     b.Navigation("TutorRequest");
                 });
 
+            modelBuilder.Entity("EduMatch.Models.CancellationRequest", b =>
+                {
+                    b.HasOne("EduMatch.Models.Class", "Class")
+                        .WithMany()
+                        .HasForeignKey("ClassId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EduMatch.Models.User", "RequestedByUser")
+                        .WithMany()
+                        .HasForeignKey("RequestedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EduMatch.Models.User", "ResolvedByUser")
+                        .WithMany()
+                        .HasForeignKey("ResolvedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Class");
+
+                    b.Navigation("RequestedByUser");
+
+                    b.Navigation("ResolvedByUser");
+                });
+
             modelBuilder.Entity("EduMatch.Models.Class", b =>
                 {
+                    b.HasOne("EduMatch.Models.ScheduleProposal", "AcceptedScheduleProposal")
+                        .WithMany()
+                        .HasForeignKey("AcceptedScheduleProposalId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("EduMatch.Models.Application", "Application")
                         .WithMany()
                         .HasForeignKey("ApplicationId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("EduMatch.Models.LearningRequest", "LearningRequest")
+                        .WithMany()
+                        .HasForeignKey("LearningRequestId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("EduMatch.Models.TutorRequest", "Request")
                         .WithMany()
                         .HasForeignKey("RequestId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("EduMatch.Models.User", "Student")
                         .WithMany()
                         .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EduMatch.Models.Subject", "Subject")
+                        .WithMany()
+                        .HasForeignKey("SubjectId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("EduMatch.Models.Tutor", "Tutor")
+                        .WithMany()
+                        .HasForeignKey("TutorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AcceptedScheduleProposal");
+
+                    b.Navigation("Application");
+
+                    b.Navigation("LearningRequest");
+
+                    b.Navigation("Request");
+
+                    b.Navigation("Student");
+
+                    b.Navigation("Subject");
+
+                    b.Navigation("Tutor");
+                });
+
+            modelBuilder.Entity("EduMatch.Models.LearningRequest", b =>
+                {
+                    b.HasOne("EduMatch.Models.User", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("EduMatch.Models.Subject", "Subject")
+                        .WithMany()
+                        .HasForeignKey("SubjectId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -851,11 +1224,9 @@ namespace EduMatch.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Application");
-
-                    b.Navigation("Request");
-
                     b.Navigation("Student");
+
+                    b.Navigation("Subject");
 
                     b.Navigation("Tutor");
                 });
@@ -906,16 +1277,28 @@ namespace EduMatch.Migrations
                     b.HasOne("EduMatch.Models.Class", "Class")
                         .WithMany()
                         .HasForeignKey("ClassId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("EduMatch.Models.LearningRequest", "LearningRequest")
+                        .WithMany()
+                        .HasForeignKey("LearningRequestId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("EduMatch.Models.User", "PaidByUser")
+                        .WithMany()
+                        .HasForeignKey("PaidByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("EduMatch.Models.Tutor", "Tutor")
                         .WithMany()
                         .HasForeignKey("TutorId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Class");
+
+                    b.Navigation("LearningRequest");
+
+                    b.Navigation("PaidByUser");
 
                     b.Navigation("Tutor");
                 });
@@ -947,6 +1330,25 @@ namespace EduMatch.Migrations
                     b.Navigation("Tutor");
                 });
 
+            modelBuilder.Entity("EduMatch.Models.ScheduleProposal", b =>
+                {
+                    b.HasOne("EduMatch.Models.LearningRequest", "LearningRequest")
+                        .WithOne("ScheduleProposal")
+                        .HasForeignKey("EduMatch.Models.ScheduleProposal", "LearningRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("EduMatch.Models.Tutor", "Tutor")
+                        .WithMany()
+                        .HasForeignKey("ProposedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("LearningRequest");
+
+                    b.Navigation("Tutor");
+                });
+
             modelBuilder.Entity("EduMatch.Models.Student", b =>
                 {
                     b.HasOne("EduMatch.Models.Address", "Address")
@@ -954,7 +1356,7 @@ namespace EduMatch.Migrations
                         .HasForeignKey("AddressId");
 
                     b.HasOne("EduMatch.Models.User", "User")
-                        .WithOne("StudentProfile")
+                        .WithOne("Student")
                         .HasForeignKey("EduMatch.Models.Student", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -976,7 +1378,7 @@ namespace EduMatch.Migrations
                         .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("EduMatch.Models.User", "User")
-                        .WithOne("TutorProfile")
+                        .WithOne("Tutor")
                         .HasForeignKey("EduMatch.Models.Tutor", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1033,6 +1435,17 @@ namespace EduMatch.Migrations
                     b.Navigation("Tutor");
                 });
 
+            modelBuilder.Entity("EduMatch.Models.TutorTeachingLevel", b =>
+                {
+                    b.HasOne("EduMatch.Models.Tutor", "Tutor")
+                        .WithMany("TeachingLevels")
+                        .HasForeignKey("TutorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Tutor");
+                });
+
             modelBuilder.Entity("EduMatch.Models.User", b =>
                 {
                     b.HasOne("EduMatch.Models.File", "AvatarFile")
@@ -1043,6 +1456,11 @@ namespace EduMatch.Migrations
                     b.Navigation("AvatarFile");
                 });
 
+            modelBuilder.Entity("EduMatch.Models.LearningRequest", b =>
+                {
+                    b.Navigation("ScheduleProposal");
+                });
+
             modelBuilder.Entity("EduMatch.Models.Subject", b =>
                 {
                     b.Navigation("TutorSubjects");
@@ -1051,6 +1469,8 @@ namespace EduMatch.Migrations
             modelBuilder.Entity("EduMatch.Models.Tutor", b =>
                 {
                     b.Navigation("Applications");
+
+                    b.Navigation("TeachingLevels");
 
                     b.Navigation("TutorSubjects");
                 });
@@ -1070,9 +1490,9 @@ namespace EduMatch.Migrations
 
                     b.Navigation("SentMessages");
 
-                    b.Navigation("StudentProfile");
+                    b.Navigation("Student");
 
-                    b.Navigation("TutorProfile");
+                    b.Navigation("Tutor");
                 });
 #pragma warning restore 612, 618
         }
