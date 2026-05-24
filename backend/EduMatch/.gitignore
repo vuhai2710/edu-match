@@ -4,6 +4,10 @@
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
+[Dd]ocs/
+
+.dotnet/
+artifacts/
 
 appsettings.Development.json
 appsettings.Production.json
