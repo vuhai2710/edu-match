@@ -29,10 +29,6 @@ export interface AddressDto {
     fullAddress?: string | null;
 }
 
-export interface AdminApproveRequestDto {
-    depositAmount?: number;
-}
-
 export interface AdminDashboardDto {
     totalUsers?: number;
     totalStudents?: number;
@@ -55,11 +51,6 @@ export interface AdminDashboardDtoApiResponse {
     message?: string | null;
     statusCode?: number | null;
     data?: AdminDashboardDto;
-}
-
-export interface AdminMatchRequestDto {
-    tutorId: number;
-    depositAmount: number;
 }
 
 export interface ApiResponse {
@@ -114,10 +105,6 @@ export enum ApplicationStatus {
     StudentAccepted = "StudentAccepted",
     TutorAccepted = "TutorAccepted",
     BothAccepted = "BothAccepted"
-}
-
-export interface ApplyToRequestDto {
-    message?: string | null;
 }
 
 export interface BooleanApiResponse {
@@ -292,10 +279,6 @@ export interface CreateLearningRequestDto {
     budgetPerHour: number;
 }
 
-export interface CreatePaymentRequestDto {
-    classId?: number;
-}
-
 export interface CreateReviewDto {
     classId: number;
     rating: number;
@@ -310,21 +293,26 @@ export interface CreateScheduleProposalDto {
     hourlyRate: number;
 }
 
-export interface CreateTutorRequestDto {
-    subjectId: number;
-    note?: string | null;
-    pricePerSession: number;
-    expiresAt: Date;
-    preferredSchedule?: string | null;
-    sessionsPerWeek: number;
-    minutesPerSession: number;
-    gradeLevel?: Grade;
-    educationLevel?: EducationLevel;
-    provinceId?: number | null;
-    provinceName?: string | null;
-    wardCode?: string | null;
-    wardName?: string | null;
-    addressDetail?: string | null;
+export interface DepositPaymentDto {
+    id?: number;
+    learningRequestId?: number | null;
+    paidByUserId?: number | null;
+    classId?: number | null;
+    tutorId?: number | null;
+    orderCode?: number;
+    amount?: number;
+    checkoutUrl?: string | null;
+    status?: PaymentStatus;
+    transactionId?: string | null;
+    paidAt?: Date | null;
+    createdAt?: Date;
+}
+
+export interface DepositPaymentDtoApiResponse {
+    success?: boolean;
+    message?: string | null;
+    statusCode?: number | null;
+    data?: DepositPaymentDto;
 }
 
 export interface DepositPolicyDto {
@@ -398,18 +386,6 @@ export interface ForgotPasswordRequestDto {
 export enum Gender {
     Male = "Male",
     Female = "Female"
-}
-
-export interface GoogleAuthResponseDto {
-    token?: string | null;
-    user?: UserDto;
-}
-
-export interface GoogleAuthResponseDtoApiResponse {
-    success?: boolean;
-    message?: string | null;
-    statusCode?: number | null;
-    data?: GoogleAuthResponseDto;
 }
 
 export interface GoogleLoginRequestDto {
@@ -767,6 +743,22 @@ export interface ReviewDtoListApiResponse {
     message?: string | null;
     statusCode?: number | null;
     data?: Array<ReviewDto>;
+}
+
+export interface ReviewEligibilityDto {
+    classId?: number;
+    canReview?: boolean;
+    reasonCode?: string | null;
+    message?: string | null;
+    availableAt?: Date | null;
+    alreadyReviewed?: boolean;
+}
+
+export interface ReviewEligibilityDtoApiResponse {
+    success?: boolean;
+    message?: string | null;
+    statusCode?: number | null;
+    data?: ReviewEligibilityDto;
 }
 
 export interface ScheduleProposalDto {
@@ -1141,23 +1133,6 @@ export interface UpdateTutorDto {
     academicDegree?: AcademicDegree;
     teachingLevels?: Array<EducationLevel>;
     subjects?: Array<UpdateTutorSubjectDto>;
-}
-
-export interface UpdateTutorRequestDto {
-    subjectId: number;
-    note?: string | null;
-    pricePerSession: number;
-    expiresAt: Date;
-    preferredSchedule?: string | null;
-    sessionsPerWeek: number;
-    minutesPerSession: number;
-    gradeLevel?: Grade;
-    educationLevel?: EducationLevel;
-    provinceId?: number | null;
-    provinceName?: string | null;
-    wardCode?: string | null;
-    wardName?: string | null;
-    addressDetail?: string | null;
 }
 
 export interface UpdateTutorSubjectDto {

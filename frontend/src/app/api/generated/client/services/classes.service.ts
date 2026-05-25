@@ -12,7 +12,7 @@ import { inject, Injectable } from "@angular/core";
 import { Observable } from "rxjs";
 import { BASE_PATH_DEFAULT, CLIENT_CONTEXT_TOKEN_DEFAULT } from "../tokens";
 import { HttpParamsBuilder } from "../utils/http-params-builder";
-import { ClassStatus, RequestOptions, ClassDtoPagedResultApiResponse, ClassDtoApiResponse } from "../models";
+import { ClassStatus, RequestOptions, ClassDtoPagedResultApiResponse, ClassDtoApiResponse, ReviewEligibilityDtoApiResponse, CancellationRequestDtoApiResponse } from "../models";
 
 @Injectable({ providedIn: "root" })
 export class ClassesService {
@@ -120,6 +120,54 @@ export class ClassesService {
     getClassById(id: number, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<ClassDtoApiResponse>>;
     getClassById(id: number, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
         const url = `${this.basePath}/api/classes/${id}`;
+
+        let headers: HttpHeaders;
+        if (options?.headers instanceof HttpHeaders) {
+            headers = options.headers;
+        } else {
+            headers = new HttpHeaders(options?.headers);
+        }
+
+        const requestOptions: any = {
+            observe: observe as any,
+            headers,
+            reportProgress: options?.reportProgress,
+            withCredentials: options?.withCredentials,
+            context: this.createContextWithClientId(options?.context)
+        };
+
+        return this.httpClient.get(url, requestOptions);
+    }
+
+    getClassReviewEligibility(id: number, observe?: 'body', options?: RequestOptions<'json'>): Observable<ReviewEligibilityDtoApiResponse>;
+    getClassReviewEligibility(id: number, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<ReviewEligibilityDtoApiResponse>>;
+    getClassReviewEligibility(id: number, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<ReviewEligibilityDtoApiResponse>>;
+    getClassReviewEligibility(id: number, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
+        const url = `${this.basePath}/api/classes/${id}/review-eligibility`;
+
+        let headers: HttpHeaders;
+        if (options?.headers instanceof HttpHeaders) {
+            headers = options.headers;
+        } else {
+            headers = new HttpHeaders(options?.headers);
+        }
+
+        const requestOptions: any = {
+            observe: observe as any,
+            headers,
+            reportProgress: options?.reportProgress,
+            withCredentials: options?.withCredentials,
+            context: this.createContextWithClientId(options?.context)
+        };
+
+        return this.httpClient.get(url, requestOptions);
+    }
+
+    getClassCancellationRequest(id: number, observe?: 'body', options?: RequestOptions<'json'>): Observable<CancellationRequestDtoApiResponse>;
+    getClassCancellationRequest(id: number, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<CancellationRequestDtoApiResponse>>;
+    getClassCancellationRequest(id: number, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<CancellationRequestDtoApiResponse>>;
+    getClassCancellationRequest(id: number, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
+        const url = `${this.basePath}/api/classes/${id}/cancellation-request`;
 
         let headers: HttpHeaders;
         if (options?.headers instanceof HttpHeaders) {

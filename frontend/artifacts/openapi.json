@@ -376,227 +376,6 @@
         }
       }
     },
-    "/api/Admin/applications/{id}/approve": {
-      "put": {
-        "tags": [
-          "Admin"
-        ],
-        "operationId": "adminApproveApplication",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AdminApproveRequestDto"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AdminApproveRequestDto"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/AdminApproveRequestDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "410": {
-            "description": "Gone",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/Admin/applications/{id}/reject": {
-      "put": {
-        "tags": [
-          "Admin"
-        ],
-        "operationId": "adminRejectApplication",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "responses": {
-          "410": {
-            "description": "Gone",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/Admin/requests/{requestId}/match": {
-      "post": {
-        "tags": [
-          "Admin"
-        ],
-        "operationId": "adminMatchRequest",
-        "parameters": [
-          {
-            "name": "requestId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AdminMatchRequestDto"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AdminMatchRequestDto"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/AdminMatchRequestDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "410": {
-            "description": "Gone",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/Admin/tutor-requests/{studentId}": {
-      "post": {
-        "tags": [
-          "Admin"
-        ],
-        "operationId": "adminCreateRequestForStudent",
-        "parameters": [
-          {
-            "name": "studentId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateTutorRequestDto"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateTutorRequestDto"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateTutorRequestDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "410": {
-            "description": "Gone",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/Admin/payments": {
       "get": {
         "tags": [
@@ -1457,66 +1236,6 @@
         }
       }
     },
-    "/api/tutor-requests/{requestId}/apply": {
-      "post": {
-        "tags": [
-          "Applications"
-        ],
-        "operationId": "applyToRequest",
-        "parameters": [
-          {
-            "name": "requestId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ApplyToRequestDto"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ApplyToRequestDto"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/ApplyToRequestDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "410": {
-            "description": "Gone",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/Applications/{id}": {
       "get": {
         "tags": [
@@ -1933,170 +1652,6 @@
         }
       }
     },
-    "/api/Applications/{id}/student-confirm": {
-      "put": {
-        "tags": [
-          "Applications"
-        ],
-        "operationId": "studentConfirmApplication",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "responses": {
-          "410": {
-            "description": "Gone",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/Applications/{id}/student-reject": {
-      "put": {
-        "tags": [
-          "Applications"
-        ],
-        "operationId": "studentRejectApplication",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "responses": {
-          "410": {
-            "description": "Gone",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/Applications/{id}/student-accept-match": {
-      "put": {
-        "tags": [
-          "Applications"
-        ],
-        "operationId": "studentAcceptMatch",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "responses": {
-          "410": {
-            "description": "Gone",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/Applications/{id}/tutor-accept-match": {
-      "put": {
-        "tags": [
-          "Applications"
-        ],
-        "operationId": "tutorAcceptMatch",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "responses": {
-          "410": {
-            "description": "Gone",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/Auth/register/student": {
       "post": {
         "tags": [
@@ -2108,15 +1663,14 @@
             "multipart/form-data": {
               "schema": {
                 "required": [
-                  "Address.ProvinceId",
-                  "Address.ProvinceName",
-                  "Address.WardCode",
-                  "Address.WardName",
                   "Email",
                   "FullName",
                   "Gender",
                   "Password",
-                  "PhoneNumber"
+                  "PhoneNumber",
+                  "ProvinceName",
+                  "WardCode",
+                  "WardName"
                 ],
                 "type": "object",
                 "properties": {
@@ -2142,20 +1696,22 @@
                   "Gender": {
                     "$ref": "#/components/schemas/Gender"
                   },
-                  "Address.ProvinceId": {
+                  "ProvinceId": {
+                    "maximum": 2147483647,
+                    "minimum": 1,
                     "type": "integer",
                     "format": "int32"
                   },
-                  "Address.ProvinceName": {
+                  "ProvinceName": {
                     "type": "string"
                   },
-                  "Address.WardCode": {
+                  "WardCode": {
                     "type": "string"
                   },
-                  "Address.WardName": {
+                  "WardName": {
                     "type": "string"
                   },
-                  "Address.AddressDetail": {
+                  "AddressDetail": {
                     "type": "string"
                   }
                 }
@@ -2179,19 +1735,19 @@
                 "Gender": {
                   "style": "form"
                 },
-                "Address.ProvinceId": {
+                "ProvinceId": {
                   "style": "form"
                 },
-                "Address.ProvinceName": {
+                "ProvinceName": {
                   "style": "form"
                 },
-                "Address.WardCode": {
+                "WardCode": {
                   "style": "form"
                 },
-                "Address.WardName": {
+                "WardName": {
                   "style": "form"
                 },
-                "Address.AddressDetail": {
+                "AddressDetail": {
                   "style": "form"
                 }
               }
@@ -2254,10 +1810,6 @@
               "schema": {
                 "required": [
                   "AcademicDegree",
-                  "Address.ProvinceId",
-                  "Address.ProvinceName",
-                  "Address.WardCode",
-                  "Address.WardName",
                   "Avatar",
                   "CareerStatus",
                   "Cv",
@@ -2267,8 +1819,11 @@
                   "Major",
                   "Password",
                   "PhoneNumber",
+                  "ProvinceName",
                   "SubjectIds",
-                  "TeachingLevels"
+                  "TeachingLevels",
+                  "WardCode",
+                  "WardName"
                 ],
                 "type": "object",
                 "properties": {
@@ -2329,20 +1884,22 @@
                   "Gender": {
                     "$ref": "#/components/schemas/Gender"
                   },
-                  "Address.ProvinceId": {
+                  "ProvinceId": {
+                    "maximum": 2147483647,
+                    "minimum": 1,
                     "type": "integer",
                     "format": "int32"
                   },
-                  "Address.ProvinceName": {
+                  "ProvinceName": {
                     "type": "string"
                   },
-                  "Address.WardCode": {
+                  "WardCode": {
                     "type": "string"
                   },
-                  "Address.WardName": {
+                  "WardName": {
                     "type": "string"
                   },
-                  "Address.AddressDetail": {
+                  "AddressDetail": {
                     "type": "string"
                   }
                 }
@@ -2390,19 +1947,19 @@
                 "Gender": {
                   "style": "form"
                 },
-                "Address.ProvinceId": {
+                "ProvinceId": {
                   "style": "form"
                 },
-                "Address.ProvinceName": {
+                "ProvinceName": {
                   "style": "form"
                 },
-                "Address.WardCode": {
+                "WardCode": {
                   "style": "form"
                 },
-                "Address.WardName": {
+                "WardName": {
                   "style": "form"
                 },
-                "Address.AddressDetail": {
+                "AddressDetail": {
                   "style": "form"
                 }
               }
@@ -2573,17 +2130,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/GoogleAuthResponseDtoApiResponse"
+                  "$ref": "#/components/schemas/LoginResponseDtoApiResponse"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GoogleAuthResponseDtoApiResponse"
+                  "$ref": "#/components/schemas/LoginResponseDtoApiResponse"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GoogleAuthResponseDtoApiResponse"
+                  "$ref": "#/components/schemas/LoginResponseDtoApiResponse"
                 }
               }
             }
@@ -3148,6 +2705,146 @@
         }
       }
     },
+    "/api/cancellation-requests/me": {
+      "get": {
+        "tags": [
+          "CancellationRequests"
+        ],
+        "operationId": "getMyCancellationRequests",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/CancellationRequestStatus"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "searchTerm",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortColumn",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortDirection",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CancellationRequestDtoPagedResultApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CancellationRequestDtoPagedResultApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CancellationRequestDtoPagedResultApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Chat/conversations": {
       "get": {
         "tags": [
@@ -3551,6 +3248,208 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ClassDtoApiResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/classes/{id}/review-eligibility": {
+      "get": {
+        "tags": [
+          "Classes"
+        ],
+        "operationId": "getClassReviewEligibility",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewEligibilityDtoApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewEligibilityDtoApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewEligibilityDtoApiResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/classes/{id}/cancellation-request": {
+      "get": {
+        "tags": [
+          "Classes"
+        ],
+        "operationId": "getClassCancellationRequest",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CancellationRequestDtoApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CancellationRequestDtoApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CancellationRequestDtoApiResponse"
                 }
               }
             }
@@ -4300,6 +4199,107 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/LearningRequestDtoApiResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/learning-requests/{learningRequestId}/schedule-proposal": {
+      "get": {
+        "tags": [
+          "LearningRequests"
+        ],
+        "operationId": "getScheduleProposalByLearningRequest",
+        "parameters": [
+          {
+            "name": "learningRequestId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleProposalDtoApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleProposalDtoApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleProposalDtoApiResponse"
                 }
               }
             }
@@ -5159,6 +5159,107 @@
         }
       }
     },
+    "/api/Payments/learning-requests/{learningRequestId}": {
+      "get": {
+        "tags": [
+          "Payments"
+        ],
+        "operationId": "getPaymentByLearningRequest",
+        "parameters": [
+          {
+            "name": "learningRequestId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepositPaymentDtoApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepositPaymentDtoApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepositPaymentDtoApiResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Payments/status/{orderCode}": {
       "get": {
         "tags": [
@@ -5287,56 +5388,6 @@
             }
           }
         }
-      }
-    },
-    "/api/Payments/create": {
-      "post": {
-        "tags": [
-          "Payments"
-        ],
-        "operationId": "createPayment",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreatePaymentRequestDto"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreatePaymentRequestDto"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreatePaymentRequestDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "410": {
-            "description": "Gone",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "deprecated": true
       }
     },
     "/api/Reviews": {
@@ -5677,6 +5728,107 @@
           },
           "409": {
             "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/schedule-proposals/{id}": {
+      "get": {
+        "tags": [
+          "ScheduleProposals"
+        ],
+        "operationId": "getScheduleProposalById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleProposalDtoApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleProposalDtoApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleProposalDtoApiResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
             "content": {
               "text/plain": {
                 "schema": {
@@ -7034,53 +7186,6 @@
             }
           }
         }
-      },
-      "post": {
-        "tags": [
-          "TutorRequests"
-        ],
-        "operationId": "createTutorRequest",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateTutorRequestDto"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateTutorRequestDto"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateTutorRequestDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "410": {
-            "description": "Gone",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
       }
     },
     "/api/TutorRequests/{id}": {
@@ -7123,64 +7228,6 @@
           },
           "404": {
             "description": "Not Found",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "TutorRequests"
-        ],
-        "operationId": "updateTutorRequest",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateTutorRequestDto"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateTutorRequestDto"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateTutorRequestDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "410": {
-            "description": "Gone",
             "content": {
               "text/plain": {
                 "schema": {
@@ -7271,47 +7318,6 @@
           },
           "403": {
             "description": "Forbidden",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/TutorRequests/{id}/close": {
-      "put": {
-        "tags": [
-          "TutorRequests"
-        ],
-        "operationId": "closeTutorRequest",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "responses": {
-          "410": {
-            "description": "Gone",
             "content": {
               "text/plain": {
                 "schema": {
@@ -8652,16 +8658,6 @@
         },
         "additionalProperties": false
       },
-      "AdminApproveRequestDto": {
-        "type": "object",
-        "properties": {
-          "depositAmount": {
-            "type": "number",
-            "format": "double"
-          }
-        },
-        "additionalProperties": false
-      },
       "AdminDashboardDto": {
         "type": "object",
         "properties": {
@@ -8747,26 +8743,6 @@
           },
           "data": {
             "$ref": "#/components/schemas/AdminDashboardDto"
-          }
-        },
-        "additionalProperties": false
-      },
-      "AdminMatchRequestDto": {
-        "required": [
-          "depositAmount",
-          "tutorId"
-        ],
-        "type": "object",
-        "properties": {
-          "tutorId": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "depositAmount": {
-            "maximum": 1.7976931348623157E+308,
-            "minimum": 0,
-            "type": "number",
-            "format": "double"
           }
         },
         "additionalProperties": false
@@ -8923,17 +8899,6 @@
           "BothAccepted"
         ],
         "type": "string"
-      },
-      "ApplyToRequestDto": {
-        "type": "object",
-        "properties": {
-          "message": {
-            "maxLength": 1000,
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
       },
       "BooleanApiResponse": {
         "type": "object",
@@ -9532,16 +9497,6 @@
         },
         "additionalProperties": false
       },
-      "CreatePaymentRequestDto": {
-        "type": "object",
-        "properties": {
-          "classId": {
-            "type": "integer",
-            "format": "int64"
-          }
-        },
-        "additionalProperties": false
-      },
       "CreateReviewDto": {
         "required": [
           "classId",
@@ -9607,77 +9562,81 @@
         },
         "additionalProperties": false
       },
-      "CreateTutorRequestDto": {
-        "required": [
-          "expiresAt",
-          "minutesPerSession",
-          "pricePerSession",
-          "sessionsPerWeek",
-          "subjectId"
-        ],
+      "DepositPaymentDto": {
         "type": "object",
         "properties": {
-          "subjectId": {
+          "id": {
             "type": "integer",
             "format": "int64"
           },
-          "note": {
-            "maxLength": 1000,
-            "type": "string",
+          "learningRequestId": {
+            "type": "integer",
+            "format": "int64",
             "nullable": true
           },
-          "pricePerSession": {
-            "maximum": 10000000,
-            "minimum": 0,
+          "paidByUserId": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "classId": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "tutorId": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "orderCode": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "amount": {
             "type": "number",
             "format": "double"
           },
-          "expiresAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "preferredSchedule": {
+          "checkoutUrl": {
             "type": "string",
             "nullable": true
           },
-          "sessionsPerWeek": {
-            "maximum": 7,
-            "minimum": 1,
-            "type": "integer",
-            "format": "int32"
+          "status": {
+            "$ref": "#/components/schemas/PaymentStatus"
           },
-          "minutesPerSession": {
-            "maximum": 240,
-            "minimum": 30,
-            "type": "integer",
-            "format": "int32"
+          "transactionId": {
+            "type": "string",
+            "nullable": true
           },
-          "gradeLevel": {
-            "$ref": "#/components/schemas/Grade"
+          "paidAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
           },
-          "educationLevel": {
-            "$ref": "#/components/schemas/EducationLevel"
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DepositPaymentDtoApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
           },
-          "provinceId": {
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "statusCode": {
             "type": "integer",
             "format": "int32",
             "nullable": true
           },
-          "provinceName": {
-            "type": "string",
-            "nullable": true
-          },
-          "wardCode": {
-            "type": "string",
-            "nullable": true
-          },
-          "wardName": {
-            "type": "string",
-            "nullable": true
-          },
-          "addressDetail": {
-            "type": "string",
-            "nullable": true
+          "data": {
+            "$ref": "#/components/schemas/DepositPaymentDto"
           }
         },
         "additionalProperties": false
@@ -9890,40 +9849,6 @@
           "Female"
         ],
         "type": "string"
-      },
-      "GoogleAuthResponseDto": {
-        "type": "object",
-        "properties": {
-          "token": {
-            "type": "string",
-            "nullable": true
-          },
-          "user": {
-            "$ref": "#/components/schemas/UserDto"
-          }
-        },
-        "additionalProperties": false
-      },
-      "GoogleAuthResponseDtoApiResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "message": {
-            "type": "string",
-            "nullable": true
-          },
-          "statusCode": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "data": {
-            "$ref": "#/components/schemas/GoogleAuthResponseDto"
-          }
-        },
-        "additionalProperties": false
       },
       "GoogleLoginRequestDto": {
         "type": "object",
@@ -10961,6 +10886,56 @@
               "$ref": "#/components/schemas/ReviewDto"
             },
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ReviewEligibilityDto": {
+        "type": "object",
+        "properties": {
+          "classId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "canReview": {
+            "type": "boolean"
+          },
+          "reasonCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "availableAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "alreadyReviewed": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ReviewEligibilityDtoApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "statusCode": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/ReviewEligibilityDto"
           }
         },
         "additionalProperties": false
@@ -12234,81 +12209,6 @@
             "items": {
               "$ref": "#/components/schemas/UpdateTutorSubjectDto"
             },
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "UpdateTutorRequestDto": {
-        "required": [
-          "expiresAt",
-          "minutesPerSession",
-          "pricePerSession",
-          "sessionsPerWeek",
-          "subjectId"
-        ],
-        "type": "object",
-        "properties": {
-          "subjectId": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "note": {
-            "maxLength": 1000,
-            "type": "string",
-            "nullable": true
-          },
-          "pricePerSession": {
-            "maximum": 10000000,
-            "minimum": 0,
-            "type": "number",
-            "format": "double"
-          },
-          "expiresAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "preferredSchedule": {
-            "type": "string",
-            "nullable": true
-          },
-          "sessionsPerWeek": {
-            "maximum": 7,
-            "minimum": 1,
-            "type": "integer",
-            "format": "int32"
-          },
-          "minutesPerSession": {
-            "maximum": 240,
-            "minimum": 30,
-            "type": "integer",
-            "format": "int32"
-          },
-          "gradeLevel": {
-            "$ref": "#/components/schemas/Grade"
-          },
-          "educationLevel": {
-            "$ref": "#/components/schemas/EducationLevel"
-          },
-          "provinceId": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "provinceName": {
-            "type": "string",
-            "nullable": true
-          },
-          "wardCode": {
-            "type": "string",
-            "nullable": true
-          },
-          "wardName": {
-            "type": "string",
-            "nullable": true
-          },
-          "addressDetail": {
-            "type": "string",
             "nullable": true
           }
         },

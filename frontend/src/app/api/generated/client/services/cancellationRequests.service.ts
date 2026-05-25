@@ -12,7 +12,7 @@ import { inject, Injectable } from "@angular/core";
 import { Observable } from "rxjs";
 import { BASE_PATH_DEFAULT, CLIENT_CONTEXT_TOKEN_DEFAULT } from "../tokens";
 import { HttpParamsBuilder } from "../utils/http-params-builder";
-import { CreateCancellationRequestDto, RequestOptions, CancellationRequestDtoApiResponse } from "../models";
+import { CreateCancellationRequestDto, RequestOptions, CancellationRequestDtoApiResponse, CancellationRequestStatus, CancellationRequestDtoPagedResultApiResponse } from "../models";
 
 @Injectable({ providedIn: "root" })
 export class CancellationRequestsService {
@@ -51,5 +51,50 @@ export class CancellationRequestsService {
         };
 
         return this.httpClient.post(url, createCancellationRequestDto, requestOptions);
+    }
+
+    getMyCancellationRequests(status?: CancellationRequestStatus, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'body', options?: RequestOptions<'json'>): Observable<CancellationRequestDtoPagedResultApiResponse>;
+    getMyCancellationRequests(status?: CancellationRequestStatus, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<CancellationRequestDtoPagedResultApiResponse>>;
+    getMyCancellationRequests(status?: CancellationRequestStatus, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<CancellationRequestDtoPagedResultApiResponse>>;
+    getMyCancellationRequests(status?: CancellationRequestStatus, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
+        const url = `${this.basePath}/api/cancellation-requests/me`;
+
+        let params = new HttpParams();
+        if (status != null) {
+            params = HttpParamsBuilder.addToHttpParams(params, status, 'status');
+        }
+        if (page != null) {
+            params = HttpParamsBuilder.addToHttpParams(params, page, 'page');
+        }
+        if (pageSize != null) {
+            params = HttpParamsBuilder.addToHttpParams(params, pageSize, 'pageSize');
+        }
+        if (searchTerm != null) {
+            params = HttpParamsBuilder.addToHttpParams(params, searchTerm, 'searchTerm');
+        }
+        if (sortColumn != null) {
+            params = HttpParamsBuilder.addToHttpParams(params, sortColumn, 'sortColumn');
+        }
+        if (sortDirection != null) {
+            params = HttpParamsBuilder.addToHttpParams(params, sortDirection, 'sortDirection');
+        }
+
+        let headers: HttpHeaders;
+        if (options?.headers instanceof HttpHeaders) {
+            headers = options.headers;
+        } else {
+            headers = new HttpHeaders(options?.headers);
+        }
+
+        const requestOptions: any = {
+            observe: observe as any,
+            headers,
+            params,
+            reportProgress: options?.reportProgress,
+            withCredentials: options?.withCredentials,
+            context: this.createContextWithClientId(options?.context)
+        };
+
+        return this.httpClient.get(url, requestOptions);
     }
 }

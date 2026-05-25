@@ -12,7 +12,7 @@ import { inject, Injectable } from "@angular/core";
 import { Observable } from "rxjs";
 import { BASE_PATH_DEFAULT, CLIENT_CONTEXT_TOKEN_DEFAULT } from "../tokens";
 import { HttpParamsBuilder } from "../utils/http-params-builder";
-import { ApplicationStatus, RequestOptions, ApplicationResponseDtoPagedResultApiResponse, TutorRequestStatus, TutorRequestResponseDtoPagedResultApiResponse, AdminApproveRequestDto, AdminMatchRequestDto, CreateTutorRequestDto, PaymentStatus, PaymentAdminDtoPagedResultApiResponse, PaymentAdminDtoApiResponse, ClassStatus, ClassDtoPagedResultApiResponse, ClassDtoApiResponse, CancellationRequestStatus, CancellationRequestDtoPagedResultApiResponse, CancellationRequestDtoApiResponse, ResolveCancellationRequestDto } from "../models";
+import { ApplicationStatus, RequestOptions, ApplicationResponseDtoPagedResultApiResponse, TutorRequestStatus, TutorRequestResponseDtoPagedResultApiResponse, PaymentStatus, PaymentAdminDtoPagedResultApiResponse, PaymentAdminDtoApiResponse, ClassStatus, ClassDtoPagedResultApiResponse, ClassDtoApiResponse, CancellationRequestStatus, CancellationRequestDtoPagedResultApiResponse, CancellationRequestDtoApiResponse, ResolveCancellationRequestDto } from "../models";
 
 @Injectable({ providedIn: "root" })
 export class AdminService {
@@ -122,114 +122,6 @@ export class AdminService {
         };
 
         return this.httpClient.get(url, requestOptions);
-    }
-
-    adminApproveApplication(id: number, adminApproveRequestDto?: AdminApproveRequestDto, observe?: 'body', options?: RequestOptions<'json'>): Observable<any>;
-    adminApproveApplication(id: number, adminApproveRequestDto?: AdminApproveRequestDto, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<any>>;
-    adminApproveApplication(id: number, adminApproveRequestDto?: AdminApproveRequestDto, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<any>>;
-    adminApproveApplication(id: number, adminApproveRequestDto?: AdminApproveRequestDto, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
-        const url = `${this.basePath}/api/Admin/applications/${id}/approve`;
-
-        let headers: HttpHeaders;
-        if (options?.headers instanceof HttpHeaders) {
-            headers = options.headers;
-        } else {
-            headers = new HttpHeaders(options?.headers);
-        }
-        // Set Content-Type for JSON requests if not already set
-        if (!headers.has('Content-Type')) {
-            headers = headers.set('Content-Type', 'application/json');
-        }
-
-        const requestOptions: any = {
-            observe: observe as any,
-            headers,
-            reportProgress: options?.reportProgress,
-            withCredentials: options?.withCredentials,
-            context: this.createContextWithClientId(options?.context)
-        };
-
-        return this.httpClient.put(url, adminApproveRequestDto, requestOptions);
-    }
-
-    adminRejectApplication(id: number, observe?: 'body', options?: RequestOptions<'json'>): Observable<any>;
-    adminRejectApplication(id: number, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<any>>;
-    adminRejectApplication(id: number, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<any>>;
-    adminRejectApplication(id: number, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
-        const url = `${this.basePath}/api/Admin/applications/${id}/reject`;
-
-        let headers: HttpHeaders;
-        if (options?.headers instanceof HttpHeaders) {
-            headers = options.headers;
-        } else {
-            headers = new HttpHeaders(options?.headers);
-        }
-
-        const requestOptions: any = {
-            observe: observe as any,
-            headers,
-            reportProgress: options?.reportProgress,
-            withCredentials: options?.withCredentials,
-            context: this.createContextWithClientId(options?.context)
-        };
-
-        return this.httpClient.put(url, null, requestOptions);
-    }
-
-    adminMatchRequest(requestId: number, adminMatchRequestDto?: AdminMatchRequestDto, observe?: 'body', options?: RequestOptions<'json'>): Observable<any>;
-    adminMatchRequest(requestId: number, adminMatchRequestDto?: AdminMatchRequestDto, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<any>>;
-    adminMatchRequest(requestId: number, adminMatchRequestDto?: AdminMatchRequestDto, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<any>>;
-    adminMatchRequest(requestId: number, adminMatchRequestDto?: AdminMatchRequestDto, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
-        const url = `${this.basePath}/api/Admin/requests/${requestId}/match`;
-
-        let headers: HttpHeaders;
-        if (options?.headers instanceof HttpHeaders) {
-            headers = options.headers;
-        } else {
-            headers = new HttpHeaders(options?.headers);
-        }
-        // Set Content-Type for JSON requests if not already set
-        if (!headers.has('Content-Type')) {
-            headers = headers.set('Content-Type', 'application/json');
-        }
-
-        const requestOptions: any = {
-            observe: observe as any,
-            headers,
-            reportProgress: options?.reportProgress,
-            withCredentials: options?.withCredentials,
-            context: this.createContextWithClientId(options?.context)
-        };
-
-        return this.httpClient.post(url, adminMatchRequestDto, requestOptions);
-    }
-
-    adminCreateRequestForStudent(studentId: number, createTutorRequestDto?: CreateTutorRequestDto, observe?: 'body', options?: RequestOptions<'json'>): Observable<any>;
-    adminCreateRequestForStudent(studentId: number, createTutorRequestDto?: CreateTutorRequestDto, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<any>>;
-    adminCreateRequestForStudent(studentId: number, createTutorRequestDto?: CreateTutorRequestDto, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<any>>;
-    adminCreateRequestForStudent(studentId: number, createTutorRequestDto?: CreateTutorRequestDto, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
-        const url = `${this.basePath}/api/Admin/tutor-requests/${studentId}`;
-
-        let headers: HttpHeaders;
-        if (options?.headers instanceof HttpHeaders) {
-            headers = options.headers;
-        } else {
-            headers = new HttpHeaders(options?.headers);
-        }
-        // Set Content-Type for JSON requests if not already set
-        if (!headers.has('Content-Type')) {
-            headers = headers.set('Content-Type', 'application/json');
-        }
-
-        const requestOptions: any = {
-            observe: observe as any,
-            headers,
-            reportProgress: options?.reportProgress,
-            withCredentials: options?.withCredentials,
-            context: this.createContextWithClientId(options?.context)
-        };
-
-        return this.httpClient.post(url, createTutorRequestDto, requestOptions);
     }
 
     getAllPayments(page?: number, pageSize?: number, status?: PaymentStatus, observe?: 'body', options?: RequestOptions<'json'>): Observable<PaymentAdminDtoPagedResultApiResponse>;

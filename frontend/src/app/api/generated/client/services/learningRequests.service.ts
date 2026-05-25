@@ -12,7 +12,7 @@ import { inject, Injectable } from "@angular/core";
 import { Observable } from "rxjs";
 import { BASE_PATH_DEFAULT, CLIENT_CONTEXT_TOKEN_DEFAULT } from "../tokens";
 import { HttpParamsBuilder } from "../utils/http-params-builder";
-import { CreateLearningRequestDto, RequestOptions, LearningRequestDtoApiResponse, LearningRequestStatus, LearningRequestDtoPagedResultApiResponse } from "../models";
+import { CreateLearningRequestDto, RequestOptions, LearningRequestDtoApiResponse, LearningRequestStatus, LearningRequestDtoPagedResultApiResponse, ScheduleProposalDtoApiResponse } from "../models";
 
 @Injectable({ providedIn: "root" })
 export class LearningRequestsService {
@@ -103,6 +103,30 @@ export class LearningRequestsService {
     getLearningRequestById(id: number, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<LearningRequestDtoApiResponse>>;
     getLearningRequestById(id: number, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
         const url = `${this.basePath}/api/learning-requests/${id}`;
+
+        let headers: HttpHeaders;
+        if (options?.headers instanceof HttpHeaders) {
+            headers = options.headers;
+        } else {
+            headers = new HttpHeaders(options?.headers);
+        }
+
+        const requestOptions: any = {
+            observe: observe as any,
+            headers,
+            reportProgress: options?.reportProgress,
+            withCredentials: options?.withCredentials,
+            context: this.createContextWithClientId(options?.context)
+        };
+
+        return this.httpClient.get(url, requestOptions);
+    }
+
+    getScheduleProposalByLearningRequest(learningRequestId: number, observe?: 'body', options?: RequestOptions<'json'>): Observable<ScheduleProposalDtoApiResponse>;
+    getScheduleProposalByLearningRequest(learningRequestId: number, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<ScheduleProposalDtoApiResponse>>;
+    getScheduleProposalByLearningRequest(learningRequestId: number, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<ScheduleProposalDtoApiResponse>>;
+    getScheduleProposalByLearningRequest(learningRequestId: number, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
+        const url = `${this.basePath}/api/learning-requests/${learningRequestId}/schedule-proposal`;
 
         let headers: HttpHeaders;
         if (options?.headers instanceof HttpHeaders) {

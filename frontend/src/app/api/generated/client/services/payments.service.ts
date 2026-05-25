@@ -12,7 +12,7 @@ import { inject, Injectable } from "@angular/core";
 import { Observable } from "rxjs";
 import { BASE_PATH_DEFAULT, CLIENT_CONTEXT_TOKEN_DEFAULT } from "../tokens";
 import { HttpParamsBuilder } from "../utils/http-params-builder";
-import { CreateDepositPaymentRequest, RequestOptions, PaymentResponseDtoApiResponse, PaymentStatusDtoApiResponse, PayOSWebhookDto, ApiResponse, CreatePaymentRequestDto } from "../models";
+import { CreateDepositPaymentRequest, RequestOptions, PaymentResponseDtoApiResponse, DepositPaymentDtoApiResponse, PaymentStatusDtoApiResponse, PayOSWebhookDto, ApiResponse } from "../models";
 
 @Injectable({ providedIn: "root" })
 export class PaymentsService {
@@ -51,6 +51,30 @@ export class PaymentsService {
         };
 
         return this.httpClient.post(url, createDepositPaymentRequest, requestOptions);
+    }
+
+    getPaymentByLearningRequest(learningRequestId: number, observe?: 'body', options?: RequestOptions<'json'>): Observable<DepositPaymentDtoApiResponse>;
+    getPaymentByLearningRequest(learningRequestId: number, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<DepositPaymentDtoApiResponse>>;
+    getPaymentByLearningRequest(learningRequestId: number, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<DepositPaymentDtoApiResponse>>;
+    getPaymentByLearningRequest(learningRequestId: number, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
+        const url = `${this.basePath}/api/Payments/learning-requests/${learningRequestId}`;
+
+        let headers: HttpHeaders;
+        if (options?.headers instanceof HttpHeaders) {
+            headers = options.headers;
+        } else {
+            headers = new HttpHeaders(options?.headers);
+        }
+
+        const requestOptions: any = {
+            observe: observe as any,
+            headers,
+            reportProgress: options?.reportProgress,
+            withCredentials: options?.withCredentials,
+            context: this.createContextWithClientId(options?.context)
+        };
+
+        return this.httpClient.get(url, requestOptions);
     }
 
     getPaymentStatus(orderCode: number, observe?: 'body', options?: RequestOptions<'json'>): Observable<PaymentStatusDtoApiResponse>;
@@ -103,33 +127,5 @@ export class PaymentsService {
         };
 
         return this.httpClient.post(url, payOSWebhookDto, requestOptions);
-    }
-
-    createPayment(createPaymentRequestDto?: CreatePaymentRequestDto, observe?: 'body', options?: RequestOptions<'json'>): Observable<any>;
-    createPayment(createPaymentRequestDto?: CreatePaymentRequestDto, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<any>>;
-    createPayment(createPaymentRequestDto?: CreatePaymentRequestDto, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<any>>;
-    createPayment(createPaymentRequestDto?: CreatePaymentRequestDto, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
-        const url = `${this.basePath}/api/Payments/create`;
-
-        let headers: HttpHeaders;
-        if (options?.headers instanceof HttpHeaders) {
-            headers = options.headers;
-        } else {
-            headers = new HttpHeaders(options?.headers);
-        }
-        // Set Content-Type for JSON requests if not already set
-        if (!headers.has('Content-Type')) {
-            headers = headers.set('Content-Type', 'application/json');
-        }
-
-        const requestOptions: any = {
-            observe: observe as any,
-            headers,
-            reportProgress: options?.reportProgress,
-            withCredentials: options?.withCredentials,
-            context: this.createContextWithClientId(options?.context)
-        };
-
-        return this.httpClient.post(url, createPaymentRequestDto, requestOptions);
     }
 }

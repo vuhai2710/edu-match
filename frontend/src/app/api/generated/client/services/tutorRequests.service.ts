@@ -12,7 +12,7 @@ import { inject, Injectable } from "@angular/core";
 import { Observable } from "rxjs";
 import { BASE_PATH_DEFAULT, CLIENT_CONTEXT_TOKEN_DEFAULT } from "../tokens";
 import { HttpParamsBuilder } from "../utils/http-params-builder";
-import { TutorRequestStatus, RequestOptions, TutorRequestResponseDtoPagedResultApiResponse, CreateTutorRequestDto, TutorRequestResponseDtoApiResponse, UpdateTutorRequestDto } from "../models";
+import { TutorRequestStatus, RequestOptions, TutorRequestResponseDtoPagedResultApiResponse, TutorRequestResponseDtoApiResponse } from "../models";
 
 @Injectable({ providedIn: "root" })
 export class TutorRequestsService {
@@ -79,34 +79,6 @@ export class TutorRequestsService {
         return this.httpClient.get(url, requestOptions);
     }
 
-    createTutorRequest(createTutorRequestDto?: CreateTutorRequestDto, observe?: 'body', options?: RequestOptions<'json'>): Observable<any>;
-    createTutorRequest(createTutorRequestDto?: CreateTutorRequestDto, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<any>>;
-    createTutorRequest(createTutorRequestDto?: CreateTutorRequestDto, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<any>>;
-    createTutorRequest(createTutorRequestDto?: CreateTutorRequestDto, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
-        const url = `${this.basePath}/api/TutorRequests`;
-
-        let headers: HttpHeaders;
-        if (options?.headers instanceof HttpHeaders) {
-            headers = options.headers;
-        } else {
-            headers = new HttpHeaders(options?.headers);
-        }
-        // Set Content-Type for JSON requests if not already set
-        if (!headers.has('Content-Type')) {
-            headers = headers.set('Content-Type', 'application/json');
-        }
-
-        const requestOptions: any = {
-            observe: observe as any,
-            headers,
-            reportProgress: options?.reportProgress,
-            withCredentials: options?.withCredentials,
-            context: this.createContextWithClientId(options?.context)
-        };
-
-        return this.httpClient.post(url, createTutorRequestDto, requestOptions);
-    }
-
     getTutorRequestById(id: number, observe?: 'body', options?: RequestOptions<'json'>): Observable<TutorRequestResponseDtoApiResponse>;
     getTutorRequestById(id: number, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<TutorRequestResponseDtoApiResponse>>;
     getTutorRequestById(id: number, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<TutorRequestResponseDtoApiResponse>>;
@@ -129,34 +101,6 @@ export class TutorRequestsService {
         };
 
         return this.httpClient.get(url, requestOptions);
-    }
-
-    updateTutorRequest(id: number, updateTutorRequestDto?: UpdateTutorRequestDto, observe?: 'body', options?: RequestOptions<'json'>): Observable<any>;
-    updateTutorRequest(id: number, updateTutorRequestDto?: UpdateTutorRequestDto, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<any>>;
-    updateTutorRequest(id: number, updateTutorRequestDto?: UpdateTutorRequestDto, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<any>>;
-    updateTutorRequest(id: number, updateTutorRequestDto?: UpdateTutorRequestDto, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
-        const url = `${this.basePath}/api/TutorRequests/${id}`;
-
-        let headers: HttpHeaders;
-        if (options?.headers instanceof HttpHeaders) {
-            headers = options.headers;
-        } else {
-            headers = new HttpHeaders(options?.headers);
-        }
-        // Set Content-Type for JSON requests if not already set
-        if (!headers.has('Content-Type')) {
-            headers = headers.set('Content-Type', 'application/json');
-        }
-
-        const requestOptions: any = {
-            observe: observe as any,
-            headers,
-            reportProgress: options?.reportProgress,
-            withCredentials: options?.withCredentials,
-            context: this.createContextWithClientId(options?.context)
-        };
-
-        return this.httpClient.put(url, updateTutorRequestDto, requestOptions);
     }
 
     getMyTutorRequests(page?: number, pageSize?: number, observe?: 'body', options?: RequestOptions<'json'>): Observable<TutorRequestResponseDtoPagedResultApiResponse>;
@@ -190,29 +134,5 @@ export class TutorRequestsService {
         };
 
         return this.httpClient.get(url, requestOptions);
-    }
-
-    closeTutorRequest(id: number, observe?: 'body', options?: RequestOptions<'json'>): Observable<any>;
-    closeTutorRequest(id: number, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<any>>;
-    closeTutorRequest(id: number, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<any>>;
-    closeTutorRequest(id: number, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
-        const url = `${this.basePath}/api/TutorRequests/${id}/close`;
-
-        let headers: HttpHeaders;
-        if (options?.headers instanceof HttpHeaders) {
-            headers = options.headers;
-        } else {
-            headers = new HttpHeaders(options?.headers);
-        }
-
-        const requestOptions: any = {
-            observe: observe as any,
-            headers,
-            reportProgress: options?.reportProgress,
-            withCredentials: options?.withCredentials,
-            context: this.createContextWithClientId(options?.context)
-        };
-
-        return this.httpClient.put(url, null, requestOptions);
     }
 }

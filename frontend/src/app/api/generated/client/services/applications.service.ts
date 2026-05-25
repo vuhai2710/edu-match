@@ -12,7 +12,7 @@ import { inject, Injectable } from "@angular/core";
 import { Observable } from "rxjs";
 import { BASE_PATH_DEFAULT, CLIENT_CONTEXT_TOKEN_DEFAULT } from "../tokens";
 import { HttpParamsBuilder } from "../utils/http-params-builder";
-import { ApplyToRequestDto, RequestOptions, ApplicationResponseDtoApiResponse, ApplicationResponseDtoPagedResultApiResponse } from "../models";
+import { RequestOptions, ApplicationResponseDtoApiResponse, ApplicationResponseDtoPagedResultApiResponse } from "../models";
 
 @Injectable({ providedIn: "root" })
 export class ApplicationsService {
@@ -23,34 +23,6 @@ export class ApplicationsService {
     private createContextWithClientId(existingContext?: HttpContext): HttpContext {
         const context = existingContext || new HttpContext();
         return context.set(this.clientContextToken, 'default');
-    }
-
-    applyToRequest(requestId: number, applyToRequestDto?: ApplyToRequestDto, observe?: 'body', options?: RequestOptions<'json'>): Observable<any>;
-    applyToRequest(requestId: number, applyToRequestDto?: ApplyToRequestDto, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<any>>;
-    applyToRequest(requestId: number, applyToRequestDto?: ApplyToRequestDto, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<any>>;
-    applyToRequest(requestId: number, applyToRequestDto?: ApplyToRequestDto, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
-        const url = `${this.basePath}/api/tutor-requests/${requestId}/apply`;
-
-        let headers: HttpHeaders;
-        if (options?.headers instanceof HttpHeaders) {
-            headers = options.headers;
-        } else {
-            headers = new HttpHeaders(options?.headers);
-        }
-        // Set Content-Type for JSON requests if not already set
-        if (!headers.has('Content-Type')) {
-            headers = headers.set('Content-Type', 'application/json');
-        }
-
-        const requestOptions: any = {
-            observe: observe as any,
-            headers,
-            reportProgress: options?.reportProgress,
-            withCredentials: options?.withCredentials,
-            context: this.createContextWithClientId(options?.context)
-        };
-
-        return this.httpClient.post(url, applyToRequestDto, requestOptions);
     }
 
     getApplicationById(id: number, observe?: 'body', options?: RequestOptions<'json'>): Observable<ApplicationResponseDtoApiResponse>;
@@ -159,101 +131,5 @@ export class ApplicationsService {
         };
 
         return this.httpClient.get(url, requestOptions);
-    }
-
-    studentConfirmApplication(id: number, observe?: 'body', options?: RequestOptions<'json'>): Observable<any>;
-    studentConfirmApplication(id: number, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<any>>;
-    studentConfirmApplication(id: number, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<any>>;
-    studentConfirmApplication(id: number, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
-        const url = `${this.basePath}/api/Applications/${id}/student-confirm`;
-
-        let headers: HttpHeaders;
-        if (options?.headers instanceof HttpHeaders) {
-            headers = options.headers;
-        } else {
-            headers = new HttpHeaders(options?.headers);
-        }
-
-        const requestOptions: any = {
-            observe: observe as any,
-            headers,
-            reportProgress: options?.reportProgress,
-            withCredentials: options?.withCredentials,
-            context: this.createContextWithClientId(options?.context)
-        };
-
-        return this.httpClient.put(url, null, requestOptions);
-    }
-
-    studentRejectApplication(id: number, observe?: 'body', options?: RequestOptions<'json'>): Observable<any>;
-    studentRejectApplication(id: number, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<any>>;
-    studentRejectApplication(id: number, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<any>>;
-    studentRejectApplication(id: number, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
-        const url = `${this.basePath}/api/Applications/${id}/student-reject`;
-
-        let headers: HttpHeaders;
-        if (options?.headers instanceof HttpHeaders) {
-            headers = options.headers;
-        } else {
-            headers = new HttpHeaders(options?.headers);
-        }
-
-        const requestOptions: any = {
-            observe: observe as any,
-            headers,
-            reportProgress: options?.reportProgress,
-            withCredentials: options?.withCredentials,
-            context: this.createContextWithClientId(options?.context)
-        };
-
-        return this.httpClient.put(url, null, requestOptions);
-    }
-
-    studentAcceptMatch(id: number, observe?: 'body', options?: RequestOptions<'json'>): Observable<any>;
-    studentAcceptMatch(id: number, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<any>>;
-    studentAcceptMatch(id: number, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<any>>;
-    studentAcceptMatch(id: number, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
-        const url = `${this.basePath}/api/Applications/${id}/student-accept-match`;
-
-        let headers: HttpHeaders;
-        if (options?.headers instanceof HttpHeaders) {
-            headers = options.headers;
-        } else {
-            headers = new HttpHeaders(options?.headers);
-        }
-
-        const requestOptions: any = {
-            observe: observe as any,
-            headers,
-            reportProgress: options?.reportProgress,
-            withCredentials: options?.withCredentials,
-            context: this.createContextWithClientId(options?.context)
-        };
-
-        return this.httpClient.put(url, null, requestOptions);
-    }
-
-    tutorAcceptMatch(id: number, observe?: 'body', options?: RequestOptions<'json'>): Observable<any>;
-    tutorAcceptMatch(id: number, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<any>>;
-    tutorAcceptMatch(id: number, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<any>>;
-    tutorAcceptMatch(id: number, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
-        const url = `${this.basePath}/api/Applications/${id}/tutor-accept-match`;
-
-        let headers: HttpHeaders;
-        if (options?.headers instanceof HttpHeaders) {
-            headers = options.headers;
-        } else {
-            headers = new HttpHeaders(options?.headers);
-        }
-
-        const requestOptions: any = {
-            observe: observe as any,
-            headers,
-            reportProgress: options?.reportProgress,
-            withCredentials: options?.withCredentials,
-            context: this.createContextWithClientId(options?.context)
-        };
-
-        return this.httpClient.put(url, null, requestOptions);
     }
 }

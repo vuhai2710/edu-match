@@ -53,6 +53,30 @@ export class ScheduleProposalsService {
         return this.httpClient.post(url, createScheduleProposalDto, requestOptions);
     }
 
+    getScheduleProposalById(id: number, observe?: 'body', options?: RequestOptions<'json'>): Observable<ScheduleProposalDtoApiResponse>;
+    getScheduleProposalById(id: number, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<ScheduleProposalDtoApiResponse>>;
+    getScheduleProposalById(id: number, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<ScheduleProposalDtoApiResponse>>;
+    getScheduleProposalById(id: number, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
+        const url = `${this.basePath}/api/schedule-proposals/${id}`;
+
+        let headers: HttpHeaders;
+        if (options?.headers instanceof HttpHeaders) {
+            headers = options.headers;
+        } else {
+            headers = new HttpHeaders(options?.headers);
+        }
+
+        const requestOptions: any = {
+            observe: observe as any,
+            headers,
+            reportProgress: options?.reportProgress,
+            withCredentials: options?.withCredentials,
+            context: this.createContextWithClientId(options?.context)
+        };
+
+        return this.httpClient.get(url, requestOptions);
+    }
+
     acceptScheduleProposal(id: number, observe?: 'body', options?: RequestOptions<'json'>): Observable<ScheduleProposalDtoApiResponse>;
     acceptScheduleProposal(id: number, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<ScheduleProposalDtoApiResponse>>;
     acceptScheduleProposal(id: number, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<ScheduleProposalDtoApiResponse>>;
