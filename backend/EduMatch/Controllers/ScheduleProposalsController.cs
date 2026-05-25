@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using EduMatch.Common.Enums;
 using EduMatch.Common.Exception;
 using EduMatch.Common.Extensions;
 using EduMatch.DTOs;
@@ -36,6 +37,24 @@ namespace EduMatch.Controllers
       return this.CreatedResponse(
         $"/api/schedule-proposals/{result.Id}",
         ApiResponse<ScheduleProposalDto>.SuccessResult(result, "Tạo đề xuất lịch học thành công."));
+    }
+
+    [HttpGet("{id:long}")]
+    [Authorize(Roles = "Student,Tutor,Admin")]
+    [SwaggerOperation(OperationId = "getScheduleProposalById")]
+    [ProducesResponseType(typeof(ApiResponse<ScheduleProposalDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<ScheduleProposalDto>>> GetById(long id)
+    {
+      var result = await _scheduleProposalService.GetByIdAsync(
+        id,
+        GetCurrentUserId(),
+        GetCurrentUserRole(),
+        TryGetCurrentTutorId());
+
+      return this.OkResponse(ApiResponse<ScheduleProposalDto>.SuccessResult(result));
     }
 
     [HttpPut("{id:long}/accept")]
@@ -86,6 +105,23 @@ namespace EduMatch.Controllers
       }
 
       return tutorId;
+    }
+
+    private long? TryGetCurrentTutorId()
+    {
+      var tutorIdClaim = User.FindFirstValue("tutorId");
+      return long.TryParse(tutorIdClaim, out var tutorId) ? tutorId : null;
+    }
+
+    private UserRole GetCurrentUserRole()
+    {
+      var roleClaim = User.FindFirstValue(ClaimTypes.Role);
+      if (!Enum.TryParse<UserRole>(roleClaim, true, out var role))
+      {
+        throw new UnauthorizedException("Cannot determine user role.");
+      }
+
+      return role;
     }
   }
 }

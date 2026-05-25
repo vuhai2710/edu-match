@@ -13,7 +13,19 @@ namespace EduMatch.Repositories
 
     public async Task<ScheduleProposal?> GetByIdWithDetailsAsync(long id)
     {
-      return await _dbSet
+      return await BuildDetailsQuery()
+        .FirstOrDefaultAsync(x => x.Id == id);
+    }
+
+    public async Task<ScheduleProposal?> GetByLearningRequestIdAsync(long learningRequestId)
+    {
+      return await BuildDetailsQuery()
+        .FirstOrDefaultAsync(x => x.LearningRequestId == learningRequestId);
+    }
+
+    private IQueryable<ScheduleProposal> BuildDetailsQuery()
+    {
+      return _dbSet
         .Include(x => x.LearningRequest)
           .ThenInclude(x => x.Student)
         .Include(x => x.LearningRequest)
@@ -23,12 +35,7 @@ namespace EduMatch.Repositories
           .ThenInclude(x => x.Subject)
         .Include(x => x.Tutor)
           .ThenInclude(x => x.User)
-        .FirstOrDefaultAsync(x => x.Id == id);
-    }
-
-    public async Task<ScheduleProposal?> GetByLearningRequestIdAsync(long learningRequestId)
-    {
-      return await _dbSet.FirstOrDefaultAsync(x => x.LearningRequestId == learningRequestId);
+        .AsQueryable();
     }
   }
 }

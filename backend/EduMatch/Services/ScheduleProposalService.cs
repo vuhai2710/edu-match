@@ -127,6 +127,34 @@ namespace EduMatch.Services
       return ScheduleProposalMapper.ToDto(proposal, validatedTimeSlots);
     }
 
+    public async Task<ScheduleProposalDto> GetByIdAsync(long id, long currentUserId, UserRole role, long? tutorProfileId = null)
+    {
+      var proposal = await _scheduleProposalRepository.GetByIdWithDetailsAsync(id);
+      if (proposal == null)
+      {
+        throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y Ä‘á» xuáº¥t lá»‹ch há»c.", "SCHEDULE_PROPOSAL_NOT_FOUND");
+      }
+
+      EnsureCanViewProposal(proposal, currentUserId, role, tutorProfileId);
+
+      var timeSlots = _bookingScheduleService.ParseAndValidate(proposal.TimeSlots, proposal.HoursPerSession);
+      return ScheduleProposalMapper.ToDto(proposal, timeSlots);
+    }
+
+    public async Task<ScheduleProposalDto> GetByLearningRequestIdAsync(long learningRequestId, long currentUserId, UserRole role, long? tutorProfileId = null)
+    {
+      var proposal = await _scheduleProposalRepository.GetByLearningRequestIdAsync(learningRequestId);
+      if (proposal == null)
+      {
+        throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y Ä‘á» xuáº¥t lá»‹ch há»c.", "SCHEDULE_PROPOSAL_NOT_FOUND");
+      }
+
+      EnsureCanViewProposal(proposal, currentUserId, role, tutorProfileId);
+
+      var timeSlots = _bookingScheduleService.ParseAndValidate(proposal.TimeSlots, proposal.HoursPerSession);
+      return ScheduleProposalMapper.ToDto(proposal, timeSlots);
+    }
+
     public async Task<ScheduleProposalDto> AcceptAsync(long id, long currentUserId)
     {
       var proposal = await GetProposalForStudentActionAsync(id, currentUserId);
@@ -200,6 +228,30 @@ namespace EduMatch.Services
         "Yêu cầu học tập không còn ở trạng thái thương lượng.");
 
       return proposal;
+    }
+
+    private static void EnsureCanViewProposal(
+      ScheduleProposal proposal,
+      long currentUserId,
+      UserRole role,
+      long? tutorProfileId)
+    {
+      if (role == UserRole.Admin)
+      {
+        return;
+      }
+
+      if (role == UserRole.Student && proposal.LearningRequest.StudentId == currentUserId)
+      {
+        return;
+      }
+
+      if (role == UserRole.Tutor && tutorProfileId.HasValue && proposal.LearningRequest.TutorId == tutorProfileId.Value)
+      {
+        return;
+      }
+
+      throw new ForbiddenException("Báº¡n khÃ´ng cÃ³ quyá»n xem Ä‘á» xuáº¥t lá»‹ch há»c nÃ y.", "SCHEDULE_PROPOSAL_FORBIDDEN");
     }
 
     private async Task<ScheduleProposal> GetAcceptedProposalAsync(long id)

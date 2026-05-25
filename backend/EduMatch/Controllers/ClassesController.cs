@@ -1,8 +1,11 @@
 using System.Security.Claims;
 using EduMatch.Common.Exception;
 using EduMatch.Common.Extensions;
+using EduMatch.Common.Enums;
 using EduMatch.DTOs;
+using EduMatch.DTOs.CancellationRequests;
 using EduMatch.DTOs.Classes;
+using EduMatch.DTOs.Review;
 using EduMatch.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -15,10 +18,17 @@ namespace EduMatch.Controllers;
 public class ClassesController : ControllerBase
 {
   private readonly IClassReadService _classReadService;
+  private readonly IReviewService _reviewService;
+  private readonly ICancellationRequestService _cancellationRequestService;
 
-  public ClassesController(IClassReadService classReadService)
+  public ClassesController(
+    IClassReadService classReadService,
+    IReviewService reviewService,
+    ICancellationRequestService cancellationRequestService)
   {
     _classReadService = classReadService;
+    _reviewService = reviewService;
+    _cancellationRequestService = cancellationRequestService;
   }
 
   [HttpGet("me")]
@@ -60,6 +70,36 @@ public class ClassesController : ControllerBase
     return this.OkResponse(ApiResponse<ClassDto>.SuccessResult(result));
   }
 
+  [HttpGet("{id:long}/review-eligibility")]
+  [Authorize(Roles = "Student")]
+  [SwaggerOperation(OperationId = "getClassReviewEligibility")]
+  [ProducesResponseType(typeof(ApiResponse<ReviewEligibilityDto>), StatusCodes.Status200OK)]
+  [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+  [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+  [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+  public async Task<ActionResult<ApiResponse<ReviewEligibilityDto>>> GetReviewEligibility(long id)
+  {
+    var result = await _reviewService.GetEligibilityAsync(GetCurrentUserId(), id);
+    return this.OkResponse(ApiResponse<ReviewEligibilityDto>.SuccessResult(result));
+  }
+
+  [HttpGet("{id:long}/cancellation-request")]
+  [Authorize(Roles = "Student,Tutor,Admin")]
+  [SwaggerOperation(OperationId = "getClassCancellationRequest")]
+  [ProducesResponseType(typeof(ApiResponse<CancellationRequestDto>), StatusCodes.Status200OK)]
+  [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+  [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+  [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+  public async Task<ActionResult<ApiResponse<CancellationRequestDto>>> GetCancellationRequest(long id)
+  {
+    var result = await _cancellationRequestService.GetLatestByClassIdAsync(
+      id,
+      GetCurrentUserId(),
+      GetCurrentUserRole());
+
+    return this.OkResponse(result);
+  }
+
   private long GetCurrentUserId()
   {
     var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -80,5 +120,16 @@ public class ClassesController : ControllerBase
     }
 
     return tutorId;
+  }
+
+  private UserRole GetCurrentUserRole()
+  {
+    var roleClaim = User.FindFirstValue(ClaimTypes.Role);
+    if (!Enum.TryParse<UserRole>(roleClaim, true, out var role))
+    {
+      throw new UnauthorizedException("Cannot determine user role.");
+    }
+
+    return role;
   }
 }

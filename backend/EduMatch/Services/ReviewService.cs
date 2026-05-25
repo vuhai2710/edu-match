@@ -113,6 +113,80 @@ namespace EduMatch.Services
       return MapToDto(reviewWithDetails);
     }
 
+    public async Task<ReviewEligibilityDto> GetEligibilityAsync(long userId, long classId)
+    {
+      var classEntity = await _classRepository.GetByIdAsync(classId);
+      if (classEntity == null)
+      {
+        throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y lá»›p há»c.", "CLASS_NOT_FOUND");
+      }
+
+      if (classEntity.StudentId != userId)
+      {
+        throw new ForbiddenException("Báº¡n khÃ´ng cÃ³ quyá»n Ä‘Ã¡nh giÃ¡ lá»›p há»c nÃ y.", "REVIEW_FORBIDDEN");
+      }
+
+      var alreadyReviewed = await _reviewRepository.ExistsByClassAndStudentAsync(classId, userId);
+      if (alreadyReviewed)
+      {
+        return new ReviewEligibilityDto
+        {
+          ClassId = classId,
+          CanReview = false,
+          ReasonCode = "ALREADY_REVIEWED",
+          Message = "Ban da danh gia lop hoc nay roi.",
+          AlreadyReviewed = true
+        };
+      }
+
+      if (classEntity.Status != ClassStatus.Active)
+      {
+        return new ReviewEligibilityDto
+        {
+          ClassId = classId,
+          CanReview = false,
+          ReasonCode = "NOT_ACTIVE",
+          Message = "Chi duoc danh gia khi lop hoc dang hoat dong.",
+          AlreadyReviewed = false
+        };
+      }
+
+      if (!classEntity.StartDate.HasValue)
+      {
+        return new ReviewEligibilityDto
+        {
+          ClassId = classId,
+          CanReview = false,
+          ReasonCode = "NO_START_DATE",
+          Message = "Lop hoc chua co ngay bat dau hop le.",
+          AlreadyReviewed = false
+        };
+      }
+
+      var availableAt = classEntity.StartDate.Value.AddDays(7);
+      if (DateTime.UtcNow < availableAt)
+      {
+        return new ReviewEligibilityDto
+        {
+          ClassId = classId,
+          CanReview = false,
+          ReasonCode = "TOO_EARLY",
+          Message = "Chi duoc phep danh gia sau 7 ngay ke tu ngay bat dau lop hoc.",
+          AvailableAt = availableAt,
+          AlreadyReviewed = false
+        };
+      }
+
+      return new ReviewEligibilityDto
+      {
+        ClassId = classId,
+        CanReview = true,
+        ReasonCode = "CAN_REVIEW",
+        Message = "Co the danh gia lop hoc.",
+        AlreadyReviewed = false
+      };
+    }
+
     public async Task<List<ReviewDto>> GetReviewsByTutorIdAsync(long tutorId)
     {
       var reviews = await _reviewRepository.GetByTutorIdAsync(tutorId);

@@ -64,13 +64,13 @@ namespace EduMatch.Controllers
     [HttpPost("google")]
     [AllowAnonymous]
     [SwaggerOperation(OperationId = "googleLogin")]
-    [ProducesResponseType(typeof(ApiResponse<GoogleAuthResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequestDto dto)
     {
       var data = await _authService.GoogleLoginAsync(dto);
-      return Ok(ApiResponse<GoogleAuthResponseDto>.SuccessResult(data, "Google login successful"));
+      return Ok(ApiResponse<LoginResponseDto>.SuccessResult(data, "Google login successful"));
     }
 
     [HttpPost("refresh-token")]

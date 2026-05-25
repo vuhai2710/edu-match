@@ -1,0 +1,20 @@
+using EduMatch.Common.Enums;
+
+namespace EduMatch.DTOs.Payment
+{
+  public class DepositPaymentDto
+  {
+    public long Id { get; set; }
+    public long? LearningRequestId { get; set; }
+    public long? PaidByUserId { get; set; }
+    public long? ClassId { get; set; }
+    public long? TutorId { get; set; }
+    public long OrderCode { get; set; }
+    public decimal Amount { get; set; }
+    public string? CheckoutUrl { get; set; }
+    public PaymentStatus Status { get; set; }
+    public string? TransactionId { get; set; }
+    public DateTime? PaidAt { get; set; }
+    public DateTime CreatedAt { get; set; }
+  }
+}

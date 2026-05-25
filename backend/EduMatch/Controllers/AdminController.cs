@@ -64,46 +64,6 @@ namespace EduMatch.Controllers
       return this.OkResponse(response);
     }
 
-    [HttpPut("applications/{id:long}/approve")]
-    [SwaggerOperation(OperationId = "adminApproveApplication")]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status410Gone)]
-    public ActionResult<ApiResponse<bool>> AdminApprove(long id, [FromBody] AdminApproveRequestDto dto)
-    {
-      return LegacyGone();
-    }
-
-    [HttpPut("applications/{id:long}/reject")]
-    [SwaggerOperation(OperationId = "adminRejectApplication")]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status410Gone)]
-    public ActionResult<ApiResponse<bool>> AdminReject(long id)
-    {
-      return LegacyGone();
-    }
-
-    [HttpPost("requests/{requestId:long}/match")]
-    [SwaggerOperation(OperationId = "adminMatchRequest")]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status410Gone)]
-    public ActionResult<ApiResponse<ApplicationResponseDto>> AdminMatch(long requestId, [FromBody] AdminMatchRequestDto dto)
-    {
-      return LegacyGone();
-    }
-
-    [HttpPost("tutor-requests/{studentId:long}")]
-    [SwaggerOperation(OperationId = "adminCreateRequestForStudent")]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status410Gone)]
-    public ActionResult<ApiResponse<TutorRequestResponseDto>> AdminCreateTutorRequest(long studentId, [FromBody] CreateTutorRequestDto dto)
-    {
-      return LegacyGone();
-    }
-
-    private ObjectResult LegacyGone()
-    {
-      return StatusCode(StatusCodes.Status410Gone,
-        ErrorResponse.Create(
-          "Luồng booking cũ đã ngừng. Vui lòng dùng /api/learning-requests và /api/schedule-proposals.",
-          "LEGACY_FLOW_DISABLED"));
-    }
-
     [HttpGet("payments")]
     [SwaggerOperation(OperationId = "getAllPayments")]
     [ProducesResponseType(typeof(ApiResponse<PagedResult<PaymentAdminDto>>), StatusCodes.Status200OK)]

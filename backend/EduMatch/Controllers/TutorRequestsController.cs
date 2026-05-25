@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using EduMatch.Common.Exception;
 using EduMatch.Common.Extensions;
 using EduMatch.DTOs;
@@ -5,7 +6,6 @@ using EduMatch.DTOs.TutorRequests;
 using EduMatch.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace EduMatch.Controllers
@@ -49,38 +49,6 @@ namespace EduMatch.Controllers
     public async Task<ActionResult<ApiResponse<PagedResult<TutorRequestResponseDto>>>> GetMyRequests([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
       return this.OkResponse(await _tutorRequestService.GetMyRequestsAsync(GetCurrentUserId(), page, pageSize));
-    }
-
-    [HttpPost]
-    [SwaggerOperation(OperationId = "createTutorRequest")]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status410Gone)]
-    public ActionResult<ApiResponse<TutorRequestResponseDto>> Create([FromBody] CreateTutorRequestDto dto)
-    {
-      return LegacyGone();
-    }
-
-    [HttpPut("{id:long}")]
-    [SwaggerOperation(OperationId = "updateTutorRequest")]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status410Gone)]
-    public ActionResult<ApiResponse<TutorRequestResponseDto>> Update(long id, [FromBody] UpdateTutorRequestDto dto)
-    {
-      return LegacyGone();
-    }
-
-    [HttpPut("{id:long}/close")]
-    [SwaggerOperation(OperationId = "closeTutorRequest")]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status410Gone)]
-    public ActionResult<ApiResponse<bool>> Close(long id)
-    {
-      return LegacyGone();
-    }
-
-    private ObjectResult LegacyGone()
-    {
-      return StatusCode(StatusCodes.Status410Gone,
-        ErrorResponse.Create(
-          "Luồng booking cũ đã ngừng. Vui lòng dùng /api/learning-requests và /api/schedule-proposals.",
-          "LEGACY_FLOW_DISABLED"));
     }
 
     private long GetCurrentUserId()

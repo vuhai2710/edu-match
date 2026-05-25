@@ -31,6 +31,18 @@ namespace EduMatch.Repositories
                 .FirstOrDefaultAsync(p => p.OrderCode == orderCode);
         }
 
+        public async Task<Payment?> GetLatestByLearningRequestIdWithDetailsAsync(long learningRequestId)
+        {
+            return await _context.Payments
+                .Include(p => p.LearningRequest)
+                    .ThenInclude(lr => lr!.Tutor)
+                .Include(p => p.Class)
+                .Where(p => p.LearningRequestId == learningRequestId)
+                .OrderByDescending(p => p.Status == PaymentStatus.Pending)
+                .ThenByDescending(p => p.CreatedAt)
+                .FirstOrDefaultAsync();
+        }
+
         public async Task<bool> HasPendingPaymentForLearningRequestAsync(long learningRequestId)
         {
             return await _context.Payments

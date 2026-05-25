@@ -173,6 +173,26 @@ namespace EduMatch.Services
       return ApiResponse<PagedResult<CancellationRequestDto>>.SuccessResult(result);
     }
 
+    public async Task<ApiResponse<PagedResult<CancellationRequestDto>>> GetMineAsync(long currentUserId, UserRole role, CancellationRequestQueryParameters parameters)
+    {
+      if (role is not (UserRole.Student or UserRole.Tutor))
+      {
+        throw new ForbiddenException("You cannot view cancellation requests with this role.", "CANCELLATION_REQUEST_FORBIDDEN");
+      }
+
+      var pagedRequests = await _cancellationRequestRepository.GetPagedForUserWithDetailsAsync(currentUserId, role, parameters);
+      var result = new PagedResult<CancellationRequestDto>
+      {
+        Items = pagedRequests.Items.Select(CancellationRequestMapper.ToDto).ToList(),
+        TotalCount = pagedRequests.TotalCount,
+        Page = pagedRequests.Page,
+        PageSize = pagedRequests.PageSize,
+        TotalPages = pagedRequests.TotalPages
+      };
+
+      return ApiResponse<PagedResult<CancellationRequestDto>>.SuccessResult(result);
+    }
+
     public async Task<ApiResponse<CancellationRequestDto>> GetByIdAsync(long id)
     {
       var request = await _cancellationRequestRepository.GetByIdWithDetailsAsync(id);
@@ -180,6 +200,19 @@ namespace EduMatch.Services
       {
         throw new NotFoundException("Cancellation request not found.", "CANCELLATION_REQUEST_NOT_FOUND");
       }
+
+      return ApiResponse<CancellationRequestDto>.SuccessResult(CancellationRequestMapper.ToDto(request));
+    }
+
+    public async Task<ApiResponse<CancellationRequestDto>> GetLatestByClassIdAsync(long classId, long currentUserId, UserRole role)
+    {
+      var request = await _cancellationRequestRepository.GetLatestByClassIdWithDetailsAsync(classId);
+      if (request == null)
+      {
+        throw new NotFoundException("Cancellation request not found.", "CANCELLATION_REQUEST_NOT_FOUND");
+      }
+
+      EnsureUserCanView(role, currentUserId, request.Class);
 
       return ApiResponse<CancellationRequestDto>.SuccessResult(CancellationRequestMapper.ToDto(request));
     }
@@ -192,6 +225,21 @@ namespace EduMatch.Services
           throw new ForbiddenException("You cannot create a cancellation request for this class.", "CANCELLATION_REQUEST_CREATE_FORBIDDEN");
         case UserRole.Tutor when classEntity.Tutor?.UserId != currentUserId:
           throw new ForbiddenException("You cannot create a cancellation request for this class.", "CANCELLATION_REQUEST_CREATE_FORBIDDEN");
+      }
+    }
+
+    private static void EnsureUserCanView(UserRole role, long currentUserId, Class classEntity)
+    {
+      switch (role)
+      {
+        case UserRole.Admin:
+          return;
+        case UserRole.Student when classEntity.StudentId == currentUserId:
+          return;
+        case UserRole.Tutor when classEntity.Tutor?.UserId == currentUserId:
+          return;
+        default:
+          throw new ForbiddenException("You cannot view this cancellation request.", "CANCELLATION_REQUEST_FORBIDDEN");
       }
     }
 

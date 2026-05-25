@@ -41,6 +41,21 @@ namespace EduMatch.Controllers
       return this.CreatedResponse($"/api/admin/cancellation-requests/{response.Data?.Id}", response);
     }
 
+    [HttpGet("me")]
+    [Authorize(Roles = "Student,Tutor")]
+    [SwaggerOperation(OperationId = "getMyCancellationRequests")]
+    [ProducesResponseType(typeof(ApiResponse<PagedResult<CancellationRequestDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<ApiResponse<PagedResult<CancellationRequestDto>>>> GetMine([FromQuery] CancellationRequestQueryParameters parameters)
+    {
+      return this.OkResponse(await _cancellationRequestService.GetMineAsync(
+        GetCurrentUserId(),
+        GetCurrentUserRole(),
+        parameters));
+    }
+
     private long GetCurrentUserId()
     {
       var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);

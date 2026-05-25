@@ -189,6 +189,30 @@ namespace EduMatch.Services
       };
     }
 
+    public async Task<DepositPaymentDto> GetByLearningRequestAsync(long callerUserId, bool isAdmin, long learningRequestId)
+    {
+      var lr = await _learningRequestRepo.GetByIdWithDetailsAsync(learningRequestId);
+      if (lr == null)
+      {
+        throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y yÃªu cáº§u há»c táº­p.", "LEARNING_REQUEST_NOT_FOUND");
+      }
+
+      if (!isAdmin && callerUserId != lr.StudentId && callerUserId != lr.Tutor.UserId)
+      {
+        throw new ForbiddenException(
+          "Báº¡n khÃ´ng cÃ³ quyá»n xem thanh toÃ¡n cho yÃªu cáº§u há»c táº­p nÃ y.",
+          "DEPOSIT_PAYMENT_FORBIDDEN");
+      }
+
+      var payment = await _paymentRepo.GetLatestByLearningRequestIdWithDetailsAsync(learningRequestId);
+      if (payment == null)
+      {
+        throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y thanh toÃ¡n.", "PAYMENT_NOT_FOUND");
+      }
+
+      return MapDepositPayment(payment);
+    }
+
     public async Task HandleWebhookAsync(PayOSWebhookDto dto)
     {
       if (dto.Data == null) return;
@@ -367,6 +391,25 @@ namespace EduMatch.Services
         newClass.Id, lr.Id, scheduleSource);
 
       return newClass;
+    }
+
+    private static DepositPaymentDto MapDepositPayment(Payment payment)
+    {
+      return new DepositPaymentDto
+      {
+        Id = payment.Id,
+        LearningRequestId = payment.LearningRequestId,
+        PaidByUserId = payment.PaidByUserId,
+        ClassId = payment.ClassId,
+        TutorId = payment.TutorId ?? payment.LearningRequest?.TutorId,
+        OrderCode = payment.OrderCode,
+        Amount = payment.Amount,
+        CheckoutUrl = payment.CheckoutUrl,
+        Status = payment.Status,
+        TransactionId = payment.TransactionId,
+        PaidAt = payment.PaidAt,
+        CreatedAt = payment.CreatedAt
+      };
     }
 
     private bool VerifyWebhookSignature(PayOSWebhookDto dto)

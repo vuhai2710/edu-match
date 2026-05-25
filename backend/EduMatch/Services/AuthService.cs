@@ -1,6 +1,7 @@
 using AutoMapper;
 using EduMatch.Common.Enums;
 using EduMatch.Common.Exception;
+using EduMatch.DTOs.Address;
 using EduMatch.DTOs.Auth;
 using EduMatch.DTOs.User;
 using EduMatch.Models;
@@ -62,7 +63,7 @@ public class AuthService
     return RegisterAsync(dto, dto);
   }
 
-  public async Task<GoogleAuthResponseDto> GoogleLoginAsync(GoogleLoginRequestDto dto)
+  public async Task<LoginResponseDto> GoogleLoginAsync(GoogleLoginRequestDto dto)
   {
     GoogleJsonWebSignature.Payload payload;
     try
@@ -117,13 +118,7 @@ public class AuthService
       _logger.LogInformation("Existing user logged in via Google: {Email} | Id: {Id}", user.Email, user.Id);
     }
 
-    var token = GenerateJwtToken(user);
-
-    return new GoogleAuthResponseDto
-    {
-      Token = token,
-      User = _mapper.Map<UserDto>(user)
-    };
+    return await IssueTokenPairAsync(user);
   }
 
   public async Task<LoginResponseDto> LoginAsync(LoginDto dto)
@@ -232,7 +227,7 @@ public class AuthService
     switch (role)
     {
       case UserRole.Student:
-        user.Student = CreateStudentProfile(dto.Address);
+        user.Student = CreateStudentProfile(BuildAddressDto(dto));
         break;
       case UserRole.Tutor:
         user.Tutor = CreateTutorProfile(tutorDto!, cvFile);
@@ -268,10 +263,7 @@ public class AuthService
       errors[nameof(dto.Gender)] = ["Giới tính là bắt buộc."];
     }
 
-    if (dto.Address == null)
-    {
-      errors[nameof(dto.Address)] = ["Địa chỉ là bắt buộc."];
-    }
+    ValidateAddress(dto, errors);
 
     if (tutorDto != null)
     {
@@ -322,7 +314,42 @@ public class AuthService
     }
   }
 
-  private Student CreateStudentProfile(DTOs.Address.CreateAddressDto? addressDto)
+  private static void ValidateAddress(RegisterDto dto, Dictionary<string, string[]> errors)
+  {
+    if (dto.ProvinceId <= 0)
+    {
+      errors[nameof(dto.ProvinceId)] = ["ProvinceId phai lon hon 0."];
+    }
+
+    if (string.IsNullOrWhiteSpace(dto.ProvinceName))
+    {
+      errors[nameof(dto.ProvinceName)] = ["ProvinceName la bat buoc."];
+    }
+
+    if (string.IsNullOrWhiteSpace(dto.WardCode))
+    {
+      errors[nameof(dto.WardCode)] = ["WardCode la bat buoc."];
+    }
+
+    if (string.IsNullOrWhiteSpace(dto.WardName))
+    {
+      errors[nameof(dto.WardName)] = ["WardName la bat buoc."];
+    }
+  }
+
+  private static CreateAddressDto BuildAddressDto(RegisterDto dto)
+  {
+    return new CreateAddressDto
+    {
+      ProvinceId = dto.ProvinceId,
+      ProvinceName = dto.ProvinceName.Trim(),
+      WardCode = dto.WardCode.Trim(),
+      WardName = dto.WardName.Trim(),
+      AddressDetail = string.IsNullOrWhiteSpace(dto.AddressDetail) ? null : dto.AddressDetail.Trim()
+    };
+  }
+
+  private Student CreateStudentProfile(CreateAddressDto? addressDto)
   {
     return new Student
     {
@@ -342,7 +369,7 @@ public class AuthService
       CareerStatus = dto.CareerStatus,
       Major = dto.Major.Trim(),
       AcademicDegree = dto.AcademicDegree,
-      Address = dto.Address == null ? null : _mapper.Map<Address>(dto.Address),
+      Address = _mapper.Map<Address>(BuildAddressDto(dto)),
       CvFileId = cvFile?.Id,
       CvFile = cvFile
     };
