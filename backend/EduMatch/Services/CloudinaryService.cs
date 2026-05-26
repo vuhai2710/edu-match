@@ -1,5 +1,6 @@
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
+using EduMatch.Common.Exception;
 using EduMatch.Configuration;
 using EduMatch.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
@@ -103,9 +104,9 @@ namespace EduMatch.Services
 
     private void EnsureConfigured()
     {
-      if (string.IsNullOrWhiteSpace(_settings.CloudName) ||
-          string.IsNullOrWhiteSpace(_settings.ApiKey) ||
-          string.IsNullOrWhiteSpace(_settings.ApiSecret))
+      if (string.IsNullOrWhiteSpace(_settings.CloudName)
+          || string.IsNullOrWhiteSpace(_settings.ApiKey)
+          || string.IsNullOrWhiteSpace(_settings.ApiSecret))
       {
         throw new System.Exception("Cloudinary chưa được cấu hình.");
       }
@@ -113,14 +114,22 @@ namespace EduMatch.Services
 
     private static void ValidateAvatar(IFormFile file)
     {
-      ValidateFile(file, AvatarMaxSizeInBytes, AvatarExtensions, AvatarContentTypes,
+      ValidateFile(
+        file,
+        AvatarMaxSizeInBytes,
+        AvatarExtensions,
+        AvatarContentTypes,
         "Ảnh đại diện chỉ hỗ trợ định dạng JPG, PNG hoặc WEBP.",
         "Ảnh đại diện không được vượt quá 5MB.");
     }
 
     private static void ValidateCv(IFormFile file)
     {
-      ValidateFile(file, CvMaxSizeInBytes, CvExtensions, CvContentTypes,
+      ValidateFile(
+        file,
+        CvMaxSizeInBytes,
+        CvExtensions,
+        CvContentTypes,
         "CV chỉ hỗ trợ định dạng PDF, DOC hoặc DOCX.",
         "CV không được vượt quá 10MB.");
     }
@@ -135,7 +144,12 @@ namespace EduMatch.Services
     {
       if (file == null || file.Length == 0)
       {
-        throw new ArgumentException("Tệp tải lên không hợp lệ.");
+        throw new ValidationException(
+          new Dictionary<string, string[]>
+          {
+            ["file"] = ["Tệp tải lên không hợp lệ."]
+          },
+          "INVALID_FILE_UPLOAD");
       }
 
       var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
@@ -143,12 +157,22 @@ namespace EduMatch.Services
 
       if (!allowedExtensions.Contains(extension) || !allowedContentTypes.Contains(contentType))
       {
-        throw new ArgumentException(invalidTypeMessage);
+        throw new ValidationException(
+          new Dictionary<string, string[]>
+          {
+            ["file"] = [invalidTypeMessage]
+          },
+          "INVALID_FILE_TYPE");
       }
 
       if (file.Length > maxSizeInBytes)
       {
-        throw new ArgumentException(invalidSizeMessage);
+        throw new ValidationException(
+          new Dictionary<string, string[]>
+          {
+            ["file"] = [invalidSizeMessage]
+          },
+          "FILE_SIZE_EXCEEDED");
       }
     }
   }

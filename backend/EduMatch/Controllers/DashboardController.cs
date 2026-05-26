@@ -1,11 +1,10 @@
+using EduMatch.Common.Extensions;
 using EduMatch.DTOs;
 using EduMatch.DTOs.Dashboard;
-using EduMatch.Common.Exception;
 using EduMatch.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
-using System.Security.Claims;
 
 namespace EduMatch.Controllers
 {
@@ -37,10 +36,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ApiResponse<TutorDashboardDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetTutorDashboard()
     {
-      var tutorIdClaim = User.FindFirstValue("tutorId");
-      if (!long.TryParse(tutorIdClaim, out var tutorProfileId))
-        throw new AppException("Missing or invalid tutorId claim", 401);
-
+      var tutorProfileId = User.GetRequiredTutorId();
       var data = await _svc.GetTutorDashboardAsync(tutorProfileId);
       return Ok(ApiResponse<TutorDashboardDto>.SuccessResult(data));
     }
@@ -51,10 +47,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ApiResponse<StudentDashboardDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetStudentDashboard()
     {
-      var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-      if (!long.TryParse(userIdClaim, out var userId))
-        throw new AppException("Missing or invalid userId claim", 401);
-
+      var userId = User.GetRequiredUserId();
       var data = await _svc.GetStudentDashboardAsync(userId);
       return Ok(ApiResponse<StudentDashboardDto>.SuccessResult(data));
     }

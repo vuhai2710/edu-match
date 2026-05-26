@@ -1,8 +1,7 @@
-using System.Security.Claims;
+using EduMatch.Common.Exception;
 using EduMatch.Common.Extensions;
 using EduMatch.DTOs;
 using EduMatch.DTOs.Review;
-using EduMatch.Common.Exception;
 using EduMatch.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -25,11 +24,11 @@ namespace EduMatch.Controllers
     [Authorize(Roles = "Student")]
     [SwaggerOperation(OperationId = "createReview")]
     [ProducesResponseType(typeof(ApiResponse<ReviewDto>), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<ApiResponse<ReviewDto>>> CreateReview([FromBody] CreateReviewDto dto)
     {
       var result = await _reviewService.CreateReviewAsync(GetCurrentUserId(), dto);
@@ -49,13 +48,7 @@ namespace EduMatch.Controllers
 
     private long GetCurrentUserId()
     {
-      var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-      if (!long.TryParse(userIdClaim, out var userId))
-      {
-        throw new UnauthorizedException("Không thể xác thực người dùng.");
-      }
-
-      return userId;
+      return User.GetRequiredUserId();
     }
   }
 }

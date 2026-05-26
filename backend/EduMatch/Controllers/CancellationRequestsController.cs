@@ -1,6 +1,4 @@
-using System.Security.Claims;
 using EduMatch.Common.Enums;
-using EduMatch.Common.Exception;
 using EduMatch.Common.Extensions;
 using EduMatch.DTOs;
 using EduMatch.DTOs.CancellationRequests;
@@ -58,24 +56,12 @@ namespace EduMatch.Controllers
 
     private long GetCurrentUserId()
     {
-      var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-      if (!long.TryParse(userIdClaim, out var userId))
-      {
-        throw new UnauthorizedException("Cannot authenticate user.");
-      }
-
-      return userId;
+      return User.GetRequiredUserId();
     }
 
     private UserRole GetCurrentUserRole()
     {
-      var roleClaim = User.FindFirstValue(ClaimTypes.Role);
-      if (!Enum.TryParse<UserRole>(roleClaim, true, out var role))
-      {
-        throw new UnauthorizedException("Cannot determine user role.");
-      }
-
-      return role;
+      return User.GetRequiredUserRole();
     }
   }
 }

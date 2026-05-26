@@ -129,7 +129,7 @@ namespace EduMatch.Services
         throw new NotFoundException("Admin user not found.", "USER_NOT_FOUND");
       }
 
-      var classEntity = request.Class ?? throw new InvalidOperationException("Cancellation request class was not loaded.");
+      var classEntity = request.Class ?? throw new DataConsistencyException("Cancellation request class relationship was not loaded.");
       if (IsCancelledStatus(classEntity.Status))
       {
         throw new ConflictException("Class is already cancelled.", "CLASS_ALREADY_CANCELLED");
@@ -393,7 +393,7 @@ namespace EduMatch.Services
       var tutorUserId = classEntity.Tutor?.UserId;
       if (!tutorUserId.HasValue)
       {
-        throw new InvalidOperationException("Class tutor user was not loaded.");
+        throw new DataConsistencyException("Class tutor user relationship was not loaded.");
       }
 
       return new[] { classEntity.StudentId, tutorUserId.Value }

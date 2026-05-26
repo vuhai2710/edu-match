@@ -53,7 +53,12 @@ namespace EduMatch.Services
     {
       if (string.IsNullOrWhiteSpace(fileUrl))
       {
-        throw new ArgumentException("URL ảnh đại diện không hợp lệ.");
+        throw new ValidationException(
+          new Dictionary<string, string[]>
+          {
+            ["fileUrl"] = ["URL ảnh đại diện không hợp lệ."]
+          },
+          "INVALID_AVATAR_URL");
       }
 
       var file = new FileEntity

@@ -1,5 +1,5 @@
-using System.Security.Claims;
 using EduMatch.Common.Exception;
+using EduMatch.Common.Extensions;
 using EduMatch.DTOs;
 using EduMatch.DTOs.Payment;
 using EduMatch.Services.Interfaces;
@@ -74,13 +74,7 @@ namespace EduMatch.Controllers
 
     private long GetCurrentUserId()
     {
-      var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-      if (!long.TryParse(userIdClaim, out var userId))
-      {
-        throw new UnauthorizedException("Cannot authenticate user.");
-      }
-
-      return userId;
+      return User.GetRequiredUserId();
     }
   }
 }

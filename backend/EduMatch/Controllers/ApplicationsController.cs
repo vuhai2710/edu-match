@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using EduMatch.Common.Exception;
 using EduMatch.Common.Extensions;
 using EduMatch.DTOs;
@@ -25,9 +24,9 @@ namespace EduMatch.Controllers
     [Authorize(Roles = "Admin,Student,Tutor")]
     [SwaggerOperation(OperationId = "getApplicationById")]
     [ProducesResponseType(typeof(ApiResponse<ApplicationResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<ApplicationResponseDto>>> GetById(long id)
     {
       var response = await _applicationService.GetByIdAsync(id, GetCurrentUserId(), User.IsInRole("Admin"));
@@ -38,10 +37,10 @@ namespace EduMatch.Controllers
     [Authorize(Roles = "Student")]
     [SwaggerOperation(OperationId = "getApplicationsByRequest")]
     [ProducesResponseType(typeof(ApiResponse<PagedResult<ApplicationResponseDto>>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<PagedResult<ApplicationResponseDto>>>> GetByRequest(long requestId, [FromQuery] BaseQueryParameters parameters)
     {
       var response = await _applicationService.GetByRequestIdAsync(requestId, GetCurrentUserId(), parameters.Page, parameters.PageSize);
@@ -52,10 +51,10 @@ namespace EduMatch.Controllers
     [Authorize(Roles = "Tutor")]
     [SwaggerOperation(OperationId = "getMyApplications")]
     [ProducesResponseType(typeof(ApiResponse<PagedResult<ApplicationResponseDto>>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<PagedResult<ApplicationResponseDto>>>> GetMyApplications([FromQuery] BaseQueryParameters parameters)
     {
       var response = await _applicationService.GetMyApplicationsAsync(GetCurrentUserId(), parameters.Page, parameters.PageSize);
@@ -64,13 +63,7 @@ namespace EduMatch.Controllers
 
     private long GetCurrentUserId()
     {
-      var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-      if (!long.TryParse(userIdClaim, out var userId))
-      {
-        throw new UnauthorizedException("Khong the xac thuc nguoi dung.");
-      }
-
-      return userId;
+      return User.GetRequiredUserId();
     }
   }
 }

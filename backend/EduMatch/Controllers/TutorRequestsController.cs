@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using EduMatch.Common.Exception;
 using EduMatch.Common.Extensions;
 using EduMatch.DTOs;
@@ -53,13 +52,7 @@ namespace EduMatch.Controllers
 
     private long GetCurrentUserId()
     {
-      var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-      if (!long.TryParse(userIdClaim, out var userId))
-      {
-        throw new AppException("Unauthorized", 401);
-      }
-
-      return userId;
+      return User.GetRequiredUserId();
     }
   }
 }

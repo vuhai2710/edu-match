@@ -1,6 +1,4 @@
-using System.Security.Claims;
 using EduMatch.Common.Enums;
-using EduMatch.Common.Exception;
 using EduMatch.Common.Extensions;
 using EduMatch.DTOs;
 using EduMatch.DTOs.ScheduleProposals;
@@ -87,41 +85,22 @@ namespace EduMatch.Controllers
 
     private long GetCurrentUserId()
     {
-      var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-      if (!long.TryParse(userIdClaim, out var userId))
-      {
-        throw new UnauthorizedException("Không thể xác thực người dùng.");
-      }
-
-      return userId;
+      return User.GetRequiredUserId();
     }
 
     private long GetCurrentTutorId()
     {
-      var tutorIdClaim = User.FindFirstValue("tutorId");
-      if (!long.TryParse(tutorIdClaim, out var tutorId))
-      {
-        throw new UnauthorizedException("Không thể xác thực gia sư.");
-      }
-
-      return tutorId;
+      return User.GetRequiredTutorId();
     }
 
     private long? TryGetCurrentTutorId()
     {
-      var tutorIdClaim = User.FindFirstValue("tutorId");
-      return long.TryParse(tutorIdClaim, out var tutorId) ? tutorId : null;
+      return User.TryGetLongClaim("tutorId");
     }
 
     private UserRole GetCurrentUserRole()
     {
-      var roleClaim = User.FindFirstValue(ClaimTypes.Role);
-      if (!Enum.TryParse<UserRole>(roleClaim, true, out var role))
-      {
-        throw new UnauthorizedException("Cannot determine user role.");
-      }
-
-      return role;
+      return User.GetRequiredUserRole();
     }
   }
 }

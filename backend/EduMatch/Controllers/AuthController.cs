@@ -1,4 +1,5 @@
 using EduMatch.Common.Exception;
+using EduMatch.Common.Extensions;
 using EduMatch.DTOs;
 using EduMatch.DTOs.Auth;
 using EduMatch.DTOs.User;
@@ -102,12 +103,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Me()
     {
-      var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-      if (!long.TryParse(userIdClaim, out var userId))
-      {
-        throw new UnauthorizedException("Không thể xác thực người dùng");
-      }
-
+      var userId = User.GetRequiredUserId();
       var userDto = await _userService.GetUserByIdAsync(userId);
       return Ok(ApiResponse<UserDto>.SuccessResult(userDto));
     }

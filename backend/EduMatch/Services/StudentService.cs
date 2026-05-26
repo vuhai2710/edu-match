@@ -65,7 +65,7 @@ namespace EduMatch.Services
         throw new NotFoundException("Không tìm thấy thông tin học sinh.");
       }
 
-      var user = profile.User ?? throw new InvalidOperationException("Student user was not loaded.");
+      var user = profile.User ?? throw new DataConsistencyException("Student user relationship was not loaded.");
       user.FullName = dto.FullName;
       user.Birth = dto.Birth;
       user.Gender = dto.Gender;

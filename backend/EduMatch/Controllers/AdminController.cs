@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using EduMatch.Common.Enums;
 using EduMatch.Common.Exception;
 using EduMatch.Common.Extensions;
@@ -43,9 +42,9 @@ namespace EduMatch.Controllers
     [HttpGet("applications")]
     [SwaggerOperation(OperationId = "getAllApplicationsForAdmin")]
     [ProducesResponseType(typeof(ApiResponse<PagedResult<ApplicationResponseDto>>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<ApiResponse<PagedResult<ApplicationResponseDto>>>> GetAllApplications([FromQuery] ApplicationQueryParameters parameters)
     {
       var response = await _applicationService.GetAllForAdminAsync(parameters);
@@ -55,9 +54,9 @@ namespace EduMatch.Controllers
     [HttpGet("tutor-requests")]
     [SwaggerOperation(OperationId = "getAllRequestsForAdmin")]
     [ProducesResponseType(typeof(ApiResponse<PagedResult<TutorRequestResponseDto>>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<ApiResponse<PagedResult<TutorRequestResponseDto>>>> GetAllRequests([FromQuery] TutorRequestFilterDto filter)
     {
       var response = await _tutorRequestService.GetAllAsync(filter);
@@ -86,11 +85,7 @@ namespace EduMatch.Controllers
       var payment = await _paymentService.GetByIdAsync(id);
       if (payment == null)
       {
-        return NotFound(ErrorResponse.Create(
-          "Payment not found",
-          StatusCodes.Status404NotFound,
-          "PAYMENT_NOT_FOUND",
-          HttpContext.TraceIdentifier));
+        throw new NotFoundException("Payment not found", "PAYMENT_NOT_FOUND");
       }
 
       return this.OkResponse(ApiResponse<PaymentAdminDto>.SuccessResult(payment));
@@ -157,13 +152,7 @@ namespace EduMatch.Controllers
 
     private long GetCurrentUserId()
     {
-      var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-      if (!long.TryParse(userIdClaim, out var userId))
-      {
-        throw new UnauthorizedException("Cannot authenticate user.");
-      }
-
-      return userId;
+      return User.GetRequiredUserId();
     }
   }
 }

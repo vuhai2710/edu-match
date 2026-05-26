@@ -1,13 +1,10 @@
-using Swashbuckle.AspNetCore.Annotations;
-using EduMatch.Common.Exception;
+using EduMatch.Common.Extensions;
 using EduMatch.DTOs;
 using EduMatch.DTOs.Chat;
 using EduMatch.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
-using System.Security.Claims;
-using System.Threading.Tasks;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace EduMatch.Controllers
 {
@@ -37,24 +34,19 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ApiResponse<List<MessageDto>>), StatusCodes.Status200OK)]
     [SwaggerOperation(OperationId = "getChatHistory")]
     public async Task<ActionResult<ApiResponse<List<MessageDto>>>> GetHistory(
-        long partnerId,
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 30)
+      long partnerId,
+      [FromQuery] int page = 1,
+      [FromQuery] int pageSize = 30)
     {
       var userId = GetUserId();
       var messages = await _messageService.GetConversationAsync(userId, partnerId, page, pageSize);
-      messages.Reverse(); 
+      messages.Reverse();
       return Ok(ApiResponse<List<MessageDto>>.SuccessResult(messages));
     }
 
     private long GetUserId()
     {
-      var claim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-      if (string.IsNullOrEmpty(claim) || !long.TryParse(claim, out var userId))
-      {
-        throw new UnauthorizedException("Cannot authenticate user.");
-      }
-      return userId;
+      return User.GetRequiredUserId();
     }
   }
 }

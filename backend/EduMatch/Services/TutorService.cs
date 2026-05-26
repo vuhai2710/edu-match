@@ -114,7 +114,7 @@ public class TutorService : ITutorService
     }
     else
     {
-      var user = profile.User ?? throw new InvalidOperationException("Tutor user was not loaded.");
+      var user = profile.User ?? throw new DataConsistencyException("Tutor user relationship was not loaded.");
 
       user.FullName = dto.FullName;
       user.Birth = dto.Birth;
