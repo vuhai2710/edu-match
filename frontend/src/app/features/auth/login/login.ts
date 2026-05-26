@@ -13,7 +13,14 @@ import { GoogleSignInButtonComponent } from '../../../shared/components/google-s
 
 @Component({
   selector: 'app-login-page',
-  imports: [FormsModule, RouterLink, MascotComponent, LucideEye, LucideEyeOff, GoogleSignInButtonComponent],
+  imports: [
+    FormsModule,
+    RouterLink,
+    MascotComponent,
+    LucideEye,
+    LucideEyeOff,
+    GoogleSignInButtonComponent,
+  ],
   template: `
     <div class="min-h-[70vh] flex items-center justify-center py-12 px-4">
       <div class="w-full max-w-md space-y-6">
@@ -26,18 +33,29 @@ import { GoogleSignInButtonComponent } from '../../../shared/components/google-s
         <div class="tactile-card p-6 sm:p-8 space-y-5">
           <div>
             <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Email</label>
-            <input type="email" [(ngModel)]="email" placeholder="email@example.com"
-                   class="tactile-input w-full text-sm font-semibold text-slate-800" />
+            <input
+              type="email"
+              [(ngModel)]="email"
+              placeholder="email@gmail.com"
+              class="tactile-input w-full text-sm font-semibold text-slate-800"
+            />
           </div>
 
           <div>
             <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Mật khẩu</label>
             <div class="relative">
-              <input [type]="showPassword() ? 'text' : 'password'" [(ngModel)]="password" placeholder="Nhập mật khẩu"
-                     class="tactile-input w-full text-sm font-semibold text-slate-800 pr-12" />
-              <button (click)="showPassword.set(!showPassword())" type="button"
-                      [attr.aria-label]="showPassword() ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'"
-                      class="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-slate-500 transition-colors hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-duo-blue">
+              <input
+                [type]="showPassword() ? 'text' : 'password'"
+                [(ngModel)]="password"
+                placeholder="Nhập mật khẩu"
+                class="tactile-input w-full text-sm font-semibold text-slate-800 pr-12"
+              />
+              <button
+                (click)="showPassword.set(!showPassword())"
+                type="button"
+                [attr.aria-label]="showPassword() ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'"
+                class="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-slate-500 transition-colors hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-duo-blue"
+              >
                 @if (showPassword()) {
                   <svg lucideEyeOff class="h-5 w-5"></svg>
                 } @else {
@@ -47,17 +65,25 @@ import { GoogleSignInButtonComponent } from '../../../shared/components/google-s
             </div>
           </div>
 
-          <a routerLink="/auth/forgot-password" class="block text-right text-xs font-bold text-duo-blue hover:underline">
+          <a
+            routerLink="/auth/forgot-password"
+            class="block text-right text-xs font-bold text-duo-blue hover:underline"
+          >
             Quên mật khẩu?
           </a>
 
-          <button (click)="onLogin()" [disabled]="isLoading()"
-                  class="tactile-button-green w-full py-3.5 rounded-2xl text-base font-extrabold uppercase disabled:opacity-60">
+          <button
+            (click)="onLogin()"
+            [disabled]="isLoading()"
+            class="tactile-button-green w-full py-3.5 rounded-2xl text-base font-extrabold uppercase disabled:opacity-60"
+          >
             {{ isLoading() ? 'Đang xử lý...' : 'Đăng nhập' }}
           </button>
 
           @if (errorMessage()) {
-            <p class="rounded-xl border-2 border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-duo-red">
+            <p
+              class="rounded-xl border-2 border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-duo-red"
+            >
               {{ errorMessage() }}
             </p>
           }
@@ -73,7 +99,9 @@ import { GoogleSignInButtonComponent } from '../../../shared/components/google-s
 
         <p class="text-center text-sm text-slate-500">
           Chưa có tài khoản?
-          <a routerLink="/auth/register" class="font-extrabold text-[#58cc02] hover:underline"> Đăng ký ngay</a>
+          <a routerLink="/auth/register" class="font-extrabold text-[#58cc02] hover:underline">
+            Đăng ký ngay</a
+          >
         </p>
       </div>
     </div>

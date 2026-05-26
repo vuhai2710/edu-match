@@ -96,6 +96,21 @@ namespace EduMatch.Repositories
         .FirstOrDefaultAsync(t => t.Id == id && !t.IsDeleted);
     }
 
+    public async Task<Tutor?> GetTutorProfileDetailByCodeAsync(string code)
+    {
+      var normalizedCode = code.Trim().ToUpper();
+
+      return await _dbSet
+        .Include(t => t.User)
+          .ThenInclude(u => u.AvatarFile)
+        .Include(t => t.Address)
+        .Include(t => t.CvFile)
+        .Include(t => t.TeachingLevels)
+        .Include(t => t.TutorSubjects)
+          .ThenInclude(ts => ts.Subject)
+        .FirstOrDefaultAsync(t => !t.IsDeleted && t.Code.ToUpper() == normalizedCode);
+    }
+
     public async Task<Tutor?> GetTutorProfileByUserIdAsync(long userId)
     {
       return await _dbSet

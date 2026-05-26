@@ -7,7 +7,7 @@ namespace EduMatch.Services
   public interface ITutorService
   {
     Task<PagedResult<TutorDto>> GetTutorsAsync(TutorQueryParameters parameters);
-    Task<TutorDetailDto> GetTutorByIdAsync(long id);
+    Task<TutorDetailDto> GetTutorByIdOrCodeAsync(string idOrCode);
     Task<TutorDetailDto> GetTutorByUserIdAsync(long userId);
     Task<TutorDetailDto> UpdateTutorProfileAsync(long userId, UpdateTutorDto dto);
     Task<FileDto> UpdateCvAsync(long userId, IFormFile file);

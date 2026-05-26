@@ -8,11 +8,6 @@ import { WorkspaceShellComponent } from './shared/layout/workspace-shell';
 
 export const routes: Routes = [
   {
-    path: '',
-    loadChildren: () =>
-      import('./features/public/routes').then((module) => module.PUBLIC_ROUTES),
-  },
-  {
     path: 'auth',
     loadChildren: () =>
       import('./features/auth/routes').then((module) => module.AUTH_ROUTES),
@@ -72,6 +67,11 @@ export const routes: Routes = [
     data: { roles: [UserRole.Admin] },
     loadChildren: () =>
       import('./features/admin/routes').then((module) => module.ADMIN_ROUTES),
+  },
+  {
+    path: '',
+    loadChildren: () =>
+      import('./features/public/routes').then((module) => module.PUBLIC_ROUTES),
   },
   {
     path: '**',

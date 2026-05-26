@@ -46,3 +46,6 @@ Thumbs.db
 #Stitch skills
 plugins/
 docs/
+
+#env
+/src/environments/

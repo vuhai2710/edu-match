@@ -30,13 +30,13 @@ namespace EduMatch.Controllers
       return this.OkResponse(ApiResponse<PagedResult<TutorDto>>.SuccessResult(result));
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("{idOrCode}")]
     [SwaggerOperation(OperationId = "getTutorById")]
     [ProducesResponseType(typeof(ApiResponse<TutorDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ApiResponse<TutorDetailDto>>> GetTutorById(long id)
+    public async Task<ActionResult<ApiResponse<TutorDetailDto>>> GetTutorById(string idOrCode)
     {
-      var result = await _tutorService.GetTutorByIdAsync(id);
+      var result = await _tutorService.GetTutorByIdOrCodeAsync(idOrCode);
       return this.OkResponse(ApiResponse<TutorDetailDto>.SuccessResult(result));
     }
 

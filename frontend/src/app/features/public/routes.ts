@@ -16,6 +16,11 @@ export const PUBLIC_ROUTES: Routes = [
         component: HomePage,
       },
       {
+        path: 'tutors/:id',
+        loadComponent: () =>
+          import('./tutor-detail/tutor-detail').then((m) => m.PublicTutorDetailPage),
+      },
+      {
         path: 'payment/success',
         component: PaymentSuccessPage,
       },

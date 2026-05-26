@@ -54,9 +54,20 @@ public class TutorService : ITutorService
     };
   }
 
-  public async Task<TutorDetailDto> GetTutorByIdAsync(long id)
+  public async Task<TutorDetailDto> GetTutorByIdOrCodeAsync(string idOrCode)
   {
-    var profile = await _tutorRepository.GetTutorProfileDetailAsync(id);
+    Tutor? profile = null;
+
+    if (long.TryParse(idOrCode, out var id))
+    {
+      profile = await _tutorRepository.GetTutorProfileDetailAsync(id);
+    }
+
+    if (profile == null && !string.IsNullOrWhiteSpace(idOrCode))
+    {
+      profile = await _tutorRepository.GetTutorProfileDetailByCodeAsync(idOrCode);
+    }
+
     if (profile == null)
     {
       throw new NotFoundException("Không tìm thấy hồ sơ gia sư.", "TUTOR_PROFILE_NOT_FOUND");

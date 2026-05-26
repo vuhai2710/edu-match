@@ -8,6 +8,7 @@ namespace EduMatch.Repositories
   {
     Task<PagedResult<Tutor>> GetTutorsAsync(TutorQueryParameters parameters);
     Task<Tutor?> GetTutorProfileDetailAsync(long id);
+    Task<Tutor?> GetTutorProfileDetailByCodeAsync(string code);
     Task<Tutor?> GetTutorProfileByUserIdAsync(long userId);
   }
 }
