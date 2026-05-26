@@ -3,6 +3,8 @@ import { Routes } from '@angular/router';
 import { UserRole } from './core/auth/session.models';
 import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
+import { PublicShellComponent } from './shared/layout/public-shell';
+import { WorkspaceShellComponent } from './shared/layout/workspace-shell';
 
 export const routes: Routes = [
   {
@@ -16,11 +18,46 @@ export const routes: Routes = [
       import('./features/auth/routes').then((module) => module.AUTH_ROUTES),
   },
   {
+    path: 'reset-password',
+    component: PublicShellComponent,
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./features/auth/reset-password/reset-password').then(
+            (module) => module.ResetPasswordPage,
+          ),
+      },
+      {
+        path: ':token',
+        loadComponent: () =>
+          import('./features/auth/reset-password/reset-password').then(
+            (module) => module.ResetPasswordPage,
+          ),
+      },
+    ],
+  },
+  {
     path: 'student',
     canActivate: [authGuard, roleGuard],
     data: { roles: [UserRole.Student] },
     loadChildren: () =>
       import('./features/student/routes').then((module) => module.STUDENT_ROUTES),
+  },
+  {
+    path: 'learning-requests',
+    canActivate: [authGuard, roleGuard],
+    data: { roles: [UserRole.Student] },
+    component: WorkspaceShellComponent,
+    children: [
+      {
+        path: ':id',
+        loadComponent: () =>
+          import('./features/student/learning-request-detail/learning-request-detail').then(
+            (module) => module.LearningRequestDetailPage,
+          ),
+      },
+    ],
   },
   {
     path: 'tutor',

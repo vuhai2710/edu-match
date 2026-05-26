@@ -23,6 +23,14 @@ namespace EduMatch.Common.Exception
       {
         await _next(context);
       }
+      catch (OperationCanceledException exception) when (context.RequestAborted.IsCancellationRequested)
+      {
+        _logger.LogDebug(
+          exception,
+          "Request was canceled by the client for [{Method}] {Path}",
+          context.Request.Method,
+          context.Request.Path);
+      }
       catch (System.Exception exception)
       {
         if (context.Response.HasStarted)
@@ -43,6 +51,7 @@ namespace EduMatch.Common.Exception
           error.StatusCode,
           error.Message,
           error.ErrorCode,
+          error.Errors,
           context.RequestAborted);
       }
     }
@@ -92,22 +101,26 @@ namespace EduMatch.Common.Exception
         ValidationException validationException => new(
           StatusCodes.Status400BadRequest,
           BuildValidationMessage(validationException),
-          validationException.ErrorCode),
+          validationException.ErrorCode,
+          validationException.Errors),
 
         UnauthorizedAccessException => new(
           StatusCodes.Status401Unauthorized,
           DefaultUnauthorizedMessage,
-          "UNAUTHORIZED"),
+          "UNAUTHORIZED",
+          null),
 
         AppException appException => new(
           appException.StatusCode,
           appException.Message,
-          appException.ErrorCode),
+          appException.ErrorCode,
+          null),
 
         _ => new(
           StatusCodes.Status500InternalServerError,
           DefaultSystemErrorMessage,
-          "INTERNAL_SERVER_ERROR")
+          "INTERNAL_SERVER_ERROR",
+          null)
       };
     }
 
@@ -131,6 +144,10 @@ namespace EduMatch.Common.Exception
         : exception.Message;
     }
 
-    private sealed record ErrorDescriptor(int StatusCode, string Message, string? ErrorCode);
+    private sealed record ErrorDescriptor(
+      int StatusCode,
+      string Message,
+      string? ErrorCode,
+      IReadOnlyDictionary<string, string[]>? Errors = null);
   }
 }

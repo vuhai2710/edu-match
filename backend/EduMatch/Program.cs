@@ -21,6 +21,10 @@ using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
+
 builder.Services.AddControllers()
   .AddJsonOptions(options =>
   {
@@ -31,23 +35,33 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
   options.InvalidModelStateResponseFactory = context =>
   {
-    var errorEntries = context.ModelState
+    var errors = context.ModelState
       .Where(entry => entry.Value?.Errors.Count > 0)
-      .Select(entry => new { entry.Key, Errors = entry.Value?.Errors ?? [] })
+      .ToDictionary(
+        entry => entry.Key,
+        entry => entry.Value!.Errors
+          .Select(error =>
+            string.IsNullOrWhiteSpace(error.ErrorMessage)
+              ? $"Giá trị của trường '{entry.Key}' không hợp lệ."
+              : error.ErrorMessage)
+          .ToArray(),
+        StringComparer.OrdinalIgnoreCase);
+
+    var messages = errors
+      .SelectMany(entry => entry.Value)
+      .Where(message => !string.IsNullOrWhiteSpace(message))
       .ToList();
 
-    var errors = errorEntries
-      .SelectMany(entry => entry.Errors.Select(error =>
-        string.IsNullOrWhiteSpace(error.ErrorMessage)
-          ? $"Giá trị của trường '{entry.Key}' không hợp lệ."
-          : error.ErrorMessage))
-      .ToList();
-
-    var message = errors.Count > 0
-      ? string.Join(" ", errors)
+    var message = messages.Count > 0
+      ? string.Join(" ", messages)
       : "Dữ liệu gửi lên không hợp lệ.";
 
-    return new BadRequestObjectResult(ErrorResponse.Create(message, "VALIDATION_ERROR"));
+    return new BadRequestObjectResult(ErrorResponse.Create(
+      message,
+      StatusCodes.Status400BadRequest,
+      "VALIDATION_ERROR",
+      context.HttpContext.TraceIdentifier,
+      errors));
   };
 });
 
@@ -149,7 +163,8 @@ builder.Services.AddAuthentication(options =>
         await context.Response.WriteErrorResponseAsync(
           StatusCodes.Status401Unauthorized,
           "Phiên đăng nhập hết hạn",
-          "UNAUTHORIZED");
+          "UNAUTHORIZED",
+          cancellationToken: context.HttpContext.RequestAborted);
       },
       OnForbidden = async context =>
       {
@@ -161,7 +176,8 @@ builder.Services.AddAuthentication(options =>
         await context.Response.WriteErrorResponseAsync(
           StatusCodes.Status403Forbidden,
           "Bạn không có quyền thực hiện thao tác này",
-          "FORBIDDEN");
+          "FORBIDDEN",
+          cancellationToken: context.HttpContext.RequestAborted);
       }
     };
   });
@@ -181,7 +197,8 @@ builder.Services.AddRateLimiter(options =>
     await context.HttpContext.Response.WriteErrorResponseAsync(
       StatusCodes.Status429TooManyRequests,
       "Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau.",
-      "RATE_LIMIT_EXCEEDED");
+      "RATE_LIMIT_EXCEEDED",
+      cancellationToken: context.HttpContext.RequestAborted);
   };
 
   options.AddPolicy("auth-login", httpContext =>
@@ -260,6 +277,8 @@ builder.Services.AddScoped<EduMatch.Repositories.Interfaces.INotificationReposit
 builder.Services.AddScoped<EduMatch.Services.Interfaces.INotificationService, EduMatch.Services.NotificationService>();
 builder.Services.AddScoped<IClassRepository, ClassRepository>();
 builder.Services.AddScoped<IClassReadService, ClassReadService>();
+builder.Services.AddScoped<ICancellationRequestRepository, CancellationRequestRepository>();
+builder.Services.AddScoped<ICancellationRequestService, CancellationRequestService>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 builder.Services.AddScoped<IDepositPolicyRepository, DepositPolicyRepository>();
 builder.Services.Configure<PayOSSettings>(builder.Configuration.GetSection("PayOS"));

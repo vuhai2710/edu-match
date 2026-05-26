@@ -63,6 +63,7 @@ namespace EduMatch.Services
             {
                 OrderCode = payment.OrderCode,
                 LearningRequestId = payment.LearningRequestId,
+                ClassId = payment.ClassId,
                 Amount = payment.Amount,
                 Status = payment.Status,
                 PaidAt = payment.PaidAt

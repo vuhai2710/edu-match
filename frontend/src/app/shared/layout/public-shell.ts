@@ -30,7 +30,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
                class="px-4 py-2 text-sm font-extrabold uppercase bg-white border-2 border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">
               Đăng nhập
             </a>
-            <a routerLink="/auth/register/student"
+            <a routerLink="/auth/register"
                class="tactile-button-green px-4 py-2 rounded-xl text-sm font-extrabold uppercase hidden sm:inline-flex">
               Đăng ký
             </a>

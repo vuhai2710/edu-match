@@ -11,9 +11,12 @@ using EduMatch.Services.Interfaces;
 using Google.Apis.Auth;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using FileEntity = EduMatch.Models.File;
 
 namespace EduMatch.Services;
@@ -21,6 +24,8 @@ namespace EduMatch.Services;
 public class AuthService
 {
   private static readonly TimeSpan RefreshTokenLifetime = TimeSpan.FromDays(7);
+  private const string GoogleTokenInfoUrl = "https://www.googleapis.com/oauth2/v3/tokeninfo";
+  private const string GoogleUserInfoUrl = "https://openidconnect.googleapis.com/v1/userinfo";
   private readonly IConfiguration _config;
   private readonly IFileService _fileService;
   private readonly IUserRepository _userRepository;
@@ -30,6 +35,7 @@ public class AuthService
   private readonly ILogger<AuthService> _logger;
   private readonly IMapper _mapper;
   private readonly ICodeGeneratorService _codeGenerator;
+  private readonly IHttpClientFactory _httpClientFactory;
 
   public AuthService(
     IUserRepository userRepository,
@@ -40,7 +46,8 @@ public class AuthService
     IConfiguration config,
     ILogger<AuthService> logger,
     IMapper mapper,
-    ICodeGeneratorService codeGenerator)
+    ICodeGeneratorService codeGenerator,
+    IHttpClientFactory httpClientFactory)
   {
     _userRepository = userRepository;
     _subjectRepository = subjectRepository;
@@ -51,6 +58,7 @@ public class AuthService
     _logger = logger;
     _mapper = mapper;
     _codeGenerator = codeGenerator;
+    _httpClientFactory = httpClientFactory;
   }
 
   public Task<LoginResponseDto> RegisterStudentAsync(RegisterStudentDto dto)
@@ -65,13 +73,61 @@ public class AuthService
 
   public async Task<LoginResponseDto> GoogleLoginAsync(GoogleLoginRequestDto dto)
   {
-    GoogleJsonWebSignature.Payload payload;
+    var payload = await GetGooglePayloadAsync(dto);
+    var normalizedEmail = payload.Email.ToLower().Trim();
+
+    var user = await _userRepository.GetByEmailWithProfilesAsync(normalizedEmail);
+
+    if (dto.RegistrationIntent && user != null)
+    {
+      throw new AppException("Email đã được sử dụng. Vui lòng đăng nhập bằng Google hoặc dùng email khác.", 400, "GOOGLE_ACCOUNT_EXISTS");
+    }
+
+    if (user == null)
+    {
+      user = await CreateGoogleUserAsync(payload, dto);
+    }
+
+    _logger.LogInformation("Google login: {Email} | Id: {Id}", user.Email, user.Id);
+    return await IssueTokenPairAsync(user);
+  }
+
+  private async Task<GoogleUserPayload> GetGooglePayloadAsync(GoogleLoginRequestDto dto)
+  {
+    if (!string.IsNullOrWhiteSpace(dto.IdToken))
+    {
+      return await ValidateGoogleIdTokenAsync(dto.IdToken);
+    }
+
+    if (!string.IsNullOrWhiteSpace(dto.AccessToken))
+    {
+      return await ValidateGoogleAccessTokenAsync(dto.AccessToken);
+    }
+
+    throw new AppException("Google token is required", 400, "GOOGLE_TOKEN_REQUIRED");
+  }
+
+  private async Task<GoogleUserPayload> ValidateGoogleIdTokenAsync(string idToken)
+  {
+    if (string.IsNullOrWhiteSpace(idToken))
+    {
+      throw new AppException("Google token is required", 400, "GOOGLE_TOKEN_REQUIRED");
+    }
+
+    var googleClientId = _config["GoogleAuth:ClientId"] ?? _config["GoogleAuth__ClientId"];
+    if (string.IsNullOrWhiteSpace(googleClientId))
+    {
+      throw new AppException("Google authentication is not configured", 500, "GOOGLE_AUTH_NOT_CONFIGURED");
+    }
+
     try
     {
-      payload = await GoogleJsonWebSignature.ValidateAsync(dto.IdToken, new GoogleJsonWebSignature.ValidationSettings
+      var payload = await GoogleJsonWebSignature.ValidateAsync(idToken, new GoogleJsonWebSignature.ValidationSettings
       {
-        Audience = new[] { _config["GoogleAuth:ClientId"] ?? _config["GoogleAuth__ClientId"] }
+        Audience = new[] { googleClientId }
       });
+
+      return new GoogleUserPayload(payload.Email, payload.Name, payload.Picture);
     }
     catch (InvalidJwtException ex)
     {
@@ -83,42 +139,122 @@ public class AuthService
       _logger.LogError(ex, "Error validating Google token");
       throw new AppException("Error during Google authentication", 401);
     }
+  }
 
-    var user = await _userRepository.GetByEmailWithProfilesAsync(payload.Email);
-
-    if (user == null)
+  private async Task<GoogleUserPayload> ValidateGoogleAccessTokenAsync(string accessToken)
+  {
+    var googleClientId = _config["GoogleAuth:ClientId"] ?? _config["GoogleAuth__ClientId"];
+    if (string.IsNullOrWhiteSpace(googleClientId))
     {
-      user = new User
-      {
-        FullName = payload.Name,
-        Email = payload.Email,
-        Role = UserRole.Student,
-        IsGoogleAccount = true,
-        IsActive = true,
-        Student = CreateStudentProfile(null)
-      };
+      throw new AppException("Google authentication is not configured", 500, "GOOGLE_AUTH_NOT_CONFIGURED");
+    }
 
-      if (!string.IsNullOrWhiteSpace(payload.Picture))
+    try
+    {
+      var http = _httpClientFactory.CreateClient();
+      using var tokenInfoResponse = await http.GetAsync(
+        $"{GoogleTokenInfoUrl}?access_token={Uri.EscapeDataString(accessToken)}");
+
+      if (!tokenInfoResponse.IsSuccessStatusCode)
       {
-        var avatarFile = await _fileService.CreateAvatarReferenceAsync(payload.Picture, $"google-avatar-{Guid.NewGuid():N}");
-        user.AvatarFileId = avatarFile.Id;
-        user.AvatarFile = avatarFile;
+        throw new AppException("Invalid Google access token", 401, "GOOGLE_ACCESS_TOKEN_INVALID");
       }
 
-      await _userRepository.AddAsync(user);
-      await _userRepository.SaveChangesAsync();
+      var tokenInfo = await tokenInfoResponse.Content.ReadFromJsonAsync<GoogleTokenInfo>();
+      var audience = tokenInfo?.Audience ?? tokenInfo?.Aud ?? tokenInfo?.IssuedTo;
+      if (!string.Equals(audience, googleClientId, StringComparison.Ordinal))
+      {
+        throw new AppException("Invalid Google token audience", 401, "GOOGLE_TOKEN_AUDIENCE_INVALID");
+      }
 
-      AssignProfileCode(user);
-      await _userRepository.SaveChangesAsync();
+      using var request = new HttpRequestMessage(HttpMethod.Get, GoogleUserInfoUrl);
+      request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
-      _logger.LogInformation("New user created via Google: {Email} | Id: {Id}", user.Email, user.Id);
+      using var response = await http.SendAsync(request);
+      if (!response.IsSuccessStatusCode)
+      {
+        throw new AppException("Invalid Google access token", 401, "GOOGLE_ACCESS_TOKEN_INVALID");
+      }
+
+      var profile = await response.Content.ReadFromJsonAsync<GoogleUserInfo>();
+      if (string.IsNullOrWhiteSpace(profile?.Email))
+      {
+        throw new AppException("Google account email is required", 401, "GOOGLE_EMAIL_REQUIRED");
+      }
+
+      if (profile.EmailVerified == false)
+      {
+        throw new AppException("Google account email is not verified", 401, "GOOGLE_EMAIL_NOT_VERIFIED");
+      }
+
+      return new GoogleUserPayload(profile.Email, profile.Name ?? profile.Email, profile.Picture);
     }
-    else
+    catch (AppException)
     {
-      _logger.LogInformation("Existing user logged in via Google: {Email} | Id: {Id}", user.Email, user.Id);
+      throw;
+    }
+    catch (HttpRequestException ex)
+    {
+      _logger.LogError(ex, "Cannot call Google token validation endpoints");
+      throw new AppException("Cannot verify Google access token", 503, "GOOGLE_TOKEN_VERIFY_FAILED");
+    }
+    catch (JsonException ex)
+    {
+      _logger.LogError(ex, "Invalid Google token validation response");
+      throw new AppException("Invalid Google token response", 401, "GOOGLE_TOKEN_RESPONSE_INVALID");
+    }
+  }
+
+  private async Task<User> CreateGoogleUserAsync(
+    GoogleUserPayload payload,
+    GoogleLoginRequestDto dto)
+  {
+    var role = dto.RegistrationIntent
+      ? dto.RequestedRole ?? UserRole.Student
+      : UserRole.Student;
+
+    if (role == UserRole.Admin)
+    {
+      throw new AppException("Google registration does not support admin accounts", 400, "GOOGLE_ADMIN_NOT_ALLOWED");
     }
 
-    return await IssueTokenPairAsync(user);
+    var user = new User
+    {
+      FullName = string.IsNullOrWhiteSpace(payload.Name) ? payload.Email : payload.Name.Trim(),
+      Email = payload.Email.ToLower().Trim(),
+      Password = BCrypt.Net.BCrypt.HashPassword(GenerateRefreshToken(), workFactor: 12),
+      Role = role,
+      IsGoogleAccount = true,
+      IsActive = true
+    };
+
+    if (!string.IsNullOrWhiteSpace(payload.Picture))
+    {
+      var avatarFile = await _fileService.CreateAvatarReferenceAsync(payload.Picture, $"google-avatar-{Guid.NewGuid():N}");
+      user.AvatarFileId = avatarFile.Id;
+      user.AvatarFile = avatarFile;
+    }
+
+    switch (role)
+    {
+      case UserRole.Student:
+        user.Student = CreateStudentProfile(null);
+        break;
+      case UserRole.Tutor:
+        user.Tutor = CreateMinimalTutorProfile();
+        break;
+      default:
+        throw new AppException("Unsupported Google registration role", 400);
+    }
+
+    await _userRepository.AddAsync(user);
+    await _userRepository.SaveChangesAsync();
+
+    AssignProfileCode(user);
+    await _userRepository.SaveChangesAsync();
+
+    _logger.LogInformation("New {Role} user created via Google: {Email} | Id: {Id}", role, user.Email, user.Id);
+    return user;
   }
 
   public async Task<LoginResponseDto> LoginAsync(LoginDto dto)
@@ -127,7 +263,7 @@ public class AuthService
 
     if (user is null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.Password))
     {
-      throw new AppException("Email hoặc mật khẩu không đúng", 401);
+      throw new AppException("Email hoặc mật khẩu không đúng", 401, "INVALID_CREDENTIALS");
     }
 
     _logger.LogInformation("User logged in: {Email} | Id: {Id}", user.Email, user.Id);
@@ -137,8 +273,21 @@ public class AuthService
 
   public async Task<LoginResponseDto> RefreshTokenAsync(RefreshTokenDto dto)
   {
-    var principal = GetPrincipalFromExpiredToken(dto.AccessToken);
-    if (principal == null)
+    var accessToken = dto.AccessToken?.Trim();
+    var refreshToken = dto.RefreshToken?.Trim();
+
+    if (string.IsNullOrWhiteSpace(accessToken) || string.IsNullOrWhiteSpace(refreshToken))
+    {
+      throw new AppException("Invalid access token or refresh token", 400);
+    }
+
+    ClaimsPrincipal principal;
+    try
+    {
+      principal = GetPrincipalFromExpiredToken(accessToken)
+        ?? throw new SecurityTokenException("Invalid token");
+    }
+    catch (System.Exception ex) when (ex is SecurityTokenException or ArgumentException)
     {
       throw new AppException("Invalid access token or refresh token", 400);
     }
@@ -149,7 +298,7 @@ public class AuthService
       throw new AppException("Invalid token payload", 400);
     }
 
-    var user = await _userRepository.GetByRefreshTokenWithProfilesAsync(dto.RefreshToken);
+    var user = await _userRepository.GetByRefreshTokenWithProfilesAsync(refreshToken);
 
     if (user == null || user.RefreshTokenExpiryTime == null || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
     {
@@ -161,7 +310,7 @@ public class AuthService
       throw new AppException("Invalid access token or refresh token", 400);
     }
 
-    return await IssueTokenPairAsync(user, dto.RefreshToken);
+    return await IssueTokenPairAsync(user, refreshToken, rotateRefreshToken: false);
   }
 
   public async Task LogoutAsync(LogoutDto dto)
@@ -375,6 +524,18 @@ public class AuthService
     };
   }
 
+  private Tutor CreateMinimalTutorProfile()
+  {
+    return new Tutor
+    {
+      Code = _codeGenerator.GenerateTemporaryCode("TUT"),
+      HourlyRate = 0,
+      CareerStatus = null,
+      Major = string.Empty,
+      AcademicDegree = null
+    };
+  }
+
   private async Task CreateTutorSubjectsAsync(Tutor tutorProfile, IEnumerable<long> subjectIds)
   {
     var distinctSubjectIds = subjectIds
@@ -435,7 +596,10 @@ public class AuthService
     }
   }
 
-  private async Task<LoginResponseDto> IssueTokenPairAsync(User user, string? currentRefreshToken = null)
+  private async Task<LoginResponseDto> IssueTokenPairAsync(
+    User user,
+    string? currentRefreshToken = null,
+    bool rotateRefreshToken = true)
   {
     if (!string.IsNullOrWhiteSpace(currentRefreshToken) &&
         !string.Equals(user.RefreshToken, currentRefreshToken, StringComparison.Ordinal))
@@ -444,9 +608,12 @@ public class AuthService
     }
 
     var accessToken = GenerateJwtToken(user);
-    var newRefreshToken = GenerateRefreshToken();
 
-    user.RefreshToken = newRefreshToken;
+    if (rotateRefreshToken || string.IsNullOrWhiteSpace(user.RefreshToken))
+    {
+      user.RefreshToken = GenerateRefreshToken();
+    }
+
     user.RefreshTokenExpiryTime = DateTime.UtcNow.Add(RefreshTokenLifetime);
 
     _userRepository.Update(user);
@@ -455,7 +622,7 @@ public class AuthService
     return new LoginResponseDto
     {
       AccessToken = accessToken,
-      RefreshToken = newRefreshToken,
+      RefreshToken = user.RefreshToken!,
       User = _mapper.Map<UserDto>(user)
     };
   }
@@ -508,7 +675,7 @@ public class AuthService
     var randomNumber = new byte[64];
     using var rng = RandomNumberGenerator.Create();
     rng.GetBytes(randomNumber);
-    return Convert.ToBase64String(randomNumber);
+    return Base64UrlEncoder.Encode(randomNumber);
   }
 
   private ClaimsPrincipal? GetPrincipalFromExpiredToken(string token)
@@ -534,5 +701,34 @@ public class AuthService
     }
 
     return principal;
+  }
+
+  private sealed record GoogleUserPayload(string Email, string? Name, string? Picture);
+
+  private sealed class GoogleTokenInfo
+  {
+    [JsonPropertyName("aud")]
+    public string? Aud { get; set; }
+
+    [JsonPropertyName("audience")]
+    public string? Audience { get; set; }
+
+    [JsonPropertyName("issued_to")]
+    public string? IssuedTo { get; set; }
+  }
+
+  private sealed class GoogleUserInfo
+  {
+    [JsonPropertyName("email")]
+    public string? Email { get; set; }
+
+    [JsonPropertyName("email_verified")]
+    public bool? EmailVerified { get; set; }
+
+    [JsonPropertyName("name")]
+    public string? Name { get; set; }
+
+    [JsonPropertyName("picture")]
+    public string? Picture { get; set; }
   }
 }

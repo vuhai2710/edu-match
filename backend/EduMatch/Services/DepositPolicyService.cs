@@ -1,5 +1,6 @@
 using EduMatch.Common.Exception;
 using EduMatch.Domain.Booking.Payments;
+using EduMatch.DTOs;
 using EduMatch.DTOs.DepositPolicy;
 using EduMatch.Models;
 using EduMatch.Repositories.Interfaces;
@@ -21,9 +22,38 @@ public class DepositPolicyService : IDepositPolicyService
     _depositCalculator = serviceProvider.GetRequiredService<IDepositCalculator>();
   }
 
-  public async Task<DepositPolicyDto> GetPolicyAsync()
+  public async Task<DepositPolicyDto> GetCurrentActivePolicyAsync()
   {
-    var policy = await _depositPolicyRepository.GetSingletonAsync();
+    var policy = await _depositPolicyRepository.GetActivePolicyAsync();
+    if (policy == null)
+    {
+      throw new NotFoundException("Khong tim thay chinh sach dat coc dang hieu luc.", "DEPOSIT_POLICY_NOT_FOUND");
+    }
+
+    return MapToDto(policy);
+  }
+
+  public async Task<PagedResult<DepositPolicyDto>> GetHistoryAsync(int page, int pageSize)
+  {
+    if (page < 1) page = 1;
+    if (pageSize < 1) pageSize = 10;
+    if (pageSize > 100) pageSize = 100;
+
+    var (items, totalCount) = await _depositPolicyRepository.GetPagedAsync(page, pageSize);
+
+    return new PagedResult<DepositPolicyDto>
+    {
+      Items = items.Select(MapToDto).ToList(),
+      TotalCount = totalCount,
+      Page = page,
+      PageSize = pageSize,
+      TotalPages = totalCount == 0 ? 0 : (int)Math.Ceiling(totalCount / (double)pageSize)
+    };
+  }
+
+  public async Task<DepositPolicyDto> GetPolicyByIdAsync(long id)
+  {
+    var policy = await _depositPolicyRepository.GetPolicyByIdAsync(id);
     if (policy == null)
     {
       throw new NotFoundException("Khong tim thay chinh sach dat coc.", "DEPOSIT_POLICY_NOT_FOUND");
@@ -32,35 +62,78 @@ public class DepositPolicyService : IDepositPolicyService
     return MapToDto(policy);
   }
 
-  public async Task<DepositPolicyDto> UpsertPolicyAsync(UpsertDepositPolicyDto dto)
+  public async Task<DepositPolicyDto> CreatePolicyAsync(UpsertDepositPolicyDto dto)
   {
     ValidatePolicy(dto);
 
-    var policy = await _depositPolicyRepository.GetSingletonAsync();
-    if (policy == null)
+    if (await _depositPolicyRepository.HasOverlapAsync(dto.ActiveFrom, dto.ActiveTo, null))
     {
-      policy = new DepositPolicy
-      {
-        DepositSessionCount = dto.DepositSessionCount,
-        DiscountPercent = dto.DiscountPercent,
-        ActiveFrom = dto.ActiveFrom,
-        ActiveTo = dto.ActiveTo
-      };
-
-      await _depositPolicyRepository.AddAsync(policy);
-    }
-    else
-    {
-      policy.DepositSessionCount = dto.DepositSessionCount;
-      policy.DiscountPercent = dto.DiscountPercent;
-      policy.ActiveFrom = dto.ActiveFrom;
-      policy.ActiveTo = dto.ActiveTo;
-
-      _depositPolicyRepository.Update(policy);
+      throw new ConflictException(
+        "Khoang thoi gian hieu luc bi trung voi mot chinh sach khac.",
+        "DEPOSIT_POLICY_OVERLAP");
     }
 
+    var policy = new DepositPolicy
+    {
+      DepositSessionCount = dto.DepositSessionCount,
+      DiscountPercent = dto.DiscountPercent,
+      ActiveFrom = dto.ActiveFrom,
+      ActiveTo = dto.ActiveTo
+    };
+
+    await _depositPolicyRepository.AddAsync(policy);
     await _depositPolicyRepository.SaveChangesAsync();
     return MapToDto(policy);
+  }
+
+  public async Task<DepositPolicyDto> UpdatePolicyAsync(long id, UpsertDepositPolicyDto dto)
+  {
+    ValidatePolicy(dto);
+
+    var policy = await _depositPolicyRepository.GetPolicyByIdAsync(id);
+    if (policy == null)
+    {
+      throw new NotFoundException("Khong tim thay chinh sach dat coc.", "DEPOSIT_POLICY_NOT_FOUND");
+    }
+
+    if (await _depositPolicyRepository.HasOverlapAsync(dto.ActiveFrom, dto.ActiveTo, id))
+    {
+      throw new ConflictException(
+        "Khoang thoi gian hieu luc bi trung voi mot chinh sach khac.",
+        "DEPOSIT_POLICY_OVERLAP");
+    }
+
+    policy.DepositSessionCount = dto.DepositSessionCount;
+    policy.DiscountPercent = dto.DiscountPercent;
+    policy.ActiveFrom = dto.ActiveFrom;
+    policy.ActiveTo = dto.ActiveTo;
+    policy.UpdatedAt = DateTime.UtcNow;
+
+    _depositPolicyRepository.Update(policy);
+    await _depositPolicyRepository.SaveChangesAsync();
+    return MapToDto(policy);
+  }
+
+  public async Task DeletePolicyAsync(long id)
+  {
+    var policy = await _depositPolicyRepository.GetPolicyByIdAsync(id);
+    if (policy == null)
+    {
+      throw new NotFoundException("Khong tim thay chinh sach dat coc.", "DEPOSIT_POLICY_NOT_FOUND");
+    }
+
+    var active = await _depositPolicyRepository.GetActivePolicyAsync();
+    if (active != null && active.Id == policy.Id)
+    {
+      throw new ConflictException(
+        "Khong the xoa chinh sach dang ap dung. Vui long tao chinh sach khac thay the truoc khi xoa.",
+        "DEPOSIT_POLICY_ACTIVE_DELETE_FORBIDDEN");
+    }
+
+    policy.IsDeleted = true;
+    policy.UpdatedAt = DateTime.UtcNow;
+    _depositPolicyRepository.Update(policy);
+    await _depositPolicyRepository.SaveChangesAsync();
   }
 
   public async Task<DepositPreviewResponseDto> PreviewDepositAsync(decimal hourlyRate, decimal hoursPerSession)

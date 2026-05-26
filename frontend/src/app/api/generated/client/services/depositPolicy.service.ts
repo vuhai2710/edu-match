@@ -12,7 +12,7 @@ import { inject, Injectable } from "@angular/core";
 import { Observable } from "rxjs";
 import { BASE_PATH_DEFAULT, CLIENT_CONTEXT_TOKEN_DEFAULT } from "../tokens";
 import { HttpParamsBuilder } from "../utils/http-params-builder";
-import { RequestOptions, DepositPolicyDtoApiResponse, UpsertDepositPolicyDto, DepositPreviewResponseDtoApiResponse } from "../models";
+import { RequestOptions, DepositPolicyDtoApiResponse, DepositPolicyDtoPagedResultApiResponse, UpsertDepositPolicyDto, DepositPreviewResponseDtoApiResponse } from "../models";
 
 @Injectable({ providedIn: "root" })
 export class DepositPolicyService {
@@ -25,11 +25,11 @@ export class DepositPolicyService {
         return context.set(this.clientContextToken, 'default');
     }
 
-    getDepositPolicy(observe?: 'body', options?: RequestOptions<'json'>): Observable<DepositPolicyDtoApiResponse>;
-    getDepositPolicy(observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<DepositPolicyDtoApiResponse>>;
-    getDepositPolicy(observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<DepositPolicyDtoApiResponse>>;
-    getDepositPolicy(observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
-        const url = `${this.basePath}/api/deposit-policy/admin`;
+    getCurrentDepositPolicy(observe?: 'body', options?: RequestOptions<'json'>): Observable<DepositPolicyDtoApiResponse>;
+    getCurrentDepositPolicy(observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<DepositPolicyDtoApiResponse>>;
+    getCurrentDepositPolicy(observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<DepositPolicyDtoApiResponse>>;
+    getCurrentDepositPolicy(observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
+        const url = `${this.basePath}/api/deposit-policy/admin/current`;
 
         let headers: HttpHeaders;
         if (options?.headers instanceof HttpHeaders) {
@@ -49,11 +49,68 @@ export class DepositPolicyService {
         return this.httpClient.get(url, requestOptions);
     }
 
-    upsertDepositPolicy(upsertDepositPolicyDto?: UpsertDepositPolicyDto, observe?: 'body', options?: RequestOptions<'json'>): Observable<DepositPolicyDtoApiResponse>;
-    upsertDepositPolicy(upsertDepositPolicyDto?: UpsertDepositPolicyDto, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<DepositPolicyDtoApiResponse>>;
-    upsertDepositPolicy(upsertDepositPolicyDto?: UpsertDepositPolicyDto, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<DepositPolicyDtoApiResponse>>;
-    upsertDepositPolicy(upsertDepositPolicyDto?: UpsertDepositPolicyDto, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
-        const url = `${this.basePath}/api/deposit-policy/admin`;
+    getDepositPolicyHistory(page?: number, pageSize?: number, observe?: 'body', options?: RequestOptions<'json'>): Observable<DepositPolicyDtoPagedResultApiResponse>;
+    getDepositPolicyHistory(page?: number, pageSize?: number, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<DepositPolicyDtoPagedResultApiResponse>>;
+    getDepositPolicyHistory(page?: number, pageSize?: number, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<DepositPolicyDtoPagedResultApiResponse>>;
+    getDepositPolicyHistory(page?: number, pageSize?: number, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
+        const url = `${this.basePath}/api/deposit-policy/admin/history`;
+
+        let params = new HttpParams();
+        if (page != null) {
+            params = HttpParamsBuilder.addToHttpParams(params, page, 'page');
+        }
+        if (pageSize != null) {
+            params = HttpParamsBuilder.addToHttpParams(params, pageSize, 'pageSize');
+        }
+
+        let headers: HttpHeaders;
+        if (options?.headers instanceof HttpHeaders) {
+            headers = options.headers;
+        } else {
+            headers = new HttpHeaders(options?.headers);
+        }
+
+        const requestOptions: any = {
+            observe: observe as any,
+            headers,
+            params,
+            reportProgress: options?.reportProgress,
+            withCredentials: options?.withCredentials,
+            context: this.createContextWithClientId(options?.context)
+        };
+
+        return this.httpClient.get(url, requestOptions);
+    }
+
+    getDepositPolicyById(id: number, observe?: 'body', options?: RequestOptions<'json'>): Observable<DepositPolicyDtoApiResponse>;
+    getDepositPolicyById(id: number, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<DepositPolicyDtoApiResponse>>;
+    getDepositPolicyById(id: number, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<DepositPolicyDtoApiResponse>>;
+    getDepositPolicyById(id: number, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
+        const url = `${this.basePath}/api/deposit-policy/admin/${id}`;
+
+        let headers: HttpHeaders;
+        if (options?.headers instanceof HttpHeaders) {
+            headers = options.headers;
+        } else {
+            headers = new HttpHeaders(options?.headers);
+        }
+
+        const requestOptions: any = {
+            observe: observe as any,
+            headers,
+            reportProgress: options?.reportProgress,
+            withCredentials: options?.withCredentials,
+            context: this.createContextWithClientId(options?.context)
+        };
+
+        return this.httpClient.get(url, requestOptions);
+    }
+
+    updateDepositPolicy(id: number, upsertDepositPolicyDto?: UpsertDepositPolicyDto, observe?: 'body', options?: RequestOptions<'json'>): Observable<DepositPolicyDtoApiResponse>;
+    updateDepositPolicy(id: number, upsertDepositPolicyDto?: UpsertDepositPolicyDto, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<DepositPolicyDtoApiResponse>>;
+    updateDepositPolicy(id: number, upsertDepositPolicyDto?: UpsertDepositPolicyDto, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<DepositPolicyDtoApiResponse>>;
+    updateDepositPolicy(id: number, upsertDepositPolicyDto?: UpsertDepositPolicyDto, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
+        const url = `${this.basePath}/api/deposit-policy/admin/${id}`;
 
         let headers: HttpHeaders;
         if (options?.headers instanceof HttpHeaders) {
@@ -75,6 +132,58 @@ export class DepositPolicyService {
         };
 
         return this.httpClient.put(url, upsertDepositPolicyDto, requestOptions);
+    }
+
+    deleteDepositPolicy(id: number, observe?: 'body', options?: RequestOptions<'json'>): Observable<any>;
+    deleteDepositPolicy(id: number, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<any>>;
+    deleteDepositPolicy(id: number, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<any>>;
+    deleteDepositPolicy(id: number, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
+        const url = `${this.basePath}/api/deposit-policy/admin/${id}`;
+
+        let headers: HttpHeaders;
+        if (options?.headers instanceof HttpHeaders) {
+            headers = options.headers;
+        } else {
+            headers = new HttpHeaders(options?.headers);
+        }
+
+        const requestOptions: any = {
+            observe: observe as any,
+            headers,
+            reportProgress: options?.reportProgress,
+            withCredentials: options?.withCredentials,
+            context: this.createContextWithClientId(options?.context)
+        };
+
+        return this.httpClient.delete(url, requestOptions);
+    }
+
+    createDepositPolicy(upsertDepositPolicyDto?: UpsertDepositPolicyDto, observe?: 'body', options?: RequestOptions<'json'>): Observable<DepositPolicyDtoApiResponse>;
+    createDepositPolicy(upsertDepositPolicyDto?: UpsertDepositPolicyDto, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<DepositPolicyDtoApiResponse>>;
+    createDepositPolicy(upsertDepositPolicyDto?: UpsertDepositPolicyDto, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<DepositPolicyDtoApiResponse>>;
+    createDepositPolicy(upsertDepositPolicyDto?: UpsertDepositPolicyDto, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
+        const url = `${this.basePath}/api/deposit-policy/admin`;
+
+        let headers: HttpHeaders;
+        if (options?.headers instanceof HttpHeaders) {
+            headers = options.headers;
+        } else {
+            headers = new HttpHeaders(options?.headers);
+        }
+        // Set Content-Type for JSON requests if not already set
+        if (!headers.has('Content-Type')) {
+            headers = headers.set('Content-Type', 'application/json');
+        }
+
+        const requestOptions: any = {
+            observe: observe as any,
+            headers,
+            reportProgress: options?.reportProgress,
+            withCredentials: options?.withCredentials,
+            context: this.createContextWithClientId(options?.context)
+        };
+
+        return this.httpClient.post(url, upsertDepositPolicyDto, requestOptions);
     }
 
     previewDeposit(hourlyRate?: number, hoursPerSession?: number, observe?: 'body', options?: RequestOptions<'json'>): Observable<DepositPreviewResponseDtoApiResponse>;

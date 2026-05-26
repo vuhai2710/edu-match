@@ -17,6 +17,8 @@ namespace EduMatch.Repositories
     {
       return await _dbSet
         .Include(u => u.AvatarFile)
+        .Include(u => u.Tutor)
+        .Include(u => u.Student)
         .FirstOrDefaultAsync(u => u.Id == id);
     }
 
@@ -58,6 +60,8 @@ namespace EduMatch.Repositories
     {
       var query = _dbSet
         .Include(u => u.AvatarFile)
+        .Include(u => u.Tutor)
+        .Include(u => u.Student)
         .AsQueryable();
 
       if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))

@@ -20,6 +20,7 @@ export interface AppEnv {
   appBaseUrl: string;
   apiBaseUrl: string;
   hubBaseUrl: string;
+  googleClientId: string;
   paymentReturnRoutes: PaymentReturnRoutes;
   realtime: RealtimeHubConfig;
 }

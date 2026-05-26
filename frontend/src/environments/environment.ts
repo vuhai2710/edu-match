@@ -6,6 +6,7 @@ export const environment: AppEnv = {
   appBaseUrl: 'http://localhost:4200',
   apiBaseUrl: 'https://localhost:7001',
   hubBaseUrl: 'https://localhost:7001',
+  googleClientId: '156523713376-8gk7ckvh0332kjgcpbb2qjvq2o4br68i.apps.googleusercontent.com',
   paymentReturnRoutes: {
     success: '/payment/success',
     cancel: '/payment/cancel',

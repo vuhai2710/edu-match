@@ -17,13 +17,32 @@ namespace EduMatch.Common.Extensions
       int statusCode,
       string message,
       string? errorCode = null,
+      IReadOnlyDictionary<string, string[]>? errors = null,
       CancellationToken cancellationToken = default)
     {
       response.StatusCode = statusCode;
       response.ContentType = "application/json";
 
-      var body = JsonSerializer.Serialize(ErrorResponse.Create(message, errorCode), JsonOptions);
-      await response.WriteAsync(body, cancellationToken);
+      var body = JsonSerializer.Serialize(
+        ErrorResponse.Create(
+          message,
+          statusCode,
+          errorCode,
+          response.HttpContext.TraceIdentifier,
+          errors),
+        JsonOptions);
+      if (cancellationToken.IsCancellationRequested)
+      {
+        return;
+      }
+
+      try
+      {
+        await response.WriteAsync(body, cancellationToken);
+      }
+      catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+      {
+      }
     }
   }
 }

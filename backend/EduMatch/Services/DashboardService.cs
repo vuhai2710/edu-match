@@ -23,33 +23,27 @@ namespace EduMatch.Services
       var now = DateTime.UtcNow;
       var startOfMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
 
-      var tTotalUsers = _db.Users.CountAsync(u => !u.IsDeleted);
-      var tStudents = _db.Users.CountAsync(u => u.Role == UserRole.Student && !u.IsDeleted);
-      var tTutors = _db.Users.CountAsync(u => u.Role == UserRole.Tutor && !u.IsDeleted);
-      var tTotalReqs = _db.TutorRequests.CountAsync(r => !r.IsDeleted);
-      var tOpenReqs = _db.TutorRequests.CountAsync(r => r.Status == TutorRequestStatus.Open && !r.IsDeleted);
-      var tPendingApps = _db.Applications.CountAsync(a => a.Status == ApplicationStatus.Pending && !a.IsDeleted);
-      var tActiveClass = _db.Classes.CountAsync(c => c.Status == ClassStatus.Active && !c.IsDeleted);
-      var tPendingCls = _db.Classes.CountAsync(c => c.Status == ClassStatus.PendingStart && !c.IsDeleted);
-      var tCancelledCls = _db.Classes.CountAsync(c =>
+      var totalUsers = await _db.Users.CountAsync(u => !u.IsDeleted);
+      var students = await _db.Users.CountAsync(u => u.Role == UserRole.Student && !u.IsDeleted);
+      var tutors = await _db.Users.CountAsync(u => u.Role == UserRole.Tutor && !u.IsDeleted);
+      var totalReqs = await _db.TutorRequests.CountAsync(r => !r.IsDeleted);
+      var openReqs = await _db.TutorRequests.CountAsync(r => r.Status == TutorRequestStatus.Open && !r.IsDeleted);
+      var pendingApps = await _db.Applications.CountAsync(a => a.Status == ApplicationStatus.Pending && !a.IsDeleted);
+      var activeClass = await _db.Classes.CountAsync(c => c.Status == ClassStatus.Active && !c.IsDeleted);
+      var pendingCls = await _db.Classes.CountAsync(c => c.Status == ClassStatus.PendingStart && !c.IsDeleted);
+      var cancelledCls = await _db.Classes.CountAsync(c =>
         (c.Status == ClassStatus.CancelledByStudent
          || c.Status == ClassStatus.CancelledByTutor
          || c.Status == ClassStatus.CancelledByAdmin)
         && !c.IsDeleted);
-      var tRevTotal = _db.Payments
+      var revTotal = await _db.Payments
                               .Where(p => p.Status == PaymentStatus.Success && !p.IsDeleted)
                               .SumAsync(p => (decimal?)p.Amount);
-      var tRevMonth = _db.Payments
+      var revMonth = await _db.Payments
                               .Where(p => p.Status == PaymentStatus.Success
                                        && p.PaidAt >= startOfMonth
                                        && !p.IsDeleted)
                               .SumAsync(p => (decimal?)p.Amount);
-
-      await Task.WhenAll(
-        tTotalUsers, tStudents, tTutors,
-        tTotalReqs, tOpenReqs, tPendingApps,
-        tActiveClass, tPendingCls, tCancelledCls,
-        tRevTotal, tRevMonth);
 
       var recentApps = await _db.Applications
         .Where(a => !a.IsDeleted)
@@ -69,18 +63,18 @@ namespace EduMatch.Services
 
       return new AdminDashboardDto
       {
-        TotalUsers = await tTotalUsers,
-        TotalStudents = await tStudents,
-        TotalTutors = await tTutors,
+        TotalUsers = totalUsers,
+        TotalStudents = students,
+        TotalTutors = tutors,
         PendingTutorApprovals = 0,
-        TotalRequests = await tTotalReqs,
-        OpenRequests = await tOpenReqs,
-        PendingApplications = await tPendingApps,
-        ActiveClasses = await tActiveClass,
-        PendingClasses = await tPendingCls,
-        CancelledClasses = await tCancelledCls,
-        TotalRevenue = await tRevTotal ?? 0m,
-        RevenueThisMonth = await tRevMonth ?? 0m,
+        TotalRequests = totalReqs,
+        OpenRequests = openReqs,
+        PendingApplications = pendingApps,
+        ActiveClasses = activeClass,
+        PendingClasses = pendingCls,
+        CancelledClasses = cancelledCls,
+        TotalRevenue = revTotal ?? 0m,
+        RevenueThisMonth = revMonth ?? 0m,
         RecentApplications = recentApps,
         PendingTutors = []
       };
@@ -91,35 +85,31 @@ namespace EduMatch.Services
       var appQuery = _db.Applications
         .Where(a => a.TutorId == tutorProfileId && !a.IsDeleted);
 
-      var tTotal = appQuery.CountAsync();
-      var tPending = appQuery.CountAsync(a => a.Status == ApplicationStatus.Pending);
-      var tAccepted = appQuery.CountAsync(a => a.Status == ApplicationStatus.BothAccepted);
-      var tRejected = appQuery.CountAsync(a => a.Status == ApplicationStatus.AdminRejected
+      var total = await appQuery.CountAsync();
+      var pending = await appQuery.CountAsync(a => a.Status == ApplicationStatus.Pending);
+      var accepted = await appQuery.CountAsync(a => a.Status == ApplicationStatus.BothAccepted);
+      var rejected = await appQuery.CountAsync(a => a.Status == ApplicationStatus.AdminRejected
                                              || a.Status == ApplicationStatus.StudentRejected);
-      var tActive = _db.Classes.CountAsync(c => c.TutorId == tutorProfileId
+      var active = await _db.Classes.CountAsync(c => c.TutorId == tutorProfileId
                                                 && c.Status == ClassStatus.Active
                                                 && !c.IsDeleted);
-      var tPendingCls = _db.Classes.CountAsync(c => c.TutorId == tutorProfileId
+      var pendingCls = await _db.Classes.CountAsync(c => c.TutorId == tutorProfileId
                                                 && c.Status == ClassStatus.PendingStart
                                                 && !c.IsDeleted);
-      var tCancelledCls = _db.Classes.CountAsync(c => c.TutorId == tutorProfileId
+      var cancelledCls = await _db.Classes.CountAsync(c => c.TutorId == tutorProfileId
                                                 && (c.Status == ClassStatus.CancelledByStudent
                                                     || c.Status == ClassStatus.CancelledByTutor
                                                     || c.Status == ClassStatus.CancelledByAdmin)
                                                 && !c.IsDeleted);
-      var tDeposits = _db.Payments
+      var deposits = await _db.Payments
                           .Where(p => p.TutorId == tutorProfileId
                                    && p.Status == PaymentStatus.Success
                                    && !p.IsDeleted)
                           .SumAsync(p => (decimal?)p.Amount);
 
-      var profileTask = _db.Tutors
+      var profile = await _db.Tutors
         .AsNoTracking()
         .FirstOrDefaultAsync(t => t.Id == tutorProfileId && !t.IsDeleted);
-
-      await Task.WhenAll(tTotal, tPending, tAccepted, tRejected,
-                         tActive, tPendingCls, tCancelledCls, tDeposits);
-      var profile = await profileTask;
 
       if (profile == null)
         throw new NotFoundException("Tutor profile not found.");
@@ -140,14 +130,14 @@ namespace EduMatch.Services
 
       return new TutorDashboardDto
       {
-        TotalApplications = await tTotal,
-        PendingApplications = await tPending,
-        AcceptedApplications = await tAccepted,
-        RejectedApplications = await tRejected,
-        ActiveClasses = await tActive,
-        PendingClasses = await tPendingCls,
-        CancelledClasses = await tCancelledCls,
-        TotalDeposits = await tDeposits ?? 0m,
+        TotalApplications = total,
+        PendingApplications = pending,
+        AcceptedApplications = accepted,
+        RejectedApplications = rejected,
+        ActiveClasses = active,
+        PendingClasses = pendingCls,
+        CancelledClasses = cancelledCls,
+        TotalDeposits = deposits ?? 0m,
         AverageRating = profile.Rating,
         TotalReviews = profile.TotalReviews,
         RecentApplications = recentApps
@@ -159,30 +149,28 @@ namespace EduMatch.Services
       var reqQuery = _db.TutorRequests
         .Where(r => r.StudentId == studentUserId && !r.IsDeleted);
 
-      var tTotal = reqQuery.CountAsync();
-      var tOpen = reqQuery.CountAsync(r => r.Status == TutorRequestStatus.Open);
-      var tClosed = reqQuery.CountAsync(r => r.Status == TutorRequestStatus.Closed
+      var total = await reqQuery.CountAsync();
+      var open = await reqQuery.CountAsync(r => r.Status == TutorRequestStatus.Open);
+      var closed = await reqQuery.CountAsync(r => r.Status == TutorRequestStatus.Closed
                                              || r.Status == TutorRequestStatus.Assigned
                                              || r.Status == TutorRequestStatus.Expired);
-      var tAppsTotal = _db.Applications
+      var appsTotal = await _db.Applications
                           .CountAsync(a => a.TutorRequest.StudentId == studentUserId && !a.IsDeleted);
-      var tAppsPend = _db.Applications
+      var appsPend = await _db.Applications
                           .CountAsync(a => a.TutorRequest.StudentId == studentUserId
                                        && a.Status == ApplicationStatus.Pending
                                        && !a.IsDeleted);
-      var tActive = _db.Classes.CountAsync(c => c.StudentId == studentUserId
+      var active = await _db.Classes.CountAsync(c => c.StudentId == studentUserId
                                                && c.Status == ClassStatus.Active
                                                && !c.IsDeleted);
-      var tPendingCls = _db.Classes.CountAsync(c => c.StudentId == studentUserId
+      var pendingCls = await _db.Classes.CountAsync(c => c.StudentId == studentUserId
                                                && c.Status == ClassStatus.PendingStart
                                                && !c.IsDeleted);
-      var tCancelledCls = _db.Classes.CountAsync(c => c.StudentId == studentUserId
+      var cancelledCls = await _db.Classes.CountAsync(c => c.StudentId == studentUserId
                                                && (c.Status == ClassStatus.CancelledByStudent
                                                    || c.Status == ClassStatus.CancelledByTutor
                                                    || c.Status == ClassStatus.CancelledByAdmin)
                                                && !c.IsDeleted);
-
-      await Task.WhenAll(tTotal, tOpen, tClosed, tAppsTotal, tAppsPend, tActive, tPendingCls, tCancelledCls);
 
       var recentReqs = await reqQuery
         .OrderByDescending(r => r.CreatedAt)
@@ -201,14 +189,14 @@ namespace EduMatch.Services
 
       return new StudentDashboardDto
       {
-        TotalRequests = await tTotal,
-        OpenRequests = await tOpen,
-        ClosedRequests = await tClosed,
-        TotalApplicationsReceived = await tAppsTotal,
-        PendingApplicationsReceived = await tAppsPend,
-        ActiveClasses = await tActive,
-        PendingClasses = await tPendingCls,
-        CancelledClasses = await tCancelledCls,
+        TotalRequests = total,
+        OpenRequests = open,
+        ClosedRequests = closed,
+        TotalApplicationsReceived = appsTotal,
+        PendingApplicationsReceived = appsPend,
+        ActiveClasses = active,
+        PendingClasses = pendingCls,
+        CancelledClasses = cancelledCls,
         RecentRequests = recentReqs
       };
     }

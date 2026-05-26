@@ -332,6 +332,23 @@ export interface DepositPolicyDtoApiResponse {
     data?: DepositPolicyDto;
 }
 
+export interface DepositPolicyDtoPagedResult {
+    items?: Array<DepositPolicyDto>;
+    totalCount?: number;
+    page?: number;
+    pageSize?: number;
+    totalPages?: number;
+    readonly hasPreviousPage?: boolean;
+    readonly hasNextPage?: boolean;
+}
+
+export interface DepositPolicyDtoPagedResultApiResponse {
+    success?: boolean;
+    message?: string | null;
+    statusCode?: number | null;
+    data?: DepositPolicyDtoPagedResult;
+}
+
 export interface DepositPreviewResponseDto {
     depositSessionCount?: number;
     discountPercent?: number;
@@ -390,6 +407,9 @@ export enum Gender {
 
 export interface GoogleLoginRequestDto {
     idToken?: string | null;
+    accessToken?: string | null;
+    requestedRole?: UserRole;
+    registrationIntent?: boolean;
 }
 
 export enum Grade {
@@ -653,6 +673,7 @@ export enum PaymentStatus {
 export interface PaymentStatusDto {
     orderCode?: number;
     learningRequestId?: number | null;
+    classId?: number | null;
     amount?: number;
     status?: PaymentStatus;
     paidAt?: Date | null;
@@ -1148,6 +1169,7 @@ export interface UpsertDepositPolicyDto {
 
 export interface UserDto {
     id?: number;
+    code?: string | null;
     fullName?: string | null;
     birth?: number | null;
     email?: string | null;
@@ -1156,6 +1178,7 @@ export interface UserDto {
     avatarUrl?: string | null;
     gender?: Gender;
     isActive?: boolean;
+    isGoogleAccount?: boolean;
 }
 
 export interface UserDtoApiResponse {

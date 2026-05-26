@@ -86,7 +86,11 @@ namespace EduMatch.Controllers
       var payment = await _paymentService.GetByIdAsync(id);
       if (payment == null)
       {
-        return NotFound(ErrorResponse.Create("Payment not found", "PAYMENT_NOT_FOUND"));
+        return NotFound(ErrorResponse.Create(
+          "Payment not found",
+          StatusCodes.Status404NotFound,
+          "PAYMENT_NOT_FOUND",
+          HttpContext.TraceIdentifier));
       }
 
       return this.OkResponse(ApiResponse<PaymentAdminDto>.SuccessResult(payment));

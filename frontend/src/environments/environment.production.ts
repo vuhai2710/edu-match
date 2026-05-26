@@ -6,6 +6,7 @@ export const environment: AppEnv = {
   appBaseUrl: 'https://edumatch.app',
   apiBaseUrl: 'https://localhost:7001',
   hubBaseUrl: 'https://localhost:7001',
+  googleClientId: '',
   paymentReturnRoutes: {
     success: '/payment/success',
     cancel: '/payment/cancel',

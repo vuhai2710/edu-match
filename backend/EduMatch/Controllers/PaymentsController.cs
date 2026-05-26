@@ -38,18 +38,18 @@ namespace EduMatch.Controllers
     [HttpGet("learning-requests/{learningRequestId:long}")]
     [Authorize(Roles = "Student,Tutor,Admin")]
     [SwaggerOperation(OperationId = "getPaymentByLearningRequest")]
-    [ProducesResponseType(typeof(ApiResponse<DepositPaymentDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<DepositPaymentDto?>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ApiResponse<DepositPaymentDto>>> GetByLearningRequest(long learningRequestId)
+    public async Task<ActionResult<ApiResponse<DepositPaymentDto?>>> GetByLearningRequest(long learningRequestId)
     {
       var result = await _depositPaymentService.GetByLearningRequestAsync(
         GetCurrentUserId(),
         User.IsInRole("Admin"),
         learningRequestId);
 
-      return Ok(ApiResponse<DepositPaymentDto>.SuccessResult(result));
+      return Ok(ApiResponse<DepositPaymentDto?>.SuccessResult(result));
     }
 
     [HttpGet("status/{orderCode}")]

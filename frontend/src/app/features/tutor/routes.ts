@@ -13,6 +13,26 @@ export const TUTOR_ROUTES: Routes = [
         component: TutorDashboardPage,
       },
       {
+        path: 'requests/:id',
+        loadComponent: () =>
+          import('./request-detail/request-detail').then(m => m.TutorRequestDetailPage),
+      },
+      {
+        path: 'classes',
+        loadComponent: () =>
+          import('./classes/classes').then(m => m.TutorClassesPage),
+      },
+      {
+        path: 'classes/:id',
+        loadComponent: () =>
+          import('./class-detail/class-detail').then(m => m.TutorClassDetailPage),
+      },
+      {
+        path: 'settings',
+        loadComponent: () =>
+          import('./profile-settings/profile-settings').then(m => m.TutorProfileSettingsPage),
+      },
+      {
         path: '',
         pathMatch: 'full',
         redirectTo: 'dashboard',

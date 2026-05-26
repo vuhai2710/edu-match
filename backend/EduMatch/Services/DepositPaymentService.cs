@@ -189,7 +189,7 @@ namespace EduMatch.Services
       };
     }
 
-    public async Task<DepositPaymentDto> GetByLearningRequestAsync(long callerUserId, bool isAdmin, long learningRequestId)
+    public async Task<DepositPaymentDto?> GetByLearningRequestAsync(long callerUserId, bool isAdmin, long learningRequestId)
     {
       var lr = await _learningRequestRepo.GetByIdWithDetailsAsync(learningRequestId);
       if (lr == null)
@@ -207,7 +207,7 @@ namespace EduMatch.Services
       var payment = await _paymentRepo.GetLatestByLearningRequestIdWithDetailsAsync(learningRequestId);
       if (payment == null)
       {
-        throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y thanh toÃ¡n.", "PAYMENT_NOT_FOUND");
+        return null;
       }
 
       return MapDepositPayment(payment);
@@ -305,6 +305,7 @@ namespace EduMatch.Services
       {
         OrderCode = payment.OrderCode,
         LearningRequestId = payment.LearningRequestId,
+        ClassId = payment.ClassId,
         Amount = payment.Amount,
         Status = payment.Status,
         PaidAt = payment.PaidAt

@@ -63,7 +63,7 @@ import { MascotComponent } from '../../../shared/components/mascot/mascot';
           <h2 class="font-display text-3xl font-black text-white">Sẵn sàng tỏa sáng? 🌟</h2>
           <p class="text-green-100 mt-2 text-lg">Bắt đầu hành trình học tập thông minh cùng EduMatch ngay hôm nay!</p>
         </div>
-        <a routerLink="/auth/register/student"
+        <a routerLink="/auth/register"
            class="bg-white text-[#58cc02] px-8 py-3.5 rounded-2xl font-extrabold text-lg uppercase border-b-4 border-green-200 hover:border-green-300 transition-colors shadow-md">
           Đăng ký miễn phí
         </a>

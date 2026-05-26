@@ -1,84 +1,208 @@
-import { Component, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
+
+import {
+  AdminDashboardDto,
+  CancellationRequestDto,
+  CancellationRequestStatus,
+  PaymentAdminDto,
+} from '../../../api/generated/client/models';
+import { AdminService, DashboardService } from '../../../api/generated/client/services';
+import { ApiErrorDetails, getApiErrorDetails } from '../../../core/http/api-error';
+import { ErrorBannerComponent } from '../../../shared/components/error-banner/error-banner';
 import { MascotComponent } from '../../../shared/components/mascot/mascot';
+import { classStatusLabel, formatDateTime, formatMoney, paymentStatusLabel } from '../../../shared/utils/api-ui';
 
 @Component({
   selector: 'app-admin-dashboard-page',
-  imports: [FormsModule, MascotComponent],
+  imports: [ErrorBannerComponent, MascotComponent, RouterLink],
   template: `
     <div class="space-y-6">
-      <!-- Welcome -->
       <div class="bg-gradient-to-r from-slate-800 to-slate-900 rounded-3xl p-6 md:p-8 flex items-center gap-6 shadow-lg">
         <app-mascot type="adminBlueGlasses" [size]="90" className="hidden sm:block" />
         <div class="flex-1 text-white">
-          <h1 class="font-display text-2xl md:text-3xl font-black">Bảng điều khiển Admin 🛡️</h1>
-          <p class="mt-1 text-slate-400">Quản lý hệ thống EduMatch, xử lý hoàn tiền & kiểm duyệt.</p>
+          <h1 class="font-display text-2xl md:text-3xl font-black">Bảng điều khiển Admin</h1>
+          <p class="mt-1 text-slate-400">Theo dõi người dùng, lớp học, thanh toán và yêu cầu hủy.</p>
         </div>
       </div>
 
-      <!-- Stats -->
-      <div class="grid sm:grid-cols-4 gap-4">
-        @for (stat of stats; track stat.label) {
-          <div class="tactile-card p-5 text-center">
-            <p class="text-2xl">{{ stat.emoji }}</p>
-            <p class="font-display text-2xl font-black mt-1" [class]="stat.color">{{ stat.value }}</p>
-            <p class="text-xs text-slate-500 font-bold">{{ stat.label }}</p>
-          </div>
-        }
-      </div>
+      <app-error-banner [details]="errorDetails()" />
 
-      <!-- Refund Management -->
-      <div>
-        <h2 class="font-extrabold text-lg text-slate-800 mb-3">💳 Yêu cầu hoàn tiền</h2>
-        <div class="tactile-card p-5">
-          <div class="flex items-center gap-4 mb-4">
-            <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-xl">🔴</div>
-            <div class="flex-1">
-              <p class="font-extrabold text-slate-900">Phạm Quỳnh Vy yêu cầu hoàn tiền</p>
-              <p class="text-sm text-slate-500">Lớp Tiếng Anh Giao tiếp · Gia sư hủy trước 12h</p>
-              <p class="text-xs text-slate-400 mt-1">Số tiền: 250,000đ · Gửi 2 giờ trước</p>
-            </div>
-          </div>
-          <div class="flex gap-3">
-            <button class="tactile-button-green flex-1 py-2.5 rounded-xl text-sm font-extrabold uppercase">
-              ✅ Duyệt hoàn tiền
-            </button>
-            <button class="tactile-button-gray flex-1 py-2.5 rounded-xl text-sm font-bold">
-              ❌ Từ chối
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Task Checklist -->
-      <div>
-        <h2 class="font-extrabold text-lg text-slate-800 mb-3">📝 Nhiệm vụ hôm nay</h2>
-        <div class="tactile-card p-5 space-y-3">
-          @for (task of tasks; track task.label) {
-            <label class="flex items-center gap-3 cursor-pointer group">
-              <input type="checkbox" [(ngModel)]="task.done" class="w-5 h-5 rounded accent-[#58cc02]" />
-              <span class="text-sm font-semibold" [class]="task.done ? 'text-slate-400 line-through' : 'text-slate-700'">
-                {{ task.label }}
-              </span>
-            </label>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <a routerLink="/admin/users" class="tactile-card p-5 text-center hover:shadow-md transition-shadow">
+          @if (isLoading()) {
+            <div class="h-7 w-12 mx-auto rounded bg-slate-200 animate-pulse"></div>
+          } @else {
+            <p class="font-display text-2xl font-black text-duo-blue">{{ dashboard()?.totalUsers ?? 0 }}</p>
           }
+          <p class="text-xs text-slate-500 font-bold mt-1">Tổng người dùng</p>
+        </a>
+        <a routerLink="/admin/users" [queryParams]="{ role: 'Tutor' }" class="tactile-card p-5 text-center hover:shadow-md transition-shadow">
+          @if (isLoading()) {
+            <div class="h-7 w-12 mx-auto rounded bg-slate-200 animate-pulse"></div>
+          } @else {
+            <p class="font-display text-2xl font-black text-duo-green">{{ dashboard()?.totalTutors ?? 0 }}</p>
+          }
+          <p class="text-xs text-slate-500 font-bold mt-1">Gia sư</p>
+        </a>
+        <a routerLink="/admin/classes" class="tactile-card p-5 text-center hover:shadow-md transition-shadow">
+          @if (isLoading()) {
+            <div class="h-7 w-12 mx-auto rounded bg-slate-200 animate-pulse"></div>
+          } @else {
+            <p class="font-display text-2xl font-black text-duo-orange">{{ dashboard()?.activeClasses ?? 0 }}</p>
+          }
+          <p class="text-xs text-slate-500 font-bold mt-1">Lớp đang học</p>
+        </a>
+        <div class="tactile-card p-5 text-center">
+          @if (isLoading()) {
+            <div class="h-7 w-20 mx-auto rounded bg-slate-200 animate-pulse"></div>
+          } @else {
+            <p class="font-display text-2xl font-black text-duo-purple">{{ money(dashboard()?.revenueThisMonth) }}</p>
+          }
+          <p class="text-xs text-slate-500 font-bold mt-1">Doanh thu tháng</p>
         </div>
+      </div>
+
+      <div class="grid sm:grid-cols-3 gap-4">
+        <div class="tactile-card p-4 text-center">
+          <p class="font-display text-xl font-black text-slate-800">{{ dashboard()?.totalStudents ?? 0 }}</p>
+          <p class="text-xs text-slate-500 font-bold">Học viên</p>
+        </div>
+        <div class="tactile-card p-4 text-center">
+          <p class="font-display text-xl font-black text-slate-800">{{ dashboard()?.pendingClasses ?? 0 }}</p>
+          <p class="text-xs text-slate-500 font-bold">Lớp chờ bắt đầu</p>
+        </div>
+        <div class="tactile-card p-4 text-center">
+          <p class="font-display text-xl font-black text-slate-800">{{ dashboard()?.cancelledClasses ?? 0 }}</p>
+          <p class="text-xs text-slate-500 font-bold">Lớp đã hủy</p>
+        </div>
+      </div>
+
+      @if (hasNoData() && !errorDetails()) {
+        <div class="tactile-card p-6 text-center bg-slate-50">
+          <p class="font-extrabold text-slate-800">Chưa có dữ liệu trong hệ thống</p>
+          <p class="text-sm text-slate-500 mt-1">Khi có người dùng, lớp học hoặc thanh toán, bảng điều khiển sẽ cập nhật tự động.</p>
+        </div>
+      }
+
+      <div class="grid lg:grid-cols-2 gap-5">
+        <section>
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="font-extrabold text-lg text-slate-800">Thanh toán gần đây</h2>
+            <a routerLink="/admin/payments" class="text-sm font-bold text-duo-blue hover:underline">Xem tất cả →</a>
+          </div>
+          <div class="space-y-3">
+            @for (payment of payments(); track payment.id) {
+              <div class="tactile-card p-4">
+                <div class="flex items-start justify-between gap-3">
+                  <div>
+                    <p class="font-extrabold text-slate-900">Order #{{ payment.orderCode }}</p>
+                    <p class="text-sm text-slate-500">LR #{{ payment.learningRequestId }} · Class #{{ payment.classId || 'chưa có' }}</p>
+                  </div>
+                  <span class="rounded-full bg-green-50 px-3 py-1 text-xs font-black text-duo-green">{{ paymentLabel(payment) }}</span>
+                </div>
+                <div class="mt-3 flex items-center justify-between text-sm">
+                  <span class="font-bold text-slate-500">{{ dateTime(payment.createdAt) }}</span>
+                  <span class="font-extrabold text-duo-green">{{ money(payment.amount) }}</span>
+                </div>
+              </div>
+            }
+            @if (!isLoading() && !payments().length) {
+              <div class="tactile-card p-5 text-center font-bold text-slate-500">Chưa có thanh toán nào.</div>
+            }
+          </div>
+        </section>
+
+        <section>
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="font-extrabold text-lg text-slate-800">Yêu cầu hủy đang chờ</h2>
+            <a routerLink="/admin/cancellation-requests" class="text-sm font-bold text-duo-blue hover:underline">Xem tất cả →</a>
+          </div>
+          <div class="space-y-3">
+            @for (request of cancellationRequests(); track request.id) {
+              <div class="tactile-card p-4">
+                <div class="flex items-start justify-between gap-3">
+                  <div>
+                    <p class="font-extrabold text-slate-900">{{ request.requestedByUserName || 'Người dùng' }}</p>
+                    <p class="text-sm text-slate-500">Lớp {{ request.classCode }} · {{ classLabel(request) }}</p>
+                  </div>
+                  <span class="rounded-full bg-orange-50 px-3 py-1 text-xs font-black text-duo-orange">{{ request.status }}</span>
+                </div>
+                <p class="mt-3 text-sm text-slate-600">{{ request.reason || 'Không có lý do.' }}</p>
+              </div>
+            }
+            @if (!isLoading() && !cancellationRequests().length) {
+              <div class="tactile-card p-5 text-center font-bold text-slate-500">Không có yêu cầu hủy đang chờ.</div>
+            }
+          </div>
+        </section>
       </div>
     </div>
   `,
 })
-export class AdminDashboardPage {
-  readonly stats = [
-    { emoji: '👥', value: '1,245', label: 'Tổng người dùng', color: 'text-duo-blue' },
-    { emoji: '🧑‍🏫', value: '156', label: 'Gia sư', color: 'text-duo-green' },
-    { emoji: '📚', value: '89', label: 'Lớp đang hoạt động', color: 'text-duo-orange' },
-    { emoji: '💰', value: '12.5M', label: 'Doanh thu tháng', color: 'text-duo-purple' },
-  ];
+export class AdminDashboardPage implements OnInit {
+  dashboard = signal<AdminDashboardDto | null>(null);
+  payments = signal<PaymentAdminDto[]>([]);
+  cancellationRequests = signal<CancellationRequestDto[]>([]);
+  errorDetails = signal<ApiErrorDetails | null>(null);
+  isLoading = signal(true);
 
-  tasks = [
-    { label: 'Kiểm duyệt 3 hồ sơ gia sư mới', done: false },
-    { label: 'Xử lý 2 yêu cầu hoàn tiền', done: false },
-    { label: 'Cập nhật chính sách thanh toán', done: true },
-    { label: 'Review báo cáo doanh thu tuần', done: false },
-  ];
+  hasNoData = computed(() => {
+    const d = this.dashboard();
+    if (!d) return false;
+    return (d.totalUsers ?? 0) === 0 && (d.activeClasses ?? 0) === 0 && (d.totalRevenue ?? 0) === 0;
+  });
+
+  private readonly dashboardApi = inject(DashboardService);
+  private readonly adminApi = inject(AdminService);
+
+  ngOnInit(): void {
+    void this.loadDashboard();
+  }
+
+  money(value?: number | null): string {
+    return formatMoney(value);
+  }
+
+  dateTime(value?: Date | null): string {
+    return formatDateTime(value);
+  }
+
+  paymentLabel(payment: PaymentAdminDto): string {
+    return paymentStatusLabel(payment.status);
+  }
+
+  classLabel(request: CancellationRequestDto): string {
+    return classStatusLabel(request.classStatus);
+  }
+
+  private async loadDashboard(): Promise<void> {
+    this.isLoading.set(true);
+    this.errorDetails.set(null);
+    try {
+      const [dashboardResponse, paymentsResponse, cancellationResponse] = await Promise.all([
+        firstValueFrom(this.dashboardApi.getAdminDashboard()),
+        firstValueFrom(this.adminApi.getAllPayments(1, 5)),
+        firstValueFrom(
+          this.adminApi.getAllCancellationRequestsForAdmin(
+            CancellationRequestStatus.Pending,
+            1,
+            5,
+            undefined,
+            'createdAt',
+            'desc',
+          ),
+        ),
+      ]);
+      this.dashboard.set(dashboardResponse.data ?? null);
+      this.payments.set(paymentsResponse.data?.items ?? []);
+      this.cancellationRequests.set(cancellationResponse.data?.items ?? []);
+    } catch (error) {
+      console.error('[admin/dashboard] load failed', error);
+      this.errorDetails.set(getApiErrorDetails(error, 'Không tải được dashboard admin.'));
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
 }

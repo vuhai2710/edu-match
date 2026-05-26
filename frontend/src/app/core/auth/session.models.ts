@@ -1,7 +1,7 @@
 export enum UserRole {
-  Student = 0,
-  Tutor = 1,
-  Admin = 2,
+  Student = 'Student',
+  Tutor = 'Tutor',
+  Admin = 'Admin',
 }
 
 export interface SessionTokens {
@@ -19,11 +19,19 @@ export interface SessionUser {
   avatarUrl?: string | null;
   gender?: number | string | null;
   isActive: boolean;
+  isGoogleAccount?: boolean;
 }
 
 export interface LoginRequest {
   email: string;
   password: string;
+}
+
+export interface GoogleLoginRequest {
+  idToken?: string;
+  accessToken?: string;
+  requestedRole?: UserRole;
+  registrationIntent: boolean;
 }
 
 export interface RefreshTokenRequest extends SessionTokens {}

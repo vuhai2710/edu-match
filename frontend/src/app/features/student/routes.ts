@@ -33,6 +33,26 @@ export const STUDENT_ROUTES: Routes = [
           import('./booking-success/booking-success').then(m => m.BookingSuccessPage),
       },
       {
+        path: 'learning-requests',
+        loadComponent: () =>
+          import('./learning-requests/learning-requests').then(m => m.LearningRequestsPage),
+      },
+      {
+        path: 'learning-requests/:id',
+        loadComponent: () =>
+          import('./learning-request-detail/learning-request-detail').then(m => m.LearningRequestDetailPage),
+      },
+      {
+        path: 'classes',
+        loadComponent: () =>
+          import('./classes/classes').then(m => m.StudentClassesPage),
+      },
+      {
+        path: 'classes/:id',
+        loadComponent: () =>
+          import('./class-detail/class-detail').then(m => m.StudentClassDetailPage),
+      },
+      {
         path: 'notifications',
         loadComponent: () =>
           import('./notifications/notification-center').then(m => m.NotificationCenterPage),

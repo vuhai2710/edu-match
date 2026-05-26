@@ -28,13 +28,20 @@ namespace EduMatch.Common.Middleware
         var elapsed = Stopwatch.GetElapsedTime(startedAt);
         if (elapsed > SlowRequestThreshold)
         {
-          _logger.LogWarning(
-            "Slow request: [{Method}] {Path} by {User} completed in {DurationMs} ms with status {StatusCode}",
-            context.Request.Method,
-            context.Request.Path,
-            ResolveUser(context.User),
-            Math.Round(elapsed.TotalMilliseconds, 2),
-            context.Response.StatusCode);
+          try
+          {
+            _logger.LogWarning(
+              "Slow request: [{Method}] {Path} by {User} completed in {DurationMs} ms with status {StatusCode}",
+              context.Request.Method,
+              context.Request.Path,
+              ResolveUser(context.User),
+              Math.Round(elapsed.TotalMilliseconds, 2),
+              context.Response.StatusCode);
+          }
+          catch
+          {
+            // Logging must not change the request outcome.
+          }
         }
       }
     }
