@@ -11,16 +11,14 @@ import {
 import { AdminService, DashboardService } from '../../../api/generated/client/services';
 import { ApiErrorDetails, getApiErrorDetails } from '../../../core/http/api-error';
 import { ErrorBannerComponent } from '../../../shared/components/error-banner/error-banner';
-import { MascotComponent } from '../../../shared/components/mascot/mascot';
 import { classStatusLabel, formatDateTime, formatMoney, paymentStatusLabel } from '../../../shared/utils/api-ui';
 
 @Component({
   selector: 'app-admin-dashboard-page',
-  imports: [ErrorBannerComponent, MascotComponent, RouterLink],
+  imports: [ErrorBannerComponent, RouterLink],
   template: `
     <div class="space-y-6">
       <div class="bg-gradient-to-r from-slate-800 to-slate-900 rounded-3xl p-6 md:p-8 flex items-center gap-6 shadow-lg">
-        <app-mascot type="adminBlueGlasses" [size]="90" className="hidden sm:block" />
         <div class="flex-1 text-white">
           <h1 class="font-display text-2xl md:text-3xl font-black">Bảng điều khiển Admin</h1>
           <p class="mt-1 text-slate-400">Theo dõi người dùng, lớp học, thanh toán và yêu cầu hủy.</p>

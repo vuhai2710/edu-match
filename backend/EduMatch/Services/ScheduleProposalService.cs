@@ -3,6 +3,7 @@ using EduMatch.Common.Enums;
 using EduMatch.Common.Exception;
 using EduMatch.Domain.Booking.Payments;
 using EduMatch.Domain.Booking.Scheduling;
+using EduMatch.DTOs;
 using EduMatch.DTOs.LearningRequests;
 using EduMatch.DTOs.ScheduleProposals;
 using EduMatch.Mappers;
@@ -50,23 +51,23 @@ namespace EduMatch.Services
       var request = await _learningRequestRepository.GetByIdWithDetailsAsync(dto.LearningRequestId);
       if (request == null)
       {
-        throw new NotFoundException("Không tìm thấy yêu cầu học tập.", "LEARNING_REQUEST_NOT_FOUND");
+        throw new NotFoundException("Khong tim thay yeu cau hoc tap.", "LEARNING_REQUEST_NOT_FOUND");
       }
 
       if (request.TutorId != tutorProfileId)
       {
-        throw new ForbiddenException("Bạn không có quyền đề xuất lịch học cho yêu cầu này.", "SCHEDULE_PROPOSAL_FORBIDDEN");
+        throw new ForbiddenException("Ban khong co quyen de xuat lich hoc cho yeu cau nay.", "SCHEDULE_PROPOSAL_FORBIDDEN");
       }
 
       EnsureLearningRequestStatus(
         request,
         LearningRequestStatus.Pending,
-        "Chỉ có thể đề xuất lịch học khi yêu cầu đang ở trạng thái chờ phản hồi.");
+        "Chi co the de xuat lich hoc khi yeu cau dang o trang thai cho phan hoi.");
 
       var existingProposal = await _scheduleProposalRepository.GetByLearningRequestIdAsync(request.Id);
       if (existingProposal != null)
       {
-        throw new ConflictException("Yêu cầu học tập này đã có đề xuất lịch học vòng 2.", "SCHEDULE_PROPOSAL_ALREADY_EXISTS");
+        throw new ConflictException("Yeu cau hoc tap nay da co de xuat lich hoc vong 2.", "SCHEDULE_PROPOSAL_ALREADY_EXISTS");
       }
 
       ValidateDesiredStartDate(dto.DesiredStartDate);
@@ -80,11 +81,8 @@ namespace EduMatch.Services
         }),
         dto.HoursPerSession);
 
-      var activePolicy = await _depositPolicyRepository.GetActivePolicyAsync();
-      if (activePolicy == null)
-      {
-        throw new NotFoundException("Không tìm thấy chính sách đặt cọc đang hiệu lực.", "DEPOSIT_POLICY_NOT_FOUND");
-      }
+      var activePolicy = await _depositPolicyRepository.GetActivePolicyAsync()
+        ?? CreateFallbackDefaultPolicy();
 
       var totalAmount = CalculateTotalAmount(dto.HourlyRate, dto.HoursPerSession, activePolicy);
       var depositCalculation = _depositCalculator.Calculate(new DepositCalculationRequest
@@ -117,8 +115,8 @@ namespace EduMatch.Services
 
       await _notificationService.SendAsync(
         request.StudentId,
-        "Gia sư đề xuất lịch học mới",
-        $"Gia sư {request.Tutor?.User?.FullName ?? string.Empty} đã gửi đề xuất lịch học mới cho môn {request.Subject?.Name ?? string.Empty}.",
+        "Gia su de xuat lich hoc moi",
+        $"Gia su {request.Tutor?.User?.FullName ?? string.Empty} da gui de xuat lich hoc moi cho mon {request.Subject?.Name ?? string.Empty}.",
         NotificationType.ScheduleProposalCreated,
         "ScheduleProposal",
         proposal.Id,
@@ -132,7 +130,7 @@ namespace EduMatch.Services
       var proposal = await _scheduleProposalRepository.GetByIdWithDetailsAsync(id);
       if (proposal == null)
       {
-        throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y Ä‘á» xuáº¥t lá»‹ch há»c.", "SCHEDULE_PROPOSAL_NOT_FOUND");
+        throw new NotFoundException("Khong tim thay de xuat lich hoc.", "SCHEDULE_PROPOSAL_NOT_FOUND");
       }
 
       EnsureCanViewProposal(proposal, currentUserId, role, tutorProfileId);
@@ -146,7 +144,7 @@ namespace EduMatch.Services
       var proposal = await _scheduleProposalRepository.GetByLearningRequestIdAsync(learningRequestId);
       if (proposal == null)
       {
-        throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y Ä‘á» xuáº¥t lá»‹ch há»c.", "SCHEDULE_PROPOSAL_NOT_FOUND");
+        throw new NotFoundException("Khong tim thay de xuat lich hoc.", "SCHEDULE_PROPOSAL_NOT_FOUND");
       }
 
       EnsureCanViewProposal(proposal, currentUserId, role, tutorProfileId);
@@ -155,53 +153,73 @@ namespace EduMatch.Services
       return ScheduleProposalMapper.ToDto(proposal, timeSlots);
     }
 
-    public async Task<ScheduleProposalDto> AcceptAsync(long id, long currentUserId)
+    public async Task<ApiResponse<ScheduleProposalDto>> AcceptAsync(long id, long currentUserId)
     {
-      var proposal = await GetProposalForStudentActionAsync(id, currentUserId);
-      var requestedSlots = _bookingScheduleService.ParseAndValidate(proposal.TimeSlots, proposal.HoursPerSession);
+      try
+      {
+        var proposal = await GetProposalForStudentActionAsync(id, currentUserId);
+        var requestedSlots = _bookingScheduleService.ParseAndValidate(proposal.TimeSlots, proposal.HoursPerSession);
 
-      await _bookingOrchestrator.SoftBookAsync(
-        proposal.LearningRequest.Id,
-        proposal.ProposedBy,
-        requestedSlots,
-        proposal.Id);
-      proposal = await ReloadAcceptedProposalAsync(id);
-      requestedSlots = _bookingScheduleService.ParseAndValidate(proposal.TimeSlots, proposal.HoursPerSession);
+        await _bookingOrchestrator.SoftBookAsync(
+          proposal.LearningRequest.Id,
+          proposal.ProposedBy,
+          requestedSlots,
+          proposal.Id);
+        proposal = await ReloadAcceptedProposalAsync(id);
+        requestedSlots = _bookingScheduleService.ParseAndValidate(proposal.TimeSlots, proposal.HoursPerSession);
 
-      await _notificationService.SendAsync(
-        proposal.Tutor.UserId,
-        "Học viên đã chấp nhận đề xuất lịch học",
-        $"Học viên {proposal.LearningRequest.Student?.FullName ?? string.Empty} đã chấp nhận đề xuất lịch học cho môn {proposal.LearningRequest.Subject?.Name ?? string.Empty}.",
-        NotificationType.ScheduleProposalAccepted,
-        "ScheduleProposal",
-        proposal.Id,
-        $"/schedule-proposals/{proposal.Id}");
+        await _notificationService.SendAsync(
+          proposal.Tutor.UserId,
+          "Hoc vien da chap nhan de xuat lich hoc",
+          $"Hoc vien {proposal.LearningRequest.Student?.FullName ?? string.Empty} da chap nhan de xuat lich hoc cho mon {proposal.LearningRequest.Subject?.Name ?? string.Empty}.",
+          NotificationType.ScheduleProposalAccepted,
+          "ScheduleProposal",
+          proposal.Id,
+          $"/schedule-proposals/{proposal.Id}");
 
-      return ScheduleProposalMapper.ToDto(proposal, requestedSlots);
+        return ApiResponse<ScheduleProposalDto>.SuccessResult(
+          ScheduleProposalMapper.ToDto(proposal, requestedSlots),
+          "Chap nhan de xuat lich hoc thanh cong.",
+          200);
+      }
+      catch (ConflictException ex)
+      {
+        return ApiResponse<ScheduleProposalDto>.Fail(ex.Message, ex.StatusCode);
+      }
     }
 
-    public async Task<ScheduleProposalDto> RejectAsync(long id, long currentUserId)
+    public async Task<ApiResponse<ScheduleProposalDto>> RejectAsync(long id, long currentUserId)
     {
-      var proposal = await GetProposalForStudentActionAsync(id, currentUserId);
-      var requestedSlots = _bookingScheduleService.ParseAndValidate(proposal.TimeSlots, proposal.HoursPerSession);
+      try
+      {
+        var proposal = await GetProposalForStudentActionAsync(id, currentUserId);
+        var requestedSlots = _bookingScheduleService.ParseAndValidate(proposal.TimeSlots, proposal.HoursPerSession);
 
-      proposal.Status = ScheduleProposalStatus.Rejected;
-      proposal.LearningRequest.Status = LearningRequestStatus.StudentRejected;
+        proposal.Status = ScheduleProposalStatus.Rejected;
+        proposal.LearningRequest.Status = LearningRequestStatus.StudentRejected;
 
-      _scheduleProposalRepository.Update(proposal);
-      _learningRequestRepository.Update(proposal.LearningRequest);
-      await _scheduleProposalRepository.SaveChangesAsync();
+        _scheduleProposalRepository.Update(proposal);
+        _learningRequestRepository.Update(proposal.LearningRequest);
+        await _scheduleProposalRepository.SaveChangesAsync();
 
-      await _notificationService.SendAsync(
-        proposal.Tutor.UserId,
-        "Học viên đã từ chối đề xuất lịch học",
-        $"Học viên {proposal.LearningRequest.Student?.FullName ?? string.Empty} đã từ chối đề xuất lịch học cho môn {proposal.LearningRequest.Subject?.Name ?? string.Empty}.",
-        NotificationType.ScheduleProposalRejected,
-        "ScheduleProposal",
-        proposal.Id,
-        $"/schedule-proposals/{proposal.Id}");
+        await _notificationService.SendAsync(
+          proposal.Tutor.UserId,
+          "Hoc vien da tu choi de xuat lich hoc",
+          $"Hoc vien {proposal.LearningRequest.Student?.FullName ?? string.Empty} da tu choi de xuat lich hoc cho mon {proposal.LearningRequest.Subject?.Name ?? string.Empty}.",
+          NotificationType.ScheduleProposalRejected,
+          "ScheduleProposal",
+          proposal.Id,
+          $"/schedule-proposals/{proposal.Id}");
 
-      return ScheduleProposalMapper.ToDto(proposal, requestedSlots);
+        return ApiResponse<ScheduleProposalDto>.SuccessResult(
+          ScheduleProposalMapper.ToDto(proposal, requestedSlots),
+          "Tu choi de xuat lich hoc thanh cong.",
+          200);
+      }
+      catch (ConflictException ex)
+      {
+        return ApiResponse<ScheduleProposalDto>.Fail(ex.Message, ex.StatusCode);
+      }
     }
 
     private async Task<ScheduleProposal> GetProposalForStudentActionAsync(long id, long currentUserId)
@@ -209,23 +227,23 @@ namespace EduMatch.Services
       var proposal = await _scheduleProposalRepository.GetByIdWithDetailsAsync(id);
       if (proposal == null)
       {
-        throw new NotFoundException("Không tìm thấy đề xuất lịch học.", "SCHEDULE_PROPOSAL_NOT_FOUND");
+        throw new NotFoundException("Khong tim thay de xuat lich hoc.", "SCHEDULE_PROPOSAL_NOT_FOUND");
       }
 
       if (proposal.LearningRequest.StudentId != currentUserId)
       {
-        throw new ForbiddenException("Bạn không có quyền phản hồi đề xuất lịch học này.", "SCHEDULE_PROPOSAL_FORBIDDEN");
+        throw new ForbiddenException("Ban khong co quyen phan hoi de xuat lich hoc nay.", "SCHEDULE_PROPOSAL_FORBIDDEN");
       }
 
       if (proposal.Status != ScheduleProposalStatus.Pending)
       {
-        throw new ConflictException("Đề xuất lịch học không còn ở trạng thái chờ phản hồi.", "SCHEDULE_PROPOSAL_INVALID_STATUS");
+        throw new ConflictException("De xuat lich hoc khong con o trang thai cho phan hoi.", "SCHEDULE_PROPOSAL_INVALID_STATUS");
       }
 
       EnsureLearningRequestStatus(
         proposal.LearningRequest,
         LearningRequestStatus.Negotiating,
-        "Yêu cầu học tập không còn ở trạng thái thương lượng.");
+        "Yeu cau hoc tap khong con o trang thai thuong luong.");
 
       return proposal;
     }
@@ -251,7 +269,7 @@ namespace EduMatch.Services
         return;
       }
 
-      throw new ForbiddenException("Báº¡n khÃ´ng cÃ³ quyá»n xem Ä‘á» xuáº¥t lá»‹ch há»c nÃ y.", "SCHEDULE_PROPOSAL_FORBIDDEN");
+      throw new ForbiddenException("Ban khong co quyen xem de xuat lich hoc nay.", "SCHEDULE_PROPOSAL_FORBIDDEN");
     }
 
     private async Task<ScheduleProposal> GetAcceptedProposalAsync(long id)
@@ -259,7 +277,7 @@ namespace EduMatch.Services
       var proposal = await _scheduleProposalRepository.GetByIdWithDetailsAsync(id);
       if (proposal == null)
       {
-        throw new NotFoundException("Không tìm thấy đề xuất lịch học.", "SCHEDULE_PROPOSAL_NOT_FOUND");
+        throw new NotFoundException("Khong tim thay de xuat lich hoc.", "SCHEDULE_PROPOSAL_NOT_FOUND");
       }
 
       return proposal;
@@ -270,7 +288,7 @@ namespace EduMatch.Services
       var proposal = await _scheduleProposalRepository.GetByIdWithDetailsAsync(id);
       if (proposal == null)
       {
-        throw new NotFoundException("Không tìm thấy đề xuất lịch học.", "SCHEDULE_PROPOSAL_NOT_FOUND");
+        throw new NotFoundException("Khong tim thay de xuat lich hoc.", "SCHEDULE_PROPOSAL_NOT_FOUND");
       }
 
       return proposal;
@@ -283,6 +301,15 @@ namespace EduMatch.Services
         grossAmount * (1 - policy.DiscountPercent),
         2,
         MidpointRounding.AwayFromZero);
+    }
+
+    private static DepositPolicy CreateFallbackDefaultPolicy()
+    {
+      return new DepositPolicy
+      {
+        DepositSessionCount = DepositPolicyDefaults.SessionCount,
+        DiscountPercent = DepositPolicyDefaults.DiscountPercent
+      };
     }
 
     private static string SerializeTimeSlots(IEnumerable<BookingTimeSlot> timeSlots)

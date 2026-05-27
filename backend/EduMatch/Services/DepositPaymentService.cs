@@ -239,6 +239,15 @@ namespace EduMatch.Services
       // Idempotency: skip if already processed
       if (payment.Status == PaymentStatus.Success)
       {
+        if (!payment.ClassId.HasValue && payment.LearningRequest != null)
+        {
+          await MarkPaymentSuccessfulAndFinalizeAsync(
+            payment,
+            payment.RawWebhookData ?? "{}",
+            payment.TransactionId,
+            "webhook-idempotent");
+        }
+
         return;
       }
 
@@ -246,22 +255,7 @@ namespace EduMatch.Services
 
       if (dto.Code == "00" && dto.Data.Code == "00")
       {
-        payment.Status = PaymentStatus.Success;
-        payment.TransactionId = dto.Data.Reference;
-        payment.PaidAt = DateTime.UtcNow;
-        payment.RawWebhookData = dataJson;
-
-        _paymentRepo.Update(payment);
-
-        // Finalize: create Class from LearningRequest
-        if (payment.LearningRequest != null)
-        {
-          var newClass = await FinalizeClassFromLearningRequest(payment);
-          payment.ClassId = newClass.Id;
-          _paymentRepo.Update(payment);
-        }
-
-        await _paymentRepo.SaveChangesAsync();
+        await MarkPaymentSuccessfulAndFinalizeAsync(payment, dataJson, dto.Data.Reference, "webhook");
 
         _logger.LogInformation(
           "Webhook success for order {OrderCode}, LearningRequest {LearningRequestId}",
@@ -295,10 +289,26 @@ namespace EduMatch.Services
 
     public async Task<PaymentStatusDto> GetStatusAsync(long orderCode)
     {
-      var payment = await _paymentRepo.GetByOrderCodeAsync(orderCode);
+      var payment = await _paymentRepo.GetByOrderCodeWithLearningRequestAsync(orderCode);
       if (payment == null)
       {
         throw new NotFoundException("Không tìm thấy thanh toán.", "PAYMENT_NOT_FOUND");
+      }
+
+      if (payment.Status == PaymentStatus.Pending)
+      {
+        await SyncPendingPaymentFromPayOSAsync(payment);
+      }
+
+      if (payment.Status == PaymentStatus.Success
+          && !payment.ClassId.HasValue
+          && payment.LearningRequest != null)
+      {
+        await MarkPaymentSuccessfulAndFinalizeAsync(
+          payment,
+          payment.RawWebhookData ?? "{}",
+          payment.TransactionId,
+          "status-read");
       }
 
       return new PaymentStatusDto
@@ -314,7 +324,118 @@ namespace EduMatch.Services
 
     // ──────────────── Private helpers ────────────────
 
-    private async Task<Class> FinalizeClassFromLearningRequest(Payment payment)
+    private async Task SyncPendingPaymentFromPayOSAsync(Payment payment)
+    {
+      HttpResponseMessage response;
+      try
+      {
+        response = await _httpClient.GetAsync($"/v2/payment-requests/{payment.OrderCode}");
+      }
+      catch (HttpRequestException ex)
+      {
+        _logger.LogWarning(
+          ex,
+          "Unable to sync pending payment {OrderCode} from PayOS",
+          payment.OrderCode);
+        return;
+      }
+
+      if (!response.IsSuccessStatusCode)
+      {
+        var errorText = await response.Content.ReadAsStringAsync();
+        _logger.LogWarning(
+          "PayOS payment sync failed for order {OrderCode}: HTTP {StatusCode}, body={Body}",
+          payment.OrderCode,
+          response.StatusCode,
+          errorText);
+        return;
+      }
+
+      var responseText = await response.Content.ReadAsStringAsync();
+      using var doc = JsonDocument.Parse(responseText);
+      var root = doc.RootElement;
+
+      if (!root.TryGetProperty("code", out var codeElement)
+          || codeElement.GetString() != "00"
+          || !root.TryGetProperty("data", out var data))
+      {
+        _logger.LogWarning(
+          "PayOS payment sync returned non-success response for order {OrderCode}: {Response}",
+          payment.OrderCode,
+          responseText);
+        return;
+      }
+
+      var payOsOrderCode = GetInt64(data, "orderCode");
+      if (payOsOrderCode != payment.OrderCode)
+      {
+        _logger.LogWarning(
+          "PayOS payment sync order mismatch: local={LocalOrderCode}, remote={RemoteOrderCode}",
+          payment.OrderCode,
+          payOsOrderCode);
+        throw new AppException(
+          "Ma thanh toan PayOS khong khop.",
+          StatusCodes.Status400BadRequest,
+          "PAYOS_ORDER_MISMATCH");
+      }
+
+      var payOsAmount = GetDecimal(data, "amount");
+      if (payOsAmount != payment.Amount)
+      {
+        _logger.LogWarning(
+          "PayOS payment sync amount mismatch for order {OrderCode}: expected={Expected}, received={Received}",
+          payment.OrderCode,
+          payment.Amount,
+          payOsAmount);
+        throw new AppException(
+          "So tien PayOS khong khop.",
+          StatusCodes.Status400BadRequest,
+          "PAYOS_AMOUNT_MISMATCH");
+      }
+
+      var payOsStatus = GetString(data, "status");
+      if (string.Equals(payOsStatus, "PAID", StringComparison.OrdinalIgnoreCase))
+      {
+        var transactionId = GetString(data, "id") ?? GetString(data, "paymentLinkId");
+        await MarkPaymentSuccessfulAndFinalizeAsync(payment, data.GetRawText(), transactionId, "status-sync");
+        return;
+      }
+
+      if (string.Equals(payOsStatus, "CANCELLED", StringComparison.OrdinalIgnoreCase))
+      {
+        payment.Status = PaymentStatus.Cancelled;
+        payment.RawWebhookData = data.GetRawText();
+        _paymentRepo.Update(payment);
+        await _paymentRepo.SaveChangesAsync();
+      }
+    }
+
+    private async Task MarkPaymentSuccessfulAndFinalizeAsync(
+      Payment payment,
+      string rawData,
+      string? transactionId,
+      string source)
+    {
+      payment.Status = PaymentStatus.Success;
+      payment.TransactionId = string.IsNullOrWhiteSpace(transactionId)
+        ? payment.TransactionId
+        : transactionId;
+      payment.PaidAt ??= DateTime.UtcNow;
+      payment.RawWebhookData = rawData;
+
+      _paymentRepo.Update(payment);
+
+      if (!payment.ClassId.HasValue && payment.LearningRequest != null)
+      {
+        var newClass = await FinalizeClassFromLearningRequest(payment, source);
+        payment.ClassId = newClass.Id;
+        _paymentRepo.Update(payment);
+      }
+
+      await _paymentRepo.SaveChangesAsync();
+    }
+
+    private async Task<Class> FinalizeClassFromLearningRequest(Payment payment, string source)
     {
       var lr = payment.LearningRequest!;
 
@@ -389,7 +510,7 @@ namespace EduMatch.Services
 
       _logger.LogInformation(
         "Created Class {ClassId} from LearningRequest {LearningRequestId}, source={Source}",
-        newClass.Id, lr.Id, scheduleSource);
+        newClass.Id, lr.Id, source);
 
       return newClass;
     }
@@ -452,6 +573,48 @@ namespace EduMatch.Services
       using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(key));
       var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(data));
       return BitConverter.ToString(hash).Replace("-", "").ToLower();
+    }
+
+    private static long GetInt64(JsonElement element, string propertyName)
+    {
+      if (!element.TryGetProperty(propertyName, out var value))
+      {
+        return 0;
+      }
+
+      return value.ValueKind switch
+      {
+        JsonValueKind.Number when value.TryGetInt64(out var number) => number,
+        JsonValueKind.String when long.TryParse(value.GetString(), out var number) => number,
+        _ => 0
+      };
+    }
+
+    private static decimal GetDecimal(JsonElement element, string propertyName)
+    {
+      if (!element.TryGetProperty(propertyName, out var value))
+      {
+        return 0m;
+      }
+
+      return value.ValueKind switch
+      {
+        JsonValueKind.Number when value.TryGetDecimal(out var number) => number,
+        JsonValueKind.String when decimal.TryParse(value.GetString(), out var number) => number,
+        _ => 0m
+      };
+    }
+
+    private static string? GetString(JsonElement element, string propertyName)
+    {
+      if (!element.TryGetProperty(propertyName, out var value)
+          || value.ValueKind == JsonValueKind.Null
+          || value.ValueKind == JsonValueKind.Undefined)
+      {
+        return null;
+      }
+
+      return value.GetString();
     }
 
     private static long GenerateOrderCode()

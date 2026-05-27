@@ -4,7 +4,7 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } fro
 import { filter, firstValueFrom, startWith } from 'rxjs';
 
 import { AuthApiService } from '../../api/facades/auth-api';
-import { NotificationsService } from '../../api/generated/client/services';
+import { ChatService, NotificationsService } from '../../api/generated/client/services';
 import { UserRole } from '../../core/auth/session.models';
 import { SessionService } from '../../core/auth/session';
 
@@ -34,36 +34,82 @@ import { SessionService } from '../../core/auth/session';
           </nav>
 
           <div class="flex items-center gap-3">
-            @if (session.role() === userRole.Student) {
-              <a routerLink="/student/notifications" class="p-2 rounded-xl hover:bg-slate-100 transition-colors relative">
-                <svg class="w-5 h-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
-                </svg>
-                @if (unreadCount() > 0) {
-                  <span class="absolute -top-1 -right-1 min-w-5 h-5 bg-duo-red text-white text-[10px] font-black rounded-full flex items-center justify-center px-1">
-                    {{ unreadCount() }}
-                  </span>
-                }
-              </a>
-            }
+            <!-- Notifications Bell -->
+            <a [routerLink]="notificationsRoute()" class="p-2 rounded-xl hover:bg-slate-100 transition-colors relative">
+              <svg class="w-6 h-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+              @if (unreadCount() > 0) {
+                <span class="absolute top-1 right-1 w-4 h-4 bg-[#ff4b4b] text-white text-[9px] font-black rounded-full flex items-center justify-center border border-white">
+                  {{ unreadCount() }}
+                </span>
+              }
+            </a>
 
+            <!-- Chat Bubble -->
+            <a [routerLink]="chatRoute()" class="p-2 rounded-xl hover:bg-slate-100 transition-colors relative">
+              <svg class="w-6 h-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+              @if (unreadChatCount() > 0) {
+                <span class="absolute top-1 right-1 w-4 h-4 bg-[#ff9600] text-white text-[9px] font-black rounded-full flex items-center justify-center border border-white">
+                  {{ unreadChatCount() }}
+                </span>
+              }
+            </a>
+
+            <!-- Vertical divider -->
+            <div class="h-6 w-[1.5px] bg-[#e1e9f1] mx-2"></div>
+
+            <!-- Avatar & Profile Dropdown Button -->
             <div class="relative" (click)="$event.stopPropagation()">
               <button type="button"
                       (click)="showProfile.set(!showProfile())"
                       [attr.aria-expanded]="showProfile()"
                       aria-haspopup="menu"
-                      class="group">
-              <div class="w-9 h-9 rounded-full bg-duo-blue text-white flex items-center justify-center font-bold text-sm border-b-2 border-duo-blue-dark">
-                {{ initials() }}
-              </div>
+                      class="flex items-center gap-3 p-1 rounded-xl hover:bg-slate-50 transition-colors group">
+                <!-- Circle Avatar wrapper -->
+                <div class="w-10 h-10 rounded-full bg-[#f0f4f9] border border-[#e1e9f1] flex items-center justify-center shrink-0 overflow-hidden group-hover:border-[#c5d6e6] transition-colors">
+                  @if (session.user()?.avatarUrl) {
+                    <img [src]="session.user()?.avatarUrl" alt="Avatar" class="w-full h-full object-cover" />
+                  } @else {
+                    <svg class="w-6 h-6 text-[#58cc02]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="11" cy="8" r="3.5" />
+                      <path d="M4 19a7 7 0 0 1 12.5-4.5" />
+                      <path d="M16 16l2.5 2.5 4.5-4.5" />
+                    </svg>
+                  }
+                </div>
+
+                <!-- User Info text -->
+                <div class="text-left hidden sm:block">
+                  <div class="font-extrabold text-sm text-[#3c3c3c] leading-tight group-hover:text-slate-900 transition-colors">
+                    {{ session.user()?.fullName }}
+                  </div>
+                  <div class="text-[10px] font-bold text-[#777777] uppercase tracking-wider mt-0.5">
+                    {{ roleLabel() }}
+                  </div>
+                </div>
               </button>
+
+              <!-- Profile Dropdown overlay -->
               @if (showProfile()) {
                 <div class="absolute right-0 top-12 w-72 bg-white rounded-2xl shadow-xl border-2 border-slate-100 p-5 z-50"
                      role="menu"
                      (click)="$event.stopPropagation()">
                   <div class="text-center mb-3">
-                    <div class="w-16 h-16 mx-auto rounded-full bg-duo-blue text-white flex items-center justify-center font-black text-2xl border-b-4 border-duo-blue-dark">
-                      {{ initials() }}
+                    <!-- Circle Avatar inside dropdown -->
+                    <div class="w-16 h-16 mx-auto rounded-full bg-[#f0f4f9] border border-[#e1e9f1] flex items-center justify-center shrink-0 overflow-hidden">
+                      @if (session.user()?.avatarUrl) {
+                        <img [src]="session.user()?.avatarUrl" alt="Avatar" class="w-full h-full object-cover" />
+                      } @else {
+                        <svg class="w-10 h-10 text-[#58cc02]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                          <circle cx="11" cy="8" r="3.5" />
+                          <path d="M4 19a7 7 0 0 1 12.5-4.5" />
+                          <path d="M16 16l2.5 2.5 4.5-4.5" />
+                        </svg>
+                      }
                     </div>
                     <p class="mt-2 font-extrabold text-slate-900">{{ session.user()?.fullName ?? 'Người dùng' }}</p>
                     <p class="text-xs text-slate-500">{{ session.user()?.email ?? '' }}</p>
@@ -96,9 +142,11 @@ export class WorkspaceShellComponent implements OnInit {
   protected readonly session = inject(SessionService);
   private readonly router = inject(Router);
   private readonly notificationsApi = inject(NotificationsService);
+  private readonly chatApi = inject(ChatService);
   private readonly authApi = inject(AuthApiService);
   protected readonly showProfile = signal(false);
   protected readonly unreadCount = signal(0);
+  protected readonly unreadChatCount = signal(0);
   protected readonly userRole = UserRole;
 
   private readonly navigation = toSignal(
@@ -110,6 +158,7 @@ export class WorkspaceShellComponent implements OnInit {
 
   ngOnInit(): void {
     void this.loadUnreadCount();
+    void this.loadUnreadChatCount();
   }
 
   @HostListener('document:click')
@@ -123,6 +172,28 @@ export class WorkspaceShellComponent implements OnInit {
     return name.split(' ').slice(-2).map(s => s[0]).join('').toUpperCase();
   });
 
+  protected readonly roleLabel = computed(() => {
+    const role = this.session.role();
+    if (role === UserRole.Student) return 'HỌC VIÊN';
+    if (role === UserRole.Tutor) return 'GIA SƯ';
+    if (role === UserRole.Admin) return 'ADMIN';
+    return '';
+  });
+
+  protected notificationsRoute(): string {
+    const role = this.session.role();
+    if (role === UserRole.Tutor) return '/tutor/notifications';
+    if (role === UserRole.Admin) return '/admin/notifications';
+    return '/student/notifications';
+  }
+
+  protected chatRoute(): string {
+    const role = this.session.role();
+    if (role === UserRole.Tutor) return '/tutor/chat';
+    if (role === UserRole.Admin) return '/admin/chat';
+    return '/student/chat';
+  }
+
   protected readonly areaLinks = computed(() => {
     this.navigation();
     const segment = this.router.url.split('/').filter(Boolean)[0] ?? 'student';
@@ -132,7 +203,6 @@ export class WorkspaceShellComponent implements OnInit {
         { label: 'Tìm gia sư', href: '/student/discover' },
         { label: 'Yêu cầu', href: '/student/learning-requests' },
         { label: 'Lớp học', href: '/student/classes' },
-        { label: 'Chat', href: '/student/chat' },
       ],
       tutor: [
         { label: 'Dashboard', href: '/tutor/dashboard' },
@@ -182,6 +252,16 @@ export class WorkspaceShellComponent implements OnInit {
       this.unreadCount.set(response.data ?? 0);
     } catch {
       this.unreadCount.set(0);
+    }
+  }
+
+  private async loadUnreadChatCount(): Promise<void> {
+    try {
+      const response = await firstValueFrom(this.chatApi.getConversations());
+      const totalUnread = (response.data ?? []).reduce((acc, conv) => acc + (conv.unreadCount ?? 0), 0);
+      this.unreadChatCount.set(totalUnread);
+    } catch {
+      this.unreadChatCount.set(0);
     }
   }
 }

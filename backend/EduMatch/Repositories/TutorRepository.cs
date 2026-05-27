@@ -21,6 +21,7 @@ namespace EduMatch.Repositories
         .Include(t => t.TeachingLevels)
         .Include(t => t.TutorSubjects)
           .ThenInclude(ts => ts.Subject)
+        .Where(t => t.User != null && !t.User.IsDeleted)
         .AsQueryable();
 
       if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
@@ -47,6 +48,16 @@ namespace EduMatch.Repositories
       if (parameters.SubjectId.HasValue)
       {
         query = query.Where(t => t.TutorSubjects.Any(ts => ts.SubjectId == parameters.SubjectId.Value));
+      }
+
+      if (parameters.MinPrice.HasValue)
+      {
+        query = query.Where(t => t.HourlyRate >= parameters.MinPrice.Value);
+      }
+
+      if (parameters.MaxPrice.HasValue)
+      {
+        query = query.Where(t => t.HourlyRate <= parameters.MaxPrice.Value);
       }
 
       var isDescending = string.Equals(parameters.SortDirection, "desc", StringComparison.OrdinalIgnoreCase);

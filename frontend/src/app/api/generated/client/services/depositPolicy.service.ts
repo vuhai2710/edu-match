@@ -12,7 +12,7 @@ import { inject, Injectable } from "@angular/core";
 import { Observable } from "rxjs";
 import { BASE_PATH_DEFAULT, CLIENT_CONTEXT_TOKEN_DEFAULT } from "../tokens";
 import { HttpParamsBuilder } from "../utils/http-params-builder";
-import { RequestOptions, DepositPolicyDtoApiResponse, DepositPolicyDtoPagedResultApiResponse, UpsertDepositPolicyDto, DepositPreviewResponseDtoApiResponse } from "../models";
+import { RequestOptions, DepositPolicyDtoApiResponse, DepositPolicyDtoPagedResultApiResponse, UpsertDepositPolicyDto, ApiResponse, DepositPreviewResponseDtoApiResponse } from "../models";
 
 @Injectable({ providedIn: "root" })
 export class DepositPolicyService {
@@ -134,9 +134,9 @@ export class DepositPolicyService {
         return this.httpClient.put(url, upsertDepositPolicyDto, requestOptions);
     }
 
-    deleteDepositPolicy(id: number, observe?: 'body', options?: RequestOptions<'json'>): Observable<any>;
-    deleteDepositPolicy(id: number, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<any>>;
-    deleteDepositPolicy(id: number, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<any>>;
+    deleteDepositPolicy(id: number, observe?: 'body', options?: RequestOptions<'json'>): Observable<ApiResponse>;
+    deleteDepositPolicy(id: number, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<ApiResponse>>;
+    deleteDepositPolicy(id: number, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<ApiResponse>>;
     deleteDepositPolicy(id: number, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
         const url = `${this.basePath}/api/deposit-policy/admin/${id}`;
 

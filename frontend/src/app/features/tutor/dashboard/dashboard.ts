@@ -5,7 +5,6 @@ import { firstValueFrom } from 'rxjs';
 import { ClassDto, LearningRequestDto, LearningRequestStatus, TutorDashboardDto } from '../../../api/generated/client/models';
 import { ClassesService, DashboardService, LearningRequestsService } from '../../../api/generated/client/services';
 import { getApiErrorMessage } from '../../../core/http/api-error';
-import { MascotComponent } from '../../../shared/components/mascot/mascot';
 import {
   classStatusLabel,
   formatDate,
@@ -16,11 +15,10 @@ import {
 
 @Component({
   selector: 'app-tutor-dashboard-page',
-  imports: [RouterLink, MascotComponent],
+  imports: [RouterLink],
   template: `
     <div class="space-y-6">
       <div class="bg-gradient-to-r from-duo-blue to-cyan-500 rounded-3xl p-6 md:p-8 flex items-center gap-6 shadow-lg">
-        <app-mascot type="tutorWand" [size]="100" className="hidden sm:block" />
         <div class="flex-1 text-white">
           <h1 class="font-display text-2xl md:text-3xl font-black">Dashboard gia sư</h1>
           <p class="mt-1 text-blue-100">Xử lý yêu cầu học mới, proposal và lớp sắp tới.</p>
@@ -60,18 +58,25 @@ import {
                 <span class="text-xs font-black text-duo-blue bg-blue-50 rounded-full px-2 py-1">{{ requestLabel(request) }}</span>
               </div>
               <div class="flex flex-wrap gap-3 mt-4">
-                <button (click)="acceptRequest(request)" [disabled]="isWorking()"
-                        class="tactile-button-green flex-1 min-w-32 py-2.5 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60">
-                  Chấp nhận
-                </button>
-                <a [routerLink]="['/tutor/requests', request.id]"
-                   class="tactile-button-blue flex-1 min-w-32 py-2.5 rounded-xl text-sm font-extrabold uppercase text-center">
-                  Đề xuất lịch
-                </a>
-                <button (click)="rejectRequest(request)" [disabled]="isWorking()"
-                        class="tactile-button-gray flex-1 min-w-32 py-2.5 rounded-xl text-sm font-bold disabled:opacity-60">
-                  Từ chối
-                </button>
+                @if (request.status === 'Pending') {
+                  <button (click)="acceptRequest(request)" [disabled]="isWorking()"
+                          class="tactile-button-green flex-1 min-w-32 py-2.5 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60">
+                    Chấp nhận
+                  </button>
+                  <a [routerLink]="['/tutor/requests', request.id]"
+                     class="tactile-button-blue flex-1 min-w-32 py-2.5 rounded-xl text-sm font-extrabold uppercase text-center">
+                    Đề xuất lịch
+                  </a>
+                  <button (click)="rejectRequest(request)" [disabled]="isWorking()"
+                          class="tactile-button-gray flex-1 min-w-32 py-2.5 rounded-xl text-sm font-bold disabled:opacity-60">
+                    Từ chối
+                  </button>
+                } @else {
+                  <a [routerLink]="['/tutor/requests', request.id]"
+                     class="tactile-button-blue w-full py-2.5 rounded-xl text-sm font-extrabold uppercase text-center">
+                    Xem chi tiết đàm phán
+                  </a>
+                }
               </div>
             </div>
           }
@@ -158,13 +163,25 @@ export class TutorDashboardPage implements OnInit {
   private async loadDashboard(): Promise<void> {
     this.errorMessage.set('');
     try {
-      const [dashboardResponse, requestsResponse, classesResponse] = await Promise.all([
+      const [dashboardResponse, pendingResponse, negotiatingResponse, classesResponse] = await Promise.all([
         firstValueFrom(this.dashboardApi.getTutorDashboard()),
-        firstValueFrom(this.requestsApi.getIncomingLearningRequests(LearningRequestStatus.Pending, 1, 5, undefined, 'createdAt', 'desc')),
+        firstValueFrom(this.requestsApi.getIncomingLearningRequests(LearningRequestStatus.Pending, 1, 10, undefined, 'createdAt', 'desc')),
+        firstValueFrom(this.requestsApi.getIncomingLearningRequests(LearningRequestStatus.Negotiating, 1, 10, undefined, 'createdAt', 'desc')),
         firstValueFrom(this.classesApi.getTutorClasses(undefined, 1, 5, undefined, 'createdAt', 'desc')),
       ]);
       this.dashboard.set(dashboardResponse.data ?? null);
-      this.incomingRequests.set(requestsResponse.data?.items ?? []);
+      
+      const merged = [
+        ...(pendingResponse.data?.items ?? []),
+        ...(negotiatingResponse.data?.items ?? []),
+      ];
+      merged.sort((a, b) => {
+        const da = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const db = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return db - da;
+      });
+      
+      this.incomingRequests.set(merged);
       this.classes.set(classesResponse.data?.items ?? []);
     } catch (error) {
       this.errorMessage.set(getApiErrorMessage(error, 'Không tải được dashboard gia sư.'));

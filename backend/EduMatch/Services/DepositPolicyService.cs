@@ -1,4 +1,3 @@
-using EduMatch.Common.Exception;
 using EduMatch.Domain.Booking.Payments;
 using EduMatch.DTOs;
 using EduMatch.DTOs.DepositPolicy;
@@ -22,26 +21,28 @@ public class DepositPolicyService : IDepositPolicyService
     _depositCalculator = serviceProvider.GetRequiredService<IDepositCalculator>();
   }
 
-  public async Task<DepositPolicyDto> GetCurrentActivePolicyAsync()
+  public async Task<ApiResponse<DepositPolicyDto?>> GetCurrentActivePolicyAsync()
   {
     var policy = await _depositPolicyRepository.GetActivePolicyAsync();
     if (policy == null)
     {
-      throw new NotFoundException("Khong tim thay chinh sach dat coc dang hieu luc.", "DEPOSIT_POLICY_NOT_FOUND");
+      return ApiResponse<DepositPolicyDto?>.SuccessResult(
+        null,
+        "Chưa có chính sách đặt cọc đang hiệu lực.",
+        StatusCodes.Status200OK);
     }
 
-    return MapToDto(policy);
+    return ApiResponse<DepositPolicyDto?>.SuccessResult(MapToDto(policy), statusCode: StatusCodes.Status200OK);
   }
 
-  public async Task<PagedResult<DepositPolicyDto>> GetHistoryAsync(int page, int pageSize)
+  public async Task<ApiResponse<PagedResult<DepositPolicyDto>>> GetHistoryAsync(int page, int pageSize)
   {
     if (page < 1) page = 1;
     if (pageSize < 1) pageSize = 10;
     if (pageSize > 100) pageSize = 100;
 
     var (items, totalCount) = await _depositPolicyRepository.GetPagedAsync(page, pageSize);
-
-    return new PagedResult<DepositPolicyDto>
+    var result = new PagedResult<DepositPolicyDto>
     {
       Items = items.Select(MapToDto).ToList(),
       TotalCount = totalCount,
@@ -49,28 +50,56 @@ public class DepositPolicyService : IDepositPolicyService
       PageSize = pageSize,
       TotalPages = totalCount == 0 ? 0 : (int)Math.Ceiling(totalCount / (double)pageSize)
     };
+
+    return ApiResponse<PagedResult<DepositPolicyDto>>.SuccessResult(result, statusCode: StatusCodes.Status200OK);
   }
 
-  public async Task<DepositPolicyDto> GetPolicyByIdAsync(long id)
+  public async Task<ApiResponse<DepositPolicyDto?>> GetPolicyByIdAsync(long id)
   {
     var policy = await _depositPolicyRepository.GetPolicyByIdAsync(id);
     if (policy == null)
     {
-      throw new NotFoundException("Khong tim thay chinh sach dat coc.", "DEPOSIT_POLICY_NOT_FOUND");
+      return ApiResponse<DepositPolicyDto?>.Fail(
+        "Không tìm thấy chính sách đặt cọc.",
+        StatusCodes.Status404NotFound);
     }
 
-    return MapToDto(policy);
+    return ApiResponse<DepositPolicyDto?>.SuccessResult(MapToDto(policy), statusCode: StatusCodes.Status200OK);
   }
 
-  public async Task<DepositPolicyDto> CreatePolicyAsync(UpsertDepositPolicyDto dto)
+  public async Task<ApiResponse<DepositPolicyDto?>> CreatePolicyAsync(UpsertDepositPolicyDto dto)
   {
-    ValidatePolicy(dto);
-
-    if (await _depositPolicyRepository.HasOverlapAsync(dto.ActiveFrom, dto.ActiveTo, null))
+    var validation = ValidatePolicy(dto);
+    if (validation != null)
     {
-      throw new ConflictException(
-        "Khoang thoi gian hieu luc bi trung voi mot chinh sach khac.",
-        "DEPOSIT_POLICY_OVERLAP");
+      return validation;
+    }
+
+    if (IsDefaultPolicy(dto))
+    {
+      var defaultPolicy = await _depositPolicyRepository.GetDefaultPolicyAsync();
+      if (defaultPolicy != null)
+      {
+        defaultPolicy.DepositSessionCount = dto.DepositSessionCount;
+        defaultPolicy.DiscountPercent = 0m;
+        defaultPolicy.ActiveFrom = null;
+        defaultPolicy.ActiveTo = null;
+        defaultPolicy.UpdatedAt = DateTime.UtcNow;
+
+        _depositPolicyRepository.Update(defaultPolicy);
+        await _depositPolicyRepository.SaveChangesAsync();
+
+        return ApiResponse<DepositPolicyDto?>.SuccessResult(
+          MapToDto(defaultPolicy),
+          "Cap nhat so buoi coc mac dinh thanh cong.",
+          StatusCodes.Status200OK);
+      }
+    }
+    else if (await _depositPolicyRepository.HasOverlapAsync(dto.ActiveFrom, dto.ActiveTo, null))
+    {
+      return ApiResponse<DepositPolicyDto?>.Fail(
+        "Khoảng thời gian hiệu lực bị trùng với một chính sách khác.",
+        StatusCodes.Status409Conflict);
     }
 
     var policy = new DepositPolicy
@@ -83,24 +112,44 @@ public class DepositPolicyService : IDepositPolicyService
 
     await _depositPolicyRepository.AddAsync(policy);
     await _depositPolicyRepository.SaveChangesAsync();
-    return MapToDto(policy);
+
+    return ApiResponse<DepositPolicyDto?>.SuccessResult(
+      MapToDto(policy),
+      "Tạo chính sách đặt cọc thành công.",
+      StatusCodes.Status201Created);
   }
 
-  public async Task<DepositPolicyDto> UpdatePolicyAsync(long id, UpsertDepositPolicyDto dto)
+  public async Task<ApiResponse<DepositPolicyDto?>> UpdatePolicyAsync(long id, UpsertDepositPolicyDto dto)
   {
-    ValidatePolicy(dto);
+    var validation = ValidatePolicy(dto);
+    if (validation != null)
+    {
+      return validation;
+    }
 
     var policy = await _depositPolicyRepository.GetPolicyByIdAsync(id);
     if (policy == null)
     {
-      throw new NotFoundException("Khong tim thay chinh sach dat coc.", "DEPOSIT_POLICY_NOT_FOUND");
+      return ApiResponse<DepositPolicyDto?>.Fail(
+        "Không tìm thấy chính sách đặt cọc.",
+        StatusCodes.Status404NotFound);
     }
 
-    if (await _depositPolicyRepository.HasOverlapAsync(dto.ActiveFrom, dto.ActiveTo, id))
+    if (IsDefaultPolicy(dto))
     {
-      throw new ConflictException(
-        "Khoang thoi gian hieu luc bi trung voi mot chinh sach khac.",
-        "DEPOSIT_POLICY_OVERLAP");
+      var defaultPolicy = await _depositPolicyRepository.GetDefaultPolicyAsync(id);
+      if (defaultPolicy != null)
+      {
+        return ApiResponse<DepositPolicyDto?>.Fail(
+          "Chinh sach mac dinh da ton tai.",
+          StatusCodes.Status409Conflict);
+      }
+    }
+    else if (await _depositPolicyRepository.HasOverlapAsync(dto.ActiveFrom, dto.ActiveTo, id))
+    {
+      return ApiResponse<DepositPolicyDto?>.Fail(
+        "Khoảng thời gian hiệu lực bị trùng với một chính sách khác.",
+        StatusCodes.Status409Conflict);
     }
 
     policy.DepositSessionCount = dto.DepositSessionCount;
@@ -111,39 +160,54 @@ public class DepositPolicyService : IDepositPolicyService
 
     _depositPolicyRepository.Update(policy);
     await _depositPolicyRepository.SaveChangesAsync();
-    return MapToDto(policy);
+
+    return ApiResponse<DepositPolicyDto?>.SuccessResult(
+      MapToDto(policy),
+      "Cập nhật chính sách đặt cọc thành công.",
+      StatusCodes.Status200OK);
   }
 
-  public async Task DeletePolicyAsync(long id)
+  public async Task<ApiResponse> DeletePolicyAsync(long id)
   {
     var policy = await _depositPolicyRepository.GetPolicyByIdAsync(id);
     if (policy == null)
     {
-      throw new NotFoundException("Khong tim thay chinh sach dat coc.", "DEPOSIT_POLICY_NOT_FOUND");
+      return ApiResponse.Fail(
+        "Không tìm thấy chính sách đặt cọc.",
+        StatusCodes.Status404NotFound);
     }
 
     var active = await _depositPolicyRepository.GetActivePolicyAsync();
     if (active != null && active.Id == policy.Id)
     {
-      throw new ConflictException(
-        "Khong the xoa chinh sach dang ap dung. Vui long tao chinh sach khac thay the truoc khi xoa.",
-        "DEPOSIT_POLICY_ACTIVE_DELETE_FORBIDDEN");
+      return ApiResponse.Fail(
+        "Không thể xóa chính sách đang áp dụng. Vui lòng tạo chính sách khác thay thế trước khi xóa.",
+        StatusCodes.Status409Conflict);
     }
 
     policy.IsDeleted = true;
     policy.UpdatedAt = DateTime.UtcNow;
     _depositPolicyRepository.Update(policy);
     await _depositPolicyRepository.SaveChangesAsync();
+
+    return ApiResponse.Ok("Xóa chính sách đặt cọc thành công.", StatusCodes.Status200OK);
   }
 
-  public async Task<DepositPreviewResponseDto> PreviewDepositAsync(decimal hourlyRate, decimal hoursPerSession)
+  public async Task<ApiResponse<DepositPreviewResponseDto>> PreviewDepositAsync(decimal hourlyRate, decimal hoursPerSession)
   {
-    ValidatePreviewRequest(hourlyRate, hoursPerSession);
+    var validation = ValidatePreviewRequest(hourlyRate, hoursPerSession);
+    if (validation != null)
+    {
+      return validation;
+    }
 
     var policy = await _depositPolicyRepository.GetActivePolicyAsync();
     if (policy == null)
     {
-      throw new NotFoundException("Khong tim thay chinh sach dat coc dang hieu luc.", "DEPOSIT_POLICY_NOT_FOUND");
+      return ApiResponse<DepositPreviewResponseDto>.SuccessResult(
+        CreateEmptyPreview(),
+        "Chưa có chính sách đặt cọc đang hiệu lực.",
+        StatusCodes.Status200OK);
     }
 
     var grossAmount = hourlyRate * hoursPerSession * policy.DepositSessionCount;
@@ -158,59 +222,92 @@ public class DepositPolicyService : IDepositPolicyService
       FixedAmount = discountedTotal
     });
 
+    return ApiResponse<DepositPreviewResponseDto>.SuccessResult(
+      new DepositPreviewResponseDto
+      {
+        DepositSessionCount = policy.DepositSessionCount,
+        DiscountPercent = policy.DiscountPercent,
+        TotalAmount = calculation.TotalAmount,
+        DepositAmount = calculation.DepositAmount,
+        RemainingAmount = calculation.RemainingAmount
+      },
+      statusCode: StatusCodes.Status200OK);
+  }
+
+  private static DepositPreviewResponseDto CreateEmptyPreview()
+  {
     return new DepositPreviewResponseDto
     {
-      DepositSessionCount = policy.DepositSessionCount,
-      DiscountPercent = policy.DiscountPercent,
-      TotalAmount = calculation.TotalAmount,
-      DepositAmount = calculation.DepositAmount,
-      RemainingAmount = calculation.RemainingAmount
+      DepositSessionCount = 0,
+      DiscountPercent = 0,
+      TotalAmount = 0,
+      DepositAmount = 0,
+      RemainingAmount = 0
     };
   }
 
-  private static void ValidatePolicy(UpsertDepositPolicyDto dto)
+  private static ApiResponse<DepositPolicyDto?>? ValidatePolicy(UpsertDepositPolicyDto dto)
   {
-    var errors = new Dictionary<string, string[]>();
+    var messages = new List<string>();
 
     if (dto.DepositSessionCount <= 0)
     {
-      errors[nameof(dto.DepositSessionCount)] = ["DepositSessionCount phai lon hon 0."];
+      messages.Add("DepositSessionCount phải lớn hơn 0.");
     }
 
     if (dto.DiscountPercent < 0 || dto.DiscountPercent >= 1)
     {
-      errors[nameof(dto.DiscountPercent)] = ["DiscountPercent phai nam trong khoang tu 0 den nho hon 1."];
+      messages.Add("DiscountPercent phải nằm trong khoảng từ 0 đến nhỏ hơn 1.");
     }
 
-    if (dto.ActiveFrom.HasValue && dto.ActiveTo.HasValue && dto.ActiveTo <= dto.ActiveFrom)
+    if (IsDefaultPolicy(dto) && dto.DiscountPercent != 0)
     {
-      errors[nameof(dto.ActiveTo)] = ["ActiveTo phai lon hon ActiveFrom."];
+      messages.Add("Chinh sach mac dinh chi cau hinh so buoi coc, khong cau hinh giam gia.");
     }
 
-    if (errors.Count > 0)
+    if (dto.ActiveFrom.HasValue && dto.ActiveTo.HasValue && dto.ActiveTo.Value.Date < dto.ActiveFrom.Value.Date)
     {
-      throw new ValidationException(errors, "INVALID_DEPOSIT_POLICY");
+      messages.Add("ActiveTo khong duoc truoc ActiveFrom.");
     }
+
+    if (messages.Count == 0)
+    {
+      return null;
+    }
+
+    return ApiResponse<DepositPolicyDto?>.Fail(
+      string.Join(" ", messages),
+      StatusCodes.Status400BadRequest);
   }
 
-  private static void ValidatePreviewRequest(decimal hourlyRate, decimal hoursPerSession)
+  private static bool IsDefaultPolicy(UpsertDepositPolicyDto dto)
   {
-    var errors = new Dictionary<string, string[]>();
+    return dto.ActiveFrom == null && dto.ActiveTo == null;
+  }
+
+  private static ApiResponse<DepositPreviewResponseDto>? ValidatePreviewRequest(decimal hourlyRate, decimal hoursPerSession)
+  {
+    var messages = new List<string>();
 
     if (hourlyRate <= 0)
     {
-      errors[nameof(hourlyRate)] = ["HourlyRate phai lon hon 0."];
+      messages.Add("HourlyRate phải lớn hơn 0.");
     }
 
     if (hoursPerSession <= 0)
     {
-      errors[nameof(hoursPerSession)] = ["HoursPerSession phai lon hon 0."];
+      messages.Add("HoursPerSession phải lớn hơn 0.");
     }
 
-    if (errors.Count > 0)
+    if (messages.Count == 0)
     {
-      throw new ValidationException(errors, "INVALID_DEPOSIT_PREVIEW");
+      return null;
     }
+
+    return ApiResponse<DepositPreviewResponseDto>.Fail(
+      string.Join(" ", messages),
+      StatusCodes.Status400BadRequest,
+      CreateEmptyPreview());
   }
 
   private static DepositPolicyDto MapToDto(DepositPolicy policy)

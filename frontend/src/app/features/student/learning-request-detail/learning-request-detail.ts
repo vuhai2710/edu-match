@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
@@ -8,6 +9,7 @@ import {
   LearningRequestStatus,
   PaymentStatus,
   ScheduleProposalDto,
+  TimeSlotInputDto,
 } from '../../../api/generated/client/models';
 import {
   LearningRequestsService,
@@ -15,17 +17,21 @@ import {
   ScheduleProposalsService,
 } from '../../../api/generated/client/services';
 import { getApiErrorMessage, unwrapApiData } from '../../../core/http/api-error';
+import { SessionService } from '../../../core/auth/session';
 import {
+  DAY_OPTIONS,
+  buildEndTime,
   formatDate,
   formatDateTime,
   formatMoney,
   formatTimeSlots,
   learningRequestStatusLabel,
+  validateTimeSlots,
 } from '../../../shared/utils/api-ui';
 
 @Component({
   selector: 'app-learning-request-detail-page',
-  imports: [RouterLink],
+  imports: [FormsModule, RouterLink],
   template: `
     @if (request(); as lr) {
       <div class="max-w-3xl mx-auto space-y-6">
@@ -75,30 +81,60 @@ import {
         </div>
 
         @if (proposal(); as p) {
-          <div class="tactile-card p-6 space-y-4 border-duo-blue">
-            <h2 class="font-extrabold text-lg text-slate-900">Đề xuất lịch từ gia sư</h2>
-            <div class="grid sm:grid-cols-2 gap-4 text-sm">
-              <div class="rounded-2xl bg-blue-50 p-4">
-                <p class="font-bold text-slate-500">Lịch mới</p>
-                <p class="mt-1 font-extrabold text-slate-900">{{ proposalSlots(p) }}</p>
+          @if (isMyProposal(p)) {
+            <div class="tactile-card p-6 space-y-4 border-duo-blue bg-blue-50/10">
+              <div class="flex items-center justify-between">
+                <h2 class="font-extrabold text-lg text-slate-900">Đề xuất lịch của bạn</h2>
+                <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-duo-blue">Đang chờ phản hồi</span>
               </div>
-              <div class="rounded-2xl bg-blue-50 p-4">
-                <p class="font-bold text-slate-500">Học phí / giờ</p>
-                <p class="mt-1 font-extrabold text-duo-green">{{ money(p.hourlyRate) }}</p>
+              <p class="text-sm text-slate-500">Đề xuất lịch mới đang được gửi tới gia sư và chờ phản hồi từ họ.</p>
+              
+              <div class="grid sm:grid-cols-3 gap-4 text-sm">
+                <div class="rounded-2xl bg-slate-50 p-4 border-2 border-slate-100">
+                  <p class="font-bold text-slate-500">Đề xuất lịch</p>
+                  <p class="mt-1 font-extrabold text-slate-900">{{ proposalSlots(p) }}</p>
+                </div>
+                <div class="rounded-2xl bg-slate-50 p-4 border-2 border-slate-100">
+                  <p class="font-bold text-slate-500">Ngày bắt đầu</p>
+                  <p class="mt-1 font-extrabold text-slate-900">{{ date(p.desiredStartDate) }}</p>
+                </div>
+                <div class="rounded-2xl bg-slate-50 p-4 border-2 border-slate-100">
+                  <p class="font-bold text-slate-500">Học phí mong muốn</p>
+                  <p class="mt-1 font-extrabold text-duo-green">{{ money(p.hourlyRate) }}/h</p>
+                </div>
               </div>
             </div>
-            <div class="flex gap-3">
-              <button (click)="acceptProposal(p)" [disabled]="isWorking()"
-                      class="tactile-button-green flex-1 py-2.5 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60">
-                Chấp nhận
-              </button>
-              <button (click)="rejectProposal(p)" [disabled]="isWorking()"
-                      class="tactile-button-gray flex-1 py-2.5 rounded-xl text-sm font-bold disabled:opacity-60">
-                Từ chối
-              </button>
+          } @else {
+            <div class="tactile-card p-6 space-y-4 border-duo-blue">
+              <h2 class="font-extrabold text-lg text-slate-900">Đề xuất lịch từ gia sư</h2>
+              <div class="grid sm:grid-cols-3 gap-4 text-sm">
+                <div class="rounded-2xl bg-blue-50 p-4">
+                  <p class="font-bold text-slate-500">Lịch mới</p>
+                  <p class="mt-1 font-extrabold text-slate-900">{{ proposalSlots(p) }}</p>
+                </div>
+                <div class="rounded-2xl bg-blue-50 p-4">
+                  <p class="font-bold text-slate-500">Ngày bắt đầu</p>
+                  <p class="mt-1 font-extrabold text-slate-900">{{ date(p.desiredStartDate) }}</p>
+                </div>
+                <div class="rounded-2xl bg-blue-50 p-4">
+                  <p class="font-bold text-slate-500">Học phí / giờ</p>
+                  <p class="mt-1 font-extrabold text-duo-green">{{ money(p.hourlyRate) }}</p>
+                </div>
+              </div>
+              <div class="flex flex-wrap gap-3">
+                <button (click)="acceptProposal(p)" [disabled]="isWorking()"
+                        class="tactile-button-green flex-1 py-2.5 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60">
+                  Chấp nhận
+                </button>
+                <button (click)="rejectProposal(p)" [disabled]="isWorking()"
+                        class="tactile-button-gray flex-1 py-2.5 rounded-xl text-sm font-bold disabled:opacity-60">
+                  Từ chối
+                </button>
+              </div>
             </div>
-          </div>
+          }
         }
+
 
         @if (lr.status === softBookedStatus) {
           <div class="tactile-card p-6 space-y-4">
@@ -128,6 +164,8 @@ export class LearningRequestDetailPage implements OnInit {
   isLoading = signal(false);
   isWorking = signal(false);
   errorMessage = signal('');
+
+  readonly dayOptions = DAY_OPTIONS;
   readonly softBookedStatus = LearningRequestStatus.SoftBooked;
 
   private readonly route = inject(ActivatedRoute);
@@ -135,10 +173,17 @@ export class LearningRequestDetailPage implements OnInit {
   private readonly learningRequestsApi = inject(LearningRequestsService);
   private readonly proposalsApi = inject(ScheduleProposalsService);
   private readonly paymentsApi = inject(PaymentsService);
+  private readonly sessionService = inject(SessionService);
 
   ngOnInit(): void {
     void this.loadRequest();
   }
+
+  isMyProposal(proposal: ScheduleProposalDto): boolean {
+    return proposal.proposedBy === this.sessionService.user()?.id;
+  }
+
+
 
   label(status?: LearningRequestStatus | null): string {
     return learningRequestStatusLabel(status);

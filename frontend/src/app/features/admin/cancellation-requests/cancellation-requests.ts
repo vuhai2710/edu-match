@@ -10,6 +10,7 @@ import {
 import { AdminService } from '../../../api/generated/client/services';
 import { ApiErrorDetails, getApiErrorDetails } from '../../../core/http/api-error';
 import { ErrorBannerComponent } from '../../../shared/components/error-banner/error-banner';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination';
 import {
   cancellationStatusLabel,
   formatDateTime,
@@ -18,7 +19,7 @@ import {
 
 @Component({
   selector: 'app-admin-cancellation-requests-page',
-  imports: [ErrorBannerComponent, FormsModule, RouterLink],
+  imports: [ErrorBannerComponent, FormsModule, RouterLink, PaginationComponent],
   template: `
     <div class="space-y-6">
       <div>
@@ -50,7 +51,7 @@ import {
         <app-error-banner [details]="errorDetails()" />
       }
 
-      <div class="space-y-3">
+      <div class="space-y-3 relative transition-opacity duration-200" [class.opacity-50]="isLoading()" [class.pointer-events-none]="isLoading()">
         @for (item of items(); track item.id) {
           <a [routerLink]="['/admin/cancellation-requests', item.id]" class="tactile-card p-5 block hover:shadow-md transition-shadow">
             <div class="flex flex-wrap items-start justify-between gap-3">
@@ -82,17 +83,12 @@ import {
         </div>
       }
 
-      @if (totalPages() > 1) {
-        <div class="flex items-center justify-between text-sm">
-          <p class="text-slate-500">Tổng {{ totalCount() }} yêu cầu · Trang {{ page() }}/{{ totalPages() }}</p>
-          <div class="flex gap-2">
-            <button (click)="prevPage()" [disabled]="page() <= 1"
-                    class="px-3 py-1.5 rounded-lg border-2 border-slate-200 font-bold text-slate-600 disabled:opacity-40">Trước</button>
-            <button (click)="nextPage()" [disabled]="page() >= totalPages()"
-                    class="px-3 py-1.5 rounded-lg border-2 border-slate-200 font-bold text-slate-600 disabled:opacity-40">Sau</button>
-          </div>
-        </div>
-      }
+      <app-pagination [page]="page()"
+                      [pageSize]="pageSize()"
+                      [totalCount]="totalCount()"
+                      itemsName="yêu cầu hủy"
+                      (pageChange)="onPageChange($event)"
+                      (pageSizeChange)="onPageSizeChange($event)" />
     </div>
   `,
 })
@@ -101,9 +97,9 @@ export class AdminCancellationRequestsPage implements OnInit {
   activeStatus = signal<CancellationRequestStatus | null>(CancellationRequestStatus.Pending);
   searchTerm = '';
   page = signal(1);
-  pageSize = 20;
+  pageSize = signal(5);
   totalCount = signal(0);
-  totalPages = computed(() => Math.max(1, Math.ceil(this.totalCount() / this.pageSize)));
+  totalPages = computed(() => Math.max(1, Math.ceil(this.totalCount() / this.pageSize())));
   isLoading = signal(false);
   errorDetails = signal<ApiErrorDetails | null>(null);
 
@@ -134,18 +130,15 @@ export class AdminCancellationRequestsPage implements OnInit {
     }, 400);
   }
 
-  prevPage(): void {
-    if (this.page() > 1) {
-      this.page.update((p) => p - 1);
-      void this.load();
-    }
+  onPageChange(newPage: number): void {
+    this.page.set(newPage);
+    void this.load();
   }
 
-  nextPage(): void {
-    if (this.page() < this.totalPages()) {
-      this.page.update((p) => p + 1);
-      void this.load();
-    }
+  onPageSizeChange(newSize: number): void {
+    this.pageSize.set(newSize);
+    this.page.set(1);
+    void this.load();
   }
 
   statusLabel = cancellationStatusLabel;
@@ -170,7 +163,7 @@ export class AdminCancellationRequestsPage implements OnInit {
         this.adminApi.getAllCancellationRequestsForAdmin(
           this.activeStatus() ?? undefined,
           this.page(),
-          this.pageSize,
+          this.pageSize(),
           search,
           'createdAt',
           'desc',
@@ -186,3 +179,4 @@ export class AdminCancellationRequestsPage implements OnInit {
     }
   }
 }
+

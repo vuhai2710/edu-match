@@ -12,5 +12,11 @@ namespace EduMatch.DTOs.Tutor
 
     [FromQuery(Name = "wardCode")]
     public string? WardCode { get; set; }
+
+    [FromQuery(Name = "minPrice")]
+    public decimal? MinPrice { get; set; }
+
+    [FromQuery(Name = "maxPrice")]
+    public decimal? MaxPrice { get; set; }
   }
 }

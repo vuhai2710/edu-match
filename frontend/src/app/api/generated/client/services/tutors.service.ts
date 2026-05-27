@@ -25,10 +25,10 @@ export class TutorsService {
         return context.set(this.clientContextToken, 'default');
     }
 
-    getTutors(subjectId?: number, provinceId?: number, wardCode?: string, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'body', options?: RequestOptions<'json'>): Observable<TutorDtoPagedResultApiResponse>;
-    getTutors(subjectId?: number, provinceId?: number, wardCode?: string, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<TutorDtoPagedResultApiResponse>>;
-    getTutors(subjectId?: number, provinceId?: number, wardCode?: string, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<TutorDtoPagedResultApiResponse>>;
-    getTutors(subjectId?: number, provinceId?: number, wardCode?: string, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
+    getTutors(subjectId?: number, provinceId?: number, wardCode?: string, minPrice?: number, maxPrice?: number, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'body', options?: RequestOptions<'json'>): Observable<TutorDtoPagedResultApiResponse>;
+    getTutors(subjectId?: number, provinceId?: number, wardCode?: string, minPrice?: number, maxPrice?: number, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<TutorDtoPagedResultApiResponse>>;
+    getTutors(subjectId?: number, provinceId?: number, wardCode?: string, minPrice?: number, maxPrice?: number, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<TutorDtoPagedResultApiResponse>>;
+    getTutors(subjectId?: number, provinceId?: number, wardCode?: string, minPrice?: number, maxPrice?: number, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
         const url = `${this.basePath}/api/Tutors`;
 
         let params = new HttpParams();
@@ -40,6 +40,12 @@ export class TutorsService {
         }
         if (wardCode != null) {
             params = HttpParamsBuilder.addToHttpParams(params, wardCode, 'wardCode');
+        }
+        if (minPrice != null) {
+            params = HttpParamsBuilder.addToHttpParams(params, minPrice, 'minPrice');
+        }
+        if (maxPrice != null) {
+            params = HttpParamsBuilder.addToHttpParams(params, maxPrice, 'maxPrice');
         }
         if (page != null) {
             params = HttpParamsBuilder.addToHttpParams(params, page, 'page');
@@ -76,11 +82,11 @@ export class TutorsService {
         return this.httpClient.get(url, requestOptions);
     }
 
-    getTutorById(id: number, observe?: 'body', options?: RequestOptions<'json'>): Observable<TutorDetailDtoApiResponse>;
-    getTutorById(id: number, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<TutorDetailDtoApiResponse>>;
-    getTutorById(id: number, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<TutorDetailDtoApiResponse>>;
-    getTutorById(id: number, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
-        const url = `${this.basePath}/api/Tutors/${id}`;
+    getTutorById(idOrCode: string, observe?: 'body', options?: RequestOptions<'json'>): Observable<TutorDetailDtoApiResponse>;
+    getTutorById(idOrCode: string, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<TutorDetailDtoApiResponse>>;
+    getTutorById(idOrCode: string, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<TutorDetailDtoApiResponse>>;
+    getTutorById(idOrCode: string, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
+        const url = `${this.basePath}/api/Tutors/${idOrCode}`;
 
         let headers: HttpHeaders;
         if (options?.headers instanceof HttpHeaders) {

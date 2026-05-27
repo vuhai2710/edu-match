@@ -1,6 +1,7 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { LucideEye, LucideEyeOff } from '@lucide/angular';
 import { firstValueFrom } from 'rxjs';
 
 import { AuthApiService, RegisterAddressPayload } from '../../../api/facades/auth-api';
@@ -14,7 +15,14 @@ import { GoogleSignInButtonComponent } from '../../../shared/components/google-s
 
 @Component({
   selector: 'app-register-student-page',
-  imports: [FormsModule, RouterLink, MascotComponent, GoogleSignInButtonComponent],
+  imports: [
+    FormsModule,
+    RouterLink,
+    MascotComponent,
+    LucideEye,
+    LucideEyeOff,
+    GoogleSignInButtonComponent,
+  ],
   template: `
     <div class="min-h-[70vh] flex items-center justify-center py-12 px-4">
       <div class="w-full max-w-2xl space-y-6">
@@ -24,26 +32,79 @@ import { GoogleSignInButtonComponent } from '../../../shared/components/google-s
           <p class="mt-1 text-slate-500">Bắt đầu hành trình học tập thông minh.</p>
         </div>
 
-        <div class="tactile-card p-6 sm:p-8 space-y-4">
+        <form (ngSubmit)="onRegister()" class="tactile-card p-6 sm:p-8 space-y-4">
           <div class="grid sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Họ và tên</label>
-              <input type="text" [(ngModel)]="fullName" class="tactile-input w-full text-sm font-semibold" />
+              <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
+                Họ và tên <span class="text-red-500">*</span>
+              </label>
+              <input type="text" [(ngModel)]="fullName" name="fullName" class="tactile-input w-full text-sm font-semibold" />
+              @if (fullNameError()) {
+                <span class="text-xs font-bold text-duo-red mt-1 block">{{ fullNameError() }}</span>
+              }
             </div>
             <div>
-              <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Số điện thoại</label>
-              <input type="tel" [(ngModel)]="phoneNumber" class="tactile-input w-full text-sm font-semibold" />
+              <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
+                Email <span class="text-red-500">*</span>
+              </label>
+              <input type="email" [(ngModel)]="email" name="email" placeholder="user@gmail.com" class="tactile-input w-full text-sm font-semibold" />
+              @if (emailError()) {
+                <span class="text-xs font-bold text-duo-red mt-1 block">{{ emailError() }}</span>
+              }
             </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
+              Mật khẩu <span class="text-red-500">*</span>
+            </label>
+            <div class="relative">
+              <input
+                [type]="showPassword() ? 'text' : 'password'"
+                [(ngModel)]="password"
+                (ngModelChange)="onPasswordChange()"
+                name="password"
+                placeholder="Tối thiểu 6 ký tự"
+                class="tactile-input w-full text-sm font-semibold pr-12"
+              />
+              <button
+                (click)="showPassword.set(!showPassword())"
+                type="button"
+                [attr.aria-label]="showPassword() ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'"
+                class="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-slate-500 transition-colors hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-duo-blue"
+              >
+                @if (showPassword()) {
+                  <svg lucideEyeOff class="h-5 w-5"></svg>
+                } @else {
+                  <svg lucideEye class="h-5 w-5"></svg>
+                }
+              </button>
+            </div>
+            @if (passwordError()) {
+              <span class="text-xs font-bold text-duo-red mt-1 block">{{ passwordError() }}</span>
+            }
           </div>
 
           <div class="grid sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Email</label>
-              <input type="email" [(ngModel)]="email" class="tactile-input w-full text-sm font-semibold" />
+              <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
+                Số điện thoại <span class="text-red-500">*</span>
+              </label>
+              <input
+                type="tel"
+                [(ngModel)]="phoneNumber"
+                name="phoneNumber"
+                maxlength="10"
+                placeholder="0123456789"
+                class="tactile-input w-full text-sm font-semibold"
+              />
+              @if (phoneNumberError()) {
+                <span class="text-xs font-bold text-duo-red mt-1 block">{{ phoneNumberError() }}</span>
+              }
             </div>
             <div>
               <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Giới tính</label>
-              <select [(ngModel)]="gender" class="tactile-input w-full text-sm font-semibold bg-white">
+              <select [(ngModel)]="gender" name="gender" class="tactile-input w-full text-sm font-semibold bg-white">
                 @for (item of genderOptions; track item.value) {
                   <option [ngValue]="item.value">{{ item.label }}</option>
                 }
@@ -51,33 +112,29 @@ import { GoogleSignInButtonComponent } from '../../../shared/components/google-s
             </div>
           </div>
 
-          <div>
-            <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Mật khẩu</label>
-            <input type="password" [(ngModel)]="password" placeholder="Tối thiểu 8 ký tự" class="tactile-input w-full text-sm font-semibold" />
-            <div class="mt-2 flex items-center gap-2">
-              <div class="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden flex gap-0.5">
-                @for (i of [0,1,2,3]; track i) {
-                  <div class="flex-1 rounded-full transition-colors" [class]="i < strength() ? strengthColor() : 'bg-slate-200'"></div>
-                }
-              </div>
-              <span class="text-xs font-bold text-slate-500">{{ strengthLabel() }}</span>
-            </div>
-          </div>
-
           <div class="grid sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Tỉnh / thành</label>
+              <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
+                Tỉnh / thành <span class="text-red-500">*</span>
+              </label>
               <select [ngModel]="provinceId()" (ngModelChange)="onProvinceChange($event)"
+                      name="provinceId"
                       class="tactile-input w-full text-sm font-semibold bg-white">
                 <option [ngValue]="null">Chọn tỉnh / thành</option>
                 @for (province of provinces(); track province.provinceId) {
                   <option [ngValue]="province.provinceId">{{ province.provinceName }}</option>
                 }
               </select>
+              @if (provinceError()) {
+                <span class="text-xs font-bold text-duo-red mt-1 block">{{ provinceError() }}</span>
+              }
             </div>
             <div>
-              <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Phường / xã</label>
+              <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
+                Phường / xã <span class="text-red-500">*</span>
+              </label>
               <select [ngModel]="wardCode()" (ngModelChange)="wardCode.set($event)"
+                      name="wardCode"
                       class="tactile-input w-full text-sm font-semibold bg-white"
                       [disabled]="!provinceId() || isLoadingWards()">
                 <option [ngValue]="null">{{ isLoadingWards() ? 'Đang tải...' : 'Chọn phường / xã' }}</option>
@@ -85,22 +142,25 @@ import { GoogleSignInButtonComponent } from '../../../shared/components/google-s
                   <option [ngValue]="ward.wardCode">{{ ward.wardName }}</option>
                 }
               </select>
+              @if (wardError()) {
+                <span class="text-xs font-bold text-duo-red mt-1 block">{{ wardError() }}</span>
+              }
             </div>
           </div>
 
           <div>
             <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Địa chỉ chi tiết</label>
-            <input type="text" [(ngModel)]="addressDetail" placeholder="Số nhà, tên đường, tòa nhà..."
+            <input type="text" [(ngModel)]="addressDetail" name="addressDetail" placeholder="Số nhà, tên đường, tòa nhà..."
                    class="tactile-input w-full text-sm font-semibold" />
           </div>
 
           <div>
-            <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Ảnh đại diện (không bắt buộc)</label>
+            <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Ảnh đại diện</label>
             <input type="file" accept="image/png,image/jpeg,image/webp" (change)="onAvatarChange($event)"
                    class="tactile-input w-full text-sm font-semibold bg-white" />
           </div>
 
-          <button (click)="onRegister()" [disabled]="!canSubmit() || isSubmitting()"
+          <button type="submit" [disabled]="isSubmitting()"
                   class="tactile-button-green w-full py-3.5 rounded-2xl text-base font-extrabold uppercase disabled:opacity-50 disabled:cursor-not-allowed">
             {{ isSubmitting() ? 'Đang đăng ký...' : 'Đăng ký' }}
           </button>
@@ -118,7 +178,7 @@ import { GoogleSignInButtonComponent } from '../../../shared/components/google-s
           </div>
 
           <app-google-sign-in-button text="signup_with" (credential)="onGoogleCredential($event)" />
-        </div>
+        </form>
 
         <p class="text-center text-sm text-slate-500">
           Đã có tài khoản? <a routerLink="/auth/login" class="font-extrabold text-[#58cc02] hover:underline">Đăng nhập</a>
@@ -136,6 +196,12 @@ export class RegisterStudentPage implements OnInit {
   addressDetail = '';
   avatar: File | null = null;
 
+  showPassword = signal(false);
+  fullNameError = signal('');
+  emailError = signal('');
+  passwordError = signal('');
+  provinceError = signal('');
+  wardError = signal('');
   provinces = signal<ProvinceDto[]>([]);
   wards = signal<WardDto[]>([]);
   provinceId = signal<number | null>(null);
@@ -154,17 +220,22 @@ export class RegisterStudentPage implements OnInit {
   private readonly session = inject(SessionService);
   private readonly router = inject(Router);
 
-  protected strength = computed(() => {
-    const p = this.password;
-    let score = 0;
-    if (p.length >= 4) score++;
-    if (p.length >= 8) score++;
-    if (/[A-Z]/.test(p) && /[0-9]/.test(p)) score++;
-    if (/[^A-Za-z0-9]/.test(p)) score++;
-    return score;
-  });
-  protected strengthColor = computed(() => ['bg-duo-red', 'bg-duo-orange', 'bg-duo-yellow', 'bg-duo-green'][this.strength() - 1] ?? 'bg-slate-200');
-  protected strengthLabel = computed(() => ['Yếu', 'Trung bình', 'Khá tốt', 'Mạnh'][this.strength() - 1] ?? '');
+  onPasswordChange(): void {
+    if (this.password && this.password.length < 6) {
+      this.passwordError.set('Mật khẩu phải có ít nhất 6 ký tự.');
+    } else {
+      this.passwordError.set('');
+    }
+  }
+
+  phoneNumberError(): string {
+    const phone = this.phoneNumber.trim();
+    if (!phone) return '';
+    if (!phone.startsWith('0')) return 'Số điện thoại phải bắt đầu bằng số 0.';
+    if (!/^\d+$/.test(phone)) return 'Số điện thoại chỉ được chứa các chữ số.';
+    if (phone.length > 10) return 'Số điện thoại tối đa 10 chữ số.';
+    return '';
+  }
 
   ngOnInit(): void {
     void this.loadProvinces();
@@ -232,7 +303,14 @@ export class RegisterStudentPage implements OnInit {
       this.session.bootstrapFromLogin(login);
       await this.router.navigateByUrl('/student/dashboard');
     } catch (error) {
-      this.errorMessage.set(getApiErrorMessage(error, 'Đăng ký học viên thất bại.'));
+      const errMsg = getApiErrorMessage(error, 'Đăng ký học viên thất bại.');
+      if (errMsg.toLowerCase().includes('email')) {
+        this.emailError.set(errMsg);
+      } else if (errMsg.toLowerCase().includes('số điện thoại') || errMsg.toLowerCase().includes('phone')) {
+        this.errorMessage.set(errMsg);
+      } else {
+        this.errorMessage.set(errMsg);
+      }
     } finally {
       this.isSubmitting.set(false);
     }
@@ -272,11 +350,24 @@ export class RegisterStudentPage implements OnInit {
   }
 
   private resolveAddress(): RegisterAddressPayload | null {
+    this.provinceError.set('');
+    this.wardError.set('');
+
+    let hasAddressError = false;
+    if (!this.provinceId()) {
+      this.provinceError.set('Vui lòng chọn tỉnh / thành.');
+      hasAddressError = true;
+    }
+
     const province = this.provinces().find((item) => item.provinceId === this.provinceId());
     const ward = this.wards().find((item) => item.wardCode === this.wardCode());
 
-    if (!province?.provinceId || !province.provinceName || !ward?.wardCode || !ward.wardName) {
-      this.errorMessage.set('Vui lòng chọn tỉnh / thành và phường / xã.');
+    if (!this.wardCode()) {
+      this.wardError.set('Vui lòng chọn phường / xã.');
+      hasAddressError = true;
+    }
+
+    if (hasAddressError || !province?.provinceId || !province.provinceName || !ward?.wardCode || !ward.wardName) {
       return null;
     }
 
@@ -290,22 +381,37 @@ export class RegisterStudentPage implements OnInit {
   }
 
   private validateBasics(): boolean {
+    let isValid = true;
+    this.fullNameError.set('');
+    this.emailError.set('');
+    this.passwordError.set('');
+    this.provinceError.set('');
+    this.wardError.set('');
+
+    if (!this.fullName.trim()) {
+      this.fullNameError.set('Vui lòng nhập họ và tên.');
+      isValid = false;
+    }
+
     if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(this.email.trim())) {
-      this.errorMessage.set('Email đăng ký phải là địa chỉ Gmail hợp lệ.');
-      return false;
+      this.emailError.set('Email đăng ký phải là địa chỉ Gmail hợp lệ.');
+      isValid = false;
     }
 
     if (this.password.length < 6) {
-      this.errorMessage.set('Mật khẩu phải có ít nhất 6 ký tự.');
-      return false;
+      this.passwordError.set('Mật khẩu phải có ít nhất 6 ký tự.');
+      isValid = false;
     }
 
-    if (!/^0\d{9}$/.test(this.phoneNumber.trim())) {
-      this.errorMessage.set('Số điện thoại phải bắt đầu bằng 0 và có đúng 10 chữ số.');
-      return false;
+    const phone = this.phoneNumber.trim();
+    if (!phone) {
+      // Set the phone error since it's required
+      isValid = false;
+    } else if (this.phoneNumberError()) {
+      isValid = false;
     }
 
-    return true;
+    return isValid;
   }
 
   private readFile(event: Event): File | null {

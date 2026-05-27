@@ -7,13 +7,14 @@ import { UserDto, UserRole } from '../../../api/generated/client/models';
 import { UsersService } from '../../../api/generated/client/services';
 import { ApiErrorDetails, getApiErrorDetails } from '../../../core/http/api-error';
 import { ErrorBannerComponent } from '../../../shared/components/error-banner/error-banner';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination';
 import { formatDate, userRoleLabel } from '../../../shared/utils/api-ui';
 
 type ActiveFilter = 'all' | 'active' | 'inactive';
 
 @Component({
   selector: 'app-admin-users-page',
-  imports: [ErrorBannerComponent, FormsModule, RouterLink],
+  imports: [ErrorBannerComponent, FormsModule, RouterLink, PaginationComponent],
   template: `
     <div class="space-y-6">
       <div>
@@ -44,7 +45,7 @@ type ActiveFilter = 'all' | 'active' | 'inactive';
               {{ tab.label }}
             </button>
           }
-
+ 
           <div class="flex-1 min-w-[200px]">
             <input type="text"
                    [(ngModel)]="searchTerm"
@@ -59,7 +60,7 @@ type ActiveFilter = 'all' | 'active' | 'inactive';
         <app-error-banner [details]="errorDetails()" />
       }
 
-      <div class="tactile-card overflow-hidden">
+      <div class="tactile-card overflow-hidden relative transition-opacity duration-200" [class.opacity-50]="isLoading()" [class.pointer-events-none]="isLoading()">
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead class="bg-slate-50 border-b-2 border-slate-100">
@@ -118,21 +119,12 @@ type ActiveFilter = 'all' | 'active' | 'inactive';
         }
       </div>
 
-      @if (totalPages() > 1) {
-        <div class="flex items-center justify-between text-sm">
-          <p class="text-slate-500">Tổng {{ totalCount() }} người dùng · Trang {{ page() }}/{{ totalPages() }}</p>
-          <div class="flex gap-2">
-            <button (click)="prevPage()" [disabled]="page() <= 1"
-                    class="px-3 py-1.5 rounded-lg border-2 border-slate-200 font-bold text-slate-600 disabled:opacity-40">
-              Trước
-            </button>
-            <button (click)="nextPage()" [disabled]="page() >= totalPages()"
-                    class="px-3 py-1.5 rounded-lg border-2 border-slate-200 font-bold text-slate-600 disabled:opacity-40">
-              Sau
-            </button>
-          </div>
-        </div>
-      }
+      <app-pagination [page]="page()"
+                      [pageSize]="pageSize()"
+                      [totalCount]="totalCount()"
+                      itemsName="người dùng"
+                      (pageChange)="onPageChange($event)"
+                      (pageSizeChange)="onPageSizeChange($event)" />
     </div>
   `,
 })
@@ -142,9 +134,9 @@ export class AdminUsersPage implements OnInit {
   activeFilter = signal<ActiveFilter>('all');
   searchTerm = '';
   page = signal(1);
-  pageSize = 20;
+  pageSize = signal(5);
   totalCount = signal(0);
-  totalPages = computed(() => Math.max(1, Math.ceil(this.totalCount() / this.pageSize)));
+  totalPages = computed(() => Math.max(1, Math.ceil(this.totalCount() / this.pageSize())));
   isLoading = signal(false);
   errorDetails = signal<ApiErrorDetails | null>(null);
 
@@ -188,18 +180,15 @@ export class AdminUsersPage implements OnInit {
     }, 400);
   }
 
-  prevPage(): void {
-    if (this.page() > 1) {
-      this.page.update((p) => p - 1);
-      void this.loadUsers();
-    }
+  onPageChange(newPage: number): void {
+    this.page.set(newPage);
+    void this.loadUsers();
   }
 
-  nextPage(): void {
-    if (this.page() < this.totalPages()) {
-      this.page.update((p) => p + 1);
-      void this.loadUsers();
-    }
+  onPageSizeChange(newSize: number): void {
+    this.pageSize.set(newSize);
+    this.page.set(1);
+    void this.loadUsers();
   }
 
   roleLabel(role?: UserRole | null): string {
@@ -234,7 +223,7 @@ export class AdminUsersPage implements OnInit {
           this.activeRole() ?? undefined,
           isActive,
           this.page(),
-          this.pageSize,
+          this.pageSize(),
           search,
           'createdAt',
           'desc',
@@ -250,3 +239,5 @@ export class AdminUsersPage implements OnInit {
     }
   }
 }
+
+

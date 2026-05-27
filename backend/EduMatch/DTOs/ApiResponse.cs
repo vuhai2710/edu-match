@@ -18,6 +18,9 @@
     public T? Data { get; set; }
     public static ApiResponse<T> SuccessResult(T data, string message = "", int? statusCode = null) =>
       new() { Success = true, Data = data, Message = message, StatusCode = statusCode };
+
+    public static ApiResponse<T> Fail(string message, int? statusCode = null, T? data = default) =>
+      new() { Success = false, Data = data, Message = message, StatusCode = statusCode };
   }
 }
 

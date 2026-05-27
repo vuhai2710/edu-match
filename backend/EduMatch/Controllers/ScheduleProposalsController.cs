@@ -34,7 +34,7 @@ namespace EduMatch.Controllers
       var result = await _scheduleProposalService.CreateAsync(GetCurrentTutorId(), dto);
       return this.CreatedResponse(
         $"/api/schedule-proposals/{result.Id}",
-        ApiResponse<ScheduleProposalDto>.SuccessResult(result, "Tạo đề xuất lịch học thành công."));
+        ApiResponse<ScheduleProposalDto>.SuccessResult(result, "Tao de xuat lich hoc thanh cong."));
     }
 
     [HttpGet("{id:long}")]
@@ -62,11 +62,10 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<ApiResponse<ScheduleProposalDto>>> Accept(long id)
     {
       var result = await _scheduleProposalService.AcceptAsync(id, GetCurrentUserId());
-      return this.OkResponse(ApiResponse<ScheduleProposalDto>.SuccessResult(result, "Chấp nhận đề xuất lịch học thành công."));
+      return this.OkResponse(result);
     }
 
     [HttpPut("{id:long}/reject")]
@@ -76,11 +75,10 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<ApiResponse<ScheduleProposalDto>>> Reject(long id)
     {
       var result = await _scheduleProposalService.RejectAsync(id, GetCurrentUserId());
-      return this.OkResponse(ApiResponse<ScheduleProposalDto>.SuccessResult(result, "Từ chối đề xuất lịch học thành công."));
+      return this.OkResponse(result);
     }
 
     private long GetCurrentUserId()

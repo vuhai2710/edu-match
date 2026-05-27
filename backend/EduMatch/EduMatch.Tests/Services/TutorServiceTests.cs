@@ -6,6 +6,7 @@ using EduMatch.Models;
 using EduMatch.Repositories;
 using EduMatch.Services;
 using EduMatch.Services.Interfaces;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 
@@ -31,7 +32,8 @@ public class TutorServiceTests
       Mock.Of<IRepository<TutorTeachingLevel>>(),
       Mock.Of<IFileService>(),
       mapper,
-      Mock.Of<ICodeGeneratorService>());
+      Mock.Of<ICodeGeneratorService>(),
+      Mock.Of<IHttpContextAccessor>());
   }
 
   [Fact]

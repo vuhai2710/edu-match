@@ -18,20 +18,21 @@ import {
   getApiErrorMessage,
 } from '../../../core/http/api-error';
 import { ErrorBannerComponent } from '../../../shared/components/error-banner/error-banner';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination';
 import { formatDate, formatMoney } from '../../../shared/utils/api-ui';
 
 type PolicyLifecycleStatus = 'active' | 'expired' | 'upcoming';
 
 @Component({
   selector: 'app-admin-deposit-policy-page',
-  imports: [ErrorBannerComponent, FormsModule],
+  imports: [ErrorBannerComponent, FormsModule, PaginationComponent],
   template: `
     <div class="space-y-6">
       <div>
         <h1 class="font-display text-2xl font-black text-slate-900">Chính sách đặt cọc</h1>
         <p class="text-sm text-slate-500 mt-1">
-          Quản lý số buổi cọc, mức giảm giá và thời gian hiệu lực. Mỗi khoảng thời gian chỉ áp dụng
-          một chính sách.
+          Quản lý số buổi cọc mặc định và các chính sách giảm giá/thời gian đặc biệt. Hệ thống tự
+          động áp dụng chính sách có thời hạn trước, sau đó fallback về cọc mặc định.
         </p>
       </div>
 
@@ -44,9 +45,15 @@ type PolicyLifecycleStatus = 'active' | 'expired' | 'upcoming';
         <div class="flex items-center justify-between gap-3">
           <h2 class="font-extrabold text-lg text-slate-800">Chính sách đang áp dụng</h2>
           @if (activePolicy()) {
-            <span class="rounded-full bg-green-50 px-3 py-1 text-xs font-black text-duo-green"
-              >Đang hiệu lực</span
-            >
+            @if (isDefaultPolicy(activePolicy()!)) {
+              <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600"
+                >Cọc mặc định (Fallback)</span
+              >
+            } @else {
+              <span class="rounded-full bg-green-50 px-3 py-1 text-xs font-black text-duo-green"
+                >Ưu tiên theo thời gian</span
+              >
+            }
           } @else {
             <span class="rounded-full bg-orange-50 px-3 py-1 text-xs font-black text-duo-orange"
               >Chưa có</span
@@ -55,11 +62,69 @@ type PolicyLifecycleStatus = 'active' | 'expired' | 'upcoming';
         </div>
 
         @if (activePolicy(); as p) {
+          <!-- Fallback/Priority Explanatory Banner -->
+          <div
+            class="rounded-xl px-4 py-3 border text-sm flex gap-3 items-start"
+            [class]="
+              isDefaultPolicy(p)
+                ? 'bg-slate-50 border-slate-200 text-slate-600'
+                : 'bg-green-50 border-green-200 text-duo-green'
+            "
+          >
+            <div class="flex-shrink-0 mt-0.5">
+              @if (isDefaultPolicy(p)) {
+                <svg
+                  class="w-5 h-5 text-slate-500"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              } @else {
+                <svg
+                  class="w-5 h-5 text-duo-green"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              }
+            </div>
+            <div class="flex-1">
+              <p class="font-extrabold mb-0.5">
+                {{
+                  isDefaultPolicy(p)
+                    ? 'Đang áp dụng Cọc Mặc Định'
+                    : 'Đang áp dụng Chính Sách Theo Thời Gian'
+                }}
+              </p>
+              <p class="text-xs leading-relaxed opacity-90">
+                {{
+                  isDefaultPolicy(p)
+                    ? 'Hệ thống đang áp dụng cài đặt cọc mặc định vì không có chính sách theo thời gian nào đang trong thời gian hiệu lực.'
+                    : 'Chính sách đặt cọc theo thời gian đang hoạt động và được ưu tiên cao hơn cài đặt cọc mặc định.'
+                }}
+              </p>
+            </div>
+          </div>
+
           <div class="grid sm:grid-cols-3 gap-3 text-sm">
             <div class="rounded-xl bg-slate-50 px-4 py-3">
               <p class="text-xs font-bold uppercase text-slate-500 tracking-wide">Số buổi cọc</p>
               <p class="mt-1 font-display text-xl font-black text-slate-800">
-                {{ p.depositSessionCount ?? '—' }}
+                {{ p.depositSessionCount ?? '—' }} buổi
               </p>
             </div>
             <div class="rounded-xl bg-slate-50 px-4 py-3">
@@ -70,7 +135,9 @@ type PolicyLifecycleStatus = 'active' | 'expired' | 'upcoming';
             </div>
             <div class="rounded-xl bg-slate-50 px-4 py-3">
               <p class="text-xs font-bold uppercase text-slate-500 tracking-wide">Hiệu lực</p>
-              <p class="mt-1 font-bold text-slate-800">{{ activeRange(p) }}</p>
+              <p class="mt-1 font-bold text-slate-800">
+                {{ isDefaultPolicy(p) ? 'Vô hạn (Mặc định)' : activeRange(p) }}
+              </p>
             </div>
           </div>
 
@@ -86,7 +153,7 @@ type PolicyLifecycleStatus = 'active' | 'expired' | 'upcoming';
                 step="10000"
                 [(ngModel)]="previewHourlyRate"
                 (ngModelChange)="onPreviewChange()"
-                class="w-full rounded-xl border-2 border-slate-200 px-3 py-2 focus:border-duo-blue outline-none"
+                class="w-full rounded-xl border-2 border-slate-200 px-3 py-2 focus:border-duo-blue outline-none font-bold"
               />
             </div>
             <div>
@@ -100,7 +167,7 @@ type PolicyLifecycleStatus = 'active' | 'expired' | 'upcoming';
                 step="0.5"
                 [(ngModel)]="previewHoursPerSession"
                 (ngModelChange)="onPreviewChange()"
-                class="w-full rounded-xl border-2 border-slate-200 px-3 py-2 focus:border-duo-blue outline-none"
+                class="w-full rounded-xl border-2 border-slate-200 px-3 py-2 focus:border-duo-blue outline-none font-bold"
               />
             </div>
           </div>
@@ -122,133 +189,261 @@ type PolicyLifecycleStatus = 'active' | 'expired' | 'upcoming';
           }
         } @else {
           <p class="text-sm text-slate-500">
-            Chưa có chính sách nào đang trong khoảng hiệu lực. Hãy tạo chính sách mới ở mục bên
-            dưới.
+            Chưa có chính sách nào đang trong khoảng hiệu lực. Hãy thiết lập cọc mặc định hoặc chính
+            sách theo thời gian ở mục bên dưới.
           </p>
         }
       </section>
 
-      <!-- ===== Section B: Form (create) ===== -->
-      <section class="tactile-card p-6 space-y-5">
-        <h2 class="font-extrabold text-lg text-slate-800">Tạo chính sách mới</h2>
+      <!-- ===== Section B: Separate Configuration Panels ===== -->
+      <div class="grid md:grid-cols-12 gap-6">
+        <!-- Part B1: Default Deposit setting -->
+        <div class="md:col-span-5">
+          <section class="tactile-card p-6 space-y-5 h-full flex flex-col justify-between">
+            <div class="space-y-4">
+              <div class="flex items-center gap-2">
+                <div
+                  class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-duo-blue"
+                >
+                  <svg
+                    class="w-5 h-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                    />
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                  </svg>
+                </div>
+                <h2 class="font-extrabold text-lg text-slate-800">Cọc mặc định (Fallback)</h2>
+              </div>
 
-        @if (formError()) {
-          <p
-            class="rounded-xl border-2 border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-duo-red"
-          >
-            {{ formError() }}
-          </p>
-        }
-        @if (formSuccess()) {
-          <p
-            class="rounded-xl border-2 border-green-100 bg-green-50 px-4 py-3 text-sm font-bold text-duo-green"
-          >
-            {{ formSuccess() }}
-          </p>
-        }
+              <p class="text-xs text-slate-500 leading-relaxed">
+                Số buổi cọc mặc định áp dụng khi <strong>không có</strong> chính sách theo thời gian
+                nào đang hiệu lực. Khi đổi cọc mặc định, các khoảng thời gian có chính sách ưu tiên
+                đang chạy vẫn giữ nguyên.
+              </p>
 
-        <!-- Sub-block B1: Số buổi cọc -->
-        <div class="rounded-xl bg-slate-50 px-4 py-4 space-y-2">
-          <h3 class="font-extrabold text-sm text-slate-700 uppercase tracking-wide">Số buổi cọc</h3>
-          <p class="text-xs text-slate-500">
-            Số buổi học mà học viên đặt cọc trước. Áp dụng cho toàn bộ khoảng thời gian hiệu lực
-            phía dưới.
-          </p>
-          <input
-            type="number"
-            min="1"
-            step="1"
-            [(ngModel)]="depositSessionCount"
-            class="w-full sm:max-w-xs rounded-xl border-2 border-slate-200 px-3 py-2 focus:border-duo-blue outline-none bg-white"
-          />
+              @if (defaultError()) {
+                <p
+                  class="rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-xs font-bold text-duo-red"
+                >
+                  {{ defaultError() }}
+                </p>
+              }
+              @if (defaultSuccess()) {
+                <p
+                  class="rounded-xl border border-green-200 bg-green-50 px-4 py-2.5 text-xs font-bold text-duo-green"
+                >
+                  {{ defaultSuccess() }}
+                </p>
+              }
+
+              <div class="rounded-xl bg-slate-50 px-4 py-4 space-y-2 border border-slate-100">
+                <label class="block text-xs font-bold uppercase text-slate-500 tracking-wide"
+                  >Số buổi cọc mặc định</label
+                >
+                <div class="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    [(ngModel)]="defaultDepositSessionCount"
+                    class="w-full rounded-xl border-2 border-slate-200 px-3 py-2 focus:border-duo-blue outline-none bg-white font-black text-slate-800"
+                  />
+                  <span class="text-sm font-bold text-slate-600 flex-shrink-0">buổi</span>
+                </div>
+                @if (defaultPolicy()) {
+                  <p class="text-[11px] text-slate-400 font-bold">
+                    Cập nhật lần cuối:
+                    {{
+                      defaultPolicy()?.updatedAt
+                        ? formatDate(defaultPolicy()?.updatedAt!)
+                        : formatDate(defaultPolicy()?.createdAt!)
+                    }}
+                  </p>
+                }
+              </div>
+            </div>
+
+            <div class="pt-4">
+              <button
+                (click)="submitDefault()"
+                [disabled]="isSavingDefault()"
+                class="w-full bg-duo-blue text-white font-extrabold py-3 px-4 rounded-xl border-b-4 border-blue-700 hover:opacity-95 disabled:opacity-60 text-sm transition-all"
+              >
+                {{ isSavingDefault() ? 'Đang lưu...' : 'Lưu cọc mặc định' }}
+              </button>
+            </div>
+          </section>
         </div>
 
-        <!-- Sub-block B2: Discount + active period -->
-        <div class="rounded-xl bg-slate-50 px-4 py-4 space-y-3">
-          <h3 class="font-extrabold text-sm text-slate-700 uppercase tracking-wide">
-            Mức giảm giá + Thời gian hiệu lực
-          </h3>
-          <p class="text-xs text-slate-500">
-            Mức giảm áp dụng và khoảng thời gian chính sách có hiệu lực. Hệ thống đảm bảo không có 2
-            chính sách trùng khoảng.
-          </p>
+        <!-- Part B2: Time-based Policies -->
+        <div class="md:col-span-7">
+          <section class="tactile-card p-6 space-y-5 h-full flex flex-col justify-between">
+            <div class="space-y-4">
+              <div class="flex items-center gap-2">
+                <div
+                  class="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-duo-orange"
+                >
+                  <svg
+                    class="w-5 h-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
+                <h2 class="font-extrabold text-lg text-slate-800">
+                  Cài đặt cọc theo thời gian & giảm giá
+                </h2>
+              </div>
 
-          <div>
-            <label class="block text-sm font-bold text-slate-600 mb-1"
-              >Phần trăm giảm giá (0–99)</label
-            >
-            <div class="relative">
-              <input
-                type="number"
-                min="0"
-                max="99"
-                step="1"
-                [ngModel]="discountPercentDisplay()"
-                (ngModelChange)="onDiscountChange($event)"
-                class="w-full sm:max-w-xs rounded-xl border-2 border-slate-200 px-3 py-2 pr-8 focus:border-duo-blue outline-none bg-white"
-              />
-              <span
-                class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 font-bold text-sm"
-                >%</span
-              >
-            </div>
-          </div>
+              <p class="text-xs text-slate-500 leading-relaxed">
+                Thiết lập số buổi cọc đặc biệt và phần trăm chiết khấu tự động cho một khoảng thời
+                gian. Hệ thống sẽ <strong>tự động ưu tiên</strong> áp dụng chính sách này thay cho
+                cọc mặc định khi ngày đặt nằm trong khoảng hiệu lực.
+              </p>
 
-          <div class="grid sm:grid-cols-2 gap-3">
-            <div>
-              <label class="block text-sm font-bold text-slate-600 mb-1"
-                >Hiệu lực từ (tùy chọn)</label
-              >
-              <input
-                type="date"
-                [(ngModel)]="activeFrom"
-                class="w-full rounded-xl border-2 border-slate-200 px-3 py-2 focus:border-duo-blue outline-none bg-white"
-              />
+              @if (timeError()) {
+                <p
+                  class="rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-xs font-bold text-duo-red"
+                >
+                  {{ timeError() }}
+                </p>
+              }
+              @if (timeSuccess()) {
+                <p
+                  class="rounded-xl border border-green-200 bg-green-50 px-4 py-2.5 text-xs font-bold text-duo-green"
+                >
+                  {{ timeSuccess() }}
+                </p>
+              }
+
+              <div class="grid sm:grid-cols-2 gap-4">
+                <!-- Số buổi cọc -->
+                <div class="rounded-xl bg-slate-50 px-4 py-3 border border-slate-100 space-y-1">
+                  <label class="block text-xs font-bold uppercase text-slate-500 tracking-wide"
+                    >Số buổi cọc</label
+                  >
+                  <div class="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      [(ngModel)]="timeDepositSessionCount"
+                      class="w-full rounded-xl border-2 border-slate-200 px-3 py-1.5 focus:border-duo-blue outline-none bg-white font-bold"
+                    />
+                    <span class="text-xs font-bold text-slate-600">buổi</span>
+                  </div>
+                </div>
+
+                <!-- Giảm giá -->
+                <div class="rounded-xl bg-slate-50 px-4 py-3 border border-slate-100 space-y-1">
+                  <label class="block text-xs font-bold uppercase text-slate-500 tracking-wide"
+                    >Giảm giá</label
+                  >
+                  <div class="relative">
+                    <input
+                      type="number"
+                      min="0"
+                      max="99"
+                      step="1"
+                      [ngModel]="timeDiscountPercentDisplay()"
+                      (ngModelChange)="onTimeDiscountChange($event)"
+                      class="w-full rounded-xl border-2 border-slate-200 px-3 py-1.5 pr-8 focus:border-duo-blue outline-none bg-white font-bold"
+                    />
+                    <span
+                      class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 font-bold text-xs"
+                      >%</span
+                    >
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid sm:grid-cols-2 gap-4">
+                <!-- Hiệu lực từ -->
+                <div class="space-y-1">
+                  <label class="block text-xs font-bold uppercase text-slate-500 tracking-wide"
+                    >Hiệu lực từ ngày</label
+                  >
+                  <input
+                    type="date"
+                    [(ngModel)]="timeActiveFrom"
+                    class="w-full rounded-xl border-2 border-slate-200 px-3 py-2 focus:border-duo-blue outline-none bg-white text-sm font-bold"
+                  />
+                </div>
+
+                <!-- Hiệu lực đến -->
+                <div class="space-y-1">
+                  <label class="block text-xs font-bold uppercase text-slate-500 tracking-wide"
+                    >Hiệu lực đến ngày</label
+                  >
+                  <input
+                    type="date"
+                    [(ngModel)]="timeActiveTo"
+                    class="w-full rounded-xl border-2 border-slate-200 px-3 py-2 focus:border-duo-blue outline-none bg-white text-sm font-bold"
+                  />
+                </div>
+              </div>
             </div>
-            <div>
-              <label class="block text-sm font-bold text-slate-600 mb-1"
-                >Hiệu lực đến (tùy chọn)</label
+
+            <div class="pt-4">
+              <button
+                (click)="submitTimeBased()"
+                [disabled]="isSubmittingTime()"
+                class="w-full bg-duo-green text-white font-extrabold py-3 px-4 rounded-xl border-b-4 border-duo-green-dark hover:opacity-95 disabled:opacity-60 text-sm transition-all"
               >
-              <input
-                type="date"
-                [(ngModel)]="activeTo"
-                class="w-full rounded-xl border-2 border-slate-200 px-3 py-2 focus:border-duo-blue outline-none bg-white"
-              />
+                {{ isSubmittingTime() ? 'Đang lưu...' : 'Tạo chính sách theo thời gian' }}
+              </button>
             </div>
-          </div>
-          <p class="text-xs text-slate-500">
-            Để trống nghĩa là không giới hạn (mở vô tận về phía đầu/cuối). Hệ thống sẽ từ chối nếu
-            khoảng này trùng với chính sách khác.
-          </p>
+          </section>
         </div>
-
-        <div>
-          <button
-            (click)="submit()"
-            [disabled]="isSubmitting()"
-            class="bg-duo-green text-white font-extrabold py-3 px-6 rounded-xl border-b-4 border-duo-green-dark hover:opacity-95 disabled:opacity-60"
-          >
-            {{ isSubmitting() ? 'Đang lưu...' : 'Tạo chính sách mới' }}
-          </button>
-        </div>
-      </section>
+      </div>
 
       <!-- ===== Section C: History list ===== -->
       <section class="space-y-3">
         <div class="flex items-center justify-between">
-          <h2 class="font-extrabold text-lg text-slate-800">Lịch sử chính sách</h2>
+          <h2 class="font-extrabold text-lg text-slate-800">Lịch sử chính sách đặt cọc</h2>
           @if (isLoadingHistory()) {
-            <span class="text-xs font-bold text-slate-500">Đang tải...</span>
+            <span class="text-xs font-bold text-slate-500 animate-pulse">Đang cập nhật...</span>
           }
         </div>
 
-        <div class="tactile-card overflow-hidden">
+        <div
+          class="tactile-card overflow-hidden relative min-h-[310px] transition-all duration-200"
+          [class.pointer-events-none]="isLoadingHistory()"
+        >
+          <!-- Sleek Loading Progress Bar -->
+          @if (isLoadingHistory()) {
+            <div class="absolute top-0 left-0 right-0 h-1 bg-blue-50 overflow-hidden z-20">
+              <div class="h-full bg-duo-blue animate-pulse"></div>
+            </div>
+          }
           <div class="overflow-x-auto">
             <table class="w-full text-sm">
               <thead class="bg-slate-50 border-b-2 border-slate-100">
                 <tr>
-                  <th class="px-4 py-3 text-left font-extrabold text-slate-600">Hiệu lực</th>
-                  <th class="px-4 py-3 text-left font-extrabold text-slate-600">Số buổi</th>
+                  <th class="px-4 py-3 text-left font-extrabold text-slate-600">Loại chính sách</th>
+                  <th class="px-4 py-3 text-left font-extrabold text-slate-600">
+                    Thời gian hiệu lực
+                  </th>
+                  <th class="px-4 py-3 text-left font-extrabold text-slate-600">Số buổi cọc</th>
                   <th class="px-4 py-3 text-left font-extrabold text-slate-600">Giảm giá</th>
                   <th class="px-4 py-3 text-left font-extrabold text-slate-600">Trạng thái</th>
                   <th class="px-4 py-3 text-right font-extrabold text-slate-600">Thao tác</th>
@@ -257,26 +452,45 @@ type PolicyLifecycleStatus = 'active' | 'expired' | 'upcoming';
               <tbody>
                 @for (item of history(); track item.id) {
                   <tr class="border-b border-slate-100 hover:bg-slate-50">
-                    <td class="px-4 py-3 text-slate-700">{{ activeRange(item) }}</td>
-                    <td class="px-4 py-3 font-bold">{{ item.depositSessionCount }}</td>
+                    <td class="px-4 py-3 font-extrabold text-slate-700">
+                      @if (isDefaultPolicy(item)) {
+                        <span class="text-duo-blue">Cọc mặc định</span>
+                      } @else {
+                        <span class="text-slate-700">Theo thời gian</span>
+                      }
+                    </td>
+                    <td class="px-4 py-3 text-slate-600">
+                      {{ isDefaultPolicy(item) ? '—' : activeRange(item) }}
+                    </td>
+                    <td class="px-4 py-3 font-bold text-slate-800">
+                      {{ item.depositSessionCount }}
+                    </td>
                     <td class="px-4 py-3 font-bold text-duo-orange">
                       {{ percentDisplay(item.discountPercent) }}%
                     </td>
                     <td class="px-4 py-3">
                       <span
-                        [class]="lifecycleBadgeClass(item)"
+                        [class]="
+                          isDefaultPolicy(item)
+                            ? 'bg-slate-100 text-slate-600'
+                            : lifecycleBadgeClass(item)
+                        "
                         class="rounded-full px-3 py-1 text-xs font-black"
                       >
-                        {{ lifecycleLabel(item) }}
+                        {{ isDefaultPolicy(item) ? 'Mặc định' : lifecycleLabel(item) }}
                       </span>
                     </td>
                     <td class="px-4 py-3 text-right">
-                      <button
-                        (click)="deleteItem(item)"
-                        class="text-duo-red font-bold text-xs hover:underline"
-                      >
-                        Xóa
-                      </button>
+                      @if (!isDefaultPolicy(item)) {
+                        <button
+                          (click)="deleteItem(item)"
+                          class="text-duo-red font-bold text-xs hover:underline"
+                        >
+                          Xóa
+                        </button>
+                      } @else {
+                        <span class="text-xs text-slate-400 italic font-medium">Hệ thống</span>
+                      }
                     </td>
                   </tr>
                 }
@@ -287,36 +501,19 @@ type PolicyLifecycleStatus = 'active' | 'expired' | 'upcoming';
           @if (!isLoadingHistory() && !history().length) {
             <div class="p-8 text-center">
               <p class="font-extrabold text-slate-800">Chưa có chính sách nào</p>
-              <p class="text-sm text-slate-500 mt-1">Tạo chính sách đầu tiên ở mục phía trên.</p>
+              <p class="text-sm text-slate-500 mt-1">Vui lòng thiết lập cọc mặc định ở trên.</p>
             </div>
           }
         </div>
 
-        @if (historyTotalPages() > 1) {
-          <div class="flex items-center justify-between text-sm">
-            <p class="text-slate-500">
-              Tổng {{ historyTotal() }} chính sách · Trang {{ historyPage() }}/{{
-                historyTotalPages()
-              }}
-            </p>
-            <div class="flex gap-2">
-              <button
-                (click)="prevHistory()"
-                [disabled]="historyPage() <= 1"
-                class="px-3 py-1.5 rounded-lg border-2 border-slate-200 font-bold text-slate-600 disabled:opacity-40"
-              >
-                Trước
-              </button>
-              <button
-                (click)="nextHistory()"
-                [disabled]="historyPage() >= historyTotalPages()"
-                class="px-3 py-1.5 rounded-lg border-2 border-slate-200 font-bold text-slate-600 disabled:opacity-40"
-              >
-                Sau
-              </button>
-            </div>
-          </div>
-        }
+        <app-pagination
+          [page]="historyPage()"
+          [pageSize]="historyPageSize()"
+          [totalCount]="historyTotal()"
+          itemsName="chính sách"
+          (pageChange)="onHistoryPageChange($event)"
+          (pageSizeChange)="onHistoryPageSizeChange($event)"
+        />
       </section>
     </div>
   `,
@@ -328,22 +525,29 @@ export class AdminDepositPolicyPage implements OnInit {
   previewHourlyRate = 150000;
   previewHoursPerSession = 2;
 
-  // Form
-  depositSessionCount = 1;
-  discountPercentRaw = signal(0);
-  activeFrom = '';
-  activeTo = '';
-  isSubmitting = signal(false);
-  formError = signal('');
-  formSuccess = signal('');
+  // Default policy state
+  defaultPolicy = signal<DepositPolicyDto | null>(null);
+  defaultDepositSessionCount = 1;
+  isSavingDefault = signal(false);
+  defaultError = signal('');
+  defaultSuccess = signal('');
 
-  // History
+  // Time-based policy form state
+  timeDepositSessionCount = 1;
+  timeDiscountPercentRaw = signal(0);
+  timeActiveFrom = '';
+  timeActiveTo = '';
+  isSubmittingTime = signal(false);
+  timeError = signal('');
+  timeSuccess = signal('');
+
+  // History paging state
   history = signal<DepositPolicyDto[]>([]);
   historyPage = signal(1);
-  readonly historyPageSize = 10;
+  historyPageSize = signal(5);
   historyTotal = signal(0);
   historyTotalPages = computed(() =>
-    Math.max(1, Math.ceil(this.historyTotal() / this.historyPageSize)),
+    Math.max(1, Math.ceil(this.historyTotal() / this.historyPageSize())),
   );
   isLoadingHistory = signal(false);
 
@@ -353,6 +557,7 @@ export class AdminDepositPolicyPage implements OnInit {
   private readonly adminApi = inject(DepositPolicyAdminApiService);
   private readonly previewApi = inject(DepositPolicyService);
   private previewDebounce?: ReturnType<typeof setTimeout>;
+  private loadingTimeout?: ReturnType<typeof setTimeout>;
 
   ngOnInit(): void {
     void this.loadAll();
@@ -360,13 +565,13 @@ export class AdminDepositPolicyPage implements OnInit {
 
   // ===== Display helpers =====
 
-  discountPercentDisplay(): number {
-    return Math.round(this.discountPercentRaw() * 100);
+  timeDiscountPercentDisplay(): number {
+    return Math.round(this.timeDiscountPercentRaw() * 100);
   }
 
-  onDiscountChange(value: number): void {
+  onTimeDiscountChange(value: number): void {
     const pct = Math.max(0, Math.min(99, Number(value) || 0));
-    this.discountPercentRaw.set(pct / 100);
+    this.timeDiscountPercentRaw.set(pct / 100);
   }
 
   percentDisplay(value?: number | null): number {
@@ -383,12 +588,27 @@ export class AdminDepositPolicyPage implements OnInit {
     return `${from} → ${to}`;
   }
 
+  formatDate(value: string | Date | undefined | null): string {
+    if (!value) return '';
+    return formatDate(value);
+  }
+
+  isDefaultPolicy(p: DepositPolicyDto): boolean {
+    return !p.activeFrom && !p.activeTo;
+  }
+
   lifecycleStatus(p: DepositPolicyDto): PolicyLifecycleStatus {
-    const now = Date.now();
-    const fromMs = p.activeFrom ? new Date(p.activeFrom).getTime() : -Infinity;
-    const toMs = p.activeTo ? new Date(p.activeTo).getTime() : Infinity;
-    if (now < fromMs) return 'upcoming';
-    if (now > toMs) return 'expired';
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayMs = today.getTime();
+    const fromDate = p.activeFrom ? new Date(p.activeFrom) : null;
+    const toDate = p.activeTo ? new Date(p.activeTo) : null;
+    fromDate?.setHours(0, 0, 0, 0);
+    toDate?.setHours(0, 0, 0, 0);
+    const fromMs = fromDate?.getTime() ?? -Infinity;
+    const toMs = toDate?.getTime() ?? Infinity;
+    if (todayMs < fromMs) return 'upcoming';
+    if (todayMs > toMs) return 'expired';
     return 'active';
   }
 
@@ -421,91 +641,134 @@ export class AdminDepositPolicyPage implements OnInit {
     this.previewDebounce = setTimeout(() => void this.loadPreview(), 300);
   }
 
-  resetForm(): void {
-    this.depositSessionCount = 1;
-    this.discountPercentRaw.set(0);
-    this.activeFrom = '';
-    this.activeTo = '';
-    this.formError.set('');
-    this.formSuccess.set('');
-  }
-
   async deleteItem(p: DepositPolicyDto): Promise<void> {
     if (!p.id) return;
     const confirmed = window.confirm(
       `Xác nhận xóa chính sách (${this.activeRange(p)}, ${this.percentDisplay(p.discountPercent)}%)? Thao tác không thể hoàn tác.`,
     );
     if (!confirmed) return;
-    this.formError.set('');
-    this.formSuccess.set('');
+
+    this.timeError.set('');
+    this.timeSuccess.set('');
+    this.defaultError.set('');
+    this.defaultSuccess.set('');
+
     try {
       await firstValueFrom(this.adminApi.delete(p.id));
-      this.formSuccess.set('Đã xóa chính sách.');
+      this.timeSuccess.set('Đã xóa chính sách thành công.');
       await this.loadAll();
     } catch (error) {
       console.error('[admin/deposit-policy] delete failed', error);
-      this.formError.set(getApiErrorMessage(error, 'Không xóa được chính sách.'));
+      this.timeError.set(getApiErrorMessage(error, 'Không xóa được chính sách.'));
     }
   }
 
-  async submit(): Promise<void> {
-    this.formError.set('');
-    this.formSuccess.set('');
+  async submitDefault(): Promise<void> {
+    this.defaultError.set('');
+    this.defaultSuccess.set('');
 
-    if (this.depositSessionCount <= 0) {
-      this.formError.set('Số buổi cọc phải lớn hơn 0.');
-      return;
-    }
-    const discount = this.discountPercentRaw();
-    if (discount < 0 || discount >= 1) {
-      this.formError.set('Phần trăm giảm giá phải từ 0 đến 99.');
-      return;
-    }
-    if (this.activeFrom && this.activeTo && new Date(this.activeTo) <= new Date(this.activeFrom)) {
-      this.formError.set('Ngày kết thúc hiệu lực phải sau ngày bắt đầu.');
+    if (this.defaultDepositSessionCount <= 0) {
+      this.defaultError.set('Số buổi cọc mặc định phải lớn hơn 0.');
       return;
     }
 
     const dto: UpsertDepositPolicyDto = {
-      depositSessionCount: this.depositSessionCount,
-      discountPercent: discount,
-      activeFrom: this.activeFrom ? new Date(this.activeFrom) : null,
-      activeTo: this.activeTo ? new Date(this.activeTo) : null,
+      depositSessionCount: this.defaultDepositSessionCount,
+      discountPercent: 0,
+      activeFrom: null,
+      activeTo: null,
     };
 
-    this.isSubmitting.set(true);
+    this.isSavingDefault.set(true);
     try {
       await firstValueFrom(this.adminApi.create(dto));
-      this.formSuccess.set('Đã tạo chính sách mới.');
-      this.resetForm();
+      this.defaultSuccess.set('Cập nhật số buổi cọc mặc định thành công.');
       await this.loadAll();
     } catch (error) {
-      console.error('[admin/deposit-policy] submit failed', error);
-      this.formError.set(getApiErrorMessage(error, 'Không lưu được chính sách.'));
+      console.error('[admin/deposit-policy] submitDefault failed', error);
+      this.defaultError.set(getApiErrorMessage(error, 'Không lưu được cọc mặc định.'));
     } finally {
-      this.isSubmitting.set(false);
+      this.isSavingDefault.set(false);
     }
   }
 
-  prevHistory(): void {
-    if (this.historyPage() > 1) {
-      this.historyPage.update((p) => p - 1);
-      void this.loadHistory();
+  async submitTimeBased(): Promise<void> {
+    this.timeError.set('');
+    this.timeSuccess.set('');
+
+    if (this.timeDepositSessionCount <= 0) {
+      this.timeError.set('Số buổi cọc phải lớn hơn 0.');
+      return;
+    }
+    const discount = this.timeDiscountPercentRaw();
+    if (discount < 0 || discount >= 1) {
+      this.timeError.set('Phần trăm giảm giá phải từ 0 đến 99.');
+      return;
+    }
+    if (!this.timeActiveFrom && !this.timeActiveTo) {
+      this.timeError.set(
+        'Chính sách theo thời gian cần ít nhất ngày bắt đầu hoặc ngày kết thúc hiệu lực.',
+      );
+      return;
+    }
+    if (
+      this.timeActiveFrom &&
+      this.timeActiveTo &&
+      new Date(this.timeActiveTo) < new Date(this.timeActiveFrom)
+    ) {
+      this.timeError.set('Ngày kế thúc hiệu lực không được trước ngày bắt đầu.');
+      return;
+    }
+
+    const dto: UpsertDepositPolicyDto = {
+      depositSessionCount: this.timeDepositSessionCount,
+      discountPercent: discount,
+      activeFrom: this.timeActiveFrom ? new Date(this.timeActiveFrom) : null,
+      activeTo: this.timeActiveTo ? new Date(this.timeActiveTo) : null,
+    };
+
+    this.isSubmittingTime.set(true);
+    try {
+      await firstValueFrom(this.adminApi.create(dto));
+      this.timeSuccess.set('Đã tạo chính sách theo thời gian thành công.');
+      this.resetTimeForm();
+      await this.loadAll();
+    } catch (error) {
+      console.error('[admin/deposit-policy] submitTimeBased failed', error);
+      this.timeError.set(getApiErrorMessage(error, 'Không lưu được chính sách theo thời gian.'));
+    } finally {
+      this.isSubmittingTime.set(false);
     }
   }
 
-  nextHistory(): void {
-    if (this.historyPage() < this.historyTotalPages()) {
-      this.historyPage.update((p) => p + 1);
-      void this.loadHistory();
-    }
+  resetTimeForm(): void {
+    this.timeDepositSessionCount = 1;
+    this.timeDiscountPercentRaw.set(0);
+    this.timeActiveFrom = '';
+    this.timeActiveTo = '';
+  }
+
+  onHistoryPageChange(newPage: number): void {
+    this.historyPage.set(newPage);
+    void this.loadHistory();
+  }
+
+  onHistoryPageSizeChange(newSize: number): void {
+    this.historyPageSize.set(newSize);
+    this.historyPage.set(1);
+    void this.loadHistory();
   }
 
   // ===== Loaders =====
 
   private async loadAll(): Promise<void> {
     this.loadError.set(null);
-    await Promise.all([this.loadActive(), this.loadHistory(), this.loadPreview()]);
+    await Promise.all([
+      this.loadActive(),
+      this.loadHistory(),
+      this.loadPreview(),
+      this.loadDefaultPolicy(),
+    ]);
   }
 
   private async loadActive(): Promise<void> {
@@ -513,7 +776,6 @@ export class AdminDepositPolicyPage implements OnInit {
       const response = await firstValueFrom(this.adminApi.getCurrent());
       this.activePolicy.set(response.data ?? null);
     } catch (error) {
-      // 404 = no active policy → not an error to user; just leave null.
       this.activePolicy.set(null);
       const status = (error as { status?: number }).status;
       if (status !== 404) {
@@ -524,10 +786,16 @@ export class AdminDepositPolicyPage implements OnInit {
   }
 
   private async loadHistory(): Promise<void> {
-    this.isLoadingHistory.set(true);
+    if (this.loadingTimeout) clearTimeout(this.loadingTimeout);
+
+    // Only trigger loading state visually if the request takes more than 150ms
+    this.loadingTimeout = setTimeout(() => {
+      this.isLoadingHistory.set(true);
+    }, 150);
+
     try {
       const response = await firstValueFrom(
-        this.adminApi.getHistory(this.historyPage(), this.historyPageSize),
+        this.adminApi.getHistory(this.historyPage(), this.historyPageSize()),
       );
       const paged: DepositPolicyPagedResult = response.data ?? {};
       this.history.set(paged.items ?? []);
@@ -536,6 +804,7 @@ export class AdminDepositPolicyPage implements OnInit {
       console.error('[admin/deposit-policy] loadHistory failed', error);
       this.loadError.set(getApiErrorDetails(error, 'Không tải được lịch sử chính sách.'));
     } finally {
+      if (this.loadingTimeout) clearTimeout(this.loadingTimeout);
       this.isLoadingHistory.set(false);
     }
   }
@@ -548,6 +817,23 @@ export class AdminDepositPolicyPage implements OnInit {
       this.preview.set(response.data ?? null);
     } catch {
       this.preview.set(null);
+    }
+  }
+
+  private async loadDefaultPolicy(): Promise<void> {
+    try {
+      const response = await firstValueFrom(this.adminApi.getHistory(1, 100));
+      const items = response.data?.items ?? [];
+      const found = items.find((p) => this.isDefaultPolicy(p));
+      if (found) {
+        this.defaultPolicy.set(found);
+        this.defaultDepositSessionCount = found.depositSessionCount ?? 1;
+      } else {
+        this.defaultPolicy.set(null);
+        this.defaultDepositSessionCount = 1;
+      }
+    } catch (error) {
+      console.error('[admin/deposit-policy] loadDefaultPolicy failed', error);
     }
   }
 }

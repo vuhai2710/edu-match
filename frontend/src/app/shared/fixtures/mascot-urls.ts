@@ -4,7 +4,7 @@
  */
 export const MASCOT_URLS = {
   eduLogo:
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuC9Aa2t2jBNeAoa3UtbJQvw7bfUtisdQXEJIr5eGObMRoCze7WebWg00VK4cwJLBCnc1GmaBTZFL81IDyQwcraubbpcvAlmxcBGJrT8FiT-ml6_w4Q7-eTXQmjcI99lemCcNZ1n4F7-oDBur3hsMLck6Dm2FI0qVhWWJ5pt_yqJczUZQ1gfH4i-VOxZG-4gfoSRKy1hs5yQagn5HKBA7ze2qGFBS_qUNjfNsznqkhr1x1TeDoyjMnvVtMNdgsKeNfRvKaS_rHTvKB1f',
+    '/assets/edu-logo.png',
   floatingGreenBook:
     'https://lh3.googleusercontent.com/aida-public/AB6AXuC4oTuW1QOwLlB2JqxmF9HM-yI4_2oRGb78Qpdv_U8W5UgCfD_VLxG6LT763E_-4CALMvR-FUcSq23dd4pGx4izggFXfcpjVauAPL5m9ex6vAhIKkNm2z0I6Fpqmdl4UbM7bEGRvkRLHXz3lnCZMQx-gU09twTpIbJ-KKpxbKSlchbsgRPf4H1_uHndCSq9Qqpb96hWN4lK03eG9MeOsIThsOa6JCjk7pB_amx7gCPRr3Is8goMDDC4aVFpinFuOYUo2NaRRwZAIBZH',
   studentBackpack:

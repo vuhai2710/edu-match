@@ -19,6 +19,7 @@ public class TutorService : ITutorService
   private readonly IFileService _fileService;
   private readonly IMapper _mapper;
   private readonly ICodeGeneratorService _codeGenerator;
+  private readonly IHttpContextAccessor _httpContextAccessor;
 
   public TutorService(
     ITutorRepository tutorRepository,
@@ -28,7 +29,8 @@ public class TutorService : ITutorService
     IRepository<TutorTeachingLevel> tutorTeachingLevelRepository,
     IFileService fileService,
     IMapper mapper,
-    ICodeGeneratorService codeGenerator)
+    ICodeGeneratorService codeGenerator,
+    IHttpContextAccessor httpContextAccessor)
   {
     _tutorRepository = tutorRepository;
     _userRepository = userRepository;
@@ -38,6 +40,7 @@ public class TutorService : ITutorService
     _fileService = fileService;
     _mapper = mapper;
     _codeGenerator = codeGenerator;
+    _httpContextAccessor = httpContextAccessor;
   }
 
   public async Task<PagedResult<TutorDto>> GetTutorsAsync(TutorQueryParameters parameters)
@@ -73,7 +76,7 @@ public class TutorService : ITutorService
       throw new NotFoundException("Không tìm thấy hồ sơ gia sư.", "TUTOR_PROFILE_NOT_FOUND");
     }
 
-    return _mapper.Map<TutorDetailDto>(profile);
+    return MapTutorDetail(profile);
   }
 
   public async Task<TutorDetailDto> GetTutorByUserIdAsync(long userId)
@@ -84,7 +87,7 @@ public class TutorService : ITutorService
       throw new NotFoundException("Không tìm thấy hồ sơ gia sư của người dùng này.", "TUTOR_PROFILE_NOT_FOUND");
     }
 
-    return _mapper.Map<TutorDetailDto>(profile);
+    return MapTutorDetail(profile);
   }
 
   public async Task<TutorDetailDto> UpdateTutorProfileAsync(long userId, UpdateTutorDto dto)
@@ -211,7 +214,7 @@ public class TutorService : ITutorService
       throw new NotFoundException("Không tìm thấy hồ sơ gia sư sau khi cập nhật.", "TUTOR_PROFILE_NOT_FOUND");
     }
 
-    return _mapper.Map<TutorDetailDto>(updatedProfile);
+    return MapTutorDetail(updatedProfile);
   }
 
   public async Task<FileDto> UpdateCvAsync(long userId, IFormFile file)
@@ -234,7 +237,7 @@ public class TutorService : ITutorService
     _tutorRepository.Update(profile);
     await _tutorRepository.SaveChangesAsync();
 
-    return _mapper.Map<FileDto>(savedFile);
+    return MapFileDto(savedFile);
   }
 
   public async Task DeleteCvAsync(long userId)
@@ -256,5 +259,38 @@ public class TutorService : ITutorService
 
     _tutorRepository.Update(profile);
     await _tutorRepository.SaveChangesAsync();
+  }
+
+  private TutorDetailDto MapTutorDetail(Tutor profile)
+  {
+    var dto = _mapper.Map<TutorDetailDto>(profile);
+    dto.CvUrl = BuildCloudinaryViewUrl(profile.CvFile?.FilePath);
+    return dto;
+  }
+
+  private FileDto MapFileDto(EduMatch.Models.File file)
+  {
+    var dto = _mapper.Map<FileDto>(file);
+    dto.FilePath = BuildCloudinaryViewUrl(file.FilePath) ?? file.FilePath;
+    return dto;
+  }
+
+  private string? BuildCloudinaryViewUrl(string? filePath)
+  {
+    if (string.IsNullOrWhiteSpace(filePath)
+        || !Uri.TryCreate(filePath, UriKind.Absolute, out var uri)
+        || !string.Equals(uri.Host, "res.cloudinary.com", StringComparison.OrdinalIgnoreCase))
+    {
+      return filePath;
+    }
+
+    var request = _httpContextAccessor.HttpContext?.Request;
+    if (request == null)
+    {
+      return filePath;
+    }
+
+    var baseUrl = $"{request.Scheme}://{request.Host}{request.PathBase}";
+    return $"{baseUrl}/api/Files/cloudinary/view?url={Uri.EscapeDataString(filePath)}";
   }
 }

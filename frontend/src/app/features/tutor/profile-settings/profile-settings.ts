@@ -1,5 +1,6 @@
 import { Component, ElementRef, HostListener, OnInit, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { LucideEye, LucideEyeOff } from '@lucide/angular';
 import { firstValueFrom } from 'rxjs';
 
 import {
@@ -26,7 +27,7 @@ import { MascotComponent } from '../../../shared/components/mascot/mascot';
 
 @Component({
   selector: 'app-tutor-profile-settings-page',
-  imports: [FormsModule, MascotComponent],
+  imports: [FormsModule, MascotComponent, LucideEye, LucideEyeOff],
   template: `
     <div class="space-y-6">
       <h1 class="font-display text-2xl font-black text-slate-900">Hồ sơ gia sư</h1>
@@ -96,7 +97,9 @@ import { MascotComponent } from '../../../shared/components/mascot/mascot';
             <h2 class="font-extrabold text-lg text-slate-900">Thông tin cá nhân</h2>
             <div class="grid sm:grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Họ và tên</label>
+                <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
+                  Họ và tên <span class="text-red-500">*</span>
+                </label>
                 <input type="text" [(ngModel)]="fullName" class="tactile-input w-full text-sm font-semibold" />
               </div>
               <div>
@@ -119,8 +122,13 @@ import { MascotComponent } from '../../../shared/components/mascot/mascot';
                 </select>
               </div>
               <div>
-                <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Số điện thoại</label>
-                <input type="tel" [(ngModel)]="phoneNumber" class="tactile-input w-full text-sm font-semibold" />
+                <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
+                  Số điện thoại <span class="text-red-500">*</span>
+                </label>
+                <input type="tel" [(ngModel)]="phoneNumber" maxlength="10" class="tactile-input w-full text-sm font-semibold" />
+                @if (phoneNumberError()) {
+                  <span class="text-xs font-bold text-duo-red mt-1 block">{{ phoneNumberError() }}</span>
+                }
               </div>
             </div>
 
@@ -130,14 +138,18 @@ import { MascotComponent } from '../../../shared/components/mascot/mascot';
                 <input type="text" [(ngModel)]="school" class="tactile-input w-full text-sm font-semibold" />
               </div>
               <div>
-                <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Học phí / giờ (VND)</label>
+                <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
+                  Học phí / giờ (VND) <span class="text-red-500">*</span>
+                </label>
                 <input type="number" [(ngModel)]="hourlyRate" class="tactile-input w-full text-sm font-semibold" />
               </div>
             </div>
 
             <div class="grid sm:grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Tỉnh / thành</label>
+                <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
+                  Tỉnh / thành <span class="text-red-500">*</span>
+                </label>
                 <select [ngModel]="provinceId()" (ngModelChange)="onProvinceChange($event)"
                         class="tactile-input w-full text-sm font-semibold bg-white">
                   <option [ngValue]="null">Chọn tỉnh / thành</option>
@@ -147,7 +159,9 @@ import { MascotComponent } from '../../../shared/components/mascot/mascot';
                 </select>
               </div>
               <div>
-                <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Phường / xã</label>
+                <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
+                  Phường / xã <span class="text-red-500">*</span>
+                </label>
                 <select [ngModel]="wardCode()" (ngModelChange)="wardCode.set($event)"
                         class="tactile-input w-full text-sm font-semibold bg-white"
                         [disabled]="!provinceId() || isLoadingWards()">
@@ -186,7 +200,9 @@ import { MascotComponent } from '../../../shared/components/mascot/mascot';
                 </select>
               </div>
               <div>
-                <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Chuyên ngành</label>
+                <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
+                  Chuyên ngành <span class="text-red-500">*</span>
+                </label>
                 <input type="text" [(ngModel)]="major" class="tactile-input w-full text-sm font-semibold" />
               </div>
             </div>
@@ -229,7 +245,7 @@ import { MascotComponent } from '../../../shared/components/mascot/mascot';
               </div>
             </div>
 
-            <button (click)="onSave()" [disabled]="isSaving()"
+            <button (click)="onSave()" [disabled]="isSaving() || !!phoneNumberError()"
                     class="tactile-button-green px-6 py-2.5 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60">
               {{ isSaving() ? 'Đang lưu...' : 'Lưu thay đổi' }}
             </button>
@@ -279,19 +295,67 @@ import { MascotComponent } from '../../../shared/components/mascot/mascot';
               <h2 class="font-extrabold text-lg text-slate-900">Đổi mật khẩu</h2>
               <div>
                 <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Mật khẩu hiện tại</label>
-                <input type="password" [(ngModel)]="currentPassword" class="tactile-input w-full text-sm font-semibold" />
+                <div class="relative">
+                  <input [type]="showCurrentPassword() ? 'text' : 'password'" [(ngModel)]="currentPassword" class="tactile-input w-full text-sm font-semibold pr-12" />
+                  <button
+                    (click)="showCurrentPassword.set(!showCurrentPassword())"
+                    type="button"
+                    [attr.aria-label]="showCurrentPassword() ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'"
+                    class="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-slate-500 transition-colors hover:text-slate-700 focus:outline-none"
+                  >
+                    @if (showCurrentPassword()) {
+                      <svg lucideEyeOff class="h-5 w-5"></svg>
+                    } @else {
+                      <svg lucideEye class="h-5 w-5"></svg>
+                    }
+                  </button>
+                </div>
               </div>
               <div class="grid sm:grid-cols-2 gap-4">
                 <div>
                   <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Mật khẩu mới</label>
-                  <input type="password" [(ngModel)]="newPassword" class="tactile-input w-full text-sm font-semibold" />
+                  <div class="relative">
+                    <input [type]="showNewPassword() ? 'text' : 'password'" [(ngModel)]="newPassword" (ngModelChange)="onNewPasswordChange()" class="tactile-input w-full text-sm font-semibold pr-12" />
+                    <button
+                      (click)="showNewPassword.set(!showNewPassword())"
+                      type="button"
+                      [attr.aria-label]="showNewPassword() ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'"
+                      class="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-slate-500 transition-colors hover:text-slate-700 focus:outline-none"
+                    >
+                      @if (showNewPassword()) {
+                        <svg lucideEyeOff class="h-5 w-5"></svg>
+                      } @else {
+                        <svg lucideEye class="h-5 w-5"></svg>
+                      }
+                    </button>
+                  </div>
+                  @if (newPasswordError()) {
+                    <span class="text-xs font-bold text-duo-red mt-1 block">{{ newPasswordError() }}</span>
+                  }
                 </div>
                 <div>
                   <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Xác nhận mật khẩu</label>
-                  <input type="password" [(ngModel)]="confirmPassword" class="tactile-input w-full text-sm font-semibold" />
+                  <div class="relative">
+                    <input [type]="showConfirmPassword() ? 'text' : 'password'" [(ngModel)]="confirmPassword" (ngModelChange)="onConfirmPasswordChange()" class="tactile-input w-full text-sm font-semibold pr-12" />
+                    <button
+                      (click)="showConfirmPassword.set(!showConfirmPassword())"
+                      type="button"
+                      [attr.aria-label]="showConfirmPassword() ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'"
+                      class="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-slate-500 transition-colors hover:text-slate-700 focus:outline-none"
+                    >
+                      @if (showConfirmPassword()) {
+                        <svg lucideEyeOff class="h-5 w-5"></svg>
+                      } @else {
+                        <svg lucideEye class="h-5 w-5"></svg>
+                      }
+                    </button>
+                  </div>
+                  @if (confirmPasswordError()) {
+                    <span class="text-xs font-bold text-duo-red mt-1 block">{{ confirmPasswordError() }}</span>
+                  }
                 </div>
               </div>
-              <button (click)="onChangePassword()" [disabled]="isChangingPassword()"
+              <button (click)="onChangePassword()" [disabled]="isChangingPassword() || !!newPasswordError() || !!confirmPasswordError()"
                       class="tactile-button-blue px-6 py-2.5 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60">
                 {{ isChangingPassword() ? 'Đang cập nhật...' : 'Cập nhật mật khẩu' }}
               </button>
@@ -331,6 +395,44 @@ export class TutorProfileSettingsPage implements OnInit {
   currentPassword = '';
   newPassword = '';
   confirmPassword = '';
+
+  showCurrentPassword = signal(false);
+  showNewPassword = signal(false);
+  showConfirmPassword = signal(false);
+
+  newPasswordError = signal('');
+  confirmPasswordError = signal('');
+
+  phoneNumberError(): string {
+    const phone = this.phoneNumber.trim();
+    if (!phone) return '';
+    if (!phone.startsWith('0')) return 'Số điện thoại phải bắt đầu bằng số 0.';
+    if (!/^\d+$/.test(phone)) return 'Số điện thoại chỉ được chứa các chữ số.';
+    if (phone.length > 10) return 'Số điện thoại tối đa 10 chữ số.';
+    return '';
+  }
+
+  onNewPasswordChange(): void {
+    if (this.newPassword && this.newPassword.length < 6) {
+      this.newPasswordError.set('Mật khẩu mới phải có ít nhất 6 ký tự.');
+    } else {
+      this.newPasswordError.set('');
+    }
+
+    if (this.confirmPassword && this.newPassword !== this.confirmPassword) {
+      this.confirmPasswordError.set('Mật khẩu nhập lại không khớp.');
+    } else {
+      this.confirmPasswordError.set('');
+    }
+  }
+
+  onConfirmPasswordChange(): void {
+    if (this.confirmPassword && this.newPassword !== this.confirmPassword) {
+      this.confirmPasswordError.set('Mật khẩu nhập lại không khớp.');
+    } else {
+      this.confirmPasswordError.set('');
+    }
+  }
 
   provinces = signal<ProvinceDto[]>([]);
   wards = signal<WardDto[]>([]);
@@ -594,6 +696,9 @@ export class TutorProfileSettingsPage implements OnInit {
       this.currentPassword = '';
       this.newPassword = '';
       this.confirmPassword = '';
+      this.showCurrentPassword.set(false);
+      this.showNewPassword.set(false);
+      this.showConfirmPassword.set(false);
       this.showSuccess('Đã cập nhật mật khẩu.');
     } catch (error) {
       this.showError(getApiErrorMessage(error, 'Không đổi được mật khẩu.'));

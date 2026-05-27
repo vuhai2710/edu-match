@@ -1,6 +1,6 @@
 using EduMatch.Common.Enums;
-using EduMatch.DTOs.Review;
 using EduMatch.Common.Exception;
+using EduMatch.DTOs.Review;
 using EduMatch.Models;
 using EduMatch.Repositories;
 using EduMatch.Repositories.Interfaces;
@@ -118,12 +118,12 @@ namespace EduMatch.Services
       var classEntity = await _classRepository.GetByIdAsync(classId);
       if (classEntity == null)
       {
-        throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y lá»›p há»c.", "CLASS_NOT_FOUND");
+        throw new NotFoundException("Không tìm thấy lớp học.", "CLASS_NOT_FOUND");
       }
 
       if (classEntity.StudentId != userId)
       {
-        throw new ForbiddenException("Báº¡n khÃ´ng cÃ³ quyá»n Ä‘Ã¡nh giÃ¡ lá»›p há»c nÃ y.", "REVIEW_FORBIDDEN");
+        throw new ForbiddenException("Bạn không có quyền đánh giá lớp học này.", "REVIEW_FORBIDDEN");
       }
 
       var alreadyReviewed = await _reviewRepository.ExistsByClassAndStudentAsync(classId, userId);
@@ -134,7 +134,7 @@ namespace EduMatch.Services
           ClassId = classId,
           CanReview = false,
           ReasonCode = "ALREADY_REVIEWED",
-          Message = "Ban da danh gia lop hoc nay roi.",
+          Message = "Bạn đã đánh giá lớp học này rồi.",
           AlreadyReviewed = true
         };
       }
@@ -146,7 +146,7 @@ namespace EduMatch.Services
           ClassId = classId,
           CanReview = false,
           ReasonCode = "NOT_ACTIVE",
-          Message = "Chi duoc danh gia khi lop hoc dang hoat dong.",
+          Message = "Chỉ được đánh giá khi lớp học đang hoạt động.",
           AlreadyReviewed = false
         };
       }
@@ -158,7 +158,7 @@ namespace EduMatch.Services
           ClassId = classId,
           CanReview = false,
           ReasonCode = "NO_START_DATE",
-          Message = "Lop hoc chua co ngay bat dau hop le.",
+          Message = "Lớp học chưa có ngày bắt đầu hợp lệ.",
           AlreadyReviewed = false
         };
       }
@@ -171,7 +171,7 @@ namespace EduMatch.Services
           ClassId = classId,
           CanReview = false,
           ReasonCode = "TOO_EARLY",
-          Message = "Chi duoc phep danh gia sau 7 ngay ke tu ngay bat dau lop hoc.",
+          Message = "Chỉ được đánh giá sau 7 ngày lớp học bắt đầu.",
           AvailableAt = availableAt,
           AlreadyReviewed = false
         };
@@ -182,7 +182,7 @@ namespace EduMatch.Services
         ClassId = classId,
         CanReview = true,
         ReasonCode = "CAN_REVIEW",
-        Message = "Co the danh gia lop hoc.",
+        Message = "Có thể đánh giá lớp học.",
         AlreadyReviewed = false
       };
     }

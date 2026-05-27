@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 
 import { NotificationDto } from '../../../api/generated/client/models';
 import { NotificationsService } from '../../../api/generated/client/services';
+import { SessionService } from '../../../core/auth/session';
 import { getApiErrorMessage } from '../../../core/http/api-error';
 import { formatDateTime, notificationRoute } from '../../../shared/utils/api-ui';
 
@@ -90,6 +91,7 @@ export class NotificationCenterPage implements OnInit {
 
   private readonly notificationsApi = inject(NotificationsService);
   private readonly router = inject(Router);
+  protected readonly session = inject(SessionService);
 
   ngOnInit(): void {
     void this.loadNotifications();
@@ -104,7 +106,7 @@ export class NotificationCenterPage implements OnInit {
     if (!notification.isRead && notification.id) {
       await this.markRead(notification.id);
     }
-    await this.router.navigateByUrl(notificationRoute(notification));
+    await this.router.navigateByUrl(notificationRoute(notification, this.session.role() ?? undefined));
   }
 
   async markAllRead(): Promise<void> {

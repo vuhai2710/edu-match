@@ -376,7 +376,10 @@ export enum EducationLevel {
 export interface ErrorResponse {
     success?: boolean;
     message?: string | null;
+    statusCode?: number;
     errorCode?: string | null;
+    traceId?: string | null;
+    errors?: Record<string, Array<string>>;
 }
 
 export interface FileDto {
@@ -693,6 +696,14 @@ export interface PendingTutorItemDto {
     profile?: string | null;
     hourlyRate?: number;
     requestedAt?: Date;
+}
+
+export interface ProblemDetails {
+    type?: string | null;
+    title?: string | null;
+    status?: number | null;
+    detail?: string | null;
+    instance?: string | null;
 }
 
 export interface ProvinceDto {

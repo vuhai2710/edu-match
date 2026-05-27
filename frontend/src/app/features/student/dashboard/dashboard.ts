@@ -5,7 +5,6 @@ import { firstValueFrom } from 'rxjs';
 import { ClassDto, LearningRequestDto, StudentDashboardDto } from '../../../api/generated/client/models';
 import { ClassesService, DashboardService, LearningRequestsService } from '../../../api/generated/client/services';
 import { getApiErrorMessage } from '../../../core/http/api-error';
-import { MascotComponent } from '../../../shared/components/mascot/mascot';
 import {
   classStatusLabel,
   formatDate,
@@ -15,11 +14,10 @@ import {
 
 @Component({
   selector: 'app-student-dashboard-page',
-  imports: [RouterLink, MascotComponent],
+  imports: [RouterLink],
   template: `
     <div class="space-y-6">
       <div class="bg-gradient-to-r from-[#58cc02] to-emerald-500 rounded-3xl p-6 md:p-8 flex items-center gap-6 shadow-lg">
-        <app-mascot type="studentBackpack" [size]="100" className="hidden sm:block" />
         <div class="flex-1 text-white">
           <h1 class="font-display text-2xl md:text-3xl font-black">Dashboard học viên</h1>
           <p class="mt-1 text-green-100 text-sm md:text-base">Theo dõi yêu cầu học, lớp đang học và thanh toán đặt cọc.</p>

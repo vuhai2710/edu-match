@@ -229,15 +229,15 @@ export class CreateBookingPage implements OnInit {
   }
 
   private async loadTutor(): Promise<void> {
-    const tutorId = Number(this.route.snapshot.paramMap.get('tutorId'));
-    if (!tutorId) {
+    const idParam = this.route.snapshot.paramMap.get('tutorId');
+    if (!idParam) {
       this.errorMessage.set('Mã gia sư không hợp lệ.');
       return;
     }
 
     this.isLoading.set(true);
     try {
-      const response = await firstValueFrom(this.tutorsApi.getTutorById(tutorId));
+      const response = await firstValueFrom(this.tutorsApi.getTutorById(idParam));
       const tutor = unwrapApiData(response);
       this.tutor.set(tutor);
       this.subjectId = tutor.subjects?.[0]?.subjectId ?? null;

@@ -15,6 +15,7 @@ export { ChatService } from "./chat.service";
 export { ClassesService } from "./classes.service";
 export { DashboardService } from "./dashboard.service";
 export { DepositPolicyService } from "./depositPolicy.service";
+export { FilesService } from "./files.service";
 export { LearningRequestsService } from "./learningRequests.service";
 export { NotificationsService } from "./notifications.service";
 export { PaymentsService } from "./payments.service";

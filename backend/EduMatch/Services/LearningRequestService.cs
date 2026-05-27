@@ -80,11 +80,8 @@ namespace EduMatch.Services
         }),
         dto.HoursPerSession);
 
-      var activePolicy = await _depositPolicyRepository.GetActivePolicyAsync();
-      if (activePolicy == null)
-      {
-        throw new NotFoundException("Không tìm thấy chính sách đặt cọc đang hiệu lực.", "DEPOSIT_POLICY_NOT_FOUND");
-      }
+      var activePolicy = await _depositPolicyRepository.GetActivePolicyAsync()
+        ?? CreateFallbackDefaultPolicy();
 
       var totalAmount = CalculateTotalAmount(dto.BudgetPerHour, dto.HoursPerSession, activePolicy);
       var depositCalculation = _depositCalculator.Calculate(new DepositCalculationRequest
@@ -151,7 +148,7 @@ namespace EduMatch.Services
       };
     }
 
-    public async Task<LearningRequestDto> GetByIdAsync(long id, long currentUserId)
+    public async Task<LearningRequestDto> GetByIdAsync(long id, long currentUserId, UserRole role, long? tutorProfileId = null)
     {
       var request = await _learningRequestRepository.GetByIdWithDetailsAsync(id);
       if (request == null)
@@ -159,13 +156,38 @@ namespace EduMatch.Services
         throw new NotFoundException("Không tìm thấy yêu cầu học tập.", "LEARNING_REQUEST_NOT_FOUND");
       }
 
-      if (request.StudentId != currentUserId)
-      {
-        throw new ForbiddenException("Bạn không có quyền xem yêu cầu học tập này.", "LEARNING_REQUEST_FORBIDDEN");
-      }
+      EnsureCanViewRequest(request, currentUserId, role, tutorProfileId);
+
+
+
+
 
       var timeSlots = _bookingScheduleService.ParseAndValidate(request.TimeSlots, request.HoursPerSession);
       return LearningRequestMapper.ToDto(request, timeSlots);
+    }
+
+    private static void EnsureCanViewRequest(
+      LearningRequest request,
+      long currentUserId,
+      UserRole role,
+      long? tutorProfileId)
+    {
+      if (role == UserRole.Admin)
+      {
+        return;
+      }
+
+      if (role == UserRole.Student && request.StudentId == currentUserId)
+      {
+        return;
+      }
+
+      if (role == UserRole.Tutor && tutorProfileId.HasValue && request.TutorId == tutorProfileId.Value)
+      {
+        return;
+      }
+
+      throw new ForbiddenException("Bạn không có quyền xem yêu cầu học tập này.", "LEARNING_REQUEST_FORBIDDEN");
     }
 
     private static decimal CalculateTotalAmount(decimal budgetPerHour, decimal hoursPerSession, DepositPolicy policy)
@@ -175,6 +197,15 @@ namespace EduMatch.Services
         grossAmount * (1 - policy.DiscountPercent),
         2,
         MidpointRounding.AwayFromZero);
+    }
+
+    private static DepositPolicy CreateFallbackDefaultPolicy()
+    {
+      return new DepositPolicy
+      {
+        DepositSessionCount = DepositPolicyDefaults.SessionCount,
+        DiscountPercent = DepositPolicyDefaults.DiscountPercent
+      };
     }
 
     private static string SerializeTimeSlots(IEnumerable<BookingTimeSlot> timeSlots)

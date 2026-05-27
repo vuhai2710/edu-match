@@ -33,15 +33,24 @@ export function formatMoney(value?: number | null): string {
 
 export function formatDate(value?: Date | string | null): string {
   if (!value) return 'Chưa có';
-  return new Intl.DateTimeFormat('vi-VN').format(new Date(value));
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return 'Chưa có';
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}/${month}/${year}`;
 }
 
 export function formatDateTime(value?: Date | string | null): string {
   if (!value) return 'Chưa có';
-  return new Intl.DateTimeFormat('vi-VN', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  }).format(new Date(value));
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return 'Chưa có';
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  return `${hours}:${minutes} ${day}/${month}/${year}`;
 }
 
 export function formatTimeSlots(slots?: TimeSlotDto[] | TimeSlotInputDto[] | null): string {
@@ -203,20 +212,29 @@ export function scheduleProposalStatusLabel(status?: ScheduleProposalStatus | nu
   return status ? labels[status] : 'Chưa cập nhật';
 }
 
-export function notificationRoute(notification: NotificationDto): string {
+export function notificationRoute(notification: NotificationDto, role: UserRole = UserRole.Student): string {
+  const rolePrefix = role === UserRole.Tutor ? '/tutor' : role === UserRole.Admin ? '/admin' : '/student';
+
   if (notification.actionUrl?.startsWith('/learning-requests/')) {
-    return `/student${notification.actionUrl}`;
+    if (role === UserRole.Tutor) {
+      const id = notification.actionUrl.split('/').pop();
+      return `/tutor/requests/${id}`;
+    }
+    return `${rolePrefix}${notification.actionUrl}`;
   }
 
   if (notification.referenceType === 'LearningRequest' && notification.referenceId) {
-    return `/student/learning-requests/${notification.referenceId}`;
+    if (role === UserRole.Tutor) {
+      return `/tutor/requests/${notification.referenceId}`;
+    }
+    return `${rolePrefix}/learning-requests/${notification.referenceId}`;
   }
 
   if (notification.referenceType === 'Class' && notification.referenceId) {
-    return `/student/classes/${notification.referenceId}`;
+    return `${rolePrefix}/classes/${notification.referenceId}`;
   }
 
-  return '/student/notifications';
+  return `${rolePrefix}/notifications`;
 }
 
 export function buildEndTime(startTime: string, hoursPerSession: number): string {

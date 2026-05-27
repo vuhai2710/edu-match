@@ -7,11 +7,12 @@ import { PaymentAdminDto, PaymentStatus } from '../../../api/generated/client/mo
 import { AdminService } from '../../../api/generated/client/services';
 import { ApiErrorDetails, getApiErrorDetails } from '../../../core/http/api-error';
 import { ErrorBannerComponent } from '../../../shared/components/error-banner/error-banner';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination';
 import { formatDateTime, formatMoney, paymentStatusLabel } from '../../../shared/utils/api-ui';
 
 @Component({
   selector: 'app-admin-payments-page',
-  imports: [ErrorBannerComponent, FormsModule, RouterLink],
+  imports: [ErrorBannerComponent, FormsModule, RouterLink, PaginationComponent],
   template: `
     <div class="space-y-6">
       <div>
@@ -43,7 +44,7 @@ import { formatDateTime, formatMoney, paymentStatusLabel } from '../../../shared
         <app-error-banner [details]="errorDetails()" />
       }
 
-      <div class="tactile-card overflow-hidden">
+      <div class="tactile-card overflow-hidden relative transition-opacity duration-200" [class.opacity-50]="isLoading()" [class.pointer-events-none]="isLoading()">
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead class="bg-slate-50 border-b-2 border-slate-100">
@@ -89,17 +90,12 @@ import { formatDateTime, formatMoney, paymentStatusLabel } from '../../../shared
         }
       </div>
 
-      @if (totalPages() > 1) {
-        <div class="flex items-center justify-between text-sm">
-          <p class="text-slate-500">Tổng {{ totalCount() }} giao dịch · Trang {{ page() }}/{{ totalPages() }}</p>
-          <div class="flex gap-2">
-            <button (click)="prevPage()" [disabled]="page() <= 1"
-                    class="px-3 py-1.5 rounded-lg border-2 border-slate-200 font-bold text-slate-600 disabled:opacity-40">Trước</button>
-            <button (click)="nextPage()" [disabled]="page() >= totalPages()"
-                    class="px-3 py-1.5 rounded-lg border-2 border-slate-200 font-bold text-slate-600 disabled:opacity-40">Sau</button>
-          </div>
-        </div>
-      }
+      <app-pagination [page]="page()"
+                      [pageSize]="pageSize()"
+                      [totalCount]="totalCount()"
+                      itemsName="giao dịch"
+                      (pageChange)="onPageChange($event)"
+                      (pageSizeChange)="onPageSizeChange($event)" />
     </div>
   `,
 })
@@ -108,9 +104,9 @@ export class AdminPaymentsPage implements OnInit {
   activeStatus = signal<PaymentStatus | null>(null);
   searchTerm = '';
   page = signal(1);
-  pageSize = 20;
+  pageSize = signal(5);
   totalCount = signal(0);
-  totalPages = computed(() => Math.max(1, Math.ceil(this.totalCount() / this.pageSize)));
+  totalPages = computed(() => Math.max(1, Math.ceil(this.totalCount() / this.pageSize())));
   isLoading = signal(false);
   errorDetails = signal<ApiErrorDetails | null>(null);
 
@@ -143,18 +139,15 @@ export class AdminPaymentsPage implements OnInit {
     }, 400);
   }
 
-  prevPage(): void {
-    if (this.page() > 1) {
-      this.page.update((p) => p - 1);
-      void this.load();
-    }
+  onPageChange(newPage: number): void {
+    this.page.set(newPage);
+    void this.load();
   }
 
-  nextPage(): void {
-    if (this.page() < this.totalPages()) {
-      this.page.update((p) => p + 1);
-      void this.load();
-    }
+  onPageSizeChange(newSize: number): void {
+    this.pageSize.set(newSize);
+    this.page.set(1);
+    void this.load();
   }
 
   label = paymentStatusLabel;
@@ -186,7 +179,7 @@ export class AdminPaymentsPage implements OnInit {
     this.errorDetails.set(null);
     try {
       const response = await firstValueFrom(
-        this.adminApi.getAllPayments(this.page(), this.pageSize, this.activeStatus() ?? undefined),
+        this.adminApi.getAllPayments(this.page(), this.pageSize(), this.activeStatus() ?? undefined),
       );
       let items = response.data?.items ?? [];
       const search = this.searchTerm.trim();
@@ -203,3 +196,4 @@ export class AdminPaymentsPage implements OnInit {
     }
   }
 }
+

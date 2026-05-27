@@ -33,6 +33,16 @@ export const TUTOR_ROUTES: Routes = [
           import('./profile-settings/profile-settings').then(m => m.TutorProfileSettingsPage),
       },
       {
+        path: 'notifications',
+        loadComponent: () =>
+          import('../student/notifications/notification-center').then(m => m.NotificationCenterPage),
+      },
+      {
+        path: 'chat',
+        loadComponent: () =>
+          import('../student/chat/chat').then(m => m.ChatPage),
+      },
+      {
         path: '',
         pathMatch: 'full',
         redirectTo: 'dashboard',

@@ -18,16 +18,33 @@ public class DepositPolicyRepository : Repository<DepositPolicy>, IDepositPolicy
 
   public Task<DepositPolicy?> GetPolicyByIdAsync(long id) => GetByIdAsync(id);
 
+  public async Task<DepositPolicy?> GetDefaultPolicyAsync(long? excludeId = null)
+  {
+    var query = _dbSet
+      .Where(x => !x.IsDeleted)
+      .Where(x => x.ActiveFrom == null && x.ActiveTo == null);
+
+    if (excludeId.HasValue)
+    {
+      query = query.Where(x => x.Id != excludeId.Value);
+    }
+
+    return await query
+      .OrderByDescending(x => x.UpdatedAt ?? x.CreatedAt)
+      .FirstOrDefaultAsync();
+  }
+
   public async Task<DepositPolicy?> GetActivePolicyAsync()
   {
-    var now = DateTime.UtcNow;
+    var today = DateTime.UtcNow.Date;
 
     return await _dbSet
       .Where(x => !x.IsDeleted)
       .Where(x =>
-        (x.ActiveFrom == null || x.ActiveFrom <= now) &&
-        (x.ActiveTo == null || x.ActiveTo >= now))
-      .OrderByDescending(x => x.ActiveFrom ?? DateTime.MinValue)
+        (x.ActiveFrom == null || x.ActiveFrom.Value.Date <= today) &&
+        (x.ActiveTo == null || x.ActiveTo.Value.Date >= today))
+      .OrderBy(x => x.ActiveFrom == null && x.ActiveTo == null)
+      .ThenByDescending(x => x.ActiveFrom ?? DateTime.MinValue)
       .ThenByDescending(x => x.UpdatedAt ?? x.CreatedAt)
       .FirstOrDefaultAsync();
   }
@@ -49,16 +66,28 @@ public class DepositPolicyRepository : Repository<DepositPolicy>, IDepositPolicy
 
   public async Task<bool> HasOverlapAsync(DateTime? activeFrom, DateTime? activeTo, long? excludeId)
   {
-    // Treat null bounds as open-ended: null ActiveFrom = -infinity, null ActiveTo = +infinity.
-    // Two intervals [a, b] and [c, d] overlap iff a <= d && c <= b.
+    var isDefaultPolicy = activeFrom == null && activeTo == null;
+    var today = DateTime.UtcNow.Date;
+    var fromDate = activeFrom?.Date;
+    var toDate = activeTo?.Date;
+
     var query = _dbSet.Where(x => !x.IsDeleted);
     if (excludeId.HasValue)
     {
       query = query.Where(x => x.Id != excludeId.Value);
     }
 
+    if (isDefaultPolicy)
+    {
+      return await query.AnyAsync(x => x.ActiveFrom == null && x.ActiveTo == null);
+    }
+
+    query = query
+      .Where(x => x.ActiveFrom != null || x.ActiveTo != null)
+      .Where(x => x.ActiveTo == null || x.ActiveTo.Value.Date >= today);
+
     return await query.AnyAsync(x =>
-      (activeTo == null || x.ActiveFrom == null || x.ActiveFrom <= activeTo) &&
-      (activeFrom == null || x.ActiveTo == null || activeFrom <= x.ActiveTo));
+      (toDate == null || x.ActiveFrom == null || x.ActiveFrom.Value.Date <= toDate) &&
+      (fromDate == null || x.ActiveTo == null || fromDate <= x.ActiveTo.Value.Date));
   }
 }

@@ -41,7 +41,7 @@ namespace EduMatch.Controllers
       var result = await _learningRequestService.CreateAsync(GetCurrentUserId(), dto);
       return this.CreatedResponse(
         $"/api/learning-requests/{result.Id}",
-        ApiResponse<LearningRequestDto>.SuccessResult(result, "Tạo yêu cầu học tập thành công."));
+        ApiResponse<LearningRequestDto>.SuccessResult(result, "Tao yeu cau hoc tap thanh cong."));
     }
 
     [HttpGet("me")]
@@ -57,7 +57,7 @@ namespace EduMatch.Controllers
     }
 
     [HttpGet("{id:long}")]
-    [Authorize(Roles = "Student")]
+    [Authorize(Roles = "Student,Tutor,Admin")]
     [SwaggerOperation(OperationId = "getLearningRequestById")]
     [ProducesResponseType(typeof(ApiResponse<LearningRequestDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
@@ -65,7 +65,12 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<LearningRequestDto>>> GetById(long id)
     {
-      var result = await _learningRequestService.GetByIdAsync(id, GetCurrentUserId());
+      var result = await _learningRequestService.GetByIdAsync(
+        id,
+        GetCurrentUserId(),
+        GetCurrentUserRole(),
+        TryGetCurrentTutorId());
+
       return this.OkResponse(ApiResponse<LearningRequestDto>.SuccessResult(result));
     }
 
@@ -106,11 +111,10 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<ApiResponse<LearningRequestDto>>> Accept(long id)
     {
       var result = await _tutorLearningRequestService.AcceptAsync(id, GetCurrentTutorId());
-      return this.OkResponse(ApiResponse<LearningRequestDto>.SuccessResult(result, "Chấp nhận yêu cầu học tập thành công."));
+      return this.OkResponse(result);
     }
 
     [HttpPut("{id:long}/reject")]
@@ -120,11 +124,10 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<ApiResponse<LearningRequestDto>>> Reject(long id)
     {
       var result = await _tutorLearningRequestService.RejectAsync(id, GetCurrentTutorId());
-      return this.OkResponse(ApiResponse<LearningRequestDto>.SuccessResult(result, "Từ chối yêu cầu học tập thành công."));
+      return this.OkResponse(result);
     }
 
     private long GetCurrentUserId()

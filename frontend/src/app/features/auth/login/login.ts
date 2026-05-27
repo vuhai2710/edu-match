@@ -8,7 +8,6 @@ import { AuthApiService } from '../../../api/facades/auth-api';
 import { SessionService } from '../../../core/auth/session';
 import { UserRole } from '../../../core/auth/session.models';
 import { getApiErrorMessage, unwrapApiData } from '../../../core/http/api-error';
-import { MascotComponent } from '../../../shared/components/mascot/mascot';
 import { GoogleSignInButtonComponent } from '../../../shared/components/google-sign-in-button/google-sign-in-button';
 
 @Component({
@@ -16,7 +15,6 @@ import { GoogleSignInButtonComponent } from '../../../shared/components/google-s
   imports: [
     FormsModule,
     RouterLink,
-    MascotComponent,
     LucideEye,
     LucideEyeOff,
     GoogleSignInButtonComponent,
@@ -25,20 +23,23 @@ import { GoogleSignInButtonComponent } from '../../../shared/components/google-s
     <div class="min-h-[70vh] flex items-center justify-center py-12 px-4">
       <div class="w-full max-w-md space-y-6">
         <div class="text-center">
-          <app-mascot type="eduLogo" [size]="80" />
-          <h1 class="mt-4 font-display text-3xl font-black text-slate-900">Đăng nhập</h1>
+          <h1 class="font-display text-3xl font-black text-slate-900">Đăng nhập</h1>
           <p class="mt-1 text-slate-500">Chào mừng trở lại! Tiếp tục hành trình học tập.</p>
         </div>
 
-        <div class="tactile-card p-6 sm:p-8 space-y-5">
+        <form (ngSubmit)="onLogin()" class="tactile-card p-6 sm:p-8 space-y-5">
           <div>
             <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Email</label>
             <input
               type="email"
               [(ngModel)]="email"
-              placeholder="email@gmail.com"
+              name="email"
+              placeholder="user@gmail.com"
               class="tactile-input w-full text-sm font-semibold text-slate-800"
             />
+            @if (emailError()) {
+              <span class="text-xs font-bold text-duo-red mt-1 block">{{ emailError() }}</span>
+            }
           </div>
 
           <div>
@@ -47,6 +48,7 @@ import { GoogleSignInButtonComponent } from '../../../shared/components/google-s
               <input
                 [type]="showPassword() ? 'text' : 'password'"
                 [(ngModel)]="password"
+                name="password"
                 placeholder="Nhập mật khẩu"
                 class="tactile-input w-full text-sm font-semibold text-slate-800 pr-12"
               />
@@ -63,6 +65,9 @@ import { GoogleSignInButtonComponent } from '../../../shared/components/google-s
                 }
               </button>
             </div>
+            @if (passwordError()) {
+              <span class="text-xs font-bold text-duo-red mt-1 block">{{ passwordError() }}</span>
+            }
           </div>
 
           <a
@@ -73,7 +78,7 @@ import { GoogleSignInButtonComponent } from '../../../shared/components/google-s
           </a>
 
           <button
-            (click)="onLogin()"
+            type="submit"
             [disabled]="isLoading()"
             class="tactile-button-green w-full py-3.5 rounded-2xl text-base font-extrabold uppercase disabled:opacity-60"
           >
@@ -95,7 +100,7 @@ import { GoogleSignInButtonComponent } from '../../../shared/components/google-s
           </div>
 
           <app-google-sign-in-button text="signin_with" (credential)="onGoogleCredential($event)" />
-        </div>
+        </form>
 
         <p class="text-center text-sm text-slate-500">
           Chưa có tài khoản?
@@ -113,6 +118,8 @@ export class LoginPage {
   showPassword = signal(false);
   isLoading = signal(false);
   errorMessage = signal('');
+  emailError = signal('');
+  passwordError = signal('');
 
   private readonly authApi = inject(AuthApiService);
   private readonly router = inject(Router);
@@ -120,13 +127,28 @@ export class LoginPage {
   private readonly session = inject(SessionService);
 
   async onLogin(): Promise<void> {
-    if (!this.email.trim() || !this.password) {
-      this.errorMessage.set('Vui lòng nhập email và mật khẩu.');
+    this.emailError.set('');
+    this.passwordError.set('');
+    this.errorMessage.set('');
+
+    let isValid = true;
+    if (!this.email.trim()) {
+      this.emailError.set('Vui lòng nhập email.');
+      isValid = false;
+    }
+    if (!this.password) {
+      this.passwordError.set('Vui lòng nhập mật khẩu.');
+      isValid = false;
+    }
+
+    if (!isValid) return;
+
+    if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(this.email.trim())) {
+      this.emailError.set('Email không đúng định dạng.');
       return;
     }
 
     this.isLoading.set(true);
-    this.errorMessage.set('');
 
     try {
       const response = await firstValueFrom(
@@ -141,7 +163,14 @@ export class LoginPage {
       const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
       await this.router.navigateByUrl(returnUrl || this.defaultRouteForRole(login.user.role));
     } catch (error) {
-      this.errorMessage.set(getApiErrorMessage(error, 'Đăng nhập thất bại.'));
+      const errMsg = getApiErrorMessage(error, 'Đăng nhập thất bại.');
+      if (errMsg.toLowerCase().includes('mật khẩu') || errMsg.toLowerCase().includes('password')) {
+        this.passwordError.set(errMsg);
+      } else if (errMsg.toLowerCase().includes('email') || errMsg.toLowerCase().includes('tài khoản')) {
+        this.emailError.set(errMsg);
+      } else {
+        this.errorMessage.set(errMsg);
+      }
     } finally {
       this.isLoading.set(false);
     }
