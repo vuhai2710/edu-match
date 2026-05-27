@@ -289,3 +289,18 @@ function toMinutes(time: string): number {
   const [hours, minutes] = time.split(':').map(Number);
   return hours * 60 + minutes;
 }
+
+export function getStartTimeOptions(dayValue: string): string[] {
+  const isWeekend = dayValue === 'Saturday' || dayValue === 'Sunday';
+  const startHour = isWeekend ? 8 : 17;
+  const options: string[] = [];
+  for (let h = startHour; h <= 22; h++) {
+    const hh = String(h).padStart(2, '0');
+    options.push(`${hh}:00`);
+    if (h < 22) {
+      options.push(`${hh}:30`);
+    }
+  }
+  return options;
+}
+

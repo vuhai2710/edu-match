@@ -1,7 +1,8 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
+import { Subject, Subscription, firstValueFrom } from 'rxjs';
+import { debounceTime } from 'rxjs/operators';
 
 import {
   ProvinceDto,
@@ -78,59 +79,191 @@ import { formatMoney } from '../../../shared/utils/api-ui';
           </p>
         </div>
 
-        <div class="space-y-3">
-          <div class="grid lg:grid-cols-[1fr_auto] gap-3">
-            <input
-              type="text"
-              [(ngModel)]="searchQuery"
-              (keydown.enter)="triggerSearch()"
-              placeholder="Tìm theo tên, môn học, chuyên ngành..."
-              class="tactile-input w-full text-sm font-semibold"
-            />
-            <button
-              (click)="triggerSearch()"
-              class="tactile-button-blue px-6 py-2.5 rounded-xl text-sm font-extrabold uppercase"
-            >
-              Tìm kiếm
-            </button>
+        <div class="bg-white p-4 md:p-5 rounded-2xl border-2 border-slate-100 shadow-sm space-y-4">
+          <!-- Search and Sort row -->
+          <div class="grid md:grid-cols-[1fr_240px] gap-3">
+            <!-- Search input -->
+            <div class="relative w-full">
+              <input
+                type="text"
+                [ngModel]="searchQuery"
+                (ngModelChange)="onSearchQueryChange($event)"
+                placeholder="Tìm theo tên, môn học, chuyên ngành..."
+                class="tactile-input w-full text-sm font-semibold pl-10 pr-10"
+              />
+              @if (searchQuery) {
+                <button
+                  (click)="clearSearchQuery()"
+                  class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 font-bold w-5 h-5 flex items-center justify-center rounded-full hover:bg-slate-100 transition-all cursor-pointer"
+                >
+                  ✕
+                </button>
+              }
+            </div>
+
+            <!-- Sort dropdown -->
+            <div class="relative w-full">
+              <select
+                [ngModel]="sortSelection()"
+                (ngModelChange)="onSortChange($event)"
+                class="tactile-input w-full text-sm font-semibold bg-white pr-9 cursor-pointer"
+              >
+                <option value="createdat_desc">Mặc định</option>
+                <option value="rating_desc">Đánh giá cao nhất</option>
+                <option value="hourlyrate_asc">Giá tăng dần</option>
+                <option value="hourlyrate_desc">Giá giảm dần</option>
+              </select>
+              @if (sortSelection() !== 'createdat_desc') {
+                <button
+                  (click)="onSortChange('createdat_desc')"
+                  class="absolute right-8 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full hover:bg-slate-100 transition-all cursor-pointer"
+                >
+                  ✕
+                </button>
+              }
+            </div>
           </div>
 
+          <!-- Filters row -->
           <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            <select
-              [ngModel]="activeSubjectId()"
-              (ngModelChange)="setSubject($event)"
-              class="tactile-input w-full text-sm font-semibold bg-white"
-            >
-              <option [ngValue]="null">Tất cả môn học</option>
-              @for (subject of subjects(); track subject.id) {
-                <option [ngValue]="subject.id">{{ subject.name }}</option>
+            <!-- Subject select -->
+            <div class="relative">
+              <select
+                [ngModel]="activeSubjectId()"
+                (ngModelChange)="setSubject($event)"
+                class="tactile-input w-full text-sm font-semibold bg-white pr-9 cursor-pointer"
+              >
+                <option [ngValue]="null">Tất cả môn học</option>
+                @for (subject of subjects(); track subject.id) {
+                  <option [ngValue]="subject.id">{{ subject.name }}</option>
+                }
+              </select>
+              @if (activeSubjectId() !== null) {
+                <button
+                  (click)="setSubject(null)"
+                  class="absolute right-8 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full hover:bg-slate-100 transition-all cursor-pointer"
+                >
+                  ✕
+                </button>
               }
-            </select>
+            </div>
 
-            <select
-              [ngModel]="provinceId()"
-              (ngModelChange)="onProvinceChange($event)"
-              class="tactile-input w-full text-sm font-semibold bg-white"
-            >
-              <option [ngValue]="null">Tất cả tỉnh / thành</option>
-              @for (province of provinces(); track province.provinceId) {
-                <option [ngValue]="province.provinceId">{{ province.provinceName }}</option>
+            <!-- Province select -->
+            <div class="relative">
+              <select
+                [ngModel]="provinceId()"
+                (ngModelChange)="onProvinceChange($event)"
+                class="tactile-input w-full text-sm font-semibold bg-white pr-9 cursor-pointer"
+              >
+                <option [ngValue]="null">Tất cả tỉnh / thành</option>
+                @for (province of provinces(); track province.provinceId) {
+                  <option [ngValue]="province.provinceId">{{ province.provinceName }}</option>
+                }
+              </select>
+              @if (provinceId() !== null) {
+                <button
+                  (click)="onProvinceChange(null)"
+                  class="absolute right-8 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full hover:bg-slate-100 transition-all cursor-pointer"
+                >
+                  ✕
+                </button>
               }
-            </select>
+            </div>
 
-            <select
-              [ngModel]="wardCode()"
-              (ngModelChange)="setWard($event)"
-              class="tactile-input w-full text-sm font-semibold bg-white"
-              [disabled]="!provinceId() || isLoadingWards()"
-            >
-              <option [ngValue]="null">Tất cả phường / xã</option>
-              @for (ward of wards(); track ward.wardCode) {
-                <option [ngValue]="ward.wardCode">{{ ward.wardName }}</option>
+            <!-- Ward select -->
+            <div class="relative">
+              <select
+                [ngModel]="wardCode()"
+                (ngModelChange)="setWard($event)"
+                class="tactile-input w-full text-sm font-semibold bg-white pr-9 cursor-pointer"
+                [disabled]="!provinceId() || isLoadingWards()"
+              >
+                <option [ngValue]="null">Tất cả phường / xã</option>
+                @for (ward of wards(); track ward.wardCode) {
+                  <option [ngValue]="ward.wardCode">{{ ward.wardName }}</option>
+                }
+              </select>
+              @if (wardCode() !== null) {
+                <button
+                  (click)="setWard(null)"
+                  class="absolute right-8 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full hover:bg-slate-100 transition-all cursor-pointer"
+                >
+                  ✕
+                </button>
               }
-            </select>
+            </div>
+          </div>
+
+          <!-- Price Range and Reset row -->
+          <div
+            class="flex flex-col lg:flex-row lg:items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100/80"
+          >
+            <div class="flex items-center gap-2 flex-1">
+              <span class="text-xs text-slate-500 font-extrabold shrink-0 uppercase tracking-wider"
+                >Khoảng giá (vnđ/h):</span
+              >
+
+              <div class="relative flex-1 max-w-[200px]">
+                <input
+                  type="number"
+                  [ngModel]="minPrice()"
+                  (ngModelChange)="onMinPriceChange($event)"
+                  placeholder="Từ (đ)"
+                  class="tactile-input py-1.5 px-3 w-full text-xs font-semibold pr-7"
+                  min="0"
+                />
+                @if (minPrice() !== null && minPrice() !== undefined) {
+                  <button
+                    (click)="onMinPriceChange(null)"
+                    class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full hover:bg-slate-200 transition-all cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                }
+              </div>
+
+              <span class="text-slate-400 text-xs font-extrabold">-</span>
+
+              <div class="relative flex-1 max-w-[200px]">
+                <input
+                  type="number"
+                  [ngModel]="maxPrice()"
+                  (ngModelChange)="onMaxPriceChange($event)"
+                  placeholder="Đến (đ)"
+                  class="tactile-input py-1.5 px-3 w-full text-xs font-semibold pr-7"
+                  min="0"
+                />
+                @if (maxPrice() !== null && maxPrice() !== undefined) {
+                  <button
+                    (click)="onMaxPriceChange(null)"
+                    class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full hover:bg-slate-200 transition-all cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                }
+              </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 shrink-0">
+              @if (hasActiveFilters()) {
+                <button
+                  (click)="resetFilters()"
+                  class="tactile-button-outline py-2 px-4 rounded-xl text-xs font-black text-slate-600 bg-white hover:bg-slate-100 border border-slate-200 cursor-pointer flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
+                >
+                  🔄 Đặt lại bộ lọc
+                </button>
+              }
+            </div>
           </div>
         </div>
+
+        @if (priceValidationError()) {
+          <p
+            class="rounded-xl border-2 border-amber-100 bg-amber-50 px-4 py-2.5 text-xs font-bold text-amber-700 animate-pulse"
+          >
+            ⚠️ {{ priceValidationError() }}
+          </p>
+        }
 
         @if (errorMessage()) {
           <p
@@ -151,7 +284,11 @@ import { formatMoney } from '../../../shared/utils/api-ui';
             }
           </div>
         } @else if (tutors().length > 0) {
-          <div class="space-y-6 relative transition-opacity duration-200" [class.opacity-50]="isLoading()" [class.pointer-events-none]="isLoading()">
+          <div
+            class="space-y-6 relative transition-opacity duration-200"
+            [class.opacity-50]="isLoading()"
+            [class.pointer-events-none]="isLoading()"
+          >
             <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               @for (tutor of tutors(); track tutor.id) {
                 <a
@@ -159,11 +296,12 @@ import { formatMoney } from '../../../shared/utils/api-ui';
                   class="tactile-card p-5 hover:shadow-lg transition-all group"
                 >
                   <div class="flex items-center gap-3 mb-3">
-                    @if (tutor.avatarUrl) {
+                    @if (tutor.avatarUrl && !avatarErrors()[tutor.id!]) {
                       <img
                         [src]="tutor.avatarUrl"
                         [alt]="tutor.fullName"
                         referrerpolicy="no-referrer"
+                        (error)="handleAvatarError(tutor.id!)"
                         class="w-14 h-14 rounded-full object-cover border-2 border-slate-100"
                       />
                     } @else {
@@ -275,10 +413,16 @@ import { formatMoney } from '../../../shared/utils/api-ui';
     </section>
   `,
 })
-export class HomePage implements OnInit {
+export class HomePage implements OnInit, OnDestroy {
   // Discover tutor data and filters
   searchQuery = '';
   tutors = signal<TutorDto[]>([]);
+  avatarErrors = signal<Record<number | string, boolean>>({});
+
+  handleAvatarError(tutorId: string | number): void {
+    this.avatarErrors.update((prev) => ({ ...prev, [tutorId]: true }));
+  }
+
   subjects = signal<SubjectListItemDto[]>([]);
   provinces = signal<ProvinceDto[]>([]);
   wards = signal<WardDto[]>([]);
@@ -293,6 +437,17 @@ export class HomePage implements OnInit {
   page = signal(1);
   pageSize = signal(5);
   totalCount = signal(0);
+
+  // Sorting & Range states
+  sortSelection = signal<string>('createdat_desc');
+  sortColumn = signal<string>('createdat');
+  sortDirection = signal<string>('desc');
+  minPrice = signal<number | null>(null);
+  maxPrice = signal<number | null>(null);
+  priceValidationError = signal<string>('');
+
+  filterSubject = new Subject<void>();
+  private filterSubscription?: Subscription;
 
   private readonly session = inject(SessionService);
   private readonly tutorsApi = inject(TutorsService);
@@ -322,9 +477,21 @@ export class HomePage implements OnInit {
 
   ngOnInit(): void {
     void this.loadInitialData();
+
+    this.filterSubscription = this.filterSubject.pipe(debounceTime(300)).subscribe(() => {
+      if (this.validatePrices()) {
+        this.page.set(1);
+        void this.loadTutors();
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.filterSubscription?.unsubscribe();
   }
 
   async loadTutors(): Promise<void> {
+    if (!this.validatePrices()) return;
     this.isLoading.set(true);
     this.errorMessage.set('');
     try {
@@ -333,13 +500,13 @@ export class HomePage implements OnInit {
           this.activeSubjectId() ?? undefined,
           this.provinceId() ?? undefined,
           this.wardCode() ?? undefined,
-          undefined,
-          undefined,
+          this.minPrice() ?? undefined,
+          this.maxPrice() ?? undefined,
           this.page(),
           this.pageSize(),
           this.searchQuery.trim() || undefined,
-          'rating',
-          'desc',
+          this.sortColumn(),
+          this.sortDirection(),
         ),
       );
       this.tutors.set(response.data?.items ?? []);
@@ -349,6 +516,67 @@ export class HomePage implements OnInit {
     } finally {
       this.isLoading.set(false);
     }
+  }
+
+  onSearchQueryChange(val: string): void {
+    this.searchQuery = val;
+    this.filterSubject.next();
+  }
+
+  clearSearchQuery(): void {
+    this.searchQuery = '';
+    this.filterSubject.next();
+  }
+
+  onMinPriceChange(val: number | null): void {
+    this.minPrice.set(val);
+    this.validatePrices();
+    this.filterSubject.next();
+  }
+
+  onMaxPriceChange(val: number | null): void {
+    this.maxPrice.set(val);
+    this.validatePrices();
+    this.filterSubject.next();
+  }
+
+  validatePrices(): boolean {
+    const min = this.minPrice();
+    const max = this.maxPrice();
+    if (min !== null && min !== undefined && max !== null && max !== undefined && min > max) {
+      this.priceValidationError.set('Giá tối thiểu không được lớn hơn giá tối đa.');
+      return false;
+    }
+    this.priceValidationError.set('');
+    return true;
+  }
+
+  hasActiveFilters(): boolean {
+    return !!(
+      this.searchQuery ||
+      this.activeSubjectId() !== null ||
+      this.provinceId() !== null ||
+      this.wardCode() !== null ||
+      this.minPrice() !== null ||
+      this.maxPrice() !== null ||
+      this.sortSelection() !== 'createdat_desc'
+    );
+  }
+
+  resetFilters(): void {
+    this.searchQuery = '';
+    this.activeSubjectId.set(null);
+    this.provinceId.set(null);
+    this.wardCode.set(null);
+    this.wards.set([]);
+    this.minPrice.set(null);
+    this.maxPrice.set(null);
+    this.sortSelection.set('createdat_desc');
+    this.sortColumn.set('createdat');
+    this.sortDirection.set('desc');
+    this.priceValidationError.set('');
+    this.page.set(1);
+    void this.loadTutors();
   }
 
   triggerSearch(): void {
@@ -383,6 +611,15 @@ export class HomePage implements OnInit {
 
   setWard(wardCode: string | null): void {
     this.wardCode.set(wardCode);
+    this.page.set(1);
+    void this.loadTutors();
+  }
+
+  onSortChange(selection: string): void {
+    this.sortSelection.set(selection);
+    const [column, direction] = selection.split('_');
+    this.sortColumn.set(column);
+    this.sortDirection.set(direction);
     this.page.set(1);
     void this.loadTutors();
   }
@@ -444,5 +681,3 @@ export class HomePage implements OnInit {
     await this.loadTutors();
   }
 }
-
-

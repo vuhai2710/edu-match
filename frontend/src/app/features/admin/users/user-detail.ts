@@ -39,8 +39,10 @@ import {
         <!-- Summary card -->
         <div class="tactile-card p-6">
           <div class="flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left">
-            @if (u.avatarUrl) {
+            @if (u.avatarUrl && !avatarError()) {
               <img [src]="u.avatarUrl" [alt]="u.fullName || ''"
+                   referrerpolicy="no-referrer"
+                   (error)="avatarError.set(true)"
                    class="w-24 h-24 rounded-full object-cover border-4 border-slate-100 shadow-inner" />
             } @else {
               <div class="w-24 h-24 rounded-full bg-duo-blue text-white flex items-center justify-center font-black text-3xl border-b-4 border-duo-blue-dark">
@@ -247,6 +249,7 @@ import {
 })
 export class AdminUserDetailPage implements OnInit {
   user = signal<UserDto | null>(null);
+  avatarError = signal(false);
   tutorProfile = signal<TutorDetailDto | null>(null);
   studentProfile = signal<StudentDetailDto | null>(null);
   isLoadingProfile = signal(false);

@@ -121,11 +121,6 @@ import { MascotComponent } from '../../../shared/components/mascot/mascot';
         <!-- Right Column: Add/Edit Form (5/12) -->
         <div class="lg:col-span-5">
           <div class="tactile-card p-6 space-y-6 relative overflow-hidden bg-white">
-            <!-- Floating Mascot Decoration for playful visual tone -->
-            <div class="absolute right-4 top-2 pointer-events-none opacity-20 lg:opacity-30">
-              <app-mascot [type]="editingSubjectId() ? 'adminBlueGlasses' : 'adminGreenPencil'" [size]="80" />
-            </div>
-
             <div class="space-y-1">
               <h2 class="font-display text-xl font-black text-slate-800">
                 {{ editingSubjectId() ? 'Chỉnh sửa môn học' : 'Tạo môn học mới' }}

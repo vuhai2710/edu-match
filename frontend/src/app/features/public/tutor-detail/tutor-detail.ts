@@ -40,11 +40,12 @@ import {
               <!-- Header Profile Card -->
               <div class="tactile-card p-6">
                 <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                  @if (t.avatarUrl) {
+                  @if (t.avatarUrl && !avatarError()) {
                     <img
                       [src]="t.avatarUrl"
                       [alt]="t.fullName"
                       referrerpolicy="no-referrer"
+                      (error)="avatarError.set(true)"
                       class="w-20 h-20 rounded-full object-cover border-4 border-green-100 shrink-0"
                     />
                   } @else {
@@ -293,6 +294,7 @@ import {
 })
 export class PublicTutorDetailPage implements OnInit {
   tutor = signal<TutorDetailDto | null>(null);
+  avatarError = signal(false);
   reviews = signal<ReviewDto[]>([]);
   isLoading = signal(false);
   errorMessage = signal('');

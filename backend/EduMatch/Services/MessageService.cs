@@ -56,32 +56,76 @@ namespace EduMatch.Services
 
     public async Task<List<ConversationSummaryDto>> GetConversationListAsync(long userId)
     {
-      var conversations = await _db.Messages
+      var messageSummaries = _db.Messages
+          .AsNoTracking()
           .Where(m => !m.IsDeleted && (m.SenderId == userId || m.ReceiverId == userId))
-          .GroupBy(m => m.SenderId == userId ? m.ReceiverId : m.SenderId)
+          .Select(m => new
+          {
+            PartnerId = m.SenderId == userId ? m.ReceiverId : m.SenderId,
+            m.Id,
+            m.Content,
+            m.CreatedAt,
+            m.ReceiverId,
+            m.IsRead
+          });
+
+      var conversations = await messageSummaries
+          .GroupBy(m => m.PartnerId)
           .Select(g => new
           {
             PartnerId = g.Key,
-            LastMessage = g.OrderByDescending(x => x.CreatedAt).First(),
+            LastMessageAt = g.Max(x => x.CreatedAt),
             UnreadCount = g.Count(x => x.ReceiverId == userId && !x.IsRead)
           })
           .ToListAsync();
 
       var partnerIds = conversations.Select(c => c.PartnerId).ToList();
+
+      if (partnerIds.Count == 0)
+      {
+        return [];
+      }
+
+      var latestMessages = await messageSummaries
+          .Where(m => partnerIds.Contains(m.PartnerId))
+          .OrderByDescending(m => m.CreatedAt)
+          .ThenByDescending(m => m.Id)
+          .ToListAsync();
+
+      var latestMessageByPartnerId = latestMessages
+          .GroupBy(m => m.PartnerId)
+          .ToDictionary(g => g.Key, g => g.First());
+
       var partners = await _db.Users
+          .AsNoTracking()
           .Where(u => partnerIds.Contains(u.Id))
-          .ToDictionaryAsync(u => u.Id);
+          .Select(u => new
+          {
+            u.Id,
+            u.FullName,
+            AvatarPath = u.AvatarFile != null ? u.AvatarFile.FilePath : null,
+            u.Role
+          })
+          .ToDictionaryAsync(
+            u => u.Id,
+            u => new
+            {
+              u.FullName,
+              u.AvatarPath,
+              Role = u.Role.ToString()
+            });
 
       return conversations
-          .OrderByDescending(c => c.LastMessage.CreatedAt)
+          .OrderByDescending(c => c.LastMessageAt)
+          .ThenByDescending(c => latestMessageByPartnerId[c.PartnerId].Id)
           .Select(c => new ConversationSummaryDto
           {
             PartnerId = c.PartnerId,
             PartnerName = partners[c.PartnerId].FullName,
-            PartnerAvatar = partners[c.PartnerId].AvatarFile?.FilePath,
-            PartnerRole = partners[c.PartnerId].Role.ToString(),
-            LastMessage = c.LastMessage.Content,
-            LastMessageAt = c.LastMessage.CreatedAt,
+            PartnerAvatar = partners[c.PartnerId].AvatarPath,
+            PartnerRole = partners[c.PartnerId].Role,
+            LastMessage = latestMessageByPartnerId[c.PartnerId].Content,
+            LastMessageAt = latestMessageByPartnerId[c.PartnerId].CreatedAt,
             UnreadCount = c.UnreadCount
           })
           .ToList();

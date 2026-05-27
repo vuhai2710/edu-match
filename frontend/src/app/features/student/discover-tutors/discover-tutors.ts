@@ -4,8 +4,17 @@ import { RouterLink } from '@angular/router';
 import { Subject, Subscription, firstValueFrom } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
 
-import { ProvinceDto, SubjectListItemDto, TutorDto, WardDto } from '../../../api/generated/client/models';
-import { AddressService, SubjectsService, TutorsService } from '../../../api/generated/client/services';
+import {
+  ProvinceDto,
+  SubjectListItemDto,
+  TutorDto,
+  WardDto,
+} from '../../../api/generated/client/models';
+import {
+  AddressService,
+  SubjectsService,
+  TutorsService,
+} from '../../../api/generated/client/services';
 import { getApiErrorMessage } from '../../../core/http/api-error';
 import { MascotComponent } from '../../../shared/components/mascot/mascot';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination';
@@ -26,13 +35,18 @@ import { formatMoney } from '../../../shared/utils/api-ui';
         <div class="grid md:grid-cols-[1fr_240px] gap-3">
           <!-- Search input -->
           <div class="relative w-full">
-            <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg">🔍</span>
-            <input type="text" [ngModel]="searchQuery" (ngModelChange)="onSearchQueryChange($event)"
-                   placeholder="Tìm theo tên, môn học, chuyên ngành..."
-                   class="tactile-input w-full text-sm font-semibold pl-10 pr-10" />
+            <input
+              type="text"
+              [ngModel]="searchQuery"
+              (ngModelChange)="onSearchQueryChange($event)"
+              placeholder="Tìm theo tên, môn học, chuyên ngành..."
+              class="tactile-input w-full text-sm font-semibold pl-10 pr-10"
+            />
             @if (searchQuery) {
-              <button (click)="clearSearchQuery()" 
-                      class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 font-bold w-5 h-5 flex items-center justify-center rounded-full hover:bg-slate-100 transition-all cursor-pointer">
+              <button
+                (click)="clearSearchQuery()"
+                class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 font-bold w-5 h-5 flex items-center justify-center rounded-full hover:bg-slate-100 transition-all cursor-pointer"
+              >
                 ✕
               </button>
             }
@@ -40,16 +54,21 @@ import { formatMoney } from '../../../shared/utils/api-ui';
 
           <!-- Sort dropdown -->
           <div class="relative w-full">
-            <select [ngModel]="sortSelection()" (ngModelChange)="onSortChange($event)"
-                    class="tactile-input w-full text-sm font-semibold bg-white pr-9 cursor-pointer">
-              <option value="createdat_desc">📅 Mới nhất</option>
-              <option value="rating_desc">⭐ Đánh giá cao nhất</option>
-              <option value="hourlyrate_asc">📈 Giá tăng dần</option>
-              <option value="hourlyrate_desc">📉 Giá giảm dần</option>
+            <select
+              [ngModel]="sortSelection()"
+              (ngModelChange)="onSortChange($event)"
+              class="tactile-input w-full text-sm font-semibold bg-white pr-9 cursor-pointer"
+            >
+              <option value="createdat_desc">Mặc định</option>
+              <option value="rating_desc">Đánh giá cao nhất</option>
+              <option value="hourlyrate_asc">Giá tăng dần</option>
+              <option value="hourlyrate_desc">Giá giảm dần</option>
             </select>
             @if (sortSelection() !== 'createdat_desc') {
-              <button (click)="onSortChange('createdat_desc')" 
-                      class="absolute right-8 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full hover:bg-slate-100 transition-all cursor-pointer">
+              <button
+                (click)="onSortChange('createdat_desc')"
+                class="absolute right-8 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full hover:bg-slate-100 transition-all cursor-pointer"
+              >
                 ✕
               </button>
             }
@@ -60,16 +79,21 @@ import { formatMoney } from '../../../shared/utils/api-ui';
         <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <!-- Subject select -->
           <div class="relative">
-            <select [ngModel]="activeSubjectId()" (ngModelChange)="setSubject($event)"
-                    class="tactile-input w-full text-sm font-semibold bg-white pr-9 cursor-pointer">
-              <option [ngValue]="null">📚 Tất cả môn học</option>
+            <select
+              [ngModel]="activeSubjectId()"
+              (ngModelChange)="setSubject($event)"
+              class="tactile-input w-full text-sm font-semibold bg-white pr-9 cursor-pointer"
+            >
+              <option [ngValue]="null">Tất cả môn học</option>
               @for (subject of subjects(); track subject.id) {
                 <option [ngValue]="subject.id">{{ subject.name }}</option>
               }
             </select>
             @if (activeSubjectId() !== null) {
-              <button (click)="setSubject(null)" 
-                      class="absolute right-8 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full hover:bg-slate-100 transition-all cursor-pointer">
+              <button
+                (click)="setSubject(null)"
+                class="absolute right-8 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full hover:bg-slate-100 transition-all cursor-pointer"
+              >
                 ✕
               </button>
             }
@@ -77,16 +101,21 @@ import { formatMoney } from '../../../shared/utils/api-ui';
 
           <!-- Province select -->
           <div class="relative">
-            <select [ngModel]="provinceId()" (ngModelChange)="onProvinceChange($event)"
-                    class="tactile-input w-full text-sm font-semibold bg-white pr-9 cursor-pointer">
-              <option [ngValue]="null">📍 Tất cả tỉnh / thành</option>
+            <select
+              [ngModel]="provinceId()"
+              (ngModelChange)="onProvinceChange($event)"
+              class="tactile-input w-full text-sm font-semibold bg-white pr-9 cursor-pointer"
+            >
+              <option [ngValue]="null">Tất cả tỉnh / thành</option>
               @for (province of provinces(); track province.provinceId) {
                 <option [ngValue]="province.provinceId">{{ province.provinceName }}</option>
               }
             </select>
             @if (provinceId() !== null) {
-              <button (click)="onProvinceChange(null)" 
-                      class="absolute right-8 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full hover:bg-slate-100 transition-all cursor-pointer">
+              <button
+                (click)="onProvinceChange(null)"
+                class="absolute right-8 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full hover:bg-slate-100 transition-all cursor-pointer"
+              >
                 ✕
               </button>
             }
@@ -94,17 +123,22 @@ import { formatMoney } from '../../../shared/utils/api-ui';
 
           <!-- Ward select -->
           <div class="relative">
-            <select [ngModel]="wardCode()" (ngModelChange)="setWard($event)"
-                    class="tactile-input w-full text-sm font-semibold bg-white pr-9 cursor-pointer"
-                    [disabled]="!provinceId() || isLoadingWards()">
-              <option [ngValue]="null">🏡 Tất cả phường / xã</option>
+            <select
+              [ngModel]="wardCode()"
+              (ngModelChange)="setWard($event)"
+              class="tactile-input w-full text-sm font-semibold bg-white pr-9 cursor-pointer"
+              [disabled]="!provinceId() || isLoadingWards()"
+            >
+              <option [ngValue]="null">Tất cả phường / xã</option>
               @for (ward of wards(); track ward.wardCode) {
                 <option [ngValue]="ward.wardCode">{{ ward.wardName }}</option>
               }
             </select>
             @if (wardCode() !== null) {
-              <button (click)="setWard(null)" 
-                      class="absolute right-8 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full hover:bg-slate-100 transition-all cursor-pointer">
+              <button
+                (click)="setWard(null)"
+                class="absolute right-8 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full hover:bg-slate-100 transition-all cursor-pointer"
+              >
                 ✕
               </button>
             }
@@ -112,16 +146,28 @@ import { formatMoney } from '../../../shared/utils/api-ui';
         </div>
 
         <!-- Price Range and Reset row -->
-        <div class="flex flex-col lg:flex-row lg:items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100/80">
+        <div
+          class="flex flex-col lg:flex-row lg:items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100/80"
+        >
           <div class="flex items-center gap-2 flex-1">
-            <span class="text-xs text-slate-500 font-extrabold shrink-0 uppercase tracking-wider">Khoảng giá (đ/h):</span>
-            
+            <span class="text-xs text-slate-500 font-extrabold shrink-0 uppercase tracking-wider"
+              >Khoảng giá (vnđ/h):</span
+            >
+
             <div class="relative flex-1 max-w-[200px]">
-              <input type="number" [ngModel]="minPrice()" (ngModelChange)="onMinPriceChange($event)"
-                     placeholder="Từ (đ)" class="tactile-input py-1.5 px-3 w-full text-xs font-semibold pr-7" min="0" />
+              <input
+                type="number"
+                [ngModel]="minPrice()"
+                (ngModelChange)="onMinPriceChange($event)"
+                placeholder="Từ (đ)"
+                class="tactile-input py-1.5 px-3 w-full text-xs font-semibold pr-7"
+                min="0"
+              />
               @if (minPrice() !== null && minPrice() !== undefined) {
-                <button (click)="onMinPriceChange(null)" 
-                        class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full hover:bg-slate-200 transition-all cursor-pointer">
+                <button
+                  (click)="onMinPriceChange(null)"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full hover:bg-slate-200 transition-all cursor-pointer"
+                >
                   ✕
                 </button>
               }
@@ -130,11 +176,19 @@ import { formatMoney } from '../../../shared/utils/api-ui';
             <span class="text-slate-400 text-xs font-extrabold">-</span>
 
             <div class="relative flex-1 max-w-[200px]">
-              <input type="number" [ngModel]="maxPrice()" (ngModelChange)="onMaxPriceChange($event)"
-                     placeholder="Đến (đ)" class="tactile-input py-1.5 px-3 w-full text-xs font-semibold pr-7" min="0" />
+              <input
+                type="number"
+                [ngModel]="maxPrice()"
+                (ngModelChange)="onMaxPriceChange($event)"
+                placeholder="Đến (đ)"
+                class="tactile-input py-1.5 px-3 w-full text-xs font-semibold pr-7"
+                min="0"
+              />
               @if (maxPrice() !== null && maxPrice() !== undefined) {
-                <button (click)="onMaxPriceChange(null)" 
-                        class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full hover:bg-slate-200 transition-all cursor-pointer">
+                <button
+                  (click)="onMaxPriceChange(null)"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full hover:bg-slate-200 transition-all cursor-pointer"
+                >
                   ✕
                 </button>
               }
@@ -143,8 +197,10 @@ import { formatMoney } from '../../../shared/utils/api-ui';
 
           <div class="flex items-center justify-end gap-3 shrink-0">
             @if (hasActiveFilters()) {
-              <button (click)="resetFilters()" 
-                      class="tactile-button-outline py-2 px-4 rounded-xl text-xs font-black text-slate-600 bg-white hover:bg-slate-100 border border-slate-200 cursor-pointer flex items-center gap-1.5 shadow-sm active:scale-95 transition-all">
+              <button
+                (click)="resetFilters()"
+                class="tactile-button-outline py-2 px-4 rounded-xl text-xs font-black text-slate-600 bg-white hover:bg-slate-100 border border-slate-200 cursor-pointer flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
+              >
                 🔄 Đặt lại bộ lọc
               </button>
             }
@@ -153,20 +209,24 @@ import { formatMoney } from '../../../shared/utils/api-ui';
       </div>
 
       @if (priceValidationError()) {
-        <p class="rounded-xl border-2 border-amber-100 bg-amber-50 px-4 py-2.5 text-xs font-bold text-amber-700 animate-pulse">
+        <p
+          class="rounded-xl border-2 border-amber-100 bg-amber-50 px-4 py-2.5 text-xs font-bold text-amber-700 animate-pulse"
+        >
           ⚠️ {{ priceValidationError() }}
         </p>
       }
 
       @if (errorMessage()) {
-        <p class="rounded-xl border-2 border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-duo-red">
+        <p
+          class="rounded-xl border-2 border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-duo-red"
+        >
           {{ errorMessage() }}
         </p>
       }
 
       @if (isLoading() && tutors().length === 0) {
         <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          @for (item of [1,2,3,4,5,6]; track item) {
+          @for (item of [1, 2, 3, 4, 5, 6]; track item) {
             <div class="tactile-card p-5 animate-pulse">
               <div class="h-14 bg-slate-100 rounded-xl"></div>
               <div class="h-4 bg-slate-100 rounded mt-4"></div>
@@ -175,21 +235,39 @@ import { formatMoney } from '../../../shared/utils/api-ui';
           }
         </div>
       } @else if (tutors().length > 0) {
-        <div class="space-y-6 relative transition-opacity duration-200" [class.opacity-50]="isLoading()" [class.pointer-events-none]="isLoading()">
+        <div
+          class="space-y-6 relative transition-opacity duration-200"
+          [class.opacity-50]="isLoading()"
+          [class.pointer-events-none]="isLoading()"
+        >
           <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             @for (tutor of tutors(); track tutor.id) {
-              <a [routerLink]="['/student/tutor', tutor.id]" class="tactile-card p-5 hover:shadow-lg transition-all group">
+              <a
+                [routerLink]="['/student/tutor', tutor.id]"
+                class="tactile-card p-5 hover:shadow-lg transition-all group"
+              >
                 <div class="flex items-center gap-3 mb-3">
-                  @if (tutor.avatarUrl) {
-                    <img [src]="tutor.avatarUrl" [alt]="tutor.fullName" referrerpolicy="no-referrer"
-                         class="w-14 h-14 rounded-full object-cover border-2 border-slate-100" />
+                  @if (tutor.avatarUrl && !avatarErrors()[tutor.id!]) {
+                    <img
+                      [src]="tutor.avatarUrl"
+                      [alt]="tutor.fullName"
+                      referrerpolicy="no-referrer"
+                      (error)="handleAvatarError(tutor.id!)"
+                      class="w-14 h-14 rounded-full object-cover border-2 border-slate-100"
+                    />
                   } @else {
-                    <div class="w-14 h-14 rounded-full bg-duo-blue text-white flex items-center justify-center font-black text-lg border-b-4 border-duo-blue-dark">
+                    <div
+                      class="w-14 h-14 rounded-full bg-duo-blue text-white flex items-center justify-center font-black text-lg border-b-4 border-duo-blue-dark"
+                    >
                       {{ initials(tutor.fullName) }}
                     </div>
                   }
                   <div class="flex-1 min-w-0">
-                    <h3 class="font-extrabold text-slate-900 truncate group-hover:text-duo-blue transition-colors">{{ tutor.fullName }}</h3>
+                    <h3
+                      class="font-extrabold text-slate-900 truncate group-hover:text-duo-blue transition-colors"
+                    >
+                      {{ tutor.fullName }}
+                    </h3>
                     <p class="text-sm text-slate-500 truncate">{{ subjectNames(tutor) }}</p>
                   </div>
                 </div>
@@ -203,7 +281,9 @@ import { formatMoney } from '../../../shared/utils/api-ui';
                       Chưa có đánh giá từ học viên
                     </span>
                   }
-                  <span class="font-extrabold text-duo-green">{{ formatPrice(tutor.hourlyRate) }}/h</span>
+                  <span class="font-extrabold text-duo-green"
+                    >{{ formatPrice(tutor.hourlyRate) }}/h</span
+                  >
                 </div>
                 <p class="text-xs text-slate-400 mt-2 line-clamp-2">
                   @if (tutor.major) {
@@ -216,12 +296,14 @@ import { formatMoney } from '../../../shared/utils/api-ui';
             }
           </div>
 
-          <app-pagination [page]="page()"
-                          [pageSize]="pageSize()"
-                          [totalCount]="totalCount()"
-                          itemsName="gia sư"
-                          (pageChange)="onPageChange($event)"
-                          (pageSizeChange)="onPageSizeChange($event)" />
+          <app-pagination
+            [page]="page()"
+            [pageSize]="pageSize()"
+            [totalCount]="totalCount()"
+            itemsName="gia sư"
+            (pageChange)="onPageChange($event)"
+            (pageSizeChange)="onPageSizeChange($event)"
+          />
         </div>
       } @else {
         <div class="text-center py-12">
@@ -236,6 +318,12 @@ import { formatMoney } from '../../../shared/utils/api-ui';
 export class DiscoverTutorsPage implements OnInit, OnDestroy {
   searchQuery = '';
   tutors = signal<TutorDto[]>([]);
+  avatarErrors = signal<Record<number | string, boolean>>({});
+
+  handleAvatarError(tutorId: string | number): void {
+    this.avatarErrors.update((prev) => ({ ...prev, [tutorId]: true }));
+  }
+
   subjects = signal<SubjectListItemDto[]>([]);
   provinces = signal<ProvinceDto[]>([]);
   wards = signal<WardDto[]>([]);
@@ -269,14 +357,12 @@ export class DiscoverTutorsPage implements OnInit, OnDestroy {
   ngOnInit(): void {
     void this.loadInitialData();
 
-    this.filterSubscription = this.filterSubject
-      .pipe(debounceTime(300))
-      .subscribe(() => {
-        if (this.validatePrices()) {
-          this.page.set(1);
-          void this.loadTutors();
-        }
-      });
+    this.filterSubscription = this.filterSubject.pipe(debounceTime(300)).subscribe(() => {
+      if (this.validatePrices()) {
+        this.page.set(1);
+        void this.loadTutors();
+      }
+    });
   }
 
   ngOnDestroy(): void {
@@ -429,12 +515,22 @@ export class DiscoverTutorsPage implements OnInit, OnDestroy {
   }
 
   subjectNames(tutor: TutorDto): string {
-    return tutor.subjects?.map((subject) => subject.subjectName).filter(Boolean).join(', ') || 'Chưa cập nhật môn học';
+    return (
+      tutor.subjects
+        ?.map((subject) => subject.subjectName)
+        .filter(Boolean)
+        .join(', ') || 'Chưa cập nhật môn học'
+    );
   }
 
   initials(name?: string | null): string {
     if (!name) return '?';
-    return name.split(' ').slice(-2).map((part) => part[0]).join('').toUpperCase();
+    return name
+      .split(' ')
+      .slice(-2)
+      .map((part) => part[0])
+      .join('')
+      .toUpperCase();
   }
 
   formatPrice(value?: number | null): string {

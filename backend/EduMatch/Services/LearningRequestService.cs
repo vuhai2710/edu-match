@@ -28,6 +28,7 @@ namespace EduMatch.Services
     private readonly INotificationService _notificationService;
     private readonly IBookingScheduleService _bookingScheduleService;
     private readonly IDepositCalculator _depositCalculator;
+    private readonly IBookingConflictService _bookingConflictService;
 
     public LearningRequestService(
       ILearningRequestRepository learningRequestRepository,
@@ -37,7 +38,8 @@ namespace EduMatch.Services
       IDepositPolicyRepository depositPolicyRepository,
       INotificationService notificationService,
       IBookingScheduleService bookingScheduleService,
-      IDepositCalculator depositCalculator)
+      IDepositCalculator depositCalculator,
+      IBookingConflictService bookingConflictService)
     {
       _learningRequestRepository = learningRequestRepository;
       _studentRepository = studentRepository;
@@ -47,6 +49,7 @@ namespace EduMatch.Services
       _notificationService = notificationService;
       _bookingScheduleService = bookingScheduleService;
       _depositCalculator = depositCalculator;
+      _bookingConflictService = bookingConflictService;
     }
 
     public async Task<LearningRequestDto> CreateAsync(long currentUserId, CreateLearningRequestDto dto)
@@ -79,6 +82,9 @@ namespace EduMatch.Services
           EndTime = slot.EndTime
         }),
         dto.HoursPerSession);
+
+      // Perform student-side schedule conflict validation
+      await _bookingConflictService.CheckForStudentConflictsAsync(currentUserId, validatedTimeSlots);
 
       var activePolicy = await _depositPolicyRepository.GetActivePolicyAsync()
         ?? CreateFallbackDefaultPolicy();

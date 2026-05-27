@@ -92,6 +92,7 @@ namespace EduMatch.Services
         }
 
         await _bookingConflictService.CheckForConflictsAsync(tutorProfileId, slots, learningRequestId);
+        await _bookingConflictService.CheckForStudentConflictsAsync(learningRequest.StudentId, slots, learningRequestId);
 
         learningRequest.Status = LearningRequestStatus.SoftBooked;
         learningRequest.PaymentExpiresAt = DateTime.UtcNow.AddHours(24);

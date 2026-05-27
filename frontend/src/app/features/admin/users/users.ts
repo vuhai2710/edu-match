@@ -77,8 +77,10 @@ type ActiveFilter = 'all' | 'active' | 'inactive';
                 <tr class="border-b border-slate-100 hover:bg-slate-50">
                   <td class="px-4 py-3">
                     <div class="flex items-center gap-3">
-                      @if (user.avatarUrl) {
+                      @if (user.avatarUrl && !avatarErrors()[user.id!]) {
                         <img [src]="user.avatarUrl" [alt]="user.fullName || ''"
+                             referrerpolicy="no-referrer"
+                             (error)="handleAvatarError(user.id!)"
                              class="w-9 h-9 rounded-full object-cover border border-slate-200" />
                       } @else {
                         <div class="w-9 h-9 rounded-full bg-duo-blue text-white flex items-center justify-center font-bold text-xs">
@@ -130,6 +132,12 @@ type ActiveFilter = 'all' | 'active' | 'inactive';
 })
 export class AdminUsersPage implements OnInit {
   users = signal<UserDto[]>([]);
+  avatarErrors = signal<Record<number | string, boolean>>({});
+
+  handleAvatarError(userId: string | number): void {
+    this.avatarErrors.update((prev) => ({ ...prev, [userId]: true }));
+  }
+
   activeRole = signal<UserRole | null>(null);
   activeFilter = signal<ActiveFilter>('all');
   searchTerm = '';

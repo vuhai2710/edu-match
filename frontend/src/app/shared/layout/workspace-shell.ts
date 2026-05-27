@@ -71,8 +71,8 @@ import { SessionService } from '../../core/auth/session';
                       class="flex items-center gap-3 p-1 rounded-xl hover:bg-slate-50 transition-colors group">
                 <!-- Circle Avatar wrapper -->
                 <div class="w-10 h-10 rounded-full bg-[#f0f4f9] border border-[#e1e9f1] flex items-center justify-center shrink-0 overflow-hidden group-hover:border-[#c5d6e6] transition-colors">
-                  @if (session.user()?.avatarUrl) {
-                    <img [src]="session.user()?.avatarUrl" alt="Avatar" class="w-full h-full object-cover" />
+                  @if (session.user()?.avatarUrl && !avatarError()) {
+                    <img [src]="session.user()?.avatarUrl" alt="Avatar" referrerpolicy="no-referrer" (error)="avatarError.set(true)" class="w-full h-full object-cover" />
                   } @else {
                     <svg class="w-6 h-6 text-[#58cc02]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                       <circle cx="11" cy="8" r="3.5" />
@@ -101,8 +101,8 @@ import { SessionService } from '../../core/auth/session';
                   <div class="text-center mb-3">
                     <!-- Circle Avatar inside dropdown -->
                     <div class="w-16 h-16 mx-auto rounded-full bg-[#f0f4f9] border border-[#e1e9f1] flex items-center justify-center shrink-0 overflow-hidden">
-                      @if (session.user()?.avatarUrl) {
-                        <img [src]="session.user()?.avatarUrl" alt="Avatar" class="w-full h-full object-cover" />
+                      @if (session.user()?.avatarUrl && !avatarError()) {
+                        <img [src]="session.user()?.avatarUrl" alt="Avatar" referrerpolicy="no-referrer" (error)="avatarError.set(true)" class="w-full h-full object-cover" />
                       } @else {
                         <svg class="w-10 h-10 text-[#58cc02]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                           <circle cx="11" cy="8" r="3.5" />
@@ -145,6 +145,7 @@ export class WorkspaceShellComponent implements OnInit {
   private readonly chatApi = inject(ChatService);
   private readonly authApi = inject(AuthApiService);
   protected readonly showProfile = signal(false);
+  protected readonly avatarError = signal(false);
   protected readonly unreadCount = signal(0);
   protected readonly unreadChatCount = signal(0);
   protected readonly userRole = UserRole;

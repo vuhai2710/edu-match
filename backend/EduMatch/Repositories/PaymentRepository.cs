@@ -83,9 +83,11 @@ namespace EduMatch.Repositories
         public async Task<Payment?> GetSuccessfulPaymentByClassIdAsync(long classId)
         {
             return await _context.Payments
+                .AsNoTracking()
                 .Include(p => p.PaidByUser)
                 .Where(p => p.ClassId == classId && p.Status == PaymentStatus.Success)
                 .OrderByDescending(p => p.PaidAt ?? p.CreatedAt)
+                .ThenByDescending(p => p.Id)
                 .FirstOrDefaultAsync();
         }
 
@@ -100,32 +102,53 @@ namespace EduMatch.Repositories
                 return [];
             }
 
-            var latestPayments = await _context.Payments
+            var paymentRows = await _context.Payments
+                .AsNoTracking()
                 .Where(p => p.ClassId.HasValue
                     && normalizedClassIds.Contains(p.ClassId.Value)
                     && p.Status == PaymentStatus.Success)
-                .GroupBy(p => p.ClassId!.Value)
-                .Select(group => group
-                    .OrderByDescending(p => p.PaidAt ?? p.CreatedAt)
-                    .First())
-                .Select(p => new { p.Id, ClassId = p.ClassId!.Value })
+                .OrderByDescending(p => p.PaidAt ?? p.CreatedAt)
+                .ThenByDescending(p => p.Id)
+                .Select(p => new
+                {
+                    p.Id,
+                    ClassId = p.ClassId!.Value,
+                    p.PaidByUserId,
+                    PaidByUserName = p.PaidByUser != null ? p.PaidByUser.FullName : null,
+                    p.Amount,
+                    p.Status,
+                    p.PaidAt
+                })
                 .ToListAsync();
 
-            var paymentIds = latestPayments
-                .Select(item => item.Id)
-                .ToList();
-
-            if (paymentIds.Count == 0)
+            if (paymentRows.Count == 0)
             {
                 return [];
             }
 
-            var payments = await _context.Payments
-                .Include(p => p.PaidByUser)
-                .Where(p => paymentIds.Contains(p.Id))
-                .ToListAsync();
-
-            return payments.ToDictionary(p => p.ClassId!.Value);
+            return paymentRows
+                .GroupBy(row => row.ClassId)
+                .ToDictionary(
+                    group => group.Key,
+                    group =>
+                    {
+                        var latestPayment = group.First();
+                        return new Payment
+                        {
+                            Id = latestPayment.Id,
+                            ClassId = latestPayment.ClassId,
+                            PaidByUserId = latestPayment.PaidByUserId,
+                            PaidByUser = latestPayment.PaidByUserName == null
+                                ? null
+                                : new User
+                                {
+                                    FullName = latestPayment.PaidByUserName
+                                },
+                            Amount = latestPayment.Amount,
+                            Status = latestPayment.Status,
+                            PaidAt = latestPayment.PaidAt
+                        };
+                    });
         }
     }
 }

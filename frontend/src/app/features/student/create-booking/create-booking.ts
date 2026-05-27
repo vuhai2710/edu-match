@@ -5,11 +5,12 @@ import { firstValueFrom } from 'rxjs';
 
 import { TimeSlotInputDto, TutorDetailDto } from '../../../api/generated/client/models';
 import { LearningRequestsService, TutorsService } from '../../../api/generated/client/services';
-import { getApiErrorMessage, unwrapApiData } from '../../../core/http/api-error';
+import { getApiErrorDetails, getApiErrorMessage, unwrapApiData } from '../../../core/http/api-error';
 import {
   DAY_OPTIONS,
   buildEndTime,
   formatMoney,
+  getStartTimeOptions,
   validateTimeSlots,
 } from '../../../shared/utils/api-ui';
 
@@ -41,6 +42,9 @@ import {
             <div>
               <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Ngày bắt đầu mong muốn</label>
               <input type="date" [(ngModel)]="desiredStartDate" class="tactile-input w-full text-sm font-semibold" />
+              @if (fieldErrors()['DesiredStartDate']) {
+                <p class="text-xs font-bold text-duo-red mt-1">{{ fieldErrors()['DesiredStartDate'] }}</p>
+              }
             </div>
           </div>
 
@@ -57,6 +61,9 @@ import {
             <div>
               <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Ngân sách / giờ</label>
               <input type="number" [(ngModel)]="budgetPerHour" class="tactile-input w-full text-sm font-semibold" />
+              @if (fieldErrors()['BudgetPerHour']) {
+                <p class="text-xs font-bold text-duo-red mt-1">{{ fieldErrors()['BudgetPerHour'] }}</p>
+              }
             </div>
           </div>
 
@@ -78,20 +85,36 @@ import {
                       <option [ngValue]="day.value">{{ day.label }}</option>
                     }
                   </select>
+                  @if (fieldErrors()['TimeSlots[' + index + '].Day']) {
+                    <p class="text-xs font-bold text-duo-red mt-1">{{ fieldErrors()['TimeSlots[' + index + '].Day'] }}</p>
+                  }
                 </div>
                 <div>
                   <label class="block text-xs font-extrabold text-slate-500 mb-1">Bắt đầu</label>
-                  <input type="time" [ngModel]="slot.startTime" (ngModelChange)="updateSlot(index, 'startTime', $event)"
-                         class="tactile-input w-full text-sm font-semibold" />
+                  <select [ngModel]="slot.startTime" (ngModelChange)="updateSlot(index, 'startTime', $event)"
+                          class="tactile-input w-full text-sm font-semibold bg-white">
+                    @for (time of getStartTimeOptions(slot.day); track time) {
+                      <option [value]="time">{{ time }}</option>
+                    }
+                  </select>
+                  @if (fieldErrors()['TimeSlots[' + index + '].StartTime']) {
+                    <p class="text-xs font-bold text-duo-red mt-1">{{ fieldErrors()['TimeSlots[' + index + '].StartTime'] }}</p>
+                  }
                 </div>
                 <div>
                   <label class="block text-xs font-extrabold text-slate-500 mb-1">Kết thúc</label>
-                  <input type="time" [ngModel]="slot.endTime" readonly class="tactile-input w-full text-sm font-semibold bg-slate-50" />
+                  <input type="text" [ngModel]="slot.endTime" readonly class="tactile-input w-full text-sm font-semibold bg-slate-50" />
+                  @if (fieldErrors()['TimeSlots[' + index + '].EndTime']) {
+                    <p class="text-xs font-bold text-duo-red mt-1">{{ fieldErrors()['TimeSlots[' + index + '].EndTime'] }}</p>
+                  }
                 </div>
                 <button type="button" (click)="removeSlot(index)" [disabled]="slots().length === 1"
                         class="tactile-button-gray px-4 py-2 rounded-xl text-xs font-bold disabled:opacity-40">
                   Xóa
                 </button>
+                @if (fieldErrors()['TimeSlots[' + index + ']']) {
+                  <p class="text-xs font-bold text-duo-red mt-2 col-span-full">{{ fieldErrors()['TimeSlots[' + index + ']'] }}</p>
+                }
               </div>
             }
           </div>
@@ -116,6 +139,12 @@ import {
               <span class="font-display text-xl font-black text-duo-green">{{ formatPrice((budgetPerHour || 0) * hoursPerSession) }}</span>
             </div>
           </div>
+
+          @if (fieldErrors()['TimeSlots']) {
+            <p class="rounded-xl border-2 border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-duo-red">
+              {{ fieldErrors()['TimeSlots'] }}
+            </p>
+          }
 
           @if (errorMessage()) {
             <p class="rounded-xl border-2 border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-duo-red">
@@ -147,7 +176,9 @@ export class CreateBookingPage implements OnInit {
   isLoading = signal(false);
   isSubmitting = signal(false);
   errorMessage = signal('');
+  fieldErrors = signal<Record<string, string>>({});
   readonly dayOptions = DAY_OPTIONS;
+  readonly getStartTimeOptions = getStartTimeOptions;
 
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -174,6 +205,14 @@ export class CreateBookingPage implements OnInit {
       current.map((slot, itemIndex) => {
         if (itemIndex !== index) return slot;
         const next = { ...slot, [key]: value };
+        if (key === 'day') {
+          const isWeekend = value === 'Saturday' || value === 'Sunday';
+          const [h] = next.startTime.split(':').map(Number);
+          const minHour = isWeekend ? 8 : 17;
+          if (h < minHour) {
+            next.startTime = isWeekend ? '08:00' : '17:00';
+          }
+        }
         return { ...next, endTime: buildEndTime(next.startTime, this.hoursPerSession) };
       }),
     );
@@ -202,6 +241,7 @@ export class CreateBookingPage implements OnInit {
 
     this.isSubmitting.set(true);
     this.errorMessage.set('');
+    this.fieldErrors.set({});
 
     try {
       const response = await firstValueFrom(
@@ -218,7 +258,18 @@ export class CreateBookingPage implements OnInit {
       const request = unwrapApiData(response);
       await this.router.navigateByUrl(`/student/learning-requests/${request.id}`);
     } catch (error) {
-      this.errorMessage.set(getApiErrorMessage(error, 'Không tạo được yêu cầu học.'));
+      const errorDetails = getApiErrorDetails(error);
+      this.errorMessage.set(errorDetails.message);
+      
+      const fe: Record<string, string> = {};
+      if (errorDetails.errors && typeof errorDetails.errors === 'object' && !Array.isArray(errorDetails.errors)) {
+        Object.entries(errorDetails.errors).forEach(([key, val]) => {
+          if (val) {
+            fe[key] = Array.isArray(val) ? val[0] : String(val);
+          }
+        });
+      }
+      this.fieldErrors.set(fe);
     } finally {
       this.isSubmitting.set(false);
     }

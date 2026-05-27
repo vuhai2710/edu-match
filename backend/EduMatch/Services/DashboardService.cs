@@ -23,7 +23,7 @@ namespace EduMatch.Services
       var now = DateTime.UtcNow;
       var startOfMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
 
-      var totalUsers = await _db.Users.CountAsync(u => !u.IsDeleted);
+      var totalUsers = await _db.Users.CountAsync(u => u.Role != UserRole.Admin && !u.IsDeleted);
       var students = await _db.Users.CountAsync(u => u.Role == UserRole.Student && !u.IsDeleted);
       var tutors = await _db.Users.CountAsync(u => u.Role == UserRole.Tutor && !u.IsDeleted);
       var totalReqs = await _db.TutorRequests.CountAsync(r => !r.IsDeleted);
