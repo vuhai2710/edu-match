@@ -60,14 +60,14 @@ public class ClassReadService : IClassReadService
       var classEntity = await _classRepository.GetByIdWithDetailsAsync(id);
       if (classEntity == null)
       {
-        throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y lá»›p há»c.", "CLASS_NOT_FOUND");
+        throw new NotFoundException("Không tìm thấy lớp học.", "CLASS_NOT_FOUND");
       }
 
       if (!isAdmin
         && classEntity.StudentId != currentUserId
         && classEntity.Tutor?.UserId != currentUserId)
       {
-        throw new ForbiddenException("Báº¡n khÃ´ng cÃ³ quyá»n xem lá»›p há»c nÃ y.", "CLASS_VIEW_FORBIDDEN");
+        throw new ForbiddenException("Bạn không có quyền xem lớp học này.", "CLASS_VIEW_FORBIDDEN");
       }
 
       var payment = await _paymentRepository.GetSuccessfulPaymentByClassIdAsync(classEntity.Id);

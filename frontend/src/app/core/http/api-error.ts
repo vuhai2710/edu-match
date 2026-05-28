@@ -36,7 +36,7 @@ export function getApiErrorMessage(
     }
 
     if (error.status === 0) {
-      return 'Không kết nối được máy chủ. Vui lòng kiểm tra backend hoặc mạng.';
+      return 'Không kết nối được máy chủ.';
     }
 
     return fallback;
@@ -55,12 +55,9 @@ export function getApiErrorDetails(
 ): ApiErrorDetails {
   if (error instanceof HttpErrorResponse) {
     const body = error.error as ApiErrorBody | string | null | undefined;
-    const errorCode =
-      body && typeof body === 'object' ? (body.errorCode ?? null) : null;
-    const traceId =
-      body && typeof body === 'object' ? (body.traceId ?? null) : null;
-    const errors =
-      body && typeof body === 'object' ? (body.errors ?? null) : null;
+    const errorCode = body && typeof body === 'object' ? (body.errorCode ?? null) : null;
+    const traceId = body && typeof body === 'object' ? (body.traceId ?? null) : null;
+    const errors = body && typeof body === 'object' ? (body.errors ?? null) : null;
     const bodyStatus =
       body && typeof body === 'object' ? (body.statusCode ?? body.status ?? null) : null;
 
@@ -123,7 +120,9 @@ function formatValidationErrors(errors: ApiErrorBody['errors']): string | null {
     const fieldMessages = Array.isArray(value) ? value : [value];
 
     return fieldMessages
-      .filter((message): message is string => typeof message === 'string' && Boolean(message.trim()))
+      .filter(
+        (message): message is string => typeof message === 'string' && Boolean(message.trim()),
+      )
       .map((message) => {
         const trimmed = message.trim();
         return field ? `${field}: ${trimmed}` : trimmed;

@@ -35,50 +35,50 @@ namespace EduMatch.Services
         var classEntity = await _classRepository.GetByIdAsync(dto.ClassId);
         if (classEntity == null)
         {
-          throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y lá»›p há»c.");
+          throw new NotFoundException("Không tìm thấy lớp học.");
         }
 
         if (classEntity.StudentId != userId)
         {
-          throw new ForbiddenException("Báº¡n khÃ´ng cÃ³ quyá»n Ä‘Ã¡nh giÃ¡ lá»›p há»c nÃ y.");
+          throw new ForbiddenException("Bạn không có quyền đánh giá lớp học này.");
         }
 
         if (classEntity.TutorId == 0)
         {
-          throw new ValidationException("Lá»›p há»c khÃ´ng cÃ³ gia sÆ° há»£p lá»‡.");
+          throw new ValidationException("Lớp học không có gia sư hợp lệ.");
         }
 
         if (classEntity.Status != ClassStatus.Active)
         {
           throw new ConflictException(
-            "Chá»‰ Ä‘Æ°á»£c Ä‘Ã¡nh giÃ¡ khi lá»›p há»c Ä‘ang hoáº¡t Ä‘á»™ng.",
+            "Chỉ được đánh giá khi lớp học đang hoạt động.",
             "REVIEW_CLASS_NOT_ACTIVE");
         }
 
         if (!classEntity.StartDate.HasValue)
         {
           throw new ValidationException(
-            "Lá»›p há»c chÆ°a cÃ³ ngÃ y báº¯t Ä‘áº§u há»£p lá»‡.",
+            "Lớp học chưa có ngày bắt đầu hợp lệ.",
             "REVIEW_NO_START_DATE");
         }
 
         if (DateTime.UtcNow < classEntity.StartDate.Value.AddDays(7))
         {
           throw new ValidationException(
-            "Chá»‰ Ä‘Æ°á»£c phÃ©p Ä‘Ã¡nh giÃ¡ sau 7 ngÃ y ká»ƒ tá»« ngÃ y báº¯t Ä‘áº§u lá»›p há»c.",
+            "Chỉ được phép đánh giá sau 7 ngày kể từ ngày bắt đầu lớp học.",
             "REVIEW_TOO_EARLY");
         }
 
         var alreadyReviewed = await _reviewRepository.ExistsByClassAndStudentAsync(dto.ClassId, userId);
         if (alreadyReviewed)
         {
-          throw new ConflictException("Báº¡n Ä‘Ã£ Ä‘Ã¡nh giÃ¡ lá»›p há»c nÃ y rá»“i.");
+          throw new ConflictException("Bạn đã đánh giá lớp học này rồi.");
         }
 
         var tutor = await _tutorRepository.GetByIdAsync(classEntity.TutorId);
         if (tutor == null)
         {
-          throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y thÃ´ng tin gia sÆ°.");
+          throw new NotFoundException("Không tìm thấy thông tin gia sư.");
         }
 
         var review = new Review
@@ -105,14 +105,14 @@ namespace EduMatch.Services
 
         await _notificationService.SendAsync(
           tutor.UserId,
-          "ÄÃ¡nh giÃ¡ má»›i",
-          $"Há»c viÃªn {reviewWithDetails.Student.FullName} Ä‘Ã£ Ä‘Ã¡nh giÃ¡ báº¡n {review.Rating} sao cho lá»›p {classEntity.Code}.",
+          "Đánh giá mới",
+          $"Học viên {reviewWithDetails.Student.FullName} đã đánh giá bạn {review.Rating} sao cho lớp {classEntity.Code}.",
           NotificationType.ReviewCreated,
           "Review",
           review.Id,
           $"/reviews/{review.Id}");
 
-        return ApiResponse<ReviewDto>.SuccessResult(MapToDto(reviewWithDetails), "ÄÃ¡nh giÃ¡ thÃ nh cÃ´ng.");
+        return ApiResponse<ReviewDto>.SuccessResult(MapToDto(reviewWithDetails), "Đánh giá thành công.");
       });
     }
 
@@ -123,12 +123,12 @@ namespace EduMatch.Services
         var classEntity = await _classRepository.GetByIdAsync(classId);
         if (classEntity == null)
         {
-          throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y lá»›p há»c.", "CLASS_NOT_FOUND");
+          throw new NotFoundException("Không tìm thấy lớp học.", "CLASS_NOT_FOUND");
         }
 
         if (classEntity.StudentId != userId)
         {
-          throw new ForbiddenException("Báº¡n khÃ´ng cÃ³ quyá»n Ä‘Ã¡nh giÃ¡ lá»›p há»c nÃ y.", "REVIEW_FORBIDDEN");
+          throw new ForbiddenException("Bạn không có quyền đánh giá lớp học này.", "REVIEW_FORBIDDEN");
         }
 
         var alreadyReviewed = await _reviewRepository.ExistsByClassAndStudentAsync(classId, userId);
@@ -139,7 +139,7 @@ namespace EduMatch.Services
             ClassId = classId,
             CanReview = false,
             ReasonCode = "ALREADY_REVIEWED",
-            Message = "Báº¡n Ä‘Ã£ Ä‘Ã¡nh giÃ¡ lá»›p há»c nÃ y rá»“i.",
+            Message = "Bạn đã đánh giá lớp học này rồi.",
             AlreadyReviewed = true
           });
         }
@@ -151,7 +151,7 @@ namespace EduMatch.Services
             ClassId = classId,
             CanReview = false,
             ReasonCode = "NOT_ACTIVE",
-            Message = "Chá»‰ Ä‘Æ°á»£c Ä‘Ã¡nh giÃ¡ khi lá»›p há»c Ä‘ang hoáº¡t Ä‘á»™ng.",
+            Message = "Chỉ được đánh giá khi lớp học đang hoạt động.",
             AlreadyReviewed = false
           });
         }
@@ -163,7 +163,7 @@ namespace EduMatch.Services
             ClassId = classId,
             CanReview = false,
             ReasonCode = "NO_START_DATE",
-            Message = "Lá»›p há»c chÆ°a cÃ³ ngÃ y báº¯t Ä‘áº§u há»£p lá»‡.",
+            Message = "Lớp học chưa có ngày bắt đầu hợp lệ.",
             AlreadyReviewed = false
           });
         }
@@ -176,7 +176,7 @@ namespace EduMatch.Services
             ClassId = classId,
             CanReview = false,
             ReasonCode = "TOO_EARLY",
-            Message = "Chá»‰ Ä‘Æ°á»£c Ä‘Ã¡nh giÃ¡ sau 7 ngÃ y lá»›p há»c báº¯t Ä‘áº§u.",
+            Message = "Chỉ được đánh giá sau 7 ngày lớp học bắt đầu.",
             AvailableAt = availableAt,
             AlreadyReviewed = false
           });
@@ -187,7 +187,7 @@ namespace EduMatch.Services
           ClassId = classId,
           CanReview = true,
           ReasonCode = "CAN_REVIEW",
-          Message = "CÃ³ thá»ƒ Ä‘Ã¡nh giÃ¡ lá»›p há»c.",
+          Message = "Có thể đánh giá lớp học.",
           AlreadyReviewed = false
         });
       });

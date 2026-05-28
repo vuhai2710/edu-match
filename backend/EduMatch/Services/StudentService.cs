@@ -45,7 +45,7 @@ namespace EduMatch.Services
         var profile = await _studentRepository.GetStudentDetailByIdAsync(studentId);
         if (profile == null)
         {
-          throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y thÃ´ng tin há»c sinh.");
+          throw new NotFoundException("Không tìm thấy thông tin học sinh.");
         }
 
         return ApiResponse<StudentDetailDto>.SuccessResult(_mapper.Map<StudentDetailDto>(profile));
@@ -59,7 +59,7 @@ namespace EduMatch.Services
         var profile = await _studentRepository.GetStudentDetailByUserIdAsync(currentUserId);
         if (profile == null)
         {
-          throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y thÃ´ng tin há»c sinh.");
+          throw new NotFoundException("Không tìm thấy thông tin học sinh.");
         }
 
         return ApiResponse<StudentDetailDto>.SuccessResult(_mapper.Map<StudentDetailDto>(profile));
@@ -73,7 +73,7 @@ namespace EduMatch.Services
         var profile = await _studentRepository.GetStudentDetailByUserIdAsync(currentUserId);
         if (profile == null)
         {
-          throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y thÃ´ng tin há»c sinh.");
+          throw new NotFoundException("Không tìm thấy thông tin học sinh.");
         }
 
         var user = profile.User ?? throw new DataConsistencyException("Student user relationship was not loaded.");

@@ -44,7 +44,7 @@ namespace EduMatch.Services
         var subjectExists = await _subjectRepository.ExistsAsync(s => s.Id == subjectId);
         if (!subjectExists)
         {
-          throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y mÃ´n há»c.", "SUBJECT_NOT_FOUND");
+          throw new NotFoundException("Không tìm thấy môn học.", "SUBJECT_NOT_FOUND");
         }
 
         var pagedTutors = await _subjectRepository.GetTutorsBySubjectAsync(subjectId, parameters);
@@ -67,7 +67,7 @@ namespace EduMatch.Services
         var subject = await _subjectRepository.GetByIdAsync(id);
         if (subject == null || subject.IsDeleted)
         {
-          throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y mÃ´n há»c.", "SUBJECT_NOT_FOUND");
+          throw new NotFoundException("Không tìm thấy môn học.", "SUBJECT_NOT_FOUND");
         }
 
         return ApiResponse<SubjectResponseDto>.SuccessResult(_mapper.Map<SubjectResponseDto>(subject));
@@ -82,7 +82,7 @@ namespace EduMatch.Services
         var nameExists = await _subjectRepository.ExistsAsync(s => s.Name.ToLower() == trimmedName.ToLower() && !s.IsDeleted);
         if (nameExists)
         {
-          throw new ConflictException("MÃ´n há»c vá»›i tÃªn nÃ y Ä‘Ã£ tá»“n táº¡i.", "SUBJECT_NAME_ALREADY_EXISTS");
+          throw new ConflictException("Môn học với tên này đã tồn tại.", "SUBJECT_NAME_ALREADY_EXISTS");
         }
 
         var subject = _mapper.Map<Subject>(dto);
@@ -102,14 +102,14 @@ namespace EduMatch.Services
         var subject = await _subjectRepository.GetByIdAsync(id);
         if (subject == null || subject.IsDeleted)
         {
-          throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y mÃ´n há»c.", "SUBJECT_NOT_FOUND");
+          throw new NotFoundException("Không tìm thấy môn học.", "SUBJECT_NOT_FOUND");
         }
 
         var trimmedName = dto.Name.Trim();
         var nameExists = await _subjectRepository.ExistsAsync(s => s.Id != id && s.Name.ToLower() == trimmedName.ToLower() && !s.IsDeleted);
         if (nameExists)
         {
-          throw new ConflictException("MÃ´n há»c vá»›i tÃªn nÃ y Ä‘Ã£ tá»“n táº¡i.", "SUBJECT_NAME_ALREADY_EXISTS");
+          throw new ConflictException("Môn học với tên này đã tồn tại.", "SUBJECT_NAME_ALREADY_EXISTS");
         }
 
         _mapper.Map(dto, subject);
@@ -130,7 +130,7 @@ namespace EduMatch.Services
         var subject = await _subjectRepository.GetByIdAsync(id);
         if (subject == null || subject.IsDeleted)
         {
-          throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y mÃ´n há»c.", "SUBJECT_NOT_FOUND");
+          throw new NotFoundException("Không tìm thấy môn học.", "SUBJECT_NOT_FOUND");
         }
 
         subject.IsDeleted = true;

@@ -52,7 +52,7 @@ namespace EduMatch.Services
       try
       {
         var request = await GetOwnedRequestAsync(id, tutorProfileId);
-        EnsurePendingStatus(request, "Khong the chap nhan yeu cau hoc tap o trang thai hien tai.");
+        EnsurePendingStatus(request, "Không thể chấp nhận yêu cầu học tập ở trạng thái hiện tại.");
 
         var requestedSlots = _bookingScheduleService.ParseAndValidate(request.TimeSlots, request.HoursPerSession);
         await _bookingOrchestrator.SoftBookAsync(request.Id, tutorProfileId, requestedSlots);
@@ -61,8 +61,8 @@ namespace EduMatch.Services
 
         await _notificationService.SendAsync(
           request.StudentId,
-          "Yeu cau hoc tap duoc chap nhan",
-          $"Gia su {request.Tutor?.User?.FullName ?? string.Empty} da chap nhan yeu cau hoc {request.Subject?.Name ?? string.Empty} cua ban.",
+          "Yêu cầu học tập được chấp nhận",
+          $"Gia sư {request.Tutor?.User?.FullName ?? string.Empty} đã chấp nhận yêu cầu học {request.Subject?.Name ?? string.Empty} của bạn.",
           NotificationType.LearningRequestAccepted,
           "LearningRequest",
           request.Id,
@@ -70,7 +70,7 @@ namespace EduMatch.Services
 
         return ApiResponse<LearningRequestDto>.SuccessResult(
           LearningRequestMapper.ToDto(request, requestedSlots),
-          "Chap nhan yeu cau hoc tap thanh cong.",
+          "Chấp nhận yêu cầu học tập thành công.",
           200);
       }
       catch (ConflictException ex)
@@ -84,7 +84,7 @@ namespace EduMatch.Services
       try
       {
         var request = await GetOwnedRequestAsync(id, tutorProfileId);
-        EnsurePendingStatus(request, "Khong the tu choi yeu cau hoc tap o trang thai hien tai.");
+        EnsurePendingStatus(request, "Không thể từ chối yêu cầu học tập ở trạng thái hiện tại.");
 
         request.Status = LearningRequestStatus.TutorRejected;
 
@@ -95,8 +95,8 @@ namespace EduMatch.Services
 
         await _notificationService.SendAsync(
           request.StudentId,
-          "Yeu cau hoc tap bi tu choi",
-          $"Gia su {request.Tutor?.User?.FullName ?? string.Empty} da tu choi yeu cau hoc {request.Subject?.Name ?? string.Empty} cua ban.",
+          "Yêu cầu học tập bị từ chối",
+          $"Gia sư {request.Tutor?.User?.FullName ?? string.Empty} đã từ chối yêu cầu học {request.Subject?.Name ?? string.Empty} của bạn.",
           NotificationType.LearningRequestRejected,
           "LearningRequest",
           request.Id,
@@ -104,7 +104,7 @@ namespace EduMatch.Services
 
         return ApiResponse<LearningRequestDto>.SuccessResult(
           LearningRequestMapper.ToDto(request, requestedSlots),
-          "Tu choi yeu cau hoc tap thanh cong.",
+          "Từ chối yêu cầu học tập thành công.",
           200);
       }
       catch (ConflictException ex)
@@ -118,12 +118,12 @@ namespace EduMatch.Services
       var request = await _learningRequestRepository.GetByIdWithDetailsAsync(id);
       if (request == null)
       {
-        throw new NotFoundException("Khong tim thay yeu cau hoc tap.", "LEARNING_REQUEST_NOT_FOUND");
+        throw new NotFoundException("Không tìm thấy yêu cầu học tập.", "LEARNING_REQUEST_NOT_FOUND");
       }
 
       if (request.TutorId != tutorProfileId)
       {
-        throw new ForbiddenException("Ban khong co quyen thao tac yeu cau hoc tap nay.", "LEARNING_REQUEST_FORBIDDEN");
+        throw new ForbiddenException("Bạn không có quyền thao tác yêu cầu học tập này.", "LEARNING_REQUEST_FORBIDDEN");
       }
 
       return request;

@@ -35,7 +35,7 @@ namespace EduMatch.Controllers
     public async Task<IActionResult> RegisterStudent([FromForm] RegisterStudentDto dto)
     {
       var data = await _authService.RegisterStudentAsync(dto);
-      return Ok(ApiResponse<LoginResponseDto>.SuccessResult(data, "ÄÄƒng kÃ½ há»c viÃªn thÃ nh cÃ´ng"));
+      return Ok(ApiResponse<LoginResponseDto>.SuccessResult(data, "Đăng ký học viên thành công"));
     }
 
     [HttpPost("register/tutor")]
@@ -46,7 +46,7 @@ namespace EduMatch.Controllers
     public async Task<IActionResult> RegisterTutor([FromForm] RegisterTutorDto dto)
     {
       var data = await _authService.RegisterTutorAsync(dto);
-      return Ok(ApiResponse<LoginResponseDto>.SuccessResult(data, "ÄÄƒng kÃ½ gia sÆ° thÃ nh cÃ´ng"));
+      return Ok(ApiResponse<LoginResponseDto>.SuccessResult(data, "Đăng ký gia sư thành công"));
     }
 
     [HttpPost("login")]

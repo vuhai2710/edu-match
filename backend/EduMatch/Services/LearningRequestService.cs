@@ -61,19 +61,19 @@ namespace EduMatch.Services
         var student = await _studentRepository.GetStudentDetailByUserIdAsync(currentUserId);
         if (student == null)
         {
-          throw new NotFoundException("Khong tim thay thong tin hoc vien.", "STUDENT_NOT_FOUND");
+          throw new NotFoundException("Không tìm thấy thông tin học viên.", "STUDENT_NOT_FOUND");
         }
 
         var tutor = await _tutorRepository.GetTutorProfileDetailAsync(dto.TutorId);
         if (tutor == null)
         {
-          throw new NotFoundException("Khong tim thay thong tin gia su.", "TUTOR_NOT_FOUND");
+          throw new NotFoundException("Không tìm thấy thông tin gia sư.", "TUTOR_NOT_FOUND");
         }
 
         var subject = await _subjectRepository.GetByIdAsync(dto.SubjectId);
         if (subject == null)
         {
-          throw new NotFoundException("Khong tim thay mon hoc.", "SUBJECT_NOT_FOUND");
+          throw new NotFoundException("Không tìm thấy môn học.", "SUBJECT_NOT_FOUND");
         }
 
         var validatedTimeSlots = _bookingScheduleService.Validate(
@@ -121,8 +121,8 @@ namespace EduMatch.Services
 
         await _notificationService.SendAsync(
           tutor.UserId,
-          "Yeu cau hoc tap moi",
-          $"Hoc vien {student.User.FullName} da gui yeu cau hoc {subject.Name}.",
+          "Yêu cầu học tập mới",
+          $"Học viên {student.User.FullName} đã gửi yêu cầu học {subject.Name}.",
           NotificationType.LearningRequestCreated,
           "LearningRequest",
           entity.Id,
@@ -130,7 +130,7 @@ namespace EduMatch.Services
 
         return ApiResponse<LearningRequestDto>.SuccessResult(
           LearningRequestMapper.ToDto(entity, validatedTimeSlots),
-          "Tao yeu cau hoc tap thanh cong.",
+          "Tạo yêu cầu học tập thành công.",
           StatusCodes.Status201Created);
       });
     }
@@ -142,7 +142,7 @@ namespace EduMatch.Services
         var student = await _studentRepository.GetStudentDetailByUserIdAsync(currentUserId);
         if (student == null)
         {
-          throw new NotFoundException("Khong tim thay thong tin hoc vien.", "STUDENT_NOT_FOUND");
+          throw new NotFoundException("Không tìm thấy thông tin học viên.", "STUDENT_NOT_FOUND");
         }
 
         var pagedRequests = await _learningRequestRepository.GetByStudentIdAsync(currentUserId, parameters);
@@ -169,7 +169,7 @@ namespace EduMatch.Services
         var request = await _learningRequestRepository.GetByIdWithDetailsAsync(id);
         if (request == null)
         {
-          throw new NotFoundException("Khong tim thay yeu cau hoc tap.", "LEARNING_REQUEST_NOT_FOUND");
+          throw new NotFoundException("Không tìm thấy yêu cầu học tập.", "LEARNING_REQUEST_NOT_FOUND");
         }
 
         EnsureCanViewRequest(request, currentUserId, role, tutorProfileId);
@@ -200,7 +200,7 @@ namespace EduMatch.Services
         return;
       }
 
-      throw new ForbiddenException("Ban khong co quyen xem yeu cau hoc tap nay.", "LEARNING_REQUEST_FORBIDDEN");
+      throw new ForbiddenException("Bạn không có quyền xem yêu cầu học tập này.", "LEARNING_REQUEST_FORBIDDEN");
     }
 
     private static decimal CalculateTotalAmount(decimal budgetPerHour, decimal hoursPerSession, DepositPolicy policy)
@@ -240,7 +240,7 @@ namespace EduMatch.Services
         throw new ValidationException(
           new Dictionary<string, string[]>
           {
-            [nameof(CreateLearningRequestDto.DesiredStartDate)] = ["DesiredStartDate khong duoc de trong."]
+            [nameof(CreateLearningRequestDto.DesiredStartDate)] = ["DesiredStartDate không được để trống."]
           },
           "INVALID_DESIRED_START_DATE");
       }

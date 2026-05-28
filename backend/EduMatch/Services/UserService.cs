@@ -45,7 +45,7 @@ namespace EduMatch.Services
         var user = await _userRepository.GetByIdAsync(id);
         if (user == null)
         {
-          throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y ngÆ°á»i dÃ¹ng.");
+          throw new NotFoundException("Không tìm thấy người dùng.");
         }
 
         return ApiResponse<UserDto>.SuccessResult(_mapper.Map<UserDto>(user));
@@ -59,7 +59,7 @@ namespace EduMatch.Services
         var user = await _userRepository.GetByIdAsync(id);
         if (user == null)
         {
-          throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y ngÆ°á»i dÃ¹ng.");
+          throw new NotFoundException("Không tìm thấy người dùng.");
         }
 
         user.IsDeleted = true;
@@ -77,22 +77,22 @@ namespace EduMatch.Services
         var user = await _userRepository.GetByIdAsync(userId);
         if (user == null || user.IsDeleted)
         {
-          throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y ngÆ°á»i dÃ¹ng.");
+          throw new NotFoundException("Không tìm thấy người dùng.");
         }
 
         if (user.IsGoogleAccount)
         {
-          throw new ValidationException("TÃ i khoáº£n Google khÃ´ng há»— trá»£ Ä‘á»•i máº­t kháº©u.");
+          throw new ValidationException("Tài khoản Google không hỗ trợ đổi mật khẩu.");
         }
 
         if (!BCrypt.Net.BCrypt.Verify(dto.CurrentPassword, user.Password))
         {
-          throw new ValidationException("Máº­t kháº©u hiá»‡n táº¡i khÃ´ng Ä‘Ãºng.");
+          throw new ValidationException("Mật khẩu hiện tại không đúng.");
         }
 
         if (BCrypt.Net.BCrypt.Verify(dto.NewPassword, user.Password))
         {
-          throw new ValidationException("Máº­t kháº©u má»›i pháº£i khÃ¡c máº­t kháº©u hiá»‡n táº¡i.");
+          throw new ValidationException("Mật khẩu mới phải khác mật khẩu hiện tại.");
         }
 
         user.Password = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword, workFactor: 12);
@@ -103,7 +103,7 @@ namespace EduMatch.Services
         _userRepository.Update(user);
         await _userRepository.SaveChangesAsync();
 
-        return ApiResponse.Ok("Äá»•i máº­t kháº©u thÃ nh cÃ´ng");
+        return ApiResponse.Ok("Đổi mật khẩu thành công");
       });
     }
 
@@ -114,7 +114,7 @@ namespace EduMatch.Services
         var user = await _userRepository.GetByIdAsync(userId);
         if (user == null || user.IsDeleted)
         {
-          throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y ngÆ°á»i dÃ¹ng.");
+          throw new NotFoundException("Không tìm thấy người dùng.");
         }
 
         if (user.AvatarFileId.HasValue)
@@ -129,7 +129,7 @@ namespace EduMatch.Services
         _userRepository.Update(user);
         await _userRepository.SaveChangesAsync();
 
-        return ApiResponse<string>.SuccessResult(savedFile.FilePath, "Cáº­p nháº­t áº£nh Ä‘áº¡i diá»‡n thÃ nh cÃ´ng");
+        return ApiResponse<string>.SuccessResult(savedFile.FilePath, "Cập nhật ảnh đại diện thành công");
       });
     }
 
@@ -140,12 +140,12 @@ namespace EduMatch.Services
         var user = await _userRepository.GetByIdAsync(userId);
         if (user == null || user.IsDeleted)
         {
-          throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y ngÆ°á»i dÃ¹ng.");
+          throw new NotFoundException("Không tìm thấy người dùng.");
         }
 
         if (!user.AvatarFileId.HasValue)
         {
-          throw new ValidationException("NgÆ°á»i dÃ¹ng chÆ°a cÃ³ avatar.");
+          throw new ValidationException("Người dùng chưa có avatar.");
         }
 
         await _fileService.DeleteFileRecordAsync(user.AvatarFileId.Value);
@@ -155,7 +155,7 @@ namespace EduMatch.Services
         _userRepository.Update(user);
         await _userRepository.SaveChangesAsync();
 
-        return ApiResponse.Ok("XÃ³a áº£nh Ä‘áº¡i diá»‡n thÃ nh cÃ´ng");
+        return ApiResponse.Ok("Xóa ảnh đại diện thành công");
       });
     }
   }

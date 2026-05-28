@@ -91,7 +91,7 @@ public class DepositPolicyService : IDepositPolicyService
 
         return ApiResponse<DepositPolicyDto?>.SuccessResult(
           MapToDto(defaultPolicy),
-          "Cap nhat so buoi coc mac dinh thanh cong.",
+          "Cập nhật số buổi cọc mặc định thành công.",
           StatusCodes.Status200OK);
       }
     }
@@ -141,7 +141,7 @@ public class DepositPolicyService : IDepositPolicyService
       if (defaultPolicy != null)
       {
         return ApiResponse<DepositPolicyDto?>.Fail(
-          "Chinh sach mac dinh da ton tai.",
+          "Chính sách mặc định đã tồn tại.",
           StatusCodes.Status409Conflict);
       }
     }
@@ -262,12 +262,12 @@ public class DepositPolicyService : IDepositPolicyService
 
     if (IsDefaultPolicy(dto) && dto.DiscountPercent != 0)
     {
-      messages.Add("Chinh sach mac dinh chi cau hinh so buoi coc, khong cau hinh giam gia.");
+      messages.Add("Chính sách mặc định chỉ cấu hình số buổi cọc, không cấu hình giảm giá.");
     }
 
     if (dto.ActiveFrom.HasValue && dto.ActiveTo.HasValue && dto.ActiveTo.Value.Date < dto.ActiveFrom.Value.Date)
     {
-      messages.Add("ActiveTo khong duoc truoc ActiveFrom.");
+      messages.Add("ActiveTo không được trước ActiveFrom.");
     }
 
     if (messages.Count == 0)

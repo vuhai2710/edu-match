@@ -59,7 +59,7 @@ namespace EduMatch.Services
         var lr = await _learningRequestRepo.GetByIdWithDetailsAsync(dto.LearningRequestId);
         if (lr == null)
         {
-          throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y yÃªu cáº§u há»c táº­p.", "LEARNING_REQUEST_NOT_FOUND");
+          throw new NotFoundException("Không tìm thấy yêu cầu học tập.", "LEARNING_REQUEST_NOT_FOUND");
         }
 
         var isStudent = callerUserId == lr.StudentId;
@@ -67,21 +67,21 @@ namespace EduMatch.Services
         if (!isStudent && !isTutor)
         {
           throw new ForbiddenException(
-            "Báº¡n khÃ´ng cÃ³ quyá»n thanh toÃ¡n cho yÃªu cáº§u há»c táº­p nÃ y.",
+            "Bạn không có quyền thanh toán cho yêu cầu học tập này.",
             "DEPOSIT_PAYMENT_FORBIDDEN");
         }
 
         if (lr.Status != LearningRequestStatus.SoftBooked)
         {
           throw new ConflictException(
-            "Chá»‰ cÃ³ thá»ƒ thanh toÃ¡n Ä‘áº·t cá»c khi yÃªu cáº§u há»c táº­p á»Ÿ tráº¡ng thÃ¡i SoftBooked.",
+            "Chỉ có thể thanh toán đặt cọc khi yêu cầu học tập ở trạng thái SoftBooked.",
             "LEARNING_REQUEST_NOT_SOFT_BOOKED");
         }
 
         if (lr.PaymentExpiresAt.HasValue && lr.PaymentExpiresAt.Value < DateTime.UtcNow)
         {
           throw new ConflictException(
-            "Thá»i háº¡n thanh toÃ¡n Ä‘áº·t cá»c Ä‘Ã£ háº¿t háº¡n.",
+            "Thời hạn thanh toán đặt cọc đã hết hạn.",
             "PAYMENT_WINDOW_EXPIRED");
         }
 
@@ -89,7 +89,7 @@ namespace EduMatch.Services
         if (hasPending)
         {
           throw new ConflictException(
-            "ÄÃ£ tá»“n táº¡i má»™t khoáº£n thanh toÃ¡n Ä‘ang chá» cho yÃªu cáº§u há»c táº­p nÃ y.",
+            "Đã tồn tại một khoản thanh toán đang chờ cho yêu cầu học tập này.",
             "DUPLICATE_PENDING_PAYMENT");
         }
 
@@ -97,7 +97,7 @@ namespace EduMatch.Services
         if (depositAmount <= 0)
         {
           throw new ValidationException(
-            "Sá»‘ tiá»n Ä‘áº·t cá»c khÃ´ng há»£p lá»‡.",
+            "Số tiền đặt cọc không hợp lệ.",
             "INVALID_DEPOSIT_AMOUNT");
         }
 
@@ -156,7 +156,7 @@ namespace EduMatch.Services
         if (code != "00")
         {
           _logger.LogError("PayOS API returned code {Code}, msg: {Msg}", code, root.GetProperty("desc").GetString());
-          throw new AppException("PayOS tá»« chá»‘i yÃªu cáº§u thanh toÃ¡n.", StatusCodes.Status502BadGateway, "PAYOS_API_REJECTED");
+          throw new AppException("PayOS từ chối yêu cầu thanh toán.", StatusCodes.Status502BadGateway, "PAYOS_API_REJECTED");
         }
 
         var dataElem = root.GetProperty("data");
@@ -172,8 +172,8 @@ namespace EduMatch.Services
 
         await _notificationService.SendToMultipleAsync(
           new[] { lr.StudentId, lr.Tutor.UserId },
-          "YÃªu cáº§u thanh toÃ¡n Ä‘áº·t cá»c",
-          $"YÃªu cáº§u thanh toÃ¡n Ä‘áº·t cá»c Ä‘Ã£ Ä‘Æ°á»£c táº¡o cho yÃªu cáº§u há»c táº­p #{dto.LearningRequestId}.",
+          "Yêu cầu thanh toán đặt cọc",
+          $"Yêu cầu thanh toán đặt cọc đã được tạo cho yêu cầu học tập #{dto.LearningRequestId}.",
           NotificationType.DepositPaymentCreated,
           "Payment",
           payment.Id,
@@ -196,13 +196,13 @@ namespace EduMatch.Services
         var lr = await _learningRequestRepo.GetByIdWithDetailsAsync(learningRequestId);
         if (lr == null)
         {
-          throw new NotFoundException("KhÃƒÂ´ng tÃƒÂ¬m thÃ¡ÂºÂ¥y yÃƒÂªu cÃ¡ÂºÂ§u hÃ¡Â»Âc tÃ¡ÂºÂ­p.", "LEARNING_REQUEST_NOT_FOUND");
+          throw new NotFoundException("Không tìm thấy yêu cầu học tập.", "LEARNING_REQUEST_NOT_FOUND");
         }
 
         if (!isAdmin && callerUserId != lr.StudentId && callerUserId != lr.Tutor.UserId)
         {
           throw new ForbiddenException(
-            "BÃ¡ÂºÂ¡n khÃƒÂ´ng cÃƒÂ³ quyÃ¡Â»Ân xem thanh toÃƒÂ¡n cho yÃƒÂªu cÃ¡ÂºÂ§u hÃ¡Â»Âc tÃ¡ÂºÂ­p nÃƒÂ y.",
+            "Bạn không có quyền xem thanh toán cho yêu cầu học tập này.",
             "DEPOSIT_PAYMENT_FORBIDDEN");
         }
 
@@ -219,7 +219,7 @@ namespace EduMatch.Services
       if (!isValid)
       {
         _logger.LogWarning("Invalid webhook signature for order {OrderCode}", dto.Data.OrderCode);
-        throw new AppException("Chá»¯ kÃ½ webhook khÃ´ng há»£p lá»‡.", StatusCodes.Status400BadRequest, "INVALID_WEBHOOK_SIGNATURE");
+        throw new AppException("Chữ ký webhook không hợp lệ.", StatusCodes.Status400BadRequest, "INVALID_WEBHOOK_SIGNATURE");
       }
 
       var payment = await _paymentRepo.GetByOrderCodeWithLearningRequestAsync(dto.Data.OrderCode);
@@ -230,7 +230,7 @@ namespace EduMatch.Services
         _logger.LogWarning(
           "Amount mismatch for order {OrderCode}: expected={Expected}, received={Received}",
           dto.Data.OrderCode, payment.Amount, dto.Data.Amount);
-        throw new AppException("Sá»‘ tiá»n khÃ´ng khá»›p.", StatusCodes.Status400BadRequest, "AMOUNT_MISMATCH");
+        throw new AppException("Số tiền không khớp.", StatusCodes.Status400BadRequest, "AMOUNT_MISMATCH");
       }
 
       if (payment.Status == PaymentStatus.Success)
@@ -261,8 +261,8 @@ namespace EduMatch.Services
         {
           await _notificationService.SendToMultipleAsync(
             new[] { payment.LearningRequest.StudentId, payment.LearningRequest.Tutor.UserId },
-            "Thanh toÃ¡n Ä‘áº·t cá»c thÃ nh cÃ´ng",
-            $"Äáº·t cá»c cho yÃªu cáº§u há»c táº­p #{payment.LearningRequestId} Ä‘Ã£ thanh toÃ¡n thÃ nh cÃ´ng. Lá»›p há»c Ä‘Ã£ Ä‘Æ°á»£c táº¡o.",
+            "Thanh toán đặt cọc thành công",
+            $"Đặt cọc cho yêu cầu học tập #{payment.LearningRequestId} đã thanh toán thành công. Lớp học đã được tạo.",
             NotificationType.DepositPaymentSuccess,
             "Payment",
             payment.Id,
@@ -289,7 +289,7 @@ namespace EduMatch.Services
         var payment = await _paymentRepo.GetByOrderCodeWithLearningRequestAsync(orderCode);
         if (payment == null)
         {
-          throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y thanh toÃ¡n.", "PAYMENT_NOT_FOUND");
+          throw new NotFoundException("Không tìm thấy thanh toán.", "PAYMENT_NOT_FOUND");
         }
 
         if (payment.Status == PaymentStatus.Pending)

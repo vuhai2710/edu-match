@@ -41,13 +41,13 @@ namespace EduMatch.Services
         if (user == null)
         {
           _logger.LogInformation("Forgot password requested for non-existing email: {Email}", email);
-          throw new AppException("Email chÆ°a Ä‘Æ°á»£c Ä‘Äƒng kÃ½");
+          throw new AppException("Email chưa được đăng ký");
         }
 
         if (user.IsGoogleAccount)
         {
           _logger.LogInformation("Forgot password requested for Google account: {Email}", email);
-          return ApiResponse.Ok("Link Ä‘áº·t láº¡i máº­t kháº©u Ä‘Ã£ Ä‘Æ°á»£c gá»­i");
+          return ApiResponse.Ok("Link đặt lại mật khẩu đã được gửi");
         }
 
         var rawToken = GenerateSecureToken();
@@ -70,7 +70,7 @@ namespace EduMatch.Services
         await _emailService.SendPasswordResetEmailAsync(user.Email, resetLink);
 
         _logger.LogInformation("Password reset token created for user {UserId}", user.Id);
-        return ApiResponse.Ok("Link Ä‘áº·t láº¡i máº­t kháº©u Ä‘Ã£ Ä‘Æ°á»£c gá»­i");
+        return ApiResponse.Ok("Link đặt lại mật khẩu đã được gửi");
       });
     }
 
@@ -83,7 +83,7 @@ namespace EduMatch.Services
 
         if (resetToken == null)
         {
-          throw new AppException("Token khÃ´ng há»£p lá»‡ hoáº·c Ä‘Ã£ háº¿t háº¡n");
+          throw new AppException("Token không hợp lệ hoặc đã hết hạn");
         }
 
         var user = resetToken.User;
@@ -106,7 +106,7 @@ namespace EduMatch.Services
         await _tokenRepository.SaveChangesAsync();
 
         _logger.LogInformation("Password reset successfully for user {UserId}", user.Id);
-        return ApiResponse.Ok("Äáº·t láº¡i máº­t kháº©u thÃ nh cÃ´ng");
+        return ApiResponse.Ok("Đặt lại mật khẩu thành công");
       });
     }
 

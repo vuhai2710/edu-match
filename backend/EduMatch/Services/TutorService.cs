@@ -78,7 +78,7 @@ public class TutorService : ITutorService
 
       if (profile == null)
       {
-        throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y há»“ sÆ¡ gia sÆ°.", "TUTOR_PROFILE_NOT_FOUND");
+        throw new NotFoundException("Không tìm thấy hồ sơ gia sư.", "TUTOR_PROFILE_NOT_FOUND");
       }
 
       return ApiResponse<TutorDetailDto>.SuccessResult(MapTutorDetail(profile));
@@ -92,7 +92,7 @@ public class TutorService : ITutorService
       var profile = await _tutorRepository.GetTutorProfileByUserIdAsync(userId);
       if (profile == null)
       {
-        throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y há»“ sÆ¡ gia sÆ° cá»§a ngÆ°á»i dÃ¹ng nÃ y.", "TUTOR_PROFILE_NOT_FOUND");
+        throw new NotFoundException("Không tìm thấy hồ sơ gia sư của người dùng này.", "TUTOR_PROFILE_NOT_FOUND");
       }
 
       return ApiResponse<TutorDetailDto>.SuccessResult(MapTutorDetail(profile));
@@ -110,7 +110,7 @@ public class TutorService : ITutorService
         var user = await _userRepository.GetByIdAsync(userId);
         if (user == null)
         {
-          throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y ngÆ°á»i dÃ¹ng.", "USER_NOT_FOUND");
+          throw new NotFoundException("Không tìm thấy người dùng.", "USER_NOT_FOUND");
         }
 
         user.FullName = dto.FullName;
@@ -190,7 +190,7 @@ public class TutorService : ITutorService
           throw new ValidationException(
             new Dictionary<string, string[]>
             {
-              [nameof(dto.Subjects)] = [$"CÃ¡c mÃ´n há»c khÃ´ng tá»“n táº¡i: {string.Join(", ", invalidSubjectIds)}."]
+              [nameof(dto.Subjects)] = [$"Các môn học không tồn tại: {string.Join(", ", invalidSubjectIds)}."]
             },
             "INVALID_TUTOR_SUBJECTS");
         }
@@ -222,7 +222,7 @@ public class TutorService : ITutorService
       var updatedProfile = await _tutorRepository.GetTutorProfileByUserIdAsync(userId);
       if (updatedProfile == null)
       {
-        throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y há»“ sÆ¡ gia sÆ° sau khi cáº­p nháº­t.", "TUTOR_PROFILE_NOT_FOUND");
+        throw new NotFoundException("Không tìm thấy hồ sơ gia sư sau khi cập nhật.", "TUTOR_PROFILE_NOT_FOUND");
       }
 
       return ApiResponse<TutorDetailDto>.SuccessResult(
@@ -238,7 +238,7 @@ public class TutorService : ITutorService
       var profile = await _tutorRepository.GetTutorProfileByUserIdAsync(userId);
       if (profile == null || profile.IsDeleted)
       {
-        throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y há»“ sÆ¡ gia sÆ°.", "TUTOR_PROFILE_NOT_FOUND");
+        throw new NotFoundException("Không tìm thấy hồ sơ gia sư.", "TUTOR_PROFILE_NOT_FOUND");
       }
 
       if (profile.CvFileId.HasValue)
@@ -253,7 +253,7 @@ public class TutorService : ITutorService
       _tutorRepository.Update(profile);
       await _tutorRepository.SaveChangesAsync();
 
-      return ApiResponse<FileDto>.SuccessResult(MapFileDto(savedFile), "Cáº­p nháº­t CV thÃ nh cÃ´ng");
+      return ApiResponse<FileDto>.SuccessResult(MapFileDto(savedFile), "Cập nhật CV thành công");
     });
   }
 
@@ -264,12 +264,12 @@ public class TutorService : ITutorService
       var profile = await _tutorRepository.GetTutorProfileByUserIdAsync(userId);
       if (profile == null || profile.IsDeleted)
       {
-        throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y há»“ sÆ¡ gia sÆ°.", "TUTOR_PROFILE_NOT_FOUND");
+        throw new NotFoundException("Không tìm thấy hồ sơ gia sư.", "TUTOR_PROFILE_NOT_FOUND");
       }
 
       if (!profile.CvFileId.HasValue)
       {
-        throw new ValidationException("Gia sÆ° chÆ°a cÃ³ CV.", "TUTOR_CV_NOT_FOUND");
+        throw new ValidationException("Gia sư chưa có CV.", "TUTOR_CV_NOT_FOUND");
       }
 
       await _fileService.DeleteFileRecordAsync(profile.CvFileId.Value);
@@ -279,7 +279,7 @@ public class TutorService : ITutorService
       _tutorRepository.Update(profile);
       await _tutorRepository.SaveChangesAsync();
 
-      return ApiResponse.Ok("XÃ³a CV thÃ nh cÃ´ng");
+      return ApiResponse.Ok("Xóa CV thành công");
     });
   }
 
