@@ -86,23 +86,23 @@ import {
                 </div>
 
                 <div class="mt-5 space-y-2">
-                  <div class="flex flex-wrap gap-2">
+                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     @if (request.status === 'Pending') {
                       <button (click)="acceptRequest(request)" [disabled]="isWorking()"
-                              class="tactile-button-green flex-grow py-2 rounded-xl text-xs font-black uppercase disabled:opacity-60">
+                              class="tactile-button-green w-full py-2 rounded-xl text-xs font-black uppercase disabled:opacity-60">
                         Chấp nhận
                       </button>
                       <a [routerLink]="['/tutor/requests', request.id]"
-                         class="tactile-button-blue flex-grow py-2 rounded-xl text-xs font-black uppercase text-center">
+                         class="tactile-button-blue w-full py-2 rounded-xl text-xs font-black uppercase text-center">
                         Đề xuất lịch
                       </a>
                       <button (click)="rejectRequest(request)" [disabled]="isWorking()"
-                              class="tactile-button-gray flex-grow py-2 rounded-xl text-xs font-bold disabled:opacity-60">
+                              class="tactile-button-gray w-full py-2 rounded-xl text-xs font-bold disabled:opacity-60">
                         Từ chối
                       </button>
                     } @else {
                       <a [routerLink]="['/tutor/requests', request.id]"
-                         class="tactile-button-blue w-full py-2.5 rounded-xl text-sm font-extrabold uppercase text-center">
+                         class="tactile-button-blue w-full py-2.5 rounded-xl text-sm font-extrabold uppercase text-center sm:col-span-3">
                         Xem chi tiết đàm phán
                       </a>
                     }

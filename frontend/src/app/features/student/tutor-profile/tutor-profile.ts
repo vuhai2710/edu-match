@@ -34,83 +34,83 @@ import {
           ← Quay lại
         </a>
 
-        <div class="grid lg:grid-cols-3 gap-6">
-          <div class="lg:col-span-2 space-y-6">
-            <!-- Header Profile Card -->
-            <div class="tactile-card p-6">
-              <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                @if (t.avatarUrl && !avatarError()) {
-                  <img
-                    [src]="t.avatarUrl"
-                    [alt]="t.fullName"
-                    referrerpolicy="no-referrer"
-                    (error)="avatarError.set(true)"
-                    class="w-20 h-20 rounded-full object-cover border-4 border-green-100 shrink-0"
-                  />
+        <!-- Header Profile Card -->
+        <div class="tactile-card p-6">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            @if (t.avatarUrl && !avatarError()) {
+              <img
+                [src]="t.avatarUrl"
+                [alt]="t.fullName"
+                referrerpolicy="no-referrer"
+                (error)="avatarError.set(true)"
+                class="w-20 h-20 rounded-full object-cover border-4 border-green-100 shrink-0"
+              />
+            } @else {
+              <div
+                class="w-20 h-20 rounded-full bg-duo-blue text-white flex items-center justify-center font-black text-2xl border-b-4 border-duo-blue-dark shrink-0"
+              >
+                {{ initials(t.fullName) }}
+              </div>
+            }
+            <div class="space-y-2 min-w-0 flex-1">
+              <div class="flex flex-wrap items-center gap-2">
+                <h1 class="font-display text-2xl font-black text-slate-900 leading-none">
+                  {{ t.fullName }}
+                </h1>
+                @if (t.code) {
+                  <span class="bg-blue-100 text-duo-blue text-xs font-extrabold px-2.5 py-1 rounded-lg border border-blue-200 uppercase">
+                    {{ t.code }}
+                  </span>
+                }
+              </div>
+              <p class="text-slate-500 font-semibold text-sm">
+                {{ t.address?.fullAddress || t.school || 'Chưa cập nhật địa chỉ' }}
+              </p>
+              <div class="flex items-center gap-3">
+                @if (t.rating && t.rating > 0) {
+                  <span class="text-sm text-slate-600 font-semibold">
+                    {{ t.rating }}/5.0 <span class="text-amber-500">★</span>
+                  </span>
+                  <span class="text-slate-400">·</span>
+                  <span class="text-sm text-slate-600 font-semibold">
+                    {{ t.totalReviews ?? 0 }} đánh giá
+                  </span>
                 } @else {
-                  <div
-                    class="w-20 h-20 rounded-full bg-duo-blue text-white flex items-center justify-center font-black text-2xl border-b-4 border-duo-blue-dark shrink-0"
-                  >
-                    {{ initials(t.fullName) }}
+                  <span class="text-sm text-slate-400 font-bold italic">
+                    Chưa có đánh giá từ học viên
+                  </span>
+                }
+              </div>
+
+              <!-- Gender, Birth year, Email on the same line -->
+              <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs sm:text-sm text-slate-600 pt-2 border-t border-slate-100 mt-2">
+                <div>
+                  <span class="text-slate-400 font-bold mr-1">Giới tính:</span>
+                  <span class="font-extrabold text-slate-800">{{ getGender(t.gender) }}</span>
+                </div>
+                @if (t.birth) {
+                  <div class="h-3 w-px bg-slate-200 hidden sm:block"></div>
+                  <div>
+                    <span class="text-slate-400 font-bold mr-1">Năm sinh:</span>
+                    <span class="font-extrabold text-slate-800">{{ t.birth }}</span>
                   </div>
                 }
-                <div class="space-y-2 min-w-0 flex-1">
-                  <div class="flex flex-wrap items-center gap-2">
-                    <h1 class="font-display text-2xl font-black text-slate-900 leading-none">
-                      {{ t.fullName }}
-                    </h1>
-                    @if (t.code) {
-                      <span class="bg-blue-100 text-duo-blue text-xs font-extrabold px-2.5 py-1 rounded-lg border border-blue-200 uppercase">
-                        {{ t.code }}
-                      </span>
-                    }
+                @if (t.email) {
+                  <div class="h-3 w-px bg-slate-200 hidden sm:block"></div>
+                  <div class="min-w-0 truncate">
+                    <span class="text-slate-400 font-bold mr-1">Email:</span>
+                    <a [href]="'mailto:' + t.email" class="font-extrabold text-sky-blue hover:underline truncate" [title]="t.email">
+                      {{ t.email }}
+                    </a>
                   </div>
-                  <p class="text-slate-500 font-semibold text-sm">
-                    {{ t.address?.fullAddress || t.school || 'Chưa cập nhật địa chỉ' }}
-                  </p>
-                  <div class="flex items-center gap-3">
-                    @if (t.rating && t.rating > 0) {
-                      <span class="text-sm text-slate-600 font-semibold">
-                        {{ t.rating }}/5.0 <span class="text-amber-500">★</span>
-                      </span>
-                      <span class="text-slate-400">·</span>
-                      <span class="text-sm text-slate-600 font-semibold">
-                        {{ t.totalReviews ?? 0 }} đánh giá
-                      </span>
-                    } @else {
-                      <span class="text-sm text-slate-400 font-bold italic">
-                        Chưa có đánh giá từ học viên
-                      </span>
-                    }
-                  </div>
-
-                  <!-- Gender, Birth year, Email on the same line -->
-                  <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs sm:text-sm text-slate-600 pt-2 border-t border-slate-100 mt-2">
-                    <div>
-                      <span class="text-slate-400 font-bold mr-1">Giới tính:</span>
-                      <span class="font-extrabold text-slate-800">{{ getGender(t.gender) }}</span>
-                    </div>
-                    @if (t.birth) {
-                      <div class="h-3 w-px bg-slate-200 hidden sm:block"></div>
-                      <div>
-                        <span class="text-slate-400 font-bold mr-1">Năm sinh:</span>
-                        <span class="font-extrabold text-slate-800">{{ t.birth }}</span>
-                      </div>
-                    }
-                    @if (t.email) {
-                      <div class="h-3 w-px bg-slate-200 hidden sm:block"></div>
-                      <div class="min-w-0 truncate">
-                        <span class="text-slate-400 font-bold mr-1">Email:</span>
-                        <a [href]="'mailto:' + t.email" class="font-extrabold text-sky-blue hover:underline truncate" [title]="t.email">
-                          {{ t.email }}
-                        </a>
-                      </div>
-                    }
-                  </div>
-                </div>
+                }
               </div>
             </div>
+          </div>
+        </div>
 
+        <div class="grid lg:grid-cols-3 gap-6">
+          <div class="lg:col-span-2 space-y-6 order-2 lg:order-1">
             <!-- Introduction Card -->
             <div class="tactile-card p-6">
               <h2 class="font-extrabold text-lg text-slate-900 mb-2">Giới thiệu</h2>
@@ -220,7 +220,7 @@ import {
           </div>
 
           <!-- Right Sidebar CTA -->
-          <div class="space-y-4">
+          <div class="space-y-4 order-1 lg:order-2">
             <div class="tactile-card p-6 sticky top-20">
               <div class="text-center mb-4">
                 <p class="text-sm text-slate-500 font-bold">Học phí tham khảo / giờ</p>

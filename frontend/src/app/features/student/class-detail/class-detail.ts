@@ -145,7 +145,7 @@ import {
           @if (!showCancelForm()) {
             <div class="flex justify-end mt-4">
               <button (click)="showCancelForm.set(true)"
-                      class="bg-red-500 hover:bg-red-600 text-white font-extrabold px-6 py-3 rounded-xl border-b-4 border-red-700 hover:opacity-95 transition-all text-sm">
+                      class="w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white font-extrabold px-6 py-3 rounded-xl border-b-4 border-red-700 hover:opacity-95 transition-all text-sm">
                 Yêu cầu hủy lớp học
               </button>
             </div>
@@ -158,27 +158,27 @@ import {
               <p class="text-xs text-slate-500 leading-relaxed">
                 Lưu ý: Yêu cầu hủy lớp của bạn sẽ được gửi tới Admin để xác minh lý do và phê duyệt hoàn trả tiền đặt cọc theo chính sách của EduMatch.
               </p>
-
+ 
               <div>
                 <label class="block text-sm font-bold text-slate-700 mb-1">Lý do hủy lớp <span class="text-red-500">*</span></label>
                 <textarea [(ngModel)]="cancelReason" rows="3"
                           placeholder="Vui lòng nhập rõ lý do hủy lớp để Admin phê duyệt..."
                           class="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm focus:border-red-500 outline-none"></textarea>
               </div>
-
+ 
               @if (cancelErrorMessage()) {
                 <p class="text-xs font-bold text-red-500">{{ cancelErrorMessage() }}</p>
               }
-
-              <div class="flex justify-end gap-3">
+ 
+              <div class="flex flex-col sm:flex-row justify-end gap-3">
                 <button (click)="showCancelForm.set(false); cancelReason.set(''); cancelErrorMessage.set('')"
                         [disabled]="isSubmittingCancel()"
-                        class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-4 py-2 rounded-xl text-sm transition-colors">
+                        class="w-full sm:w-auto bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-4 py-2 rounded-xl text-sm transition-colors">
                   Hủy bỏ
                 </button>
                 <button (click)="submitCancellation(item.id!)"
                         [disabled]="isSubmittingCancel() || !cancelReason().trim()"
-                        class="bg-red-500 hover:bg-red-600 text-white font-extrabold px-5 py-2 rounded-xl border-b-4 border-red-700 hover:opacity-95 disabled:opacity-50 transition-all text-sm">
+                        class="w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white font-extrabold px-5 py-2 rounded-xl border-b-4 border-red-700 hover:opacity-95 disabled:opacity-50 transition-all text-sm">
                   {{ isSubmittingCancel() ? 'Đang gửi...' : 'Gửi yêu cầu' }}
                 </button>
               </div>

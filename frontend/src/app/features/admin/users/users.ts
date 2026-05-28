@@ -62,7 +62,72 @@ type ActiveFilter = 'all' | 'active' | 'inactive' | 'pending_approval' | 'reject
       }
 
       <div class="tactile-card overflow-hidden relative transition-opacity duration-200" [class.opacity-50]="isLoading()" [class.pointer-events-none]="isLoading()">
-        <div class="overflow-x-auto">
+        <!-- Mobile View: Card List -->
+        <div class="block md:hidden divide-y divide-slate-100">
+          @for (user of users(); track user.id) {
+            <div class="p-4 flex flex-col gap-3">
+              <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3 min-w-0">
+                  @if (user.avatarUrl && !avatarErrors()[user.id!]) {
+                    <img [src]="user.avatarUrl" [alt]="user.fullName || ''"
+                         referrerpolicy="no-referrer"
+                         (error)="handleAvatarError(user.id!)"
+                         class="w-10 h-10 rounded-full object-cover border border-slate-200 shrink-0" />
+                  } @else {
+                    <div class="w-10 h-10 rounded-full bg-duo-blue text-white flex items-center justify-center font-bold text-xs shrink-0">
+                      {{ initials(user.fullName) }}
+                    </div>
+                  }
+                  <div class="min-w-0">
+                    <p class="font-extrabold text-slate-900 truncate">{{ user.fullName || 'Không rõ' }}</p>
+                    <p class="text-xs text-slate-500">{{ subtitle(user) }}</p>
+                  </div>
+                </div>
+                <!-- Status & Role Badges -->
+                <div class="flex flex-col items-end gap-1 shrink-0">
+                  <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-black text-slate-700">{{ roleLabel(user.role) }}</span>
+                  @if (user.isActive) {
+                    <span class="rounded-full bg-green-50 px-2.5 py-0.5 text-[10px] font-black text-duo-green border border-green-100">Active</span>
+                  } @else {
+                    <span class="rounded-full bg-red-50 px-2.5 py-0.5 text-[10px] font-black text-duo-red border border-red-100">Locked</span>
+                  }
+                </div>
+              </div>
+
+              <!-- Email and other details -->
+              <div class="text-xs text-slate-600 flex items-center justify-between">
+                <span>Email:</span>
+                <span class="font-bold text-slate-800 break-all select-all">{{ user.email || '—' }}</span>
+              </div>
+
+              <!-- Actions -->
+              <div class="flex items-center justify-between gap-2.5 pt-2 border-t border-slate-100">
+                <div class="flex gap-3">
+                  @if (user.id !== session.user()?.id) {
+                    <a [routerLink]="['/admin/chat']" [queryParams]="{ partnerId: user.id }" class="text-duo-green font-bold text-xs hover:underline">Nhắn tin</a>
+                  }
+                  <a [routerLink]="['/admin/users', user.id]" class="text-duo-blue font-bold text-xs hover:underline">Xem chi tiết</a>
+                </div>
+                
+                @if (user.role === userRole.Tutor && user.tutorApprovalStatus === tutorApprovalStatus.Pending) {
+                  <div class="flex gap-2">
+                    <button (click)="approveTutor(user.tutorId)" [disabled]="isActionRunning()"
+                            class="px-2.5 py-1 bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-[10px] uppercase rounded-lg border-b-2 border-emerald-700 hover:brightness-105 active:border-b-0 active:translate-y-[2px] disabled:opacity-50 transition-all cursor-pointer">
+                      Duyệt
+                    </button>
+                    <button (click)="rejectTutor(user.tutorId)" [disabled]="isActionRunning()"
+                            class="px-2.5 py-1 bg-rose-500 hover:bg-rose-600 text-white font-extrabold text-[10px] uppercase rounded-lg border-b-2 border-rose-700 hover:brightness-105 active:border-b-0 active:translate-y-[2px] disabled:opacity-50 transition-all cursor-pointer">
+                      Từ chối
+                    </button>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Desktop View: Table -->
+        <div class="overflow-x-auto hidden md:block">
           <table class="w-full text-sm">
             <thead class="bg-slate-50 border-b-2 border-slate-100">
               <tr>

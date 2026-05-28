@@ -58,14 +58,14 @@ import {
           </div>
 
           @if (lr.status === 'Pending') {
-            <div class="flex flex-wrap gap-3">
-              <button (click)="acceptRequest(lr)" [disabled]="isWorking()" class="tactile-button-green flex-1 min-w-36 py-2.5 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <button (click)="acceptRequest(lr)" [disabled]="isWorking()" class="tactile-button-green w-full py-2.5 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60">
                 Chấp nhận
               </button>
-              <button (click)="openProposalForm()" [disabled]="isWorking() || proposalFormVisible()" class="tactile-button-blue flex-1 min-w-36 py-2.5 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60">
+              <button (click)="openProposalForm()" [disabled]="isWorking() || proposalFormVisible()" class="tactile-button-blue w-full py-2.5 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60">
                 Đề xuất lịch khác
               </button>
-              <button (click)="rejectRequest(lr)" [disabled]="isWorking()" class="tactile-button-gray flex-1 min-w-36 py-2.5 rounded-xl text-sm font-bold disabled:opacity-60">
+              <button (click)="rejectRequest(lr)" [disabled]="isWorking()" class="tactile-button-gray w-full py-2.5 rounded-xl text-sm font-bold disabled:opacity-60">
                 Từ chối
               </button>
             </div>
@@ -113,17 +113,17 @@ import {
                   <p class="mt-1 font-extrabold text-duo-green">{{ money(p.hourlyRate) }}/h</p>
                 </div>
               </div>
-              <div class="flex flex-wrap gap-3">
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <button (click)="acceptProposal(p)" [disabled]="isWorking()"
-                        class="tactile-button-green flex-1 py-2.5 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60">
+                        class="tactile-button-green w-full py-2.5 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60">
                   Chấp nhận đề xuất
                 </button>
                 <button (click)="openProposalForm()" [disabled]="isWorking() || proposalFormVisible()"
-                        class="tactile-button-blue flex-1 py-2.5 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60">
+                        class="tactile-button-blue w-full py-2.5 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60">
                   Đề xuất lịch khác
                 </button>
                 <button (click)="rejectProposal(p)" [disabled]="isWorking()"
-                        class="tactile-button-gray flex-1 py-2.5 rounded-xl text-sm font-bold disabled:opacity-60">
+                        class="tactile-button-gray w-full py-2.5 rounded-xl text-sm font-bold disabled:opacity-60">
                   Từ chối đề xuất
                 </button>
               </div>
@@ -191,7 +191,7 @@ import {
                     <p class="text-xs font-bold text-duo-red mt-1">{{ fieldErrors()['TimeSlots[' + index + '].EndTime'] }}</p>
                   }
                 </div>
-                <button type="button" (click)="removeSlot(index)" [disabled]="proposalSlots().length === 1" class="tactile-button-gray px-4 py-2 rounded-xl text-xs font-bold disabled:opacity-40">Xóa</button>
+                <button type="button" (click)="removeSlot(index)" [disabled]="proposalSlots().length === 1" class="tactile-button-gray w-fit justify-self-end sm:w-auto px-4 py-2 rounded-xl text-xs font-bold disabled:opacity-40">Xóa</button>
                 @if (fieldErrors()['TimeSlots[' + index + ']']) {
                   <p class="text-xs font-bold text-duo-red mt-2 col-span-full">{{ fieldErrors()['TimeSlots[' + index + ']'] }}</p>
                 }
@@ -200,11 +200,11 @@ import {
 
             <button type="button" (click)="addSlot()" class="tactile-button-gray px-4 py-2 rounded-xl text-xs font-bold">Thêm lịch</button>
 
-            <div class="flex gap-3 pt-2">
-              <button (click)="createProposal(lr)" [disabled]="isWorking()" class="tactile-button-blue flex-1 py-3 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60">
+            <div class="flex flex-col sm:flex-row gap-2 pt-2">
+              <button (click)="createProposal(lr)" [disabled]="isWorking()" class="tactile-button-blue w-full py-3 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60">
                 Gửi đề xuất lịch mới
               </button>
-              <button (click)="proposalFormVisible.set(false)" [disabled]="isWorking()" class="tactile-button-gray flex-1 py-3 rounded-xl text-sm font-bold disabled:opacity-60">
+              <button (click)="proposalFormVisible.set(false)" [disabled]="isWorking()" class="tactile-button-gray w-full py-3 rounded-xl text-sm font-bold disabled:opacity-60">
                 Hủy
               </button>
             </div>

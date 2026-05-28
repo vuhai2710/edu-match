@@ -8,16 +8,20 @@ import { FormsModule } from '@angular/forms';
   template: `
     <div class="flex flex-col sm:flex-row items-center justify-between gap-4 py-4 px-2 border-t border-slate-100">
       <!-- Left Side: Display Stats & Page Size Dropdown -->
-      <div class="flex flex-wrap items-center gap-4 text-sm text-slate-500 font-bold">
-        <span>
-          Hiển thị <span class="text-slate-800 font-extrabold">{{ startItem() }} - {{ endItem() }}</span> trong tổng số <span class="text-slate-800 font-extrabold">{{ totalCount() }}</span> {{ itemsName() }}
+      <div class="flex items-center justify-between w-full sm:w-auto text-sm text-slate-500 font-bold gap-2">
+        <span class="text-xs sm:text-sm whitespace-nowrap">
+          <span class="hidden sm:inline">Hiển thị </span>
+          <span class="text-slate-800 font-extrabold">{{ startItem() }} - {{ endItem() }}</span>
+          trong
+          <span class="text-slate-800 font-extrabold">{{ totalCount() }}</span>
+          <span class="hidden sm:inline"> {{ itemsName() }}</span>
         </span>
 
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1.5 shrink-0">
           <span class="text-xs text-slate-400 font-semibold">Hiển thị:</span>
           <select [ngModel]="pageSize()" 
                   (ngModelChange)="changePageSize($event)" 
-                  class="tactile-input py-1 px-2.5 text-xs font-black bg-white text-slate-700 cursor-pointer min-w-[70px]">
+                  class="tactile-select-compact">
             @for (size of pageSizeOptions; track size) {
               <option [value]="size">{{ size }}</option>
             }
@@ -27,7 +31,29 @@ import { FormsModule } from '@angular/forms';
 
       <!-- Right Side: Tactile Page Navigation Buttons -->
       @if (totalPages() > 1) {
-        <div class="flex items-center gap-1.5 flex-wrap">
+        <!-- Mobile view: simple pagination on 1 line -->
+        <div class="flex items-center justify-between w-full sm:hidden gap-2">
+          <button type="button" 
+                  [disabled]="page() <= 1"
+                  (click)="selectPage(page() - 1)"
+                  class="pagination-btn pagination-btn-outline px-4 py-1.5 text-xs font-bold grow justify-center">
+            ◀ TRƯỚC
+          </button>
+          
+          <span class="text-xs font-extrabold text-slate-700 whitespace-nowrap px-2">
+            {{ page() }} / {{ totalPages() }}
+          </span>
+
+          <button type="button"
+                  [disabled]="page() >= totalPages()"
+                  (click)="selectPage(page() + 1)"
+                  class="pagination-btn pagination-btn-outline px-4 py-1.5 text-xs font-bold grow justify-center">
+            SAU ▶
+          </button>
+        </div>
+
+        <!-- Desktop view: numeric pagination -->
+        <div class="hidden sm:flex items-center gap-1.5 flex-wrap">
           <!-- Previous Button -->
           <button type="button" 
                   [disabled]="page() <= 1"
@@ -128,6 +154,33 @@ import { FormsModule } from '@angular/forms';
       background-color: #f1f5f9;
       color: #94a3b8;
       border-color: #e2e8f0;
+    }
+
+    /* Compact Select Dropdown */
+    .tactile-select-compact {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 36px;
+      min-width: 65px;
+      padding: 0 8px;
+      border-radius: 12px;
+      font-family: 'Fredoka', 'Nunito', ui-sans-serif, system-ui, sans-serif;
+      font-weight: 800;
+      font-size: 13px;
+      color: #475569;
+      background-color: #ffffff;
+      border: 2px solid #e2e8f0;
+      border-bottom-width: 4px;
+      border-bottom-color: #cbd5e1;
+      outline: none;
+      cursor: pointer;
+      box-sizing: border-box;
+      transition: all 0.1s ease;
+    }
+    .tactile-select-compact:focus {
+      border-color: #1cb0f6;
+      border-bottom-color: #1899d6;
     }
   `]
 })

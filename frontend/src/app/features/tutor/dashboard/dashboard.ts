@@ -46,7 +46,7 @@ import {
         </p>
       }
 
-      <div class="grid sm:grid-cols-3 gap-4">
+      <div class="grid grid-cols-2 gap-4">
         <div class="tactile-card p-5 text-center">
           <p class="font-display text-2xl font-black text-duo-blue">
             {{ dashboard()?.activeClasses ?? 0 }}
@@ -81,32 +81,32 @@ import {
                   requestLabel(request)
                 }}</span>
               </div>
-              <div class="flex flex-wrap gap-3 mt-4">
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-4">
                 @if (request.status === 'Pending') {
                   <button
                     (click)="acceptRequest(request)"
                     [disabled]="isWorking()"
-                    class="tactile-button-green flex-1 min-w-32 py-2.5 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60"
+                    class="tactile-button-green w-full py-2.5 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60"
                   >
                     Chấp nhận
                   </button>
                   <a
                     [routerLink]="['/tutor/requests', request.id]"
-                    class="tactile-button-blue flex-1 min-w-32 py-2.5 rounded-xl text-sm font-extrabold uppercase text-center"
+                    class="tactile-button-blue w-full py-2.5 rounded-xl text-sm font-extrabold uppercase text-center"
                   >
                     Đề xuất lịch
                   </a>
                   <button
                     (click)="rejectRequest(request)"
                     [disabled]="isWorking()"
-                    class="tactile-button-gray flex-1 min-w-32 py-2.5 rounded-xl text-sm font-bold disabled:opacity-60"
+                    class="tactile-button-gray w-full py-2.5 rounded-xl text-sm font-bold disabled:opacity-60"
                   >
                     Từ chối
                   </button>
                 } @else {
                   <a
                     [routerLink]="['/tutor/requests', request.id]"
-                    class="tactile-button-blue w-full py-2.5 rounded-xl text-sm font-extrabold uppercase text-center"
+                    class="tactile-button-blue w-full py-2.5 rounded-xl text-sm font-extrabold uppercase text-center sm:col-span-3"
                   >
                     Xem chi tiết đàm phán
                   </a>

@@ -80,7 +80,7 @@ import {
             </div>
 
             @for (slot of slots(); track $index; let index = $index) {
-              <div class="grid sm:grid-cols-[1fr_1fr_1fr_auto] gap-3 items-end rounded-2xl border-2 border-slate-100 p-3">
+              <div class="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto] gap-3 items-end rounded-2xl border-2 border-slate-100 p-3">
                 <div>
                   <label class="block text-xs font-extrabold text-slate-500 mb-1">Ngày</label>
                   <select [ngModel]="slot.day" (ngModelChange)="updateSlot(index, 'day', $event)"
@@ -113,7 +113,7 @@ import {
                   }
                 </div>
                 <button type="button" (click)="removeSlot(index)" [disabled]="slots().length === 1"
-                        class="tactile-button-gray px-4 py-2 rounded-xl text-xs font-bold disabled:opacity-40">
+                        class="w-fit justify-self-end sm:w-auto tactile-button-gray px-4 py-2 rounded-xl text-xs font-bold disabled:opacity-40">
                   Xóa
                 </button>
                 @if (fieldErrors()['TimeSlots[' + index + ']']) {

@@ -46,16 +46,16 @@ import { formatMoney } from '../../../shared/utils/api-ui';
             Kết nối 1-1 với gia sư chất lượng đã được xác minh. Học đúng cách, tiến bộ nhanh, từ
             trực tiếp đến trực tuyến.
           </p>
-          <div class="flex flex-wrap gap-3 pt-2">
+          <div class="flex flex-col sm:flex-row gap-3 pt-2">
             <a
               routerLink="/auth/register/student"
-              class="tactile-button-green px-8 py-3.5 rounded-2xl text-lg font-extrabold uppercase inline-flex items-center gap-2"
+              class="tactile-button-green w-full sm:w-auto justify-center px-8 py-3.5 rounded-2xl text-lg font-extrabold uppercase inline-flex items-center gap-2 text-center"
             >
               Tôi là Học viên
             </a>
             <a
               routerLink="/auth/register/tutor"
-              class="tactile-button-blue px-8 py-3.5 rounded-2xl text-lg font-extrabold uppercase inline-flex items-center gap-2"
+              class="tactile-button-blue w-full sm:w-auto justify-center px-8 py-3.5 rounded-2xl text-lg font-extrabold uppercase inline-flex items-center gap-2 text-center"
             >
               Tôi là Gia sư
             </a>
@@ -198,57 +198,59 @@ import { formatMoney } from '../../../shared/utils/api-ui';
           <div
             class="flex flex-col lg:flex-row lg:items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100/80"
           >
-            <div class="flex items-center gap-2 flex-1">
+            <div class="flex flex-col sm:flex-row sm:items-center gap-2 flex-1 w-full">
               <span class="text-xs text-slate-500 font-extrabold shrink-0 uppercase tracking-wider"
                 >Khoảng giá (vnđ/h):</span
               >
 
-              <div class="relative flex-1 max-w-[200px]">
-                <input
-                  type="number"
-                  [ngModel]="minPrice()"
-                  (ngModelChange)="onMinPriceChange($event)"
-                  placeholder="Từ (đ)"
-                  class="tactile-input py-1.5 px-3 w-full text-xs font-semibold pr-7"
-                  min="0"
-                />
-                @if (minPrice() !== null && minPrice() !== undefined) {
-                  <button
-                    (click)="onMinPriceChange(null)"
-                    class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full hover:bg-slate-200 transition-all cursor-pointer"
-                  >
-                    ✕
-                  </button>
-                }
-              </div>
+              <div class="flex items-center gap-2 flex-1 w-full">
+                <div class="relative flex-1 sm:max-w-[200px]">
+                  <input
+                    type="number"
+                    [ngModel]="minPrice()"
+                    (ngModelChange)="onMinPriceChange($event)"
+                    placeholder="Từ (đ)"
+                    class="tactile-input py-1.5 px-3 w-full text-xs font-semibold pr-7"
+                    min="0"
+                  />
+                  @if (minPrice() !== null && minPrice() !== undefined) {
+                    <button
+                      (click)="onMinPriceChange(null)"
+                      class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full hover:bg-slate-200 transition-all cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  }
+                </div>
 
-              <span class="text-slate-400 text-xs font-extrabold">-</span>
+                <span class="text-slate-400 text-xs font-extrabold">-</span>
 
-              <div class="relative flex-1 max-w-[200px]">
-                <input
-                  type="number"
-                  [ngModel]="maxPrice()"
-                  (ngModelChange)="onMaxPriceChange($event)"
-                  placeholder="Đến (đ)"
-                  class="tactile-input py-1.5 px-3 w-full text-xs font-semibold pr-7"
-                  min="0"
-                />
-                @if (maxPrice() !== null && maxPrice() !== undefined) {
-                  <button
-                    (click)="onMaxPriceChange(null)"
-                    class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full hover:bg-slate-200 transition-all cursor-pointer"
-                  >
-                    ✕
-                  </button>
-                }
+                <div class="relative flex-1 sm:max-w-[200px]">
+                  <input
+                    type="number"
+                    [ngModel]="maxPrice()"
+                    (ngModelChange)="onMaxPriceChange($event)"
+                    placeholder="Đến (đ)"
+                    class="tactile-input py-1.5 px-3 w-full text-xs font-semibold pr-7"
+                    min="0"
+                  />
+                  @if (maxPrice() !== null && maxPrice() !== undefined) {
+                    <button
+                      (click)="onMaxPriceChange(null)"
+                      class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full hover:bg-slate-200 transition-all cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  }
+                </div>
               </div>
             </div>
 
-            <div class="flex items-center justify-end gap-3 shrink-0">
+            <div class="flex items-center justify-end gap-3 shrink-0 w-full lg:w-auto">
               @if (hasActiveFilters()) {
                 <button
                   (click)="resetFilters()"
-                  class="tactile-button-outline py-2 px-4 rounded-xl text-xs font-black text-slate-600 bg-white hover:bg-slate-100 border border-slate-200 cursor-pointer flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
+                  class="tactile-button-outline w-full lg:w-auto justify-center py-2 px-4 rounded-xl text-xs font-black text-slate-600 bg-white hover:bg-slate-100 border border-slate-200 cursor-pointer flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
                 >
                   🔄 Đặt lại bộ lọc
                 </button>
@@ -405,7 +407,7 @@ import { formatMoney } from '../../../shared/utils/api-ui';
         </div>
         <a
           routerLink="/auth/register"
-          class="bg-white text-[#58cc02] px-8 py-3.5 rounded-2xl font-extrabold text-lg uppercase border-b-4 border-green-200 hover:border-green-300 transition-colors shadow-md"
+          class="bg-white text-[#58cc02] w-full md:w-auto text-center justify-center px-8 py-3.5 rounded-2xl font-extrabold text-lg uppercase border-b-4 border-green-200 hover:border-green-300 transition-colors shadow-md"
         >
           Bắt đầu ngay
         </a>

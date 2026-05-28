@@ -121,13 +121,13 @@ import {
                   <p class="mt-1 font-extrabold text-duo-green">{{ money(p.hourlyRate) }}</p>
                 </div>
               </div>
-              <div class="flex flex-wrap gap-3">
+              <div class="flex flex-col sm:flex-row gap-3">
                 <button (click)="acceptProposal(p)" [disabled]="isWorking()"
-                        class="tactile-button-green flex-1 py-2.5 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60">
+                        class="w-full sm:flex-1 tactile-button-green py-2.5 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60 text-center">
                   Chấp nhận
                 </button>
                 <button (click)="rejectProposal(p)" [disabled]="isWorking()"
-                        class="tactile-button-gray flex-1 py-2.5 rounded-xl text-sm font-bold disabled:opacity-60">
+                        class="w-full sm:flex-1 tactile-button-gray py-2.5 rounded-xl text-sm font-bold disabled:opacity-60 text-center">
                   Từ chối
                 </button>
               </div>

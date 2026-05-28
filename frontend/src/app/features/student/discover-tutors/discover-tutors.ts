@@ -149,49 +149,51 @@ import { formatMoney } from '../../../shared/utils/api-ui';
         <div
           class="flex flex-col lg:flex-row lg:items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100/80"
         >
-          <div class="flex items-center gap-2 flex-1">
+          <div class="flex flex-col sm:flex-row sm:items-center gap-2 flex-1 w-full">
             <span class="text-xs text-slate-500 font-extrabold shrink-0 uppercase tracking-wider"
               >Khoảng giá (vnđ/h):</span
             >
 
-            <div class="relative flex-1 max-w-[200px]">
-              <input
-                type="number"
-                [ngModel]="minPrice()"
-                (ngModelChange)="onMinPriceChange($event)"
-                placeholder="Từ (đ)"
-                class="tactile-input py-1.5 px-3 w-full text-xs font-semibold pr-7"
-                min="0"
-              />
-              @if (minPrice() !== null && minPrice() !== undefined) {
-                <button
-                  (click)="onMinPriceChange(null)"
-                  class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full hover:bg-slate-200 transition-all cursor-pointer"
-                >
-                  ✕
-                </button>
-              }
-            </div>
+            <div class="flex items-center gap-2 flex-1 w-full">
+              <div class="relative flex-1 max-w-[200px]">
+                <input
+                  type="number"
+                  [ngModel]="minPrice()"
+                  (ngModelChange)="onMinPriceChange($event)"
+                  placeholder="Từ (đ)"
+                  class="tactile-input py-1.5 px-3 w-full text-xs font-semibold pr-7"
+                  min="0"
+                />
+                @if (minPrice() !== null && minPrice() !== undefined) {
+                  <button
+                    (click)="onMinPriceChange(null)"
+                    class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full hover:bg-slate-200 transition-all cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                }
+              </div>
 
-            <span class="text-slate-400 text-xs font-extrabold">-</span>
+              <span class="text-slate-400 text-xs font-extrabold">-</span>
 
-            <div class="relative flex-1 max-w-[200px]">
-              <input
-                type="number"
-                [ngModel]="maxPrice()"
-                (ngModelChange)="onMaxPriceChange($event)"
-                placeholder="Đến (đ)"
-                class="tactile-input py-1.5 px-3 w-full text-xs font-semibold pr-7"
-                min="0"
-              />
-              @if (maxPrice() !== null && maxPrice() !== undefined) {
-                <button
-                  (click)="onMaxPriceChange(null)"
-                  class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full hover:bg-slate-200 transition-all cursor-pointer"
-                >
-                  ✕
-                </button>
-              }
+              <div class="relative flex-1 max-w-[200px]">
+                <input
+                  type="number"
+                  [ngModel]="maxPrice()"
+                  (ngModelChange)="onMaxPriceChange($event)"
+                  placeholder="Đến (đ)"
+                  class="tactile-input py-1.5 px-3 w-full text-xs font-semibold pr-7"
+                  min="0"
+                />
+                @if (maxPrice() !== null && maxPrice() !== undefined) {
+                  <button
+                    (click)="onMaxPriceChange(null)"
+                    class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full hover:bg-slate-200 transition-all cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                }
+              </div>
             </div>
           </div>
 

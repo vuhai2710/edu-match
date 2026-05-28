@@ -20,10 +20,11 @@ export interface ChatConversation extends ConversationSummaryDto {
   imports: [FormsModule, MascotComponent],
   template: `
     <div class="flex gap-0 h-[calc(100vh-120px)] rounded-2xl overflow-hidden border-2 border-slate-100 bg-white">
-      <aside class="w-72 border-r-2 border-slate-100 flex flex-col shrink-0 hidden md:flex">
+      <aside class="w-full md:w-72 border-r-2 border-slate-100 flex flex-col shrink-0 md:flex"
+             [class.hidden]="activePartnerId() !== null">
         <div class="p-4 border-b border-slate-100">
           <h2 class="font-display text-lg font-black text-slate-900">Tin nhắn</h2>
-          <input type="text" [(ngModel)]="searchQuery" placeholder="Tìm kiếm..."
+          <input type="text" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" placeholder="Tìm kiếm..."
                  class="tactile-input w-full text-xs font-semibold mt-2" />
         </div>
         <div class="flex-1 overflow-y-auto">
@@ -64,9 +65,16 @@ export interface ChatConversation extends ConversationSummaryDto {
         </div>
       </aside>
 
-      <div class="flex-1 flex flex-col">
+      <div class="flex-1 flex flex-col md:flex"
+           [class.hidden]="activePartnerId() === null">
         @if (activeConversation(); as conversation) {
           <div class="p-4 border-b-2 border-slate-100 flex items-center gap-3">
+            <button (click)="activePartnerId.set(null)"
+                    class="md:hidden p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 mr-1 flex items-center justify-center border-2 border-slate-100 transition-colors">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
             @if (conversation.partnerAvatar) {
               <img [src]="conversation.partnerAvatar" class="w-9 h-9 rounded-full object-cover shrink-0 border border-slate-100" />
             } @else {
@@ -133,7 +141,7 @@ export interface ChatConversation extends ConversationSummaryDto {
 })
 export class ChatPage implements OnInit, OnDestroy {
   protected readonly session = inject(SessionService);
-  searchQuery = '';
+  searchQuery = signal('');
   conversations = signal<ChatConversation[]>([]);
   messages = signal<MessageDto[]>([]);
   activePartnerId = signal<number | null>(null);
@@ -155,7 +163,7 @@ export class ChatPage implements OnInit, OnDestroy {
   );
 
   filteredConversations = computed(() => {
-    const query = this.searchQuery.trim().toLowerCase();
+    const query = this.searchQuery().trim().toLowerCase();
     if (!query) return this.conversations();
     return this.conversations().filter((conversation) =>
       `${conversation.partnerName ?? ''} ${conversation.lastMessage ?? ''}`.toLowerCase().includes(query),
@@ -282,9 +290,13 @@ export class ChatPage implements OnInit, OnDestroy {
       const response = await firstValueFrom(this.chatApi.getConversations());
       this.conversations.set(response.data ?? []);
       const partnerId = Number(this.route.snapshot.queryParamMap.get('partnerId'));
-      const initialPartner = partnerId || this.conversations()[0]?.partnerId;
-      if (initialPartner) {
-        await this.selectConversation(initialPartner);
+      if (partnerId) {
+        await this.selectConversation(partnerId);
+      } else if (window.innerWidth >= 768) {
+        const initialPartner = this.conversations()[0]?.partnerId;
+        if (initialPartner) {
+          await this.selectConversation(initialPartner);
+        }
       }
     } catch (error) {
       this.errorMessage.set(getApiErrorMessage(error, 'Không tải được danh sách chat.'));

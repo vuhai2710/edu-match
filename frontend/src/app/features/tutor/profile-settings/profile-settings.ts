@@ -364,12 +364,12 @@ import { MascotComponent } from '../../../shared/components/mascot/mascot';
       </div>
 
       @if (successMessage()) {
-        <div class="fixed bottom-6 right-6 bg-duo-green text-white px-6 py-3 rounded-2xl font-extrabold shadow-lg z-50">
+        <div class="fixed bottom-6 left-6 right-6 sm:left-auto sm:right-6 sm:max-w-sm bg-duo-green text-white px-6 py-3 rounded-2xl font-extrabold shadow-lg z-50 text-center sm:text-left">
           {{ successMessage() }}
         </div>
       }
       @if (errorMessage()) {
-        <div class="fixed bottom-6 right-6 bg-duo-red text-white px-6 py-3 rounded-2xl font-extrabold shadow-lg z-50 max-w-sm">
+        <div class="fixed bottom-6 left-6 right-6 sm:left-auto sm:right-6 sm:max-w-sm bg-duo-red text-white px-6 py-3 rounded-2xl font-extrabold shadow-lg z-50 text-center sm:text-left">
           {{ errorMessage() }}
         </div>
       }

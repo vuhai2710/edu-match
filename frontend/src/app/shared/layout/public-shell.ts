@@ -20,18 +20,18 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
           </a>
 
           <!-- Nav Controls -->
-          <nav class="flex items-center gap-2 md:gap-4">
+          <nav class="flex items-center gap-1.5 sm:gap-3">
             <a routerLink="/" routerLinkActive="text-duo-green border-b-2 border-duo-green font-black pb-1"
                [routerLinkActiveOptions]="{ exact: true }"
-               class="hidden md:block text-sm font-extrabold text-slate-500 hover:text-slate-800 transition-colors uppercase">
+               class="hidden md:block text-xs sm:text-sm font-extrabold text-slate-500 hover:text-slate-800 transition-colors uppercase">
               Trang chủ
             </a>
             <a routerLink="/auth/login"
-               class="px-4 py-2 text-sm font-extrabold uppercase bg-white border-2 border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">
+               class="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-extrabold uppercase bg-white border-2 border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">
               Đăng nhập
             </a>
             <a routerLink="/auth/register"
-               class="tactile-button-green px-4 py-2 rounded-xl text-sm font-extrabold uppercase hidden sm:inline-flex">
+               class="tactile-button-green px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs sm:text-sm font-extrabold uppercase">
               Đăng ký
             </a>
           </nav>
