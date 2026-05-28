@@ -19,9 +19,18 @@ namespace EduMatch.Controllers
     [SwaggerOperation(OperationId = "viewCloudinaryFile")]
     [ProducesResponseType(StatusCodes.Status302Found)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public ActionResult ViewCloudinaryFile([FromQuery] string fileUrl)
+    public ActionResult ViewCloudinaryFile(
+      [FromQuery(Name = "url")] string? url,
+      [FromQuery] string? fileUrl)
     {
-      var signedUrl = _cloudinaryService.BuildSignedRawDownloadUrl(fileUrl);
+      var resolvedFileUrl = string.IsNullOrWhiteSpace(url) ? fileUrl : url;
+      if (string.IsNullOrWhiteSpace(resolvedFileUrl))
+      {
+        ModelState.AddModelError("url", "URL Cloudinary là bắt buộc.");
+        return ValidationProblem(ModelState);
+      }
+
+      var signedUrl = _cloudinaryService.BuildSignedRawDownloadUrl(resolvedFileUrl);
       return Redirect(signedUrl);
     }
   }
