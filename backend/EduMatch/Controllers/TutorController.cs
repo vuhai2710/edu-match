@@ -26,8 +26,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ApiResponse<PagedResult<TutorDto>>>> GetTutors([FromQuery] TutorQueryParameters parameters)
     {
-      var result = await _tutorService.GetTutorsAsync(parameters);
-      return this.OkResponse(ApiResponse<PagedResult<TutorDto>>.SuccessResult(result));
+      return this.OkResponse(await _tutorService.GetTutorsAsync(parameters));
     }
 
     [HttpGet("{idOrCode}")]
@@ -36,8 +35,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<TutorDetailDto>>> GetTutorById(string idOrCode)
     {
-      var result = await _tutorService.GetTutorByIdOrCodeAsync(idOrCode);
-      return this.OkResponse(ApiResponse<TutorDetailDto>.SuccessResult(result));
+      return this.OkResponse(await _tutorService.GetTutorByIdOrCodeAsync(idOrCode));
     }
 
     [HttpGet("me")]
@@ -49,8 +47,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<TutorDetailDto>>> GetCurrentTutorProfile()
     {
-      var result = await _tutorService.GetTutorByUserIdAsync(GetCurrentUserId());
-      return this.OkResponse(ApiResponse<TutorDetailDto>.SuccessResult(result));
+      return this.OkResponse(await _tutorService.GetTutorByUserIdAsync(GetCurrentUserId()));
     }
 
     [HttpPut("me")]
@@ -63,8 +60,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<TutorDetailDto>>> UpdateCurrentTutorProfile([FromBody] UpdateTutorDto dto)
     {
-      var result = await _tutorService.UpdateTutorProfileAsync(GetCurrentUserId(), dto);
-      return this.OkResponse(ApiResponse<TutorDetailDto>.SuccessResult(result, "Tutor profile updated successfully"));
+      return this.OkResponse(await _tutorService.UpdateTutorProfileAsync(GetCurrentUserId(), dto));
     }
 
     [HttpPut("me/cv")]
@@ -78,8 +74,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<FileDto>>> UpdateMyCv(IFormFile file)
     {
-      var result = await _tutorService.UpdateCvAsync(GetCurrentUserId(), file);
-      return this.OkResponse(ApiResponse<FileDto>.SuccessResult(result, "Cập nhật CV thành công"));
+      return this.OkResponse(await _tutorService.UpdateCvAsync(GetCurrentUserId(), file));
     }
 
     [HttpDelete("me/cv")]
@@ -92,8 +87,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse>> DeleteMyCv()
     {
-      await _tutorService.DeleteCvAsync(GetCurrentUserId());
-      return this.OkResponse(ApiResponse.Ok("Xóa CV thành công"));
+      return this.OkResponse(await _tutorService.DeleteCvAsync(GetCurrentUserId()));
     }
 
     private long GetCurrentUserId()

@@ -23,6 +23,7 @@ namespace EduMatch.Controllers
     [HttpPost]
     [Authorize(Roles = "Student")]
     [SwaggerOperation(OperationId = "createReview")]
+    [ProducesResponseType(typeof(ApiResponse<ReviewDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<ReviewDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
@@ -32,8 +33,12 @@ namespace EduMatch.Controllers
     public async Task<ActionResult<ApiResponse<ReviewDto>>> CreateReview([FromBody] CreateReviewDto dto)
     {
       var result = await _reviewService.CreateReviewAsync(GetCurrentUserId(), dto);
-      var response = ApiResponse<ReviewDto>.SuccessResult(result, "Đánh giá thành công.");
-      return this.CreatedResponse($"/api/reviews/{result.Id}", response);
+      if (!result.Success)
+      {
+        return this.OkResponse(result);
+      }
+
+      return this.CreatedResponse($"/api/reviews/{result.Data!.Id}", result);
     }
 
     [HttpGet("tutor/{tutorId}")]
@@ -42,8 +47,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<List<ReviewDto>>>> GetReviewsByTutorId(long tutorId)
     {
-      var result = await _reviewService.GetReviewsByTutorIdAsync(tutorId);
-      return this.OkResponse(ApiResponse<List<ReviewDto>>.SuccessResult(result));
+      return this.OkResponse(await _reviewService.GetReviewsByTutorIdAsync(tutorId));
     }
 
     private long GetCurrentUserId()

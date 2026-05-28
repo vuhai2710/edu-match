@@ -47,8 +47,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<ApiResponse<PagedResult<ApplicationResponseDto>>>> GetAllApplications([FromQuery] ApplicationQueryParameters parameters)
     {
-      var response = await _applicationService.GetAllForAdminAsync(parameters);
-      return this.OkResponse(response);
+      return this.OkResponse(await _applicationService.GetAllForAdminAsync(parameters));
     }
 
     [HttpGet("tutor-requests")]
@@ -59,8 +58,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<ApiResponse<PagedResult<TutorRequestResponseDto>>>> GetAllRequests([FromQuery] TutorRequestFilterDto filter)
     {
-      var response = await _tutorRequestService.GetAllAsync(filter);
-      return this.OkResponse(response);
+      return this.OkResponse(await _tutorRequestService.GetAllAsync(filter));
     }
 
     [HttpGet("payments")]
@@ -99,8 +97,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<ApiResponse<PagedResult<ClassDto>>>> GetAllClasses([FromQuery] ClassQueryParameters parameters)
     {
-      var result = await _classReadService.GetAdminClassesAsync(parameters);
-      return this.OkResponse(ApiResponse<PagedResult<ClassDto>>.SuccessResult(result));
+      return this.OkResponse(await _classReadService.GetAdminClassesAsync(parameters));
     }
 
     [HttpGet("classes/{id:long}")]
@@ -111,8 +108,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<ClassDto>>> GetClassById(long id)
     {
-      var result = await _classReadService.GetByIdAsync(id, 0, true);
-      return this.OkResponse(ApiResponse<ClassDto>.SuccessResult(result));
+      return this.OkResponse(await _classReadService.GetByIdAsync(id, 0, true));
     }
 
     [HttpGet("cancellation-requests")]

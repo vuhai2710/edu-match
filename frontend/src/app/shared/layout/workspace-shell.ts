@@ -1,12 +1,13 @@
-import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, OnInit, OnDestroy, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { filter, firstValueFrom, startWith } from 'rxjs';
+import { Subscription, filter, firstValueFrom, startWith } from 'rxjs';
 
 import { AuthApiService } from '../../api/facades/auth-api';
 import { ChatService, NotificationsService } from '../../api/generated/client/services';
 import { UserRole } from '../../core/auth/session.models';
 import { SessionService } from '../../core/auth/session';
+import { SignalrService } from '../../core/realtime/signalr.service';
 
 @Component({
   selector: 'app-workspace-shell',
@@ -138,12 +139,14 @@ import { SessionService } from '../../core/auth/session';
     </div>
   `,
 })
-export class WorkspaceShellComponent implements OnInit {
+export class WorkspaceShellComponent implements OnInit, OnDestroy {
   protected readonly session = inject(SessionService);
   private readonly router = inject(Router);
   private readonly notificationsApi = inject(NotificationsService);
   private readonly chatApi = inject(ChatService);
   private readonly authApi = inject(AuthApiService);
+  private readonly signalrService = inject(SignalrService);
+
   protected readonly showProfile = signal(false);
   protected readonly avatarError = signal(false);
   protected readonly unreadCount = signal(0);
@@ -157,9 +160,50 @@ export class WorkspaceShellComponent implements OnInit {
     ),
   );
 
+  private signalrSub?: Subscription;
+
   ngOnInit(): void {
     void this.loadUnreadCount();
     void this.loadUnreadChatCount();
+
+    // Subscribe to real-time events
+    this.signalrSub = this.signalrService.notification$.subscribe(() => {
+      this.unreadCount.update((count) => count + 1);
+    });
+
+    this.signalrSub.add(
+      this.signalrService.message$.subscribe((message) => {
+        if (message.senderId !== this.session.user()?.id) {
+          void this.loadUnreadChatCount();
+        }
+      })
+    );
+
+    this.signalrSub.add(
+      this.signalrService.messagesRead$.subscribe(() => {
+        void this.loadUnreadChatCount();
+      })
+    );
+
+    this.signalrSub.add(
+      this.signalrService.notificationUpdated$.subscribe((data) => {
+        if (data.unreadCount !== undefined) {
+          this.unreadCount.set(data.unreadCount);
+        } else {
+          void this.loadUnreadCount();
+        }
+      })
+    );
+
+    this.signalrSub.add(
+      this.signalrService.chatUnreadUpdated$.subscribe((data) => {
+        this.unreadChatCount.update((current) => Math.max(0, current - data.count));
+      })
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.signalrSub?.unsubscribe();
   }
 
   @HostListener('document:click')
@@ -207,6 +251,7 @@ export class WorkspaceShellComponent implements OnInit {
       ],
       tutor: [
         { label: 'Dashboard', href: '/tutor/dashboard' },
+        { label: 'Yêu cầu', href: '/tutor/requests' },
         { label: 'Lớp dạy', href: '/tutor/classes' },
       ],
       admin: [

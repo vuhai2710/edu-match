@@ -7,6 +7,7 @@ import {
   AcademicDegree,
   EducationLevel,
   Gender,
+  Grade,
   TutorCareerStatus,
 } from '../generated/client/models';
 import {
@@ -38,6 +39,7 @@ export interface RegisterStudentPayload {
   gender: Gender;
   address: RegisterAddressPayload;
   avatar?: File | null;
+  gradeLevel?: Grade | null;
 }
 
 export interface RegisterTutorPayload extends RegisterStudentPayload {
@@ -147,6 +149,10 @@ export class AuthApiService {
 
     if (payload.avatar) {
       formData.append('Avatar', payload.avatar);
+    }
+
+    if (payload.gradeLevel) {
+      formData.append('GradeLevel', payload.gradeLevel);
     }
 
     return formData;

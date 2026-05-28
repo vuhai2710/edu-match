@@ -139,10 +139,9 @@ import {
         @if (lr.status === softBookedStatus) {
           <div class="tactile-card p-6 space-y-4">
             <h2 class="font-extrabold text-lg text-slate-900">Thanh toán đặt cọc</h2>
-            <p class="text-sm text-slate-500">Sau khi thanh toán PayOS thành công, backend sẽ tạo lớp học từ yêu cầu này.</p>
             <button (click)="payDeposit(lr)" [disabled]="isWorking()"
                     class="tactile-button-green w-full py-3 rounded-xl font-extrabold uppercase disabled:opacity-60">
-              {{ isWorking() ? 'Đang tạo checkout...' : 'Thanh toán đặt cọc' }}
+              {{ isWorking() ? 'Vui lòng chờ...' : 'Thanh toán đặt cọc' }}
             </button>
           </div>
         }

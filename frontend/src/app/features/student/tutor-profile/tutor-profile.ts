@@ -230,6 +230,7 @@ import {
               </div>
               <a
                 [routerLink]="['/student/booking', t.id]"
+                [queryParams]="subjectId ? { subjectId: subjectId } : {}"
                 class="tactile-button-green w-full py-3 rounded-2xl text-base font-extrabold uppercase text-center block"
               >
                 Đặt lịch học
@@ -266,6 +267,7 @@ export class TutorProfilePage implements OnInit {
   reviews = signal<ReviewDto[]>([]);
   isLoading = signal(false);
   errorMessage = signal('');
+  subjectId: number | null = null;
 
   private readonly route = inject(ActivatedRoute);
   private readonly tutorsApi = inject(TutorsService);
@@ -273,6 +275,8 @@ export class TutorProfilePage implements OnInit {
 
   ngOnInit(): void {
     void this.loadTutor();
+    const querySubId = this.route.snapshot.queryParamMap.get('subjectId');
+    this.subjectId = querySubId ? Number(querySubId) : null;
   }
 
   initials(name?: string | null): string {

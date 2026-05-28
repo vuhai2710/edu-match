@@ -26,8 +26,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ApiResponse<PagedResult<StudentDto>>>> GetStudents([FromQuery] StudentQueryParameters parameters)
     {
-      var result = await _studentService.GetStudentsAsync(parameters);
-      return this.OkResponse(ApiResponse<PagedResult<StudentDto>>.SuccessResult(result));
+      return this.OkResponse(await _studentService.GetStudentsAsync(parameters));
     }
 
     [HttpGet("{id}")]
@@ -39,8 +38,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<StudentDetailDto>>> GetStudentById([FromRoute(Name = "id")] long studentId)
     {
-      var result = await _studentService.GetStudentByIdAsync(studentId);
-      return this.OkResponse(ApiResponse<StudentDetailDto>.SuccessResult(result));
+      return this.OkResponse(await _studentService.GetStudentByIdAsync(studentId));
     }
 
     [HttpGet("me")]
@@ -52,8 +50,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<StudentDetailDto>>> GetMyProfile()
     {
-      var result = await _studentService.GetMyProfileAsync(GetCurrentUserId());
-      return this.OkResponse(ApiResponse<StudentDetailDto>.SuccessResult(result));
+      return this.OkResponse(await _studentService.GetMyProfileAsync(GetCurrentUserId()));
     }
 
     [HttpPut("me")]
@@ -66,8 +63,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<StudentDetailDto>>> UpdateMyProfile([FromBody] UpdateStudentDto dto)
     {
-      var result = await _studentService.UpdateMyProfileAsync(GetCurrentUserId(), dto);
-      return this.OkResponse(ApiResponse<StudentDetailDto>.SuccessResult(result, "Cập nhật hồ sơ thành công"));
+      return this.OkResponse(await _studentService.UpdateMyProfileAsync(GetCurrentUserId(), dto));
     }
 
     private long GetCurrentUserId()

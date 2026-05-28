@@ -136,8 +136,8 @@ export class AdminClassDetailPage implements OnInit {
   paymentLabel = paymentStatusLabel;
 
   scheduleSourceLabel(src?: AcceptedScheduleSource | null): string {
-    if (src === AcceptedScheduleSource.R1) return 'R1 — Lịch ban đầu';
-    if (src === AcceptedScheduleSource.R2) return 'R2 — Đề xuất từ gia sư';
+    if (src === AcceptedScheduleSource.R1) return 'Học viên đề xuất';
+    if (src === AcceptedScheduleSource.R2) return 'Gia sư đề xuất';
     return '—';
   }
 

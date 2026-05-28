@@ -13,6 +13,11 @@ export const TUTOR_ROUTES: Routes = [
         component: TutorDashboardPage,
       },
       {
+        path: 'requests',
+        loadComponent: () =>
+          import('./learning-requests/learning-requests').then(m => m.TutorLearningRequestsPage),
+      },
+      {
         path: 'requests/:id',
         loadComponent: () =>
           import('./request-detail/request-detail').then(m => m.TutorRequestDetailPage),

@@ -1,10 +1,11 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
+import { Subscription, firstValueFrom } from 'rxjs';
 
 import { NotificationDto } from '../../../api/generated/client/models';
 import { NotificationsService } from '../../../api/generated/client/services';
 import { SessionService } from '../../../core/auth/session';
+import { SignalrService } from '../../../core/realtime/signalr.service';
 import { getApiErrorMessage } from '../../../core/http/api-error';
 import { formatDateTime, notificationRoute } from '../../../shared/utils/api-ui';
 
@@ -76,7 +77,7 @@ import { formatDateTime, notificationRoute } from '../../../shared/utils/api-ui'
     </div>
   `,
 })
-export class NotificationCenterPage implements OnInit {
+export class NotificationCenterPage implements OnInit, OnDestroy {
   notifications = signal<NotificationDto[]>([]);
   unreadCount = signal(0);
   filter = signal<boolean | null>(null);
@@ -92,9 +93,26 @@ export class NotificationCenterPage implements OnInit {
   private readonly notificationsApi = inject(NotificationsService);
   private readonly router = inject(Router);
   protected readonly session = inject(SessionService);
+  private readonly signalrService = inject(SignalrService);
+
+  private signalrSub?: Subscription;
 
   ngOnInit(): void {
     void this.loadNotifications();
+
+    this.signalrSub = this.signalrService.notification$.subscribe((notification) => {
+      // Prepend the new notification to the list if it matches the current filter
+      if (this.filter() === null || (this.filter() === false && !notification.isRead)) {
+        this.notifications.update((list) => [notification, ...list]);
+      }
+      if (!notification.isRead) {
+        this.unreadCount.update((count) => count + 1);
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.signalrSub?.unsubscribe();
   }
 
   setFilter(value: boolean | null): void {
@@ -104,7 +122,14 @@ export class NotificationCenterPage implements OnInit {
 
   async openNotification(notification: NotificationDto): Promise<void> {
     if (!notification.isRead && notification.id) {
-      await this.markRead(notification.id);
+      // Optimistic update
+      this.notifications.update((list) =>
+        list.map((n) => (n.id === notification.id ? { ...n, isRead: true } : n))
+      );
+      this.unreadCount.update((count) => Math.max(0, count - 1));
+      this.signalrService.notificationUpdated$.next({ unreadCount: this.unreadCount() });
+
+      void this.markRead(notification.id);
     }
     await this.router.navigateByUrl(notificationRoute(notification, this.session.role() ?? undefined));
   }
@@ -112,10 +137,15 @@ export class NotificationCenterPage implements OnInit {
   async markAllRead(): Promise<void> {
     this.isWorking.set(true);
     try {
+      // Optimistic update
+      this.notifications.update((list) => list.map((n) => ({ ...n, isRead: true })));
+      this.unreadCount.set(0);
+      this.signalrService.notificationUpdated$.next({ unreadCount: 0 });
+
       await firstValueFrom(this.notificationsApi.markAllNotificationsAsRead());
-      await this.loadNotifications();
     } catch (error) {
       this.errorMessage.set(getApiErrorMessage(error, 'Không đánh dấu được thông báo.'));
+      void this.loadNotifications();
     } finally {
       this.isWorking.set(false);
     }

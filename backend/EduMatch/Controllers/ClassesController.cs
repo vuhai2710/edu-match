@@ -38,8 +38,7 @@ public class ClassesController : ControllerBase
   [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
   public async Task<ActionResult<ApiResponse<PagedResult<ClassDto>>>> GetMyClasses([FromQuery] ClassQueryParameters parameters)
   {
-    var result = await _classReadService.GetStudentClassesAsync(GetCurrentUserId(), parameters);
-    return this.OkResponse(ApiResponse<PagedResult<ClassDto>>.SuccessResult(result));
+    return this.OkResponse(await _classReadService.GetStudentClassesAsync(GetCurrentUserId(), parameters));
   }
 
   [HttpGet("tutor")]
@@ -51,8 +50,7 @@ public class ClassesController : ControllerBase
   [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
   public async Task<ActionResult<ApiResponse<PagedResult<ClassDto>>>> GetTutorClasses([FromQuery] ClassQueryParameters parameters)
   {
-    var result = await _classReadService.GetTutorClassesAsync(GetCurrentTutorId(), parameters);
-    return this.OkResponse(ApiResponse<PagedResult<ClassDto>>.SuccessResult(result));
+    return this.OkResponse(await _classReadService.GetTutorClassesAsync(GetCurrentTutorId(), parameters));
   }
 
   [HttpGet("{id:long}")]
@@ -64,8 +62,7 @@ public class ClassesController : ControllerBase
   [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
   public async Task<ActionResult<ApiResponse<ClassDto>>> GetById(long id)
   {
-    var result = await _classReadService.GetByIdAsync(id, GetCurrentUserId(), User.IsInRole("Admin"));
-    return this.OkResponse(ApiResponse<ClassDto>.SuccessResult(result));
+    return this.OkResponse(await _classReadService.GetByIdAsync(id, GetCurrentUserId(), User.IsInRole("Admin")));
   }
 
   [HttpGet("{id:long}/review-eligibility")]
@@ -77,8 +74,7 @@ public class ClassesController : ControllerBase
   [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
   public async Task<ActionResult<ApiResponse<ReviewEligibilityDto>>> GetReviewEligibility(long id)
   {
-    var result = await _reviewService.GetEligibilityAsync(GetCurrentUserId(), id);
-    return this.OkResponse(ApiResponse<ReviewEligibilityDto>.SuccessResult(result));
+    return this.OkResponse(await _reviewService.GetEligibilityAsync(GetCurrentUserId(), id));
   }
 
   [HttpGet("{id:long}/cancellation-request")]
@@ -90,12 +86,10 @@ public class ClassesController : ControllerBase
   [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
   public async Task<ActionResult<ApiResponse<CancellationRequestDto>>> GetCancellationRequest(long id)
   {
-    var result = await _cancellationRequestService.GetLatestByClassIdAsync(
+    return this.OkResponse(await _cancellationRequestService.GetLatestByClassIdAsync(
       id,
       GetCurrentUserId(),
-      GetCurrentUserRole());
-
-    return this.OkResponse(result);
+      GetCurrentUserRole()));
   }
 
   private long GetCurrentUserId()

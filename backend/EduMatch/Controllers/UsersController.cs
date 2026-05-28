@@ -29,8 +29,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<ApiResponse<PagedResult<UserDto>>>> GetUsers([FromQuery] UserQueryParameters parameters)
     {
-      var result = await _userService.GetUsersAsync(parameters);
-      return this.OkResponse(ApiResponse<PagedResult<UserDto>>.SuccessResult(result));
+      return this.OkResponse(await _userService.GetUsersAsync(parameters));
     }
 
     [HttpGet("{id}")]
@@ -42,21 +41,19 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<UserDto>>> GetUserById(long id)
     {
-      var result = await _userService.GetUserByIdAsync(id);
-      return this.OkResponse(ApiResponse<UserDto>.SuccessResult(result));
+      return this.OkResponse(await _userService.GetUserByIdAsync(id));
     }
 
     [HttpDelete("{id}")]
     [Authorize(Roles = "Admin")]
     [SwaggerOperation(OperationId = "deleteUser")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DeleteUser(long id)
+    public async Task<ActionResult<ApiResponse<bool>>> DeleteUser(long id)
     {
-      await _userService.DeleteUserAsync(id);
-      return this.NoContentResponse();
+      return this.OkResponse(await _userService.DeleteUserAsync(id));
     }
 
     [HttpPut("me/password")]
@@ -68,8 +65,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse>> ChangeMyPassword([FromBody] ChangePasswordDto dto)
     {
-      await _userService.ChangePasswordAsync(GetCurrentUserId(), dto);
-      return this.OkResponse(ApiResponse.Ok("Đổi mật khẩu thành công"));
+      return this.OkResponse(await _userService.ChangePasswordAsync(GetCurrentUserId(), dto));
     }
 
     [HttpPut("me/avatar")]
@@ -82,8 +78,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<string>>> UpdateMyAvatar(IFormFile file)
     {
-      var result = await _userService.UpdateAvatarAsync(GetCurrentUserId(), file);
-      return this.OkResponse(ApiResponse<string>.SuccessResult(result, "Cập nhật ảnh đại diện thành công"));
+      return this.OkResponse(await _userService.UpdateAvatarAsync(GetCurrentUserId(), file));
     }
 
     [HttpDelete("me/avatar")]
@@ -95,8 +90,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse>> DeleteMyAvatar()
     {
-      await _userService.DeleteAvatarAsync(GetCurrentUserId());
-      return this.OkResponse(ApiResponse.Ok("Xóa ảnh đại diện thành công"));
+      return this.OkResponse(await _userService.DeleteAvatarAsync(GetCurrentUserId()));
     }
 
     private long GetCurrentUserId()

@@ -5,8 +5,8 @@ namespace EduMatch.Services.Interfaces;
 
 public interface IClassReadService
 {
-  Task<PagedResult<ClassDto>> GetStudentClassesAsync(long currentUserId, ClassQueryParameters parameters);
-  Task<PagedResult<ClassDto>> GetTutorClassesAsync(long tutorProfileId, ClassQueryParameters parameters);
-  Task<ClassDto> GetByIdAsync(long id, long currentUserId, bool isAdmin = false);
-  Task<PagedResult<ClassDto>> GetAdminClassesAsync(ClassQueryParameters parameters);
+  Task<ApiResponse<PagedResult<ClassDto>>> GetStudentClassesAsync(long currentUserId, ClassQueryParameters parameters);
+  Task<ApiResponse<PagedResult<ClassDto>>> GetTutorClassesAsync(long tutorProfileId, ClassQueryParameters parameters);
+  Task<ApiResponse<ClassDto>> GetByIdAsync(long id, long currentUserId, bool isAdmin = false);
+  Task<ApiResponse<PagedResult<ClassDto>>> GetAdminClassesAsync(ClassQueryParameters parameters);
 }

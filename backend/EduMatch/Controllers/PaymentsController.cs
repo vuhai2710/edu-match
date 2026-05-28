@@ -31,8 +31,7 @@ namespace EduMatch.Controllers
     public async Task<ActionResult<ApiResponse<PaymentResponseDto>>> CreateDepositPayment(
       [FromBody] CreateDepositPaymentRequest dto)
     {
-      var result = await _depositPaymentService.CreateDepositAsync(GetCurrentUserId(), dto);
-      return Ok(ApiResponse<PaymentResponseDto>.SuccessResult(result));
+      return this.OkResponse(await _depositPaymentService.CreateDepositAsync(GetCurrentUserId(), dto));
     }
 
     [HttpGet("learning-requests/{learningRequestId:long}")]
@@ -44,12 +43,10 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<DepositPaymentDto?>>> GetByLearningRequest(long learningRequestId)
     {
-      var result = await _depositPaymentService.GetByLearningRequestAsync(
+      return this.OkResponse(await _depositPaymentService.GetByLearningRequestAsync(
         GetCurrentUserId(),
         User.IsInRole("Admin"),
-        learningRequestId);
-
-      return Ok(ApiResponse<DepositPaymentDto?>.SuccessResult(result));
+        learningRequestId));
     }
 
     [HttpGet("status/{orderCode}")]
@@ -58,8 +55,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<PaymentStatusDto>>> GetStatus(long orderCode)
     {
-      var result = await _depositPaymentService.GetStatusAsync(orderCode);
-      return Ok(ApiResponse<PaymentStatusDto>.SuccessResult(result));
+      return this.OkResponse(await _depositPaymentService.GetStatusAsync(orderCode));
     }
 
     [HttpPost("webhook")]

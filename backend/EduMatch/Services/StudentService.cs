@@ -21,81 +21,95 @@ namespace EduMatch.Services
       _mapper = mapper;
     }
 
-    public async Task<PagedResult<StudentDto>> GetStudentsAsync(StudentQueryParameters parameters)
+    public async Task<ApiResponse<PagedResult<StudentDto>>> GetStudentsAsync(StudentQueryParameters parameters)
     {
-      var pagedProfiles = await _studentRepository.GetStudentsAsync(parameters);
-
-      return new PagedResult<StudentDto>
+      return await ServiceResponse.ExecuteAsync(async () =>
       {
-        Items = _mapper.Map<List<StudentDto>>(pagedProfiles.Items),
-        Page = pagedProfiles.Page,
-        PageSize = pagedProfiles.PageSize,
-        TotalCount = pagedProfiles.TotalCount,
-        TotalPages = pagedProfiles.TotalPages
-      };
-    }
+        var pagedProfiles = await _studentRepository.GetStudentsAsync(parameters);
 
-    public async Task<StudentDetailDto> GetStudentByIdAsync(long studentId)
-    {
-      var profile = await _studentRepository.GetStudentDetailByIdAsync(studentId);
-      if (profile == null)
-      {
-        throw new NotFoundException("Không tìm thấy thông tin học sinh.");
-      }
-
-      return _mapper.Map<StudentDetailDto>(profile);
-    }
-
-    public async Task<StudentDetailDto> GetMyProfileAsync(long currentUserId)
-    {
-      var profile = await _studentRepository.GetStudentDetailByUserIdAsync(currentUserId);
-      if (profile == null)
-      {
-        throw new NotFoundException("Không tìm thấy thông tin học sinh.");
-      }
-
-      return _mapper.Map<StudentDetailDto>(profile);
-    }
-
-    public async Task<StudentDetailDto> UpdateMyProfileAsync(long currentUserId, UpdateStudentDto dto)
-    {
-      var profile = await _studentRepository.GetStudentDetailByUserIdAsync(currentUserId);
-      if (profile == null)
-      {
-        throw new NotFoundException("Không tìm thấy thông tin học sinh.");
-      }
-
-      var user = profile.User ?? throw new DataConsistencyException("Student user relationship was not loaded.");
-      user.FullName = dto.FullName;
-      user.Birth = dto.Birth;
-      user.Gender = dto.Gender;
-      user.School = string.IsNullOrWhiteSpace(dto.School) ? null : dto.School.Trim();
-
-      if (dto.PhoneNumber != null)
-      {
-        user.PhoneNumber = dto.PhoneNumber;
-      }
-
-      _mapper.Map(dto, profile);
-
-      if (dto.Address != null)
-      {
-        if (profile.Address == null)
+        return ApiResponse<PagedResult<StudentDto>>.SuccessResult(new PagedResult<StudentDto>
         {
-          profile.Address = _mapper.Map<Address>(dto.Address);
-        }
-        else
+          Items = _mapper.Map<List<StudentDto>>(pagedProfiles.Items),
+          Page = pagedProfiles.Page,
+          PageSize = pagedProfiles.PageSize,
+          TotalCount = pagedProfiles.TotalCount,
+          TotalPages = pagedProfiles.TotalPages
+        });
+      });
+    }
+
+    public async Task<ApiResponse<StudentDetailDto>> GetStudentByIdAsync(long studentId)
+    {
+      return await ServiceResponse.ExecuteAsync(async () =>
+      {
+        var profile = await _studentRepository.GetStudentDetailByIdAsync(studentId);
+        if (profile == null)
         {
-          _mapper.Map(dto.Address, profile.Address);
+          throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y thÃ´ng tin há»c sinh.");
         }
-      }
 
-      _studentRepository.Update(profile);
-      await _studentRepository.SaveChangesAsync();
+        return ApiResponse<StudentDetailDto>.SuccessResult(_mapper.Map<StudentDetailDto>(profile));
+      });
+    }
 
-      _logger.LogInformation("Student profile updated for User ID: {UserId}", currentUserId);
+    public async Task<ApiResponse<StudentDetailDto>> GetMyProfileAsync(long currentUserId)
+    {
+      return await ServiceResponse.ExecuteAsync(async () =>
+      {
+        var profile = await _studentRepository.GetStudentDetailByUserIdAsync(currentUserId);
+        if (profile == null)
+        {
+          throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y thÃ´ng tin há»c sinh.");
+        }
 
-      return _mapper.Map<StudentDetailDto>(profile);
+        return ApiResponse<StudentDetailDto>.SuccessResult(_mapper.Map<StudentDetailDto>(profile));
+      });
+    }
+
+    public async Task<ApiResponse<StudentDetailDto>> UpdateMyProfileAsync(long currentUserId, UpdateStudentDto dto)
+    {
+      return await ServiceResponse.ExecuteAsync(async () =>
+      {
+        var profile = await _studentRepository.GetStudentDetailByUserIdAsync(currentUserId);
+        if (profile == null)
+        {
+          throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y thÃ´ng tin há»c sinh.");
+        }
+
+        var user = profile.User ?? throw new DataConsistencyException("Student user relationship was not loaded.");
+        user.FullName = dto.FullName;
+        user.Birth = dto.Birth;
+        user.Gender = dto.Gender;
+        user.School = string.IsNullOrWhiteSpace(dto.School) ? null : dto.School.Trim();
+
+        if (dto.PhoneNumber != null)
+        {
+          user.PhoneNumber = dto.PhoneNumber;
+        }
+
+        _mapper.Map(dto, profile);
+
+        if (dto.Address != null)
+        {
+          if (profile.Address == null)
+          {
+            profile.Address = _mapper.Map<Address>(dto.Address);
+          }
+          else
+          {
+            _mapper.Map(dto.Address, profile.Address);
+          }
+        }
+
+        _studentRepository.Update(profile);
+        await _studentRepository.SaveChangesAsync();
+
+        _logger.LogInformation("Student profile updated for User ID: {UserId}", currentUserId);
+
+        return ApiResponse<StudentDetailDto>.SuccessResult(
+          _mapper.Map<StudentDetailDto>(profile),
+          "Cáº­p nháº­t há»“ sÆ¡ thÃ nh cÃ´ng");
+      });
     }
   }
 }

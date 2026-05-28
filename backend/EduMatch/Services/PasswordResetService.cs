@@ -1,4 +1,5 @@
 using EduMatch.Common.Exception;
+using EduMatch.DTOs;
 using EduMatch.Models;
 using EduMatch.Repositories.Interfaces;
 using EduMatch.Services.Interfaces;
@@ -31,82 +32,92 @@ namespace EduMatch.Services
       _logger = logger;
     }
 
-    public async Task ForgotPasswordAsync(string email)
+    public async Task<ApiResponse> ForgotPasswordAsync(string email)
     {
-      var user = await _userRepository.GetByEmailAsync(email);
-
-      if (user == null)
+      return await ServiceResponse.ExecuteAsync(async () =>
       {
-        _logger.LogInformation("Forgot password requested for non-existing email: {Email}", email);
-        throw new AppException("Email chưa được đăng ký");
-      }
+        var user = await _userRepository.GetByEmailAsync(email);
 
-      if (user.IsGoogleAccount)
-      {
-        _logger.LogInformation("Forgot password requested for Google account: {Email}", email);
-        return;
-      }
-
-      var rawToken = GenerateSecureToken();
-      var tokenHash = HashToken(rawToken);
-
-      var resetToken = new PasswordResetToken
-      {
-        UserId = user.Id,
-        TokenHash = tokenHash,
-        ExpiresAt = DateTime.UtcNow.AddMinutes(TokenExpiryMinutes)
-      };
-
-      await _tokenRepository.AddAsync(resetToken);
-      await _tokenRepository.SaveChangesAsync();
-
-      var baseUrl = _config["Frontend:BaseUrl"] ?? "http://localhost:4200";
-      var resetPath = _config["Frontend:ResetPasswordPath"] ?? "/auth/reset-password";
-      var resetLink = $"{baseUrl}{resetPath}?token={rawToken}";
-
-      await _emailService.SendPasswordResetEmailAsync(user.Email, resetLink);
-
-      _logger.LogInformation("Password reset token created for user {UserId}", user.Id);
-    }
-
-    public async Task ResetPasswordAsync(string token, string newPassword)
-    {
-      var tokenHash = HashToken(token);
-      var resetToken = await _tokenRepository.GetValidTokenByHashAsync(tokenHash);
-
-      if (resetToken == null)
-      {
-        throw new AppException("Token không hợp lệ hoặc đã hết hạn");
-      }
-
-      var user = resetToken.User;
-
-      user.Password = BCrypt.Net.BCrypt.HashPassword(newPassword, workFactor: 12);
-
-      resetToken.IsUsed = true;
-      resetToken.UsedAt = DateTime.UtcNow;
-
-      var activeTokens = await _tokenRepository.GetActiveTokensByUserIdAsync(user.Id);
-      foreach (var activeToken in activeTokens)
-      {
-        if (activeToken.Id != resetToken.Id)
+        if (user == null)
         {
-          activeToken.IsUsed = true;
-          activeToken.UsedAt = DateTime.UtcNow;
+          _logger.LogInformation("Forgot password requested for non-existing email: {Email}", email);
+          throw new AppException("Email chÆ°a Ä‘Æ°á»£c Ä‘Äƒng kÃ½");
         }
-      }
 
-      _userRepository.Update(user);
-      await _tokenRepository.SaveChangesAsync();
+        if (user.IsGoogleAccount)
+        {
+          _logger.LogInformation("Forgot password requested for Google account: {Email}", email);
+          return ApiResponse.Ok("Link Ä‘áº·t láº¡i máº­t kháº©u Ä‘Ã£ Ä‘Æ°á»£c gá»­i");
+        }
 
-      _logger.LogInformation("Password reset successfully for user {UserId}", user.Id);
+        var rawToken = GenerateSecureToken();
+        var tokenHash = HashToken(rawToken);
+
+        var resetToken = new PasswordResetToken
+        {
+          UserId = user.Id,
+          TokenHash = tokenHash,
+          ExpiresAt = DateTime.UtcNow.AddMinutes(TokenExpiryMinutes)
+        };
+
+        await _tokenRepository.AddAsync(resetToken);
+        await _tokenRepository.SaveChangesAsync();
+
+        var baseUrl = _config["Frontend:BaseUrl"] ?? "http://localhost:4200";
+        var resetPath = _config["Frontend:ResetPasswordPath"] ?? "/auth/reset-password";
+        var resetLink = $"{baseUrl}{resetPath}?token={rawToken}";
+
+        await _emailService.SendPasswordResetEmailAsync(user.Email, resetLink);
+
+        _logger.LogInformation("Password reset token created for user {UserId}", user.Id);
+        return ApiResponse.Ok("Link Ä‘áº·t láº¡i máº­t kháº©u Ä‘Ã£ Ä‘Æ°á»£c gá»­i");
+      });
     }
 
-    public async Task<bool> ValidateTokenAsync(string token)
+    public async Task<ApiResponse> ResetPasswordAsync(string token, string newPassword)
     {
-      var tokenHash = HashToken(token);
-      var resetToken = await _tokenRepository.GetValidTokenByHashAsync(tokenHash);
-      return resetToken != null;
+      return await ServiceResponse.ExecuteAsync(async () =>
+      {
+        var tokenHash = HashToken(token);
+        var resetToken = await _tokenRepository.GetValidTokenByHashAsync(tokenHash);
+
+        if (resetToken == null)
+        {
+          throw new AppException("Token khÃ´ng há»£p lá»‡ hoáº·c Ä‘Ã£ háº¿t háº¡n");
+        }
+
+        var user = resetToken.User;
+        user.Password = BCrypt.Net.BCrypt.HashPassword(newPassword, workFactor: 12);
+
+        resetToken.IsUsed = true;
+        resetToken.UsedAt = DateTime.UtcNow;
+
+        var activeTokens = await _tokenRepository.GetActiveTokensByUserIdAsync(user.Id);
+        foreach (var activeToken in activeTokens)
+        {
+          if (activeToken.Id != resetToken.Id)
+          {
+            activeToken.IsUsed = true;
+            activeToken.UsedAt = DateTime.UtcNow;
+          }
+        }
+
+        _userRepository.Update(user);
+        await _tokenRepository.SaveChangesAsync();
+
+        _logger.LogInformation("Password reset successfully for user {UserId}", user.Id);
+        return ApiResponse.Ok("Äáº·t láº¡i máº­t kháº©u thÃ nh cÃ´ng");
+      });
+    }
+
+    public async Task<ApiResponse<bool>> ValidateTokenAsync(string token)
+    {
+      return await ServiceResponse.ExecuteAsync(async () =>
+      {
+        var tokenHash = HashToken(token);
+        var resetToken = await _tokenRepository.GetValidTokenByHashAsync(tokenHash);
+        return ApiResponse<bool>.SuccessResult(resetToken != null);
+      });
     }
 
     private static string GenerateSecureToken()

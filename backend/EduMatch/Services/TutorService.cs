@@ -43,222 +43,244 @@ public class TutorService : ITutorService
     _httpContextAccessor = httpContextAccessor;
   }
 
-  public async Task<PagedResult<TutorDto>> GetTutorsAsync(TutorQueryParameters parameters)
+  public async Task<ApiResponse<PagedResult<TutorDto>>> GetTutorsAsync(TutorQueryParameters parameters)
   {
-    var pagedProfiles = await _tutorRepository.GetTutorsAsync(parameters);
-
-    return new PagedResult<TutorDto>
+    return await ServiceResponse.ExecuteAsync(async () =>
     {
-      Items = _mapper.Map<List<TutorDto>>(pagedProfiles.Items),
-      TotalCount = pagedProfiles.TotalCount,
-      Page = pagedProfiles.Page,
-      PageSize = pagedProfiles.PageSize,
-      TotalPages = pagedProfiles.TotalPages
-    };
+      var pagedProfiles = await _tutorRepository.GetTutorsAsync(parameters);
+
+      return ApiResponse<PagedResult<TutorDto>>.SuccessResult(new PagedResult<TutorDto>
+      {
+        Items = _mapper.Map<List<TutorDto>>(pagedProfiles.Items),
+        TotalCount = pagedProfiles.TotalCount,
+        Page = pagedProfiles.Page,
+        PageSize = pagedProfiles.PageSize,
+        TotalPages = pagedProfiles.TotalPages
+      });
+    });
   }
 
-  public async Task<TutorDetailDto> GetTutorByIdOrCodeAsync(string idOrCode)
+  public async Task<ApiResponse<TutorDetailDto>> GetTutorByIdOrCodeAsync(string idOrCode)
   {
-    Tutor? profile = null;
-
-    if (long.TryParse(idOrCode, out var id))
+    return await ServiceResponse.ExecuteAsync(async () =>
     {
-      profile = await _tutorRepository.GetTutorProfileDetailAsync(id);
-    }
+      Tutor? profile = null;
 
-    if (profile == null && !string.IsNullOrWhiteSpace(idOrCode))
-    {
-      profile = await _tutorRepository.GetTutorProfileDetailByCodeAsync(idOrCode);
-    }
+      if (long.TryParse(idOrCode, out var id))
+      {
+        profile = await _tutorRepository.GetTutorProfileDetailAsync(id);
+      }
 
-    if (profile == null)
-    {
-      throw new NotFoundException("Không tìm thấy hồ sơ gia sư.", "TUTOR_PROFILE_NOT_FOUND");
-    }
+      if (profile == null && !string.IsNullOrWhiteSpace(idOrCode))
+      {
+        profile = await _tutorRepository.GetTutorProfileDetailByCodeAsync(idOrCode);
+      }
 
-    return MapTutorDetail(profile);
+      if (profile == null)
+      {
+        throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y há»“ sÆ¡ gia sÆ°.", "TUTOR_PROFILE_NOT_FOUND");
+      }
+
+      return ApiResponse<TutorDetailDto>.SuccessResult(MapTutorDetail(profile));
+    });
   }
 
-  public async Task<TutorDetailDto> GetTutorByUserIdAsync(long userId)
+  public async Task<ApiResponse<TutorDetailDto>> GetTutorByUserIdAsync(long userId)
   {
-    var profile = await _tutorRepository.GetTutorProfileByUserIdAsync(userId);
-    if (profile == null)
+    return await ServiceResponse.ExecuteAsync(async () =>
     {
-      throw new NotFoundException("Không tìm thấy hồ sơ gia sư của người dùng này.", "TUTOR_PROFILE_NOT_FOUND");
-    }
+      var profile = await _tutorRepository.GetTutorProfileByUserIdAsync(userId);
+      if (profile == null)
+      {
+        throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y há»“ sÆ¡ gia sÆ° cá»§a ngÆ°á»i dÃ¹ng nÃ y.", "TUTOR_PROFILE_NOT_FOUND");
+      }
 
-    return MapTutorDetail(profile);
+      return ApiResponse<TutorDetailDto>.SuccessResult(MapTutorDetail(profile));
+    });
   }
 
-  public async Task<TutorDetailDto> UpdateTutorProfileAsync(long userId, UpdateTutorDto dto)
+  public async Task<ApiResponse<TutorDetailDto>> UpdateTutorProfileAsync(long userId, UpdateTutorDto dto)
   {
-    var profile = await _tutorRepository.GetTutorProfileByUserIdAsync(userId);
-
-    if (profile == null)
+    return await ServiceResponse.ExecuteAsync(async () =>
     {
-      var user = await _userRepository.GetByIdAsync(userId);
-      if (user == null)
+      var profile = await _tutorRepository.GetTutorProfileByUserIdAsync(userId);
+
+      if (profile == null)
       {
-        throw new NotFoundException("Không tìm thấy người dùng.", "USER_NOT_FOUND");
-      }
+        var user = await _userRepository.GetByIdAsync(userId);
+        if (user == null)
+        {
+          throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y ngÆ°á»i dÃ¹ng.", "USER_NOT_FOUND");
+        }
 
-      user.FullName = dto.FullName;
-      user.Birth = dto.Birth;
-      user.Gender = dto.Gender;
-      user.School = string.IsNullOrWhiteSpace(dto.School) ? null : dto.School.Trim();
+        user.FullName = dto.FullName;
+        user.Birth = dto.Birth;
+        user.Gender = dto.Gender;
+        user.School = string.IsNullOrWhiteSpace(dto.School) ? null : dto.School.Trim();
 
-      if (dto.PhoneNumber != null)
-      {
-        user.PhoneNumber = dto.PhoneNumber;
-      }
+        if (dto.PhoneNumber != null)
+        {
+          user.PhoneNumber = dto.PhoneNumber;
+        }
 
-      profile = new Tutor
-      {
-        Code = _codeGenerator.GenerateTemporaryCode("TUT"),
-        UserId = userId
-      };
-      _mapper.Map(dto, profile);
+        profile = new Tutor
+        {
+          Code = _codeGenerator.GenerateTemporaryCode("TUT"),
+          UserId = userId
+        };
+        _mapper.Map(dto, profile);
 
-      if (dto.Address != null)
-      {
-        profile.Address = _mapper.Map<Address>(dto.Address);
-      }
-
-      await _tutorRepository.AddAsync(profile);
-    }
-    else
-    {
-      var user = profile.User ?? throw new DataConsistencyException("Tutor user relationship was not loaded.");
-
-      user.FullName = dto.FullName;
-      user.Birth = dto.Birth;
-      user.Gender = dto.Gender;
-      user.School = string.IsNullOrWhiteSpace(dto.School) ? null : dto.School.Trim();
-
-      if (dto.PhoneNumber != null)
-      {
-        user.PhoneNumber = dto.PhoneNumber;
-      }
-
-      _mapper.Map(dto, profile);
-
-      if (dto.Address != null)
-      {
-        if (profile.Address == null)
+        if (dto.Address != null)
         {
           profile.Address = _mapper.Map<Address>(dto.Address);
         }
-        else
+
+        await _tutorRepository.AddAsync(profile);
+      }
+      else
+      {
+        var user = profile.User ?? throw new DataConsistencyException("Tutor user relationship was not loaded.");
+
+        user.FullName = dto.FullName;
+        user.Birth = dto.Birth;
+        user.Gender = dto.Gender;
+        user.School = string.IsNullOrWhiteSpace(dto.School) ? null : dto.School.Trim();
+
+        if (dto.PhoneNumber != null)
         {
-          _mapper.Map(dto.Address, profile.Address);
+          user.PhoneNumber = dto.PhoneNumber;
+        }
+
+        _mapper.Map(dto, profile);
+
+        if (dto.Address != null)
+        {
+          if (profile.Address == null)
+          {
+            profile.Address = _mapper.Map<Address>(dto.Address);
+          }
+          else
+          {
+            _mapper.Map(dto.Address, profile.Address);
+          }
+        }
+
+        _tutorRepository.Update(profile);
+
+        if (profile.TutorSubjects.Any())
+        {
+          _tutorSubjectRepository.RemoveRange(profile.TutorSubjects);
+        }
+
+        if (profile.TeachingLevels.Any())
+        {
+          _tutorTeachingLevelRepository.RemoveRange(profile.TeachingLevels);
         }
       }
 
-      _tutorRepository.Update(profile);
-
-      if (profile.TutorSubjects.Any())
+      if (dto.Subjects != null && dto.Subjects.Any())
       {
-        _tutorSubjectRepository.RemoveRange(profile.TutorSubjects);
-      }
+        var subjectIds = dto.Subjects.Select(subject => subject.SubjectId).Distinct().ToList();
+        var validSubjects = await _subjectRepository.FindAsync(subject => subjectIds.Contains(subject.Id));
+        var validSubjectIds = validSubjects.Select(subject => subject.Id).ToHashSet();
+        var invalidSubjectIds = subjectIds.Where(subjectId => !validSubjectIds.Contains(subjectId)).Distinct().ToArray();
 
-      if (profile.TeachingLevels.Any())
-      {
-        _tutorTeachingLevelRepository.RemoveRange(profile.TeachingLevels);
-      }
-    }
+        if (invalidSubjectIds.Length > 0)
+        {
+          throw new ValidationException(
+            new Dictionary<string, string[]>
+            {
+              [nameof(dto.Subjects)] = [$"CÃ¡c mÃ´n há»c khÃ´ng tá»“n táº¡i: {string.Join(", ", invalidSubjectIds)}."]
+            },
+            "INVALID_TUTOR_SUBJECTS");
+        }
 
-    if (dto.Subjects != null && dto.Subjects.Any())
-    {
-      var subjectIds = dto.Subjects.Select(subject => subject.SubjectId).Distinct().ToList();
-      var validSubjects = await _subjectRepository.FindAsync(subject => subjectIds.Contains(subject.Id));
-      var validSubjectIds = validSubjects.Select(subject => subject.Id).ToHashSet();
-      var invalidSubjectIds = subjectIds.Where(subjectId => !validSubjectIds.Contains(subjectId)).Distinct().ToArray();
-
-      if (invalidSubjectIds.Length > 0)
-      {
-        throw new ValidationException(
-          new Dictionary<string, string[]>
+        foreach (var subDto in dto.Subjects)
+        {
+          await _tutorSubjectRepository.AddAsync(new TutorSubject
           {
-            [nameof(dto.Subjects)] = [$"Các môn học không tồn tại: {string.Join(", ", invalidSubjectIds)}."]
-          },
-          "INVALID_TUTOR_SUBJECTS");
+            Tutor = profile,
+            SubjectId = subDto.SubjectId
+          });
+        }
       }
 
-      foreach (var subDto in dto.Subjects)
+      if (dto.TeachingLevels != null && dto.TeachingLevels.Any())
       {
-        await _tutorSubjectRepository.AddAsync(new TutorSubject
+        foreach (var teachingLevel in dto.TeachingLevels.Distinct())
         {
-          Tutor = profile,
-          SubjectId = subDto.SubjectId
-        });
+          await _tutorTeachingLevelRepository.AddAsync(new TutorTeachingLevel
+          {
+            Tutor = profile,
+            TeachingLevel = teachingLevel
+          });
+        }
       }
-    }
 
-    if (dto.TeachingLevels != null && dto.TeachingLevels.Any())
-    {
-      foreach (var teachingLevel in dto.TeachingLevels.Distinct())
+      await _tutorRepository.SaveChangesAsync();
+
+      var updatedProfile = await _tutorRepository.GetTutorProfileByUserIdAsync(userId);
+      if (updatedProfile == null)
       {
-        await _tutorTeachingLevelRepository.AddAsync(new TutorTeachingLevel
-        {
-          Tutor = profile,
-          TeachingLevel = teachingLevel
-        });
+        throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y há»“ sÆ¡ gia sÆ° sau khi cáº­p nháº­t.", "TUTOR_PROFILE_NOT_FOUND");
       }
-    }
 
-    await _tutorRepository.SaveChangesAsync();
-
-    var updatedProfile = await _tutorRepository.GetTutorProfileByUserIdAsync(userId);
-    if (updatedProfile == null)
-    {
-      throw new NotFoundException("Không tìm thấy hồ sơ gia sư sau khi cập nhật.", "TUTOR_PROFILE_NOT_FOUND");
-    }
-
-    return MapTutorDetail(updatedProfile);
+      return ApiResponse<TutorDetailDto>.SuccessResult(
+        MapTutorDetail(updatedProfile),
+        "Tutor profile updated successfully");
+    });
   }
 
-  public async Task<FileDto> UpdateCvAsync(long userId, IFormFile file)
+  public async Task<ApiResponse<FileDto>> UpdateCvAsync(long userId, IFormFile file)
   {
-    var profile = await _tutorRepository.GetTutorProfileByUserIdAsync(userId);
-    if (profile == null || profile.IsDeleted)
+    return await ServiceResponse.ExecuteAsync(async () =>
     {
-      throw new NotFoundException("Không tìm thấy hồ sơ gia sư.", "TUTOR_PROFILE_NOT_FOUND");
-    }
+      var profile = await _tutorRepository.GetTutorProfileByUserIdAsync(userId);
+      if (profile == null || profile.IsDeleted)
+      {
+        throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y há»“ sÆ¡ gia sÆ°.", "TUTOR_PROFILE_NOT_FOUND");
+      }
 
-    if (profile.CvFileId.HasValue)
+      if (profile.CvFileId.HasValue)
+      {
+        await _fileService.DeleteFileRecordAsync(profile.CvFileId.Value);
+      }
+
+      var savedFile = await _fileService.UploadCvAsync(file);
+      profile.CvFileId = savedFile.Id;
+      profile.UpdatedAt = DateTime.UtcNow;
+
+      _tutorRepository.Update(profile);
+      await _tutorRepository.SaveChangesAsync();
+
+      return ApiResponse<FileDto>.SuccessResult(MapFileDto(savedFile), "Cáº­p nháº­t CV thÃ nh cÃ´ng");
+    });
+  }
+
+  public async Task<ApiResponse> DeleteCvAsync(long userId)
+  {
+    return await ServiceResponse.ExecuteAsync(async () =>
     {
+      var profile = await _tutorRepository.GetTutorProfileByUserIdAsync(userId);
+      if (profile == null || profile.IsDeleted)
+      {
+        throw new NotFoundException("KhÃ´ng tÃ¬m tháº¥y há»“ sÆ¡ gia sÆ°.", "TUTOR_PROFILE_NOT_FOUND");
+      }
+
+      if (!profile.CvFileId.HasValue)
+      {
+        throw new ValidationException("Gia sÆ° chÆ°a cÃ³ CV.", "TUTOR_CV_NOT_FOUND");
+      }
+
       await _fileService.DeleteFileRecordAsync(profile.CvFileId.Value);
-    }
+      profile.CvFileId = null;
+      profile.UpdatedAt = DateTime.UtcNow;
 
-    var savedFile = await _fileService.UploadCvAsync(file);
-    profile.CvFileId = savedFile.Id;
-    profile.UpdatedAt = DateTime.UtcNow;
+      _tutorRepository.Update(profile);
+      await _tutorRepository.SaveChangesAsync();
 
-    _tutorRepository.Update(profile);
-    await _tutorRepository.SaveChangesAsync();
-
-    return MapFileDto(savedFile);
-  }
-
-  public async Task DeleteCvAsync(long userId)
-  {
-    var profile = await _tutorRepository.GetTutorProfileByUserIdAsync(userId);
-    if (profile == null || profile.IsDeleted)
-    {
-      throw new NotFoundException("Không tìm thấy hồ sơ gia sư.", "TUTOR_PROFILE_NOT_FOUND");
-    }
-
-    if (!profile.CvFileId.HasValue)
-    {
-      throw new ValidationException("Gia sư chưa có CV.", "TUTOR_CV_NOT_FOUND");
-    }
-
-    await _fileService.DeleteFileRecordAsync(profile.CvFileId.Value);
-    profile.CvFileId = null;
-    profile.UpdatedAt = DateTime.UtcNow;
-
-    _tutorRepository.Update(profile);
-    await _tutorRepository.SaveChangesAsync();
+      return ApiResponse.Ok("XÃ³a CV thÃ nh cÃ´ng");
+    });
   }
 
   private TutorDetailDto MapTutorDetail(Tutor profile)

@@ -1,11 +1,12 @@
+using EduMatch.DTOs;
 using EduMatch.DTOs.Dashboard;
 
 namespace EduMatch.Services.Interfaces
 {
   public interface IDashboardService
   {
-    Task<AdminDashboardDto> GetAdminDashboardAsync();
-    Task<TutorDashboardDto> GetTutorDashboardAsync(long tutorProfileId);
-    Task<StudentDashboardDto> GetStudentDashboardAsync(long studentUserId);
+    Task<ApiResponse<AdminDashboardDto>> GetAdminDashboardAsync();
+    Task<ApiResponse<TutorDashboardDto>> GetTutorDashboardAsync(long tutorProfileId);
+    Task<ApiResponse<StudentDashboardDto>> GetStudentDashboardAsync(long studentUserId);
   }
 }

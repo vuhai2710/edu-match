@@ -49,118 +49,130 @@ namespace EduMatch.Services
       _bookingConflictService = bookingConflictService;
     }
 
-    public async Task<ScheduleProposalDto> CreateAsync(long tutorProfileId, CreateScheduleProposalDto dto)
+    public async Task<ApiResponse<ScheduleProposalDto>> CreateAsync(long tutorProfileId, CreateScheduleProposalDto dto)
     {
-      var request = await _learningRequestRepository.GetByIdWithDetailsAsync(dto.LearningRequestId);
-      if (request == null)
+      return await ServiceResponse.ExecuteAsync(async () =>
       {
-        throw new NotFoundException("Khong tim thay yeu cau hoc tap.", "LEARNING_REQUEST_NOT_FOUND");
-      }
-
-      if (request.TutorId != tutorProfileId)
-      {
-        throw new ForbiddenException("Ban khong co quyen de xuat lich hoc cho yeu cau nay.", "SCHEDULE_PROPOSAL_FORBIDDEN");
-      }
-
-      EnsureLearningRequestStatus(
-        request,
-        LearningRequestStatus.Pending,
-        "Chi co the de xuat lich hoc khi yeu cau dang o trang thai cho phan hoi.");
-
-      var existingProposal = await _scheduleProposalRepository.GetByLearningRequestIdAsync(request.Id);
-      if (existingProposal != null)
-      {
-        throw new ConflictException("Yeu cau hoc tap nay da co de xuat lich hoc vong 2.", "SCHEDULE_PROPOSAL_ALREADY_EXISTS");
-      }
-
-      ValidateDesiredStartDate(dto.DesiredStartDate);
-
-      var validatedTimeSlots = _bookingScheduleService.Validate(
-        dto.TimeSlots.Select(slot => new BookingTimeSlotInput
+        var request = await _learningRequestRepository.GetByIdWithDetailsAsync(dto.LearningRequestId);
+        if (request == null)
         {
-          Day = slot.Day,
-          StartTime = slot.StartTime,
-          EndTime = slot.EndTime
-        }),
-        dto.HoursPerSession);
+          throw new NotFoundException("Khong tim thay yeu cau hoc tap.", "LEARNING_REQUEST_NOT_FOUND");
+        }
 
-      await _bookingConflictService.CheckForConflictsAsync(tutorProfileId, validatedTimeSlots, request.Id);
+        if (request.TutorId != tutorProfileId)
+        {
+          throw new ForbiddenException("Ban khong co quyen de xuat lich hoc cho yeu cau nay.", "SCHEDULE_PROPOSAL_FORBIDDEN");
+        }
 
-      var activePolicy = await _depositPolicyRepository.GetActivePolicyAsync()
-        ?? CreateFallbackDefaultPolicy();
+        EnsureLearningRequestStatus(
+          request,
+          LearningRequestStatus.Pending,
+          "Chi co the de xuat lich hoc khi yeu cau dang o trang thai cho phan hoi.");
 
-      var totalAmount = CalculateTotalAmount(dto.HourlyRate, dto.HoursPerSession, activePolicy);
-      var depositCalculation = _depositCalculator.Calculate(new DepositCalculationRequest
-      {
-        TotalAmount = totalAmount,
-        FixedAmount = totalAmount
+        var existingProposal = await _scheduleProposalRepository.GetByLearningRequestIdAsync(request.Id);
+        if (existingProposal != null)
+        {
+          throw new ConflictException("Yeu cau hoc tap nay da co de xuat lich hoc vong 2.", "SCHEDULE_PROPOSAL_ALREADY_EXISTS");
+        }
+
+        ValidateDesiredStartDate(dto.DesiredStartDate);
+
+        var validatedTimeSlots = _bookingScheduleService.Validate(
+          dto.TimeSlots.Select(slot => new BookingTimeSlotInput
+          {
+            Day = slot.Day,
+            StartTime = slot.StartTime,
+            EndTime = slot.EndTime
+          }),
+          dto.HoursPerSession);
+
+        await _bookingConflictService.CheckForConflictsAsync(tutorProfileId, validatedTimeSlots, request.Id);
+
+        var activePolicy = await _depositPolicyRepository.GetActivePolicyAsync()
+          ?? CreateFallbackDefaultPolicy();
+
+        var totalAmount = CalculateTotalAmount(dto.HourlyRate, dto.HoursPerSession, activePolicy);
+        var depositCalculation = _depositCalculator.Calculate(new DepositCalculationRequest
+        {
+          TotalAmount = totalAmount,
+          FixedAmount = totalAmount
+        });
+
+        var proposal = new ScheduleProposal
+        {
+          LearningRequestId = request.Id,
+          ProposedBy = tutorProfileId,
+          RoundNumber = 2,
+          TimeSlots = SerializeTimeSlots(validatedTimeSlots),
+          DesiredStartDate = ToUtc(dto.DesiredStartDate),
+          HoursPerSession = dto.HoursPerSession,
+          HourlyRate = dto.HourlyRate,
+          CalculatedDepositAmount = depositCalculation.DepositAmount,
+          Status = ScheduleProposalStatus.Pending
+        };
+
+        request.Status = LearningRequestStatus.Negotiating;
+
+        await _scheduleProposalRepository.AddAsync(proposal);
+        _learningRequestRepository.Update(request);
+        await _scheduleProposalRepository.SaveChangesAsync();
+
+        proposal.LearningRequest = request;
+        proposal.Tutor = request.Tutor;
+
+        await _notificationService.SendAsync(
+          request.StudentId,
+          "Gia su de xuat lich hoc moi",
+          $"Gia su {request.Tutor?.User?.FullName ?? string.Empty} da gui de xuat lich hoc moi cho mon {request.Subject?.Name ?? string.Empty}.",
+          NotificationType.ScheduleProposalCreated,
+          "ScheduleProposal",
+          proposal.Id,
+          $"/learning-requests/{request.Id}");
+
+        return ApiResponse<ScheduleProposalDto>.SuccessResult(
+          ScheduleProposalMapper.ToDto(proposal, validatedTimeSlots),
+          "Tao de xuat lich hoc thanh cong.",
+          StatusCodes.Status201Created);
       });
-
-      var proposal = new ScheduleProposal
-      {
-        LearningRequestId = request.Id,
-        ProposedBy = tutorProfileId,
-        RoundNumber = 2,
-        TimeSlots = SerializeTimeSlots(validatedTimeSlots),
-        DesiredStartDate = ToUtc(dto.DesiredStartDate),
-        HoursPerSession = dto.HoursPerSession,
-        HourlyRate = dto.HourlyRate,
-        CalculatedDepositAmount = depositCalculation.DepositAmount,
-        Status = ScheduleProposalStatus.Pending
-      };
-
-      request.Status = LearningRequestStatus.Negotiating;
-
-      await _scheduleProposalRepository.AddAsync(proposal);
-      _learningRequestRepository.Update(request);
-      await _scheduleProposalRepository.SaveChangesAsync();
-
-      proposal.LearningRequest = request;
-      proposal.Tutor = request.Tutor;
-
-      await _notificationService.SendAsync(
-        request.StudentId,
-        "Gia su de xuat lich hoc moi",
-        $"Gia su {request.Tutor?.User?.FullName ?? string.Empty} da gui de xuat lich hoc moi cho mon {request.Subject?.Name ?? string.Empty}.",
-        NotificationType.ScheduleProposalCreated,
-        "ScheduleProposal",
-        proposal.Id,
-        $"/schedule-proposals/{proposal.Id}");
-
-      return ScheduleProposalMapper.ToDto(proposal, validatedTimeSlots);
     }
 
-    public async Task<ScheduleProposalDto> GetByIdAsync(long id, long currentUserId, UserRole role, long? tutorProfileId = null)
+    public async Task<ApiResponse<ScheduleProposalDto>> GetByIdAsync(long id, long currentUserId, UserRole role, long? tutorProfileId = null)
     {
-      var proposal = await _scheduleProposalRepository.GetByIdWithDetailsAsync(id);
-      if (proposal == null)
+      return await ServiceResponse.ExecuteAsync(async () =>
       {
-        throw new NotFoundException("Khong tim thay de xuat lich hoc.", "SCHEDULE_PROPOSAL_NOT_FOUND");
-      }
+        var proposal = await _scheduleProposalRepository.GetByIdWithDetailsAsync(id);
+        if (proposal == null)
+        {
+          throw new NotFoundException("Khong tim thay de xuat lich hoc.", "SCHEDULE_PROPOSAL_NOT_FOUND");
+        }
 
-      EnsureCanViewProposal(proposal, currentUserId, role, tutorProfileId);
+        EnsureCanViewProposal(proposal, currentUserId, role, tutorProfileId);
 
-      var timeSlots = _bookingScheduleService.ParseAndValidate(proposal.TimeSlots, proposal.HoursPerSession);
-      return ScheduleProposalMapper.ToDto(proposal, timeSlots);
+        var timeSlots = _bookingScheduleService.ParseAndValidate(proposal.TimeSlots, proposal.HoursPerSession);
+        return ApiResponse<ScheduleProposalDto>.SuccessResult(ScheduleProposalMapper.ToDto(proposal, timeSlots));
+      });
     }
 
-    public async Task<ScheduleProposalDto> GetByLearningRequestIdAsync(long learningRequestId, long currentUserId, UserRole role, long? tutorProfileId = null)
+    public async Task<ApiResponse<ScheduleProposalDto>> GetByLearningRequestIdAsync(long learningRequestId, long currentUserId, UserRole role, long? tutorProfileId = null)
     {
-      var proposal = await _scheduleProposalRepository.GetByLearningRequestIdAsync(learningRequestId);
-      if (proposal == null)
+      return await ServiceResponse.ExecuteAsync(async () =>
       {
-        throw new NotFoundException("Khong tim thay de xuat lich hoc.", "SCHEDULE_PROPOSAL_NOT_FOUND");
-      }
+        var proposal = await _scheduleProposalRepository.GetByLearningRequestIdAsync(learningRequestId);
+        if (proposal == null)
+        {
+          throw new NotFoundException("Khong tim thay de xuat lich hoc.", "SCHEDULE_PROPOSAL_NOT_FOUND");
+        }
 
-      EnsureCanViewProposal(proposal, currentUserId, role, tutorProfileId);
+        EnsureCanViewProposal(proposal, currentUserId, role, tutorProfileId);
 
-      var timeSlots = _bookingScheduleService.ParseAndValidate(proposal.TimeSlots, proposal.HoursPerSession);
-      return ScheduleProposalMapper.ToDto(proposal, timeSlots);
+        var timeSlots = _bookingScheduleService.ParseAndValidate(proposal.TimeSlots, proposal.HoursPerSession);
+        return ApiResponse<ScheduleProposalDto>.SuccessResult(ScheduleProposalMapper.ToDto(proposal, timeSlots));
+      });
     }
 
     public async Task<ApiResponse<ScheduleProposalDto>> AcceptAsync(long id, long currentUserId)
     {
-      try
+      return await ServiceResponse.ExecuteAsync(async () =>
       {
         var proposal = await GetProposalForStudentActionAsync(id, currentUserId);
         var requestedSlots = _bookingScheduleService.ParseAndValidate(proposal.TimeSlots, proposal.HoursPerSession);
@@ -180,22 +192,18 @@ namespace EduMatch.Services
           NotificationType.ScheduleProposalAccepted,
           "ScheduleProposal",
           proposal.Id,
-          $"/schedule-proposals/{proposal.Id}");
+          $"/learning-requests/{proposal.LearningRequest.Id}");
 
         return ApiResponse<ScheduleProposalDto>.SuccessResult(
           ScheduleProposalMapper.ToDto(proposal, requestedSlots),
           "Chap nhan de xuat lich hoc thanh cong.",
           200);
-      }
-      catch (ConflictException ex)
-      {
-        return ApiResponse<ScheduleProposalDto>.Fail(ex.Message, ex.StatusCode);
-      }
+      });
     }
 
     public async Task<ApiResponse<ScheduleProposalDto>> RejectAsync(long id, long currentUserId)
     {
-      try
+      return await ServiceResponse.ExecuteAsync(async () =>
       {
         var proposal = await GetProposalForStudentActionAsync(id, currentUserId);
         var requestedSlots = _bookingScheduleService.ParseAndValidate(proposal.TimeSlots, proposal.HoursPerSession);
@@ -214,17 +222,13 @@ namespace EduMatch.Services
           NotificationType.ScheduleProposalRejected,
           "ScheduleProposal",
           proposal.Id,
-          $"/schedule-proposals/{proposal.Id}");
+          $"/learning-requests/{proposal.LearningRequest.Id}");
 
         return ApiResponse<ScheduleProposalDto>.SuccessResult(
           ScheduleProposalMapper.ToDto(proposal, requestedSlots),
           "Tu choi de xuat lich hoc thanh cong.",
           200);
-      }
-      catch (ConflictException ex)
-      {
-        return ApiResponse<ScheduleProposalDto>.Fail(ex.Message, ex.StatusCode);
-      }
+      });
     }
 
     private async Task<ScheduleProposal> GetProposalForStudentActionAsync(long id, long currentUserId)
@@ -275,17 +279,6 @@ namespace EduMatch.Services
       }
 
       throw new ForbiddenException("Ban khong co quyen xem de xuat lich hoc nay.", "SCHEDULE_PROPOSAL_FORBIDDEN");
-    }
-
-    private async Task<ScheduleProposal> GetAcceptedProposalAsync(long id)
-    {
-      var proposal = await _scheduleProposalRepository.GetByIdWithDetailsAsync(id);
-      if (proposal == null)
-      {
-        throw new NotFoundException("Khong tim thay de xuat lich hoc.", "SCHEDULE_PROPOSAL_NOT_FOUND");
-      }
-
-      return proposal;
     }
 
     private async Task<ScheduleProposal> ReloadAcceptedProposalAsync(long id)

@@ -33,11 +33,15 @@ import {
           <div class="grid sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Môn học</label>
-              <select [(ngModel)]="subjectId" class="tactile-input w-full text-sm font-semibold bg-white">
-                @for (subject of t.subjects ?? []; track subject.subjectId) {
-                  <option [ngValue]="subject.subjectId">{{ subject.subjectName }}</option>
-                }
-              </select>
+              @if (isSubjectFixed) {
+                <input type="text" [value]="getFixedSubjectName()" readonly class="tactile-input w-full text-sm font-semibold bg-slate-50 text-slate-500 cursor-not-allowed" />
+              } @else {
+                <select [(ngModel)]="subjectId" class="tactile-input w-full text-sm font-semibold bg-white">
+                  @for (subject of t.subjects ?? []; track subject.subjectId) {
+                    <option [ngValue]="subject.subjectId">{{ subject.subjectName }}</option>
+                  }
+                </select>
+              }
             </div>
             <div>
               <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Ngày bắt đầu mong muốn</label>
@@ -169,6 +173,7 @@ export class CreateBookingPage implements OnInit {
     { day: 'Monday', startTime: '17:00', endTime: '19:00' },
   ]);
   subjectId: number | null = null;
+  isSubjectFixed = false;
   desiredStartDate = this.defaultStartDate();
   hoursPerSession = 2;
   budgetPerHour: number | null = null;
@@ -279,6 +284,11 @@ export class CreateBookingPage implements OnInit {
     return formatMoney(value);
   }
 
+  getFixedSubjectName(): string {
+    const sub = this.tutor()?.subjects?.find((s) => s.subjectId === this.subjectId);
+    return sub?.subjectName || '';
+  }
+
   private async loadTutor(): Promise<void> {
     const idParam = this.route.snapshot.paramMap.get('tutorId');
     if (!idParam) {
@@ -286,12 +296,21 @@ export class CreateBookingPage implements OnInit {
       return;
     }
 
+    const querySubId = this.route.snapshot.queryParamMap.get('subjectId');
+    const parsedSubId = querySubId ? Number(querySubId) : null;
+
     this.isLoading.set(true);
     try {
       const response = await firstValueFrom(this.tutorsApi.getTutorById(idParam));
       const tutor = unwrapApiData(response);
       this.tutor.set(tutor);
-      this.subjectId = tutor.subjects?.[0]?.subjectId ?? null;
+      if (parsedSubId && tutor.subjects?.some((s) => s.subjectId === parsedSubId)) {
+        this.subjectId = parsedSubId;
+        this.isSubjectFixed = true;
+      } else {
+        this.subjectId = tutor.subjects?.[0]?.subjectId ?? null;
+        this.isSubjectFixed = false;
+      }
       this.budgetPerHour = tutor.hourlyRate ?? null;
     } catch (error) {
       this.errorMessage.set(getApiErrorMessage(error, 'Không tải được gia sư.'));

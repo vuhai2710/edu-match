@@ -44,5 +44,29 @@ namespace EduMatch.Common.Extensions
       {
       }
     }
+
+    public static async Task WriteApiResponseAsync(
+      this HttpResponse response,
+      ApiResponse payload,
+      int statusCode = StatusCodes.Status200OK,
+      CancellationToken cancellationToken = default)
+    {
+      response.StatusCode = statusCode;
+      response.ContentType = "application/json";
+
+      var body = JsonSerializer.Serialize(payload, JsonOptions);
+      if (cancellationToken.IsCancellationRequested)
+      {
+        return;
+      }
+
+      try
+      {
+        await response.WriteAsync(body, cancellationToken);
+      }
+      catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+      {
+      }
+    }
   }
 }

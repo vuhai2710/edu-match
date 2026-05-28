@@ -2,6 +2,7 @@ using AutoMapper;
 using EduMatch.Common.Enums;
 using EduMatch.Common.Exception;
 using EduMatch.DTOs.Address;
+using EduMatch.DTOs;
 using EduMatch.DTOs.Auth;
 using EduMatch.DTOs.User;
 using EduMatch.Models;
@@ -257,18 +258,19 @@ public class AuthService
     return user;
   }
 
-  public async Task<LoginResponseDto> LoginAsync(LoginDto dto)
+  public async Task<ApiResponse<LoginResponseDto>> LoginAsync(LoginDto dto)
   {
     var user = await _userRepository.GetByEmailWithProfilesAsync(dto.Email);
 
     if (user is null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.Password))
     {
-      throw new AppException("Email hoặc mật khẩu không đúng", 401, "INVALID_CREDENTIALS");
+      return ApiResponse<LoginResponseDto>.Fail("Email hoặc mật khẩu không đúng", 401);
     }
 
     _logger.LogInformation("User logged in: {Email} | Id: {Id}", user.Email, user.Id);
 
-    return await IssueTokenPairAsync(user);
+    var loginResponse = await IssueTokenPairAsync(user);
+    return ApiResponse<LoginResponseDto>.SuccessResult(loginResponse, "Đăng nhập thành công", StatusCodes.Status200OK);
   }
 
   public async Task<LoginResponseDto> RefreshTokenAsync(RefreshTokenDto dto)
@@ -376,7 +378,8 @@ public class AuthService
     switch (role)
     {
       case UserRole.Student:
-        user.Student = CreateStudentProfile(BuildAddressDto(dto));
+        var gradeLevel = (dto as RegisterStudentDto)?.GradeLevel;
+        user.Student = CreateStudentProfile(BuildAddressDto(dto), gradeLevel);
         break;
       case UserRole.Tutor:
         user.Tutor = CreateTutorProfile(tutorDto!, cvFile);
@@ -498,12 +501,12 @@ public class AuthService
     };
   }
 
-  private Student CreateStudentProfile(CreateAddressDto? addressDto)
+  private Student CreateStudentProfile(CreateAddressDto? addressDto, Grade? gradeLevel = null)
   {
     return new Student
     {
       Code = _codeGenerator.GenerateTemporaryCode("STU"),
-      GradeLevel = null,
+      GradeLevel = gradeLevel,
       Address = addressDto == null ? null : _mapper.Map<Address>(addressDto)
     };
   }

@@ -6,11 +6,11 @@ namespace EduMatch.Services.Interfaces
 {
   public interface IUserService
   {
-    Task<PagedResult<UserDto>> GetUsersAsync(UserQueryParameters parameters);
-    Task<UserDto> GetUserByIdAsync(long id);
-    Task<bool> DeleteUserAsync(long id);
-    Task ChangePasswordAsync(long userId, ChangePasswordDto dto);
-    Task<string> UpdateAvatarAsync(long userId, IFormFile file);
-    Task DeleteAvatarAsync(long userId);
+    Task<ApiResponse<PagedResult<UserDto>>> GetUsersAsync(UserQueryParameters parameters);
+    Task<ApiResponse<UserDto>> GetUserByIdAsync(long id);
+    Task<ApiResponse<bool>> DeleteUserAsync(long id);
+    Task<ApiResponse> ChangePasswordAsync(long userId, ChangePasswordDto dto);
+    Task<ApiResponse<string>> UpdateAvatarAsync(long userId, IFormFile file);
+    Task<ApiResponse> DeleteAvatarAsync(long userId);
   }
 }

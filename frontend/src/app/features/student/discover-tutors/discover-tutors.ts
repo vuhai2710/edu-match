@@ -244,6 +244,7 @@ import { formatMoney } from '../../../shared/utils/api-ui';
             @for (tutor of tutors(); track tutor.id) {
               <a
                 [routerLink]="['/student/tutor', tutor.id]"
+                [queryParams]="activeSubjectId() ? { subjectId: activeSubjectId() } : {}"
                 class="tactile-card p-5 hover:shadow-lg transition-all group"
               >
                 <div class="flex items-center gap-3 mb-3">

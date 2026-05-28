@@ -1,4 +1,5 @@
 using AutoMapper;
+using EduMatch.Common.Enums;
 using EduMatch.Data;
 using EduMatch.DTOs.Chat;
 using EduMatch.Models;
@@ -79,6 +80,25 @@ namespace EduMatch.Services
           })
           .ToListAsync();
 
+      var currentUser = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+      if (currentUser != null && currentUser.Role != UserRole.Admin)
+      {
+        var admin = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Role == UserRole.Admin);
+        if (admin != null)
+        {
+          var hasAdmin = conversations.Any(c => c.PartnerId == admin.Id);
+          if (!hasAdmin)
+          {
+            conversations.Add(new
+            {
+              PartnerId = admin.Id,
+              LastMessageAt = currentUser.CreatedAt,
+              UnreadCount = 0
+            });
+          }
+        }
+      }
+
       var partnerIds = conversations.Select(c => c.PartnerId).ToList();
 
       if (partnerIds.Count == 0)
@@ -104,7 +124,8 @@ namespace EduMatch.Services
             u.Id,
             u.FullName,
             AvatarPath = u.AvatarFile != null ? u.AvatarFile.FilePath : null,
-            u.Role
+            u.Role,
+            Code = u.Student != null ? u.Student.Code : (u.Tutor != null ? u.Tutor.Code : null)
           })
           .ToDictionaryAsync(
             u => u.Id,
@@ -112,22 +133,33 @@ namespace EduMatch.Services
             {
               u.FullName,
               u.AvatarPath,
-              Role = u.Role.ToString()
+              Role = u.Role.ToString(),
+              u.Code
             });
 
       return conversations
           .OrderByDescending(c => c.LastMessageAt)
-          .ThenByDescending(c => latestMessageByPartnerId[c.PartnerId].Id)
-          .Select(c => new ConversationSummaryDto
+          .ThenByDescending(c => latestMessageByPartnerId.TryGetValue(c.PartnerId, out var lm) ? lm.Id : 0)
+          .Select(c =>
           {
-            PartnerId = c.PartnerId,
-            PartnerName = partners[c.PartnerId].FullName,
-            PartnerAvatar = partners[c.PartnerId].AvatarPath,
-            PartnerRole = partners[c.PartnerId].Role,
-            LastMessage = latestMessageByPartnerId[c.PartnerId].Content,
-            LastMessageAt = latestMessageByPartnerId[c.PartnerId].CreatedAt,
-            UnreadCount = c.UnreadCount
+            var partner = partners.ContainsKey(c.PartnerId) ? partners[c.PartnerId] : null;
+            if (partner == null) return null!;
+
+            var hasMsg = latestMessageByPartnerId.TryGetValue(c.PartnerId, out var msg);
+            return new ConversationSummaryDto
+            {
+              PartnerId = c.PartnerId,
+              PartnerName = partner.FullName,
+              PartnerAvatar = partner.AvatarPath,
+              PartnerRole = partner.Role,
+              PartnerCode = partner.Code,
+              LastMessage = hasMsg ? msg.Content : (partner.Role == "Admin" ? "Hỗ trợ trực tuyến / Quản trị viên" : "Chưa có tin nhắn"),
+              LastMessageAt = hasMsg ? msg.CreatedAt : c.LastMessageAt,
+              UnreadCount = c.UnreadCount
+            };
           })
+          .Where(c => c != null)
+          .Cast<ConversationSummaryDto>()
           .ToList();
     }
 

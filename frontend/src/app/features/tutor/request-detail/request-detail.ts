@@ -3,6 +3,8 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
+import { StudentDetailModalComponent } from '../../../shared/components/student-detail-modal';
+
 import { LearningRequestDto, TimeSlotInputDto, ScheduleProposalDto } from '../../../api/generated/client/models';
 import { LearningRequestsService, ScheduleProposalsService } from '../../../api/generated/client/services';
 import { getApiErrorDetails, getApiErrorMessage, unwrapApiData } from '../../../core/http/api-error';
@@ -20,8 +22,9 @@ import {
 
 @Component({
   selector: 'app-tutor-request-detail-page',
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, StudentDetailModalComponent],
   template: `
+
     @if (request(); as lr) {
       <div class="max-w-3xl mx-auto space-y-6">
         <a routerLink="/tutor/dashboard" class="text-sm font-bold text-slate-500 hover:text-slate-800">← Quay lại</a>
@@ -30,7 +33,15 @@ import {
           <div class="flex items-start justify-between gap-3">
             <div>
               <h1 class="font-display text-2xl font-black text-slate-900">{{ lr.subjectName || 'Yêu cầu học' }}</h1>
-              <p class="text-sm text-slate-500 mt-1">Học viên: {{ lr.studentName || 'Đang cập nhật' }}</p>
+              <div class="flex items-center gap-2 mt-1">
+                <p class="text-sm text-slate-500">Học viên: {{ lr.studentName || 'Đang cập nhật' }}</p>
+                @if (lr.studentId) {
+                  <button (click)="openStudentDetail(lr.studentId)" 
+                          class="text-xs font-extrabold text-duo-blue hover:text-duo-blue-dark hover:underline flex items-center gap-0.5">
+                    (Xem chi tiết)
+                  </button>
+                }
+              </div>
             </div>
             <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-duo-blue">{{ label(lr) }}</span>
           </div>
@@ -49,7 +60,7 @@ import {
           @if (lr.status === 'Pending') {
             <div class="flex flex-wrap gap-3">
               <button (click)="acceptRequest(lr)" [disabled]="isWorking()" class="tactile-button-green flex-1 min-w-36 py-2.5 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60">
-                Chấp nhận lịch ban đầu
+                Chấp nhận
               </button>
               <button (click)="openProposalForm()" [disabled]="isWorking() || proposalFormVisible()" class="tactile-button-blue flex-1 min-w-36 py-2.5 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60">
                 Đề xuất lịch khác
@@ -207,6 +218,11 @@ import {
         @if (errorMessage()) {
           <p class="rounded-xl border-2 border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-duo-red">{{ errorMessage() }}</p>
         }
+
+        <!-- Student Detail Modal overlay -->
+        @if (selectedStudentId()) {
+          <app-student-detail-modal [studentId]="selectedStudentId()" (close)="selectedStudentId.set(null)" />
+        }
       </div>
     } @else if (isLoading()) {
       <div class="max-w-3xl mx-auto py-8">
@@ -232,6 +248,11 @@ export class TutorRequestDetailPage implements OnInit {
   errorMessage = signal('');
   fieldErrors = signal<Record<string, string>>({});
   proposalFormVisible = signal(false);
+  selectedStudentId = signal<number | null>(null);
+
+  openStudentDetail(studentId: number): void {
+    this.selectedStudentId.set(studentId);
+  }
   readonly dayOptions = DAY_OPTIONS;
   readonly getStartTimeOptions = getStartTimeOptions;
 

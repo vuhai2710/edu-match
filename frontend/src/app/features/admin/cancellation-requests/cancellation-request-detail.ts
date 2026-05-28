@@ -29,6 +29,9 @@ import {
       @if (errorDetails()) {
         <app-error-banner [details]="errorDetails()" />
       }
+      @if (errorMessage()) {
+        <p class="rounded-xl border-2 border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-duo-red">{{ errorMessage() }}</p>
+      }
       @if (successMessage()) {
         <p class="rounded-xl border-2 border-green-100 bg-green-50 px-4 py-3 text-sm font-bold text-duo-green">{{ successMessage() }}</p>
       }
@@ -79,17 +82,29 @@ import {
             </div>
 
             <div>
-              <label class="block text-sm font-bold text-slate-600 mb-1">Số tiền hoàn cọc</label>
+              <label class="block text-sm font-bold text-slate-600 mb-1">
+                Số tiền hoàn cọc <span class="text-red-500">*</span>
+              </label>
               <input type="number" min="0" step="1000"
                      [(ngModel)]="refundAmount"
+                     [class.border-red-500]="submitted() && isRefunded && (!refundAmount || refundAmount <= 0)"
                      class="w-full rounded-xl border-2 border-slate-200 px-3 py-2 focus:border-duo-blue outline-none" />
+              @if (submitted() && isRefunded && (!refundAmount || refundAmount <= 0)) {
+                <p class="text-xs text-red-500 font-bold mt-1">Số tiền hoàn cọc phải lớn hơn 0 khi đánh dấu đã hoàn tiền.</p>
+              }
             </div>
 
             <div>
-              <label class="block text-sm font-bold text-slate-600 mb-1">Ghi chú hoàn tiền</label>
+              <label class="block text-sm font-bold text-slate-600 mb-1">
+                Ghi chú hoàn tiền <span class="text-red-500">*</span>
+              </label>
               <textarea [(ngModel)]="refundNote" maxlength="1000" rows="3"
                         placeholder="VD: Đã chuyển 200,000đ qua tài khoản VCB ****1234"
+                        [class.border-red-500]="submitted() && isRefunded && !refundNote.trim()"
                         class="w-full rounded-xl border-2 border-slate-200 px-3 py-2 focus:border-duo-blue outline-none"></textarea>
+              @if (submitted() && isRefunded && !refundNote.trim()) {
+                <p class="text-xs text-red-500 font-bold mt-1">Vui lòng nhập ghi chú hoàn tiền (thông tin chuyển khoản đối chiếu).</p>
+              }
             </div>
 
             <label class="flex items-center gap-2 cursor-pointer">
@@ -144,6 +159,7 @@ export class AdminCancellationRequestDetailPage implements OnInit {
   errorMessage = signal('');
   successMessage = signal('');
   isResolving = signal(false);
+  submitted = signal(false);
 
   refundAmount = 0;
   refundNote = '';
@@ -179,21 +195,23 @@ export class AdminCancellationRequestDetailPage implements OnInit {
   async resolve(): Promise<void> {
     this.errorMessage.set('');
     this.successMessage.set('');
+    this.submitted.set(true);
 
     if (this.refundAmount < 0) {
       this.errorMessage.set('Số tiền hoàn không thể âm.');
       return;
     }
-    if (this.isRefunded && this.refundAmount <= 0) {
+    if (this.isRefunded && (!this.refundAmount || this.refundAmount <= 0)) {
       this.errorMessage.set('Khi đánh dấu "Đã hoàn tiền", số tiền hoàn phải lớn hơn 0.');
+      return;
+    }
+    if (this.isRefunded && !this.refundNote.trim()) {
+      this.errorMessage.set('Vui lòng nhập ghi chú hoàn tiền (thông tin chuyển khoản đối chiếu).');
       return;
     }
 
     const r = this.request();
     if (!r?.id) return;
-
-    const confirmed = window.confirm('Xác nhận xử lý yêu cầu hủy này? Thao tác này không thể hoàn tác.');
-    if (!confirmed) return;
 
     const dto: ResolveCancellationRequestDto = {
       refundAmount: this.refundAmount,

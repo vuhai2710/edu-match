@@ -23,6 +23,7 @@ namespace EduMatch.Controllers
     [HttpPost]
     [Authorize(Roles = "Student,Tutor,Admin")]
     [SwaggerOperation(OperationId = "createCancellationRequest")]
+    [ProducesResponseType(typeof(ApiResponse<CancellationRequestDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<CancellationRequestDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
@@ -35,6 +36,11 @@ namespace EduMatch.Controllers
         GetCurrentUserId(),
         GetCurrentUserRole(),
         dto);
+
+      if (!response.Success)
+      {
+        return this.OkResponse(response);
+      }
 
       return this.CreatedResponse($"/api/admin/cancellation-requests/{response.Data?.Id}", response);
     }

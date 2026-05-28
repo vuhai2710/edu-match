@@ -62,6 +62,14 @@ import {
               @if (subtitle(u)) {
                 <p class="text-sm text-slate-500 font-extrabold tracking-wider">{{ subtitle(u) }}</p>
               }
+              @if (u.id !== session.user()?.id) {
+                <div class="flex flex-wrap items-center justify-center sm:justify-start gap-3 pt-2">
+                  <a [routerLink]="['/admin/chat']" [queryParams]="{ partnerId: u.id }"
+                     class="px-4 py-2 bg-duo-green text-white font-extrabold text-xs uppercase tracking-wider rounded-xl border-b-4 border-duo-green-dark hover:brightness-105 active:border-b-0 active:translate-y-[4px] inline-flex items-center gap-1.5 transition-all">
+                    💬 Nhắn tin
+                  </a>
+                </div>
+              }
             </div>
             @if (canDelete()) {
               <button (click)="confirmDelete()"
@@ -265,7 +273,7 @@ export class AdminUserDetailPage implements OnInit {
   private readonly usersApi = inject(UsersService);
   private readonly tutorsApi = inject(TutorsService);
   private readonly studentsApi = inject(StudentsService);
-  private readonly session = inject(SessionService);
+  protected readonly session = inject(SessionService);
 
   ngOnInit(): void {
     void this.loadUser();

@@ -2,6 +2,8 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
+import { StudentDetailModalComponent } from '../../../shared/components/student-detail-modal';
+
 import { ClassDto, LearningRequestDto, LearningRequestStatus, TutorDashboardDto } from '../../../api/generated/client/models';
 import { ClassesService, DashboardService, LearningRequestsService } from '../../../api/generated/client/services';
 import { getApiErrorMessage } from '../../../core/http/api-error';
@@ -15,8 +17,9 @@ import {
 
 @Component({
   selector: 'app-tutor-dashboard-page',
-  imports: [RouterLink],
+  imports: [RouterLink, StudentDetailModalComponent],
   template: `
+
     <div class="space-y-6">
       <div class="bg-gradient-to-r from-duo-blue to-cyan-500 rounded-3xl p-6 md:p-8 flex items-center gap-6 shadow-lg">
         <div class="flex-1 text-white">
@@ -60,7 +63,7 @@ import {
               <div class="flex flex-wrap gap-3 mt-4">
                 @if (request.status === 'Pending') {
                   <button (click)="acceptRequest(request)" [disabled]="isWorking()"
-                          class="tactile-button-green flex-1 min-w-32 py-2.5 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60">
+                           class="tactile-button-green flex-1 min-w-32 py-2.5 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60">
                     Chấp nhận
                   </button>
                   <a [routerLink]="['/tutor/requests', request.id]"
@@ -68,7 +71,7 @@ import {
                     Đề xuất lịch
                   </a>
                   <button (click)="rejectRequest(request)" [disabled]="isWorking()"
-                          class="tactile-button-gray flex-1 min-w-32 py-2.5 rounded-xl text-sm font-bold disabled:opacity-60">
+                           class="tactile-button-gray flex-1 min-w-32 py-2.5 rounded-xl text-sm font-bold disabled:opacity-60">
                     Từ chối
                   </button>
                 } @else {
@@ -78,6 +81,18 @@ import {
                   </a>
                 }
               </div>
+
+              <!-- View Student Details Button -->
+              @if (request.studentId) {
+                <button (click)="openStudentDetail(request.studentId)"
+                        class="w-full mt-3 border-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-600 font-extrabold py-2 px-4 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors">
+                  <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="8" r="4" />
+                    <path d="M5 20a7 7 0 0 1 14 0" />
+                  </svg>
+                  Chi tiết học viên
+                </button>
+              }
             </div>
           }
           @if (!incomingRequests().length) {
@@ -107,6 +122,11 @@ import {
         </div>
       </section>
     </div>
+
+    <!-- Student Detail Modal overlay -->
+    @if (selectedStudentId()) {
+      <app-student-detail-modal [studentId]="selectedStudentId()" (close)="selectedStudentId.set(null)" />
+    }
   `,
 })
 export class TutorDashboardPage implements OnInit {
@@ -115,6 +135,11 @@ export class TutorDashboardPage implements OnInit {
   classes = signal<ClassDto[]>([]);
   isWorking = signal(false);
   errorMessage = signal('');
+  selectedStudentId = signal<number | null>(null);
+
+  openStudentDetail(studentId: number): void {
+    this.selectedStudentId.set(studentId);
+  }
 
   private readonly dashboardApi = inject(DashboardService);
   private readonly requestsApi = inject(LearningRequestsService);

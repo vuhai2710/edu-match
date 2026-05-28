@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, DestroyRef } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
@@ -17,7 +17,7 @@ import { getApiErrorMessage } from '../../../core/http/api-error';
 
       @if (isRedirecting()) {
         <p class="text-sm leading-6 text-slate-600">
-          EduMatch đang đưa bạn về lại trang thông tin yêu cầu học.
+          EduMatch đang đưa bạn về lại trang thông tin yêu cầu học sau {{ countdown() }} giây...
         </p>
       } @else {
         <p class="text-sm leading-6 text-slate-600">
@@ -50,11 +50,20 @@ export class PaymentCancelPage implements OnInit {
   readonly learningRequestId = signal<number | null>(null);
   readonly isRedirecting = signal(true);
   readonly errorMessage = signal('');
+  readonly countdown = signal(3);
 
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly paymentsApi = inject(PaymentsService);
   private readonly session = inject(SessionService);
+  private readonly destroyRef = inject(DestroyRef);
+  private isDestroyed = false;
+
+  constructor() {
+    this.destroyRef.onDestroy(() => {
+      this.isDestroyed = true;
+    });
+  }
 
   ngOnInit(): void {
     void this.resolveTargetAndRedirect();
@@ -77,11 +86,21 @@ export class PaymentCancelPage implements OnInit {
       : '/student/learning-requests';
   }
 
+  private async delayAndRedirect(): Promise<void> {
+    for (let i = 3; i > 0; i--) {
+      if (this.isDestroyed) return;
+      this.countdown.set(i);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+    if (this.isDestroyed) return;
+    await this.router.navigateByUrl(this.requestLink());
+  }
+
   private async resolveTargetAndRedirect(): Promise<void> {
     const learningRequestIdFromQuery = Number(this.route.snapshot.queryParamMap.get('learningRequestId')) || null;
     if (learningRequestIdFromQuery) {
       this.learningRequestId.set(learningRequestIdFromQuery);
-      await this.router.navigateByUrl(this.requestLink());
+      await this.delayAndRedirect();
       return;
     }
 
@@ -101,7 +120,7 @@ export class PaymentCancelPage implements OnInit {
       }
 
       this.learningRequestId.set(learningRequestId);
-      await this.router.navigateByUrl(this.requestLink());
+      await this.delayAndRedirect();
     } catch (error) {
       this.isRedirecting.set(false);
       this.errorMessage.set(getApiErrorMessage(error, 'Không quay lại được trang yêu cầu học.'));

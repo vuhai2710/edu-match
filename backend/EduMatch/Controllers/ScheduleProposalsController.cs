@@ -23,6 +23,7 @@ namespace EduMatch.Controllers
     [HttpPost]
     [Authorize(Roles = "Tutor")]
     [SwaggerOperation(OperationId = "createScheduleProposal")]
+    [ProducesResponseType(typeof(ApiResponse<ScheduleProposalDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<ScheduleProposalDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
@@ -32,9 +33,12 @@ namespace EduMatch.Controllers
     public async Task<ActionResult<ApiResponse<ScheduleProposalDto>>> Create([FromBody] CreateScheduleProposalDto dto)
     {
       var result = await _scheduleProposalService.CreateAsync(GetCurrentTutorId(), dto);
-      return this.CreatedResponse(
-        $"/api/schedule-proposals/{result.Id}",
-        ApiResponse<ScheduleProposalDto>.SuccessResult(result, "Tao de xuat lich hoc thanh cong."));
+      if (!result.Success)
+      {
+        return this.OkResponse(result);
+      }
+
+      return this.CreatedResponse($"/api/schedule-proposals/{result.Data!.Id}", result);
     }
 
     [HttpGet("{id:long}")]
@@ -46,13 +50,11 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<ScheduleProposalDto>>> GetById(long id)
     {
-      var result = await _scheduleProposalService.GetByIdAsync(
+      return this.OkResponse(await _scheduleProposalService.GetByIdAsync(
         id,
         GetCurrentUserId(),
         GetCurrentUserRole(),
-        TryGetCurrentTutorId());
-
-      return this.OkResponse(ApiResponse<ScheduleProposalDto>.SuccessResult(result));
+        TryGetCurrentTutorId()));
     }
 
     [HttpPut("{id:long}/accept")]
@@ -64,8 +66,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<ScheduleProposalDto>>> Accept(long id)
     {
-      var result = await _scheduleProposalService.AcceptAsync(id, GetCurrentUserId());
-      return this.OkResponse(result);
+      return this.OkResponse(await _scheduleProposalService.AcceptAsync(id, GetCurrentUserId()));
     }
 
     [HttpPut("{id:long}/reject")]
@@ -77,8 +78,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<ScheduleProposalDto>>> Reject(long id)
     {
-      var result = await _scheduleProposalService.RejectAsync(id, GetCurrentUserId());
-      return this.OkResponse(result);
+      return this.OkResponse(await _scheduleProposalService.RejectAsync(id, GetCurrentUserId()));
     }
 
     private long GetCurrentUserId()

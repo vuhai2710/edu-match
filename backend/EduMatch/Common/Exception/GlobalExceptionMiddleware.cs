@@ -40,6 +40,13 @@ namespace EduMatch.Common.Exception
           throw;
         }
 
+        if (TryMapBusinessFailure(exception, out var businessFailure))
+        {
+          LogBusinessFailure(context, businessFailure, exception);
+          await context.Response.WriteApiResponseAsync(businessFailure, StatusCodes.Status200OK, context.RequestAborted);
+          return;
+        }
+
         var error = ExceptionMapper.Map(exception);
         LogException(context, error, exception);
 
@@ -50,6 +57,33 @@ namespace EduMatch.Common.Exception
           error.Errors,
           context.RequestAborted);
       }
+    }
+
+    private static bool TryMapBusinessFailure(System.Exception exception, out DTOs.ApiResponse response)
+    {
+      switch (exception)
+      {
+        case UnauthorizedException unauthorizedException:
+          response = DTOs.ApiResponse.Fail(unauthorizedException.Message, StatusCodes.Status401Unauthorized);
+          return true;
+        case AppException appException when appException.StatusCode < StatusCodes.Status500InternalServerError:
+          response = DTOs.ApiResponse.Fail(appException.Message, appException.StatusCode);
+          return true;
+        default:
+          response = null!;
+          return false;
+      }
+    }
+
+    private void LogBusinessFailure(HttpContext context, DTOs.ApiResponse response, System.Exception exception)
+    {
+      _logger.LogWarning(
+        exception,
+        "[{Method}] {Path} -> 200 (business failure {BusinessStatusCode}): {Message}",
+        context.Request.Method,
+        context.Request.Path,
+        response.StatusCode,
+        response.Message);
     }
 
     private void LogException(HttpContext context, ExceptionDescriptor error, System.Exception exception)

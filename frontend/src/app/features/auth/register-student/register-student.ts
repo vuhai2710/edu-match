@@ -6,7 +6,7 @@ import { firstValueFrom } from 'rxjs';
 
 import { AuthApiService, RegisterAddressPayload } from '../../../api/facades/auth-api';
 import { AddressService } from '../../../api/generated/client/services';
-import { Gender, ProvinceDto, WardDto } from '../../../api/generated/client/models';
+import { Gender, Grade, ProvinceDto, WardDto } from '../../../api/generated/client/models';
 import { SessionService } from '../../../core/auth/session';
 import { UserRole } from '../../../core/auth/session.models';
 import { getApiErrorMessage, unwrapApiData } from '../../../core/http/api-error';
@@ -85,7 +85,7 @@ import { GoogleSignInButtonComponent } from '../../../shared/components/google-s
             }
           </div>
 
-          <div class="grid sm:grid-cols-2 gap-4">
+          <div class="grid sm:grid-cols-3 gap-4">
             <div>
               <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
                 Số điện thoại <span class="text-red-500">*</span>
@@ -106,6 +106,14 @@ import { GoogleSignInButtonComponent } from '../../../shared/components/google-s
               <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Giới tính</label>
               <select [(ngModel)]="gender" name="gender" class="tactile-input w-full text-sm font-semibold bg-white">
                 @for (item of genderOptions; track item.value) {
+                  <option [ngValue]="item.value">{{ item.label }}</option>
+                }
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Khối lớp</label>
+              <select [(ngModel)]="gradeLevel" name="gradeLevel" class="tactile-input w-full text-sm font-semibold bg-white">
+                @for (item of gradeOptions; track item.value) {
                   <option [ngValue]="item.value">{{ item.label }}</option>
                 }
               </select>
@@ -193,6 +201,7 @@ export class RegisterStudentPage implements OnInit {
   password = '';
   phoneNumber = '';
   gender = Gender.Male;
+  gradeLevel = Grade.Grade12;
   addressDetail = '';
   avatar: File | null = null;
 
@@ -213,6 +222,24 @@ export class RegisterStudentPage implements OnInit {
   protected readonly genderOptions = [
     { value: Gender.Male, label: 'Nam' },
     { value: Gender.Female, label: 'Nữ' },
+  ];
+
+  protected readonly gradeOptions = [
+    { value: Grade.Grade0, label: 'Mầm non' },
+    { value: Grade.Grade1, label: 'Lớp 1' },
+    { value: Grade.Grade2, label: 'Lớp 2' },
+    { value: Grade.Grade3, label: 'Lớp 3' },
+    { value: Grade.Grade4, label: 'Lớp 4' },
+    { value: Grade.Grade5, label: 'Lớp 5' },
+    { value: Grade.Grade6, label: 'Lớp 6' },
+    { value: Grade.Grade7, label: 'Lớp 7' },
+    { value: Grade.Grade8, label: 'Lớp 8' },
+    { value: Grade.Grade9, label: 'Lớp 9' },
+    { value: Grade.Grade10, label: 'Lớp 10' },
+    { value: Grade.Grade11, label: 'Lớp 11' },
+    { value: Grade.Grade12, label: 'Lớp 12' },
+    { value: Grade.University, label: 'Đại học' },
+    { value: Grade.Other, label: 'Khác' },
   ];
 
   private readonly authApi = inject(AuthApiService);
@@ -295,6 +322,7 @@ export class RegisterStudentPage implements OnInit {
           password: this.password,
           phoneNumber: this.phoneNumber,
           gender: this.gender,
+          gradeLevel: this.gradeLevel,
           address,
           avatar: this.avatar,
         }),

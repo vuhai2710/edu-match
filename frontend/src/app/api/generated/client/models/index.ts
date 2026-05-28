@@ -237,6 +237,7 @@ export interface ConversationSummaryDto {
     partnerName?: string | null;
     partnerAvatar?: string | null;
     partnerRole?: string | null;
+    partnerCode?: string | null;
     lastMessage?: string | null;
     lastMessageAt?: Date;
     unreadCount?: number;

@@ -9,6 +9,7 @@ import { ApiErrorDetails, getApiErrorDetails } from '../../../core/http/api-erro
 import { ErrorBannerComponent } from '../../../shared/components/error-banner/error-banner';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination';
 import { formatDate, userRoleLabel } from '../../../shared/utils/api-ui';
+import { SessionService } from '../../../core/auth/session';
 
 type ActiveFilter = 'all' | 'active' | 'inactive';
 
@@ -105,7 +106,12 @@ type ActiveFilter = 'all' | 'active' | 'inactive';
                     }
                   </td>
                   <td class="px-4 py-3 text-right">
-                    <a [routerLink]="['/admin/users', user.id]" class="text-duo-blue font-bold text-xs hover:underline">Xem chi tiết</a>
+                    <div class="flex items-center justify-end gap-3">
+                      @if (user.id !== session.user()?.id) {
+                        <a [routerLink]="['/admin/chat']" [queryParams]="{ partnerId: user.id }" class="text-duo-green font-bold text-xs hover:underline">Nhắn tin</a>
+                      }
+                      <a [routerLink]="['/admin/users', user.id]" class="text-duo-blue font-bold text-xs hover:underline">Xem chi tiết</a>
+                    </div>
                   </td>
                 </tr>
               }
@@ -162,6 +168,7 @@ export class AdminUsersPage implements OnInit {
   ];
 
   private readonly usersApi = inject(UsersService);
+  protected readonly session = inject(SessionService);
   private searchDebounce?: ReturnType<typeof setTimeout>;
 
   ngOnInit(): void {

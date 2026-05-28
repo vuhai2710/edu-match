@@ -24,32 +24,27 @@ namespace EduMatch.Controllers
     [Authorize(Roles = "Admin")]
     [SwaggerOperation(OperationId = "getAdminDashboard")]
     [ProducesResponseType(typeof(ApiResponse<AdminDashboardDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetAdminDashboard()
+    public async Task<ActionResult<ApiResponse<AdminDashboardDto>>> GetAdminDashboard()
     {
-      var data = await _svc.GetAdminDashboardAsync();
-      return Ok(ApiResponse<AdminDashboardDto>.SuccessResult(data));
+      return this.OkResponse(await _svc.GetAdminDashboardAsync());
     }
 
     [HttpGet("tutor")]
     [Authorize(Roles = "Tutor")]
     [SwaggerOperation(OperationId = "getTutorDashboard")]
     [ProducesResponseType(typeof(ApiResponse<TutorDashboardDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetTutorDashboard()
+    public async Task<ActionResult<ApiResponse<TutorDashboardDto>>> GetTutorDashboard()
     {
-      var tutorProfileId = User.GetRequiredTutorId();
-      var data = await _svc.GetTutorDashboardAsync(tutorProfileId);
-      return Ok(ApiResponse<TutorDashboardDto>.SuccessResult(data));
+      return this.OkResponse(await _svc.GetTutorDashboardAsync(User.GetRequiredTutorId()));
     }
 
     [HttpGet("student")]
     [Authorize(Roles = "Student")]
     [SwaggerOperation(OperationId = "getStudentDashboard")]
     [ProducesResponseType(typeof(ApiResponse<StudentDashboardDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetStudentDashboard()
+    public async Task<ActionResult<ApiResponse<StudentDashboardDto>>> GetStudentDashboard()
     {
-      var userId = User.GetRequiredUserId();
-      var data = await _svc.GetStudentDashboardAsync(userId);
-      return Ok(ApiResponse<StudentDashboardDto>.SuccessResult(data));
+      return this.OkResponse(await _svc.GetStudentDashboardAsync(User.GetRequiredUserId()));
     }
   }
 }

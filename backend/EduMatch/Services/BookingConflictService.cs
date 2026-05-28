@@ -51,7 +51,6 @@ namespace EduMatch.Services
         }
       }
 
-      // Check conflict with active or pending classes of the tutor
       var activeClasses = await _dbContext.Classes
         .Include(c => c.LearningRequest)
         .Where(c => c.TutorId == tutorProfileId
@@ -105,7 +104,6 @@ namespace EduMatch.Services
         }
         catch (ValidationException)
         {
-          // ignore invalid JSON format in db if any
         }
       }
     }
@@ -132,7 +130,7 @@ namespace EduMatch.Services
         if (HasOverlap(requestedSlots, existingSlots))
         {
           throw new ConflictException(
-            "Lịch học đề xuất bị trùng với một yêu cầu học tập SoftBooked khác của bạn đang chờ thanh toán.",
+            "Lịch học đề xuất bị trùng với một yêu cầu học tập khác của bạn đang chờ thanh toán.",
             "STUDENT_SCHEDULE_CONFLICT");
         }
       }
@@ -172,7 +170,6 @@ namespace EduMatch.Services
             }
             catch (ValidationException)
             {
-              // try next candidate
             }
           }
           if (parsed) continue;
@@ -190,7 +187,6 @@ namespace EduMatch.Services
         }
         catch (ValidationException)
         {
-          // ignore invalid JSON format in db if any
         }
       }
     }
