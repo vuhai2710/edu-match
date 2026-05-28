@@ -12,7 +12,7 @@ import { inject, Injectable } from "@angular/core";
 import { Observable } from "rxjs";
 import { BASE_PATH_DEFAULT, CLIENT_CONTEXT_TOKEN_DEFAULT } from "../tokens";
 import { HttpParamsBuilder } from "../utils/http-params-builder";
-import { ApplicationStatus, RequestOptions, ApplicationResponseDtoPagedResultApiResponse, TutorRequestStatus, TutorRequestResponseDtoPagedResultApiResponse, PaymentStatus, PaymentAdminDtoPagedResultApiResponse, PaymentAdminDtoApiResponse, ClassStatus, ClassDtoPagedResultApiResponse, ClassDtoApiResponse, CancellationRequestStatus, CancellationRequestDtoPagedResultApiResponse, CancellationRequestDtoApiResponse, ResolveCancellationRequestDto } from "../models";
+import { ApplicationStatus, RequestOptions, ApplicationResponseDtoPagedResultApiResponse, TutorRequestStatus, TutorRequestResponseDtoPagedResultApiResponse, PaymentStatus, PaymentAdminDtoPagedResultApiResponse, PaymentAdminDtoApiResponse, ClassStatus, ClassDtoPagedResultApiResponse, ClassDtoApiResponse, CancellationRequestStatus, CancellationRequestDtoPagedResultApiResponse, CancellationRequestDtoApiResponse, ResolveCancellationRequestDto, BooleanApiResponse } from "../models";
 
 @Injectable({ providedIn: "root" })
 export class AdminService {
@@ -348,5 +348,53 @@ export class AdminService {
         };
 
         return this.httpClient.put(url, resolveCancellationRequestDto, requestOptions);
+    }
+
+    approveTutor(id: number, observe?: 'body', options?: RequestOptions<'json'>): Observable<BooleanApiResponse>;
+    approveTutor(id: number, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<BooleanApiResponse>>;
+    approveTutor(id: number, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<BooleanApiResponse>>;
+    approveTutor(id: number, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
+        const url = `${this.basePath}/api/Admin/tutors/${id}/approve`;
+
+        let headers: HttpHeaders;
+        if (options?.headers instanceof HttpHeaders) {
+            headers = options.headers;
+        } else {
+            headers = new HttpHeaders(options?.headers);
+        }
+
+        const requestOptions: any = {
+            observe: observe as any,
+            headers,
+            reportProgress: options?.reportProgress,
+            withCredentials: options?.withCredentials,
+            context: this.createContextWithClientId(options?.context)
+        };
+
+        return this.httpClient.put(url, null, requestOptions);
+    }
+
+    rejectTutor(id: number, observe?: 'body', options?: RequestOptions<'json'>): Observable<BooleanApiResponse>;
+    rejectTutor(id: number, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<BooleanApiResponse>>;
+    rejectTutor(id: number, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<BooleanApiResponse>>;
+    rejectTutor(id: number, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
+        const url = `${this.basePath}/api/Admin/tutors/${id}/reject`;
+
+        let headers: HttpHeaders;
+        if (options?.headers instanceof HttpHeaders) {
+            headers = options.headers;
+        } else {
+            headers = new HttpHeaders(options?.headers);
+        }
+
+        const requestOptions: any = {
+            observe: observe as any,
+            headers,
+            reportProgress: options?.reportProgress,
+            withCredentials: options?.withCredentials,
+            context: this.createContextWithClientId(options?.context)
+        };
+
+        return this.httpClient.put(url, null, requestOptions);
     }
 }

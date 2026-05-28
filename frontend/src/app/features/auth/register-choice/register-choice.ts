@@ -9,7 +9,6 @@ import { RouterLink } from '@angular/router';
       <div class="w-full max-w-3xl space-y-8">
         <div class="text-center">
           <h1 class="font-display text-3xl sm:text-4xl font-black text-slate-900">Bạn muốn đăng ký với vai trò nào?</h1>
-          <p class="mt-2 text-sm sm:text-base text-slate-500">Chọn đúng vai trò để EduMatch chuẩn bị form phù hợp cho bạn.</p>
         </div>
 
         <div class="grid sm:grid-cols-2 gap-4">

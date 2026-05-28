@@ -7,6 +7,7 @@ import {
   CancellationRequestDto,
   CancellationRequestStatus,
   PaymentAdminDto,
+  PendingTutorItemDto,
 } from '../../../api/generated/client/models';
 import { AdminService, DashboardService } from '../../../api/generated/client/services';
 import { ApiErrorDetails, getApiErrorDetails } from '../../../core/http/api-error';
@@ -27,7 +28,7 @@ import { classStatusLabel, formatDateTime, formatMoney, paymentStatusLabel } fro
 
       <app-error-banner [details]="errorDetails()" />
 
-      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         <a routerLink="/admin/users" class="tactile-card p-5 text-center hover:shadow-md transition-shadow">
           @if (isLoading()) {
             <div class="h-7 w-12 mx-auto rounded bg-slate-200 animate-pulse"></div>
@@ -43,6 +44,19 @@ import { classStatusLabel, formatDateTime, formatMoney, paymentStatusLabel } fro
             <p class="font-display text-2xl font-black text-duo-green">{{ dashboard()?.totalTutors ?? 0 }}</p>
           }
           <p class="text-xs text-slate-500 font-bold mt-1">Gia sư</p>
+        </a>
+        <a routerLink="/admin/users" [queryParams]="{ role: 'Tutor', status: 'Pending' }" class="tactile-card p-5 text-center hover:shadow-md transition-shadow relative">
+          @if (isLoading()) {
+            <div class="h-7 w-12 mx-auto rounded bg-slate-200 animate-pulse"></div>
+          } @else {
+            <p class="font-display text-2xl font-black text-duo-orange">
+              {{ dashboard()?.pendingTutorApprovals ?? 0 }}
+            </p>
+          }
+          <p class="text-xs text-slate-500 font-bold mt-1">Gia sư chờ duyệt</p>
+          @if ((dashboard()?.pendingTutorApprovals ?? 0) > 0) {
+            <span class="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-duo-orange animate-pulse"></span>
+          }
         </a>
         <a routerLink="/admin/classes" class="tactile-card p-5 text-center hover:shadow-md transition-shadow">
           @if (isLoading()) {
@@ -84,30 +98,36 @@ import { classStatusLabel, formatDateTime, formatMoney, paymentStatusLabel } fro
         </div>
       }
 
-      <div class="grid lg:grid-cols-2 gap-5">
+      <div class="grid lg:grid-cols-3 gap-5">
         <section>
           <div class="flex items-center justify-between mb-3">
-            <h2 class="font-extrabold text-lg text-slate-800">Thanh toán gần đây</h2>
-            <a routerLink="/admin/payments" class="text-sm font-bold text-duo-blue hover:underline">Xem tất cả →</a>
+            <h2 class="font-extrabold text-lg text-slate-800">Gia sư chờ duyệt</h2>
+            <a routerLink="/admin/users" [queryParams]="{ role: 'Tutor', status: 'Pending' }" class="text-sm font-bold text-duo-blue hover:underline">Xem tất cả →</a>
           </div>
           <div class="space-y-3">
-            @for (payment of payments(); track payment.id) {
-              <div class="tactile-card p-4">
-                <div class="flex items-start justify-between gap-3">
-                  <div>
-                    <p class="font-extrabold text-slate-900">Order #{{ payment.orderCode }}</p>
-                    <p class="text-sm text-slate-500">LR #{{ payment.learningRequestId }} · Class #{{ payment.classId || 'chưa có' }}</p>
+            @for (tutor of dashboard()?.pendingTutors ?? []; track tutor.tutorId) {
+              <div class="tactile-card p-4 flex gap-3 items-start">
+                @if (tutor.avatarUrl) {
+                  <img [src]="tutor.avatarUrl" [alt]="tutor.fullName || ''" class="w-10 h-10 rounded-full object-cover border border-slate-100 shadow-sm" />
+                } @else {
+                  <div class="w-10 h-10 rounded-full bg-duo-orange text-white flex items-center justify-center font-black text-sm">
+                    {{ initials(tutor.fullName) }}
                   </div>
-                  <span class="rounded-full bg-green-50 px-3 py-1 text-xs font-black text-duo-green">{{ paymentLabel(payment) }}</span>
-                </div>
-                <div class="mt-3 flex items-center justify-between text-sm">
-                  <span class="font-bold text-slate-500">{{ dateTime(payment.createdAt) }}</span>
-                  <span class="font-extrabold text-duo-green">{{ money(payment.amount) }}</span>
+                }
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-start justify-between gap-1">
+                    <a [routerLink]="['/admin/users', tutor.userId]" class="font-extrabold text-slate-900 hover:text-duo-blue hover:underline block truncate">
+                      {{ tutor.fullName }}
+                    </a>
+                    <span class="font-extrabold text-duo-green text-xs whitespace-nowrap">{{ money(tutor.hourlyRate) }}/h</span>
+                  </div>
+                  <p class="text-xs text-slate-500 mt-0.5 line-clamp-2">{{ tutor.profile || 'Chưa cập nhật phần tự giới thiệu.' }}</p>
+                  <p class="text-[10px] text-slate-400 font-bold mt-1.5">Yêu cầu: {{ dateTime(tutor.requestedAt) }}</p>
                 </div>
               </div>
             }
-            @if (!isLoading() && !payments().length) {
-              <div class="tactile-card p-5 text-center font-bold text-slate-500">Chưa có thanh toán nào.</div>
+            @if (!isLoading() && !(dashboard()?.pendingTutors?.length)) {
+              <div class="tactile-card p-5 text-center font-bold text-slate-500">Không có gia sư nào đang chờ phê duyệt.</div>
             }
           </div>
         </section>
@@ -132,6 +152,33 @@ import { classStatusLabel, formatDateTime, formatMoney, paymentStatusLabel } fro
             }
             @if (!isLoading() && !cancellationRequests().length) {
               <div class="tactile-card p-5 text-center font-bold text-slate-500">Không có yêu cầu hủy đang chờ.</div>
+            }
+          </div>
+        </section>
+
+        <section>
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="font-extrabold text-lg text-slate-800">Thanh toán gần đây</h2>
+            <a routerLink="/admin/payments" class="text-sm font-bold text-duo-blue hover:underline">Xem tất cả →</a>
+          </div>
+          <div class="space-y-3">
+            @for (payment of payments(); track payment.id) {
+              <div class="tactile-card p-4">
+                <div class="flex items-start justify-between gap-3">
+                  <div>
+                    <p class="font-extrabold text-slate-900">Order #{{ payment.orderCode }}</p>
+                    <p class="text-sm text-slate-500">LR #{{ payment.learningRequestId }} · Class #{{ payment.classId || 'chưa có' }}</p>
+                  </div>
+                  <span class="rounded-full bg-green-50 px-3 py-1 text-xs font-black text-duo-green">{{ paymentLabel(payment) }}</span>
+                </div>
+                <div class="mt-3 flex items-center justify-between text-sm">
+                  <span class="font-bold text-slate-500">{{ dateTime(payment.createdAt) }}</span>
+                  <span class="font-extrabold text-duo-green">{{ money(payment.amount) }}</span>
+                </div>
+              </div>
+            }
+            @if (!isLoading() && !payments().length) {
+              <div class="tactile-card p-5 text-center font-bold text-slate-500">Chưa có thanh toán nào.</div>
             }
           </div>
         </section>
@@ -165,6 +212,11 @@ export class AdminDashboardPage implements OnInit {
 
   dateTime(value?: Date | null): string {
     return formatDateTime(value);
+  }
+
+  initials(name?: string | null): string {
+    if (!name) return '?';
+    return name.split(' ').slice(-2).map((s) => s[0]).join('').toUpperCase();
   }
 
   paymentLabel(payment: PaymentAdminDto): string {

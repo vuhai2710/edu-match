@@ -12,7 +12,7 @@ import { inject, Injectable } from "@angular/core";
 import { Observable } from "rxjs";
 import { BASE_PATH_DEFAULT, CLIENT_CONTEXT_TOKEN_DEFAULT } from "../tokens";
 import { HttpParamsBuilder } from "../utils/http-params-builder";
-import { UserRole, RequestOptions, UserDtoPagedResultApiResponse, UserDtoApiResponse, ChangePasswordDto, ApiResponse, StringApiResponse } from "../models";
+import { UserRole, TutorApprovalStatus, RequestOptions, UserDtoPagedResultApiResponse, UserDtoApiResponse, ChangePasswordDto, ApiResponse, StringApiResponse } from "../models";
 
 @Injectable({ providedIn: "root" })
 export class UsersService {
@@ -25,10 +25,10 @@ export class UsersService {
         return context.set(this.clientContextToken, 'default');
     }
 
-    getUsers(role?: UserRole, isActive?: boolean, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'body', options?: RequestOptions<'json'>): Observable<UserDtoPagedResultApiResponse>;
-    getUsers(role?: UserRole, isActive?: boolean, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<UserDtoPagedResultApiResponse>>;
-    getUsers(role?: UserRole, isActive?: boolean, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<UserDtoPagedResultApiResponse>>;
-    getUsers(role?: UserRole, isActive?: boolean, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
+    getUsers(role?: UserRole, isActive?: boolean, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, tutorApprovalStatus?: TutorApprovalStatus, observe?: 'body', options?: RequestOptions<'json'>): Observable<UserDtoPagedResultApiResponse>;
+    getUsers(role?: UserRole, isActive?: boolean, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, tutorApprovalStatus?: TutorApprovalStatus, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<UserDtoPagedResultApiResponse>>;
+    getUsers(role?: UserRole, isActive?: boolean, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, tutorApprovalStatus?: TutorApprovalStatus, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<UserDtoPagedResultApiResponse>>;
+    getUsers(role?: UserRole, isActive?: boolean, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, tutorApprovalStatus?: TutorApprovalStatus, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
         const url = `${this.basePath}/api/Users`;
 
         let params = new HttpParams();
@@ -52,6 +52,9 @@ export class UsersService {
         }
         if (sortDirection != null) {
             params = HttpParamsBuilder.addToHttpParams(params, sortDirection, 'sortDirection');
+        }
+        if (tutorApprovalStatus != null) {
+            params = HttpParamsBuilder.addToHttpParams(params, tutorApprovalStatus, 'tutorApprovalStatus');
         }
 
         let headers: HttpHeaders;

@@ -12,7 +12,7 @@ namespace EduMatch.Repositories
     {
     }
 
-    public async Task<PagedResult<Tutor>> GetTutorsAsync(TutorQueryParameters parameters)
+    public async Task<PagedResult<Tutor>> GetTutorsAsync(TutorQueryParameters parameters, bool isAdmin = false)
     {
       var query = _dbSet
         .Include(t => t.User)
@@ -23,6 +23,11 @@ namespace EduMatch.Repositories
           .ThenInclude(ts => ts.Subject)
         .Where(t => t.User != null && !t.User.IsDeleted)
         .AsQueryable();
+
+      if (!isAdmin)
+      {
+        query = query.Where(t => t.ApprovalStatus == EduMatch.Common.Enums.TutorApprovalStatus.Approved);
+      }
 
       if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
       {

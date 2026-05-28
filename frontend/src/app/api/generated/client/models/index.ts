@@ -692,6 +692,7 @@ export interface PaymentStatusDtoApiResponse {
 
 export interface PendingTutorItemDto {
     tutorId?: number;
+    userId?: number;
     fullName?: string | null;
     avatarUrl?: string | null;
     profile?: string | null;
@@ -1014,6 +1015,12 @@ export interface TutorDashboardDtoApiResponse {
     data?: TutorDashboardDto;
 }
 
+export enum TutorApprovalStatus {
+    Pending = "Pending",
+    Approved = "Approved",
+    Rejected = "Rejected"
+}
+
 export interface TutorDetailDto {
     id?: number;
     code?: string | null;
@@ -1036,6 +1043,7 @@ export interface TutorDetailDto {
     address?: AddressDto;
     teachingLevels?: Array<EducationLevel>;
     subjects?: Array<TutorSubjectDto>;
+    approvalStatus?: TutorApprovalStatus;
 }
 
 export interface TutorDetailDtoApiResponse {
@@ -1063,6 +1071,7 @@ export interface TutorDto {
     address?: AddressDto;
     teachingLevels?: Array<EducationLevel>;
     subjects?: Array<TutorSubjectDto>;
+    approvalStatus?: TutorApprovalStatus;
 }
 
 export interface TutorDtoPagedResult {
@@ -1191,6 +1200,8 @@ export interface UserDto {
     gender?: Gender;
     isActive?: boolean;
     isGoogleAccount?: boolean;
+    tutorApprovalStatus?: TutorApprovalStatus;
+    tutorId?: number;
 }
 
 export interface UserDtoApiResponse {

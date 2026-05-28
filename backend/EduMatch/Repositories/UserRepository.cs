@@ -83,6 +83,11 @@ namespace EduMatch.Repositories
         query = query.Where(u => u.IsActive == parameters.IsActive.Value);
       }
 
+      if (parameters.TutorApprovalStatus.HasValue)
+      {
+        query = query.Where(u => u.Tutor != null && u.Tutor.ApprovalStatus == parameters.TutorApprovalStatus.Value);
+      }
+
       var isDescending = string.Equals(parameters.SortDirection, "desc", StringComparison.OrdinalIgnoreCase);
       if (!string.IsNullOrWhiteSpace(parameters.SortColumn))
       {

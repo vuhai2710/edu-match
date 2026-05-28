@@ -62,6 +62,25 @@ namespace EduMatch.Services
           })
           .ToListAsync();
 
+        var pendingTutorCount = await _db.Tutors.CountAsync(t => t.ApprovalStatus == TutorApprovalStatus.Pending && !t.IsDeleted);
+        var pendingTutorsList = await _db.Tutors
+            .Include(t => t.User)
+                .ThenInclude(u => u.AvatarFile)
+            .Where(t => t.ApprovalStatus == TutorApprovalStatus.Pending && !t.IsDeleted)
+            .OrderByDescending(t => t.CreatedAt)
+            .Take(5)
+            .Select(t => new PendingTutorItemDto
+            {
+              TutorId = t.Id,
+              UserId = t.UserId,
+              FullName = t.User.FullName,
+              AvatarUrl = t.User.AvatarFile != null ? t.User.AvatarFile.FilePath : null,
+              Profile = t.Profile,
+              HourlyRate = t.HourlyRate,
+              RequestedAt = t.CreatedAt
+            })
+            .ToListAsync();
+
         _logger.LogInformation("AdminDashboard fetched successfully");
 
         return ApiResponse<AdminDashboardDto>.SuccessResult(new AdminDashboardDto
@@ -69,7 +88,7 @@ namespace EduMatch.Services
           TotalUsers = totalUsers,
           TotalStudents = students,
           TotalTutors = tutors,
-          PendingTutorApprovals = 0,
+          PendingTutorApprovals = pendingTutorCount,
           TotalRequests = totalReqs,
           OpenRequests = openReqs,
           PendingApplications = pendingApps,
@@ -79,7 +98,7 @@ namespace EduMatch.Services
           TotalRevenue = revTotal ?? 0m,
           RevenueThisMonth = revMonth ?? 0m,
           RecentApplications = recentApps,
-          PendingTutors = []
+          PendingTutors = pendingTutorsList
         });
       });
     }

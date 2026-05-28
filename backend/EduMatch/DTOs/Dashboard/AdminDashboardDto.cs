@@ -34,6 +34,7 @@ namespace EduMatch.DTOs.Dashboard
   public class PendingTutorItemDto
   {
     public long TutorId { get; set; }
+    public long UserId { get; set; }
     public string FullName { get; set; } = default!;
     public string? AvatarUrl { get; set; }
     public string? Profile { get; set; }

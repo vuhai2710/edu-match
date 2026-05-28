@@ -9,8 +9,10 @@ using EduMatch.Models;
 using EduMatch.Repositories;
 using EduMatch.Repositories.Interfaces;
 using EduMatch.Services.Interfaces;
+using EduMatch.Data;
 using Google.Apis.Auth;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.EntityFrameworkCore;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
 using System.Security.Claims;
@@ -37,6 +39,7 @@ public class AuthService
   private readonly IMapper _mapper;
   private readonly ICodeGeneratorService _codeGenerator;
   private readonly IHttpClientFactory _httpClientFactory;
+  private readonly AppDbContext _db;
 
   public AuthService(
     IUserRepository userRepository,
@@ -48,7 +51,8 @@ public class AuthService
     ILogger<AuthService> logger,
     IMapper mapper,
     ICodeGeneratorService codeGenerator,
-    IHttpClientFactory httpClientFactory)
+    IHttpClientFactory httpClientFactory,
+    AppDbContext db)
   {
     _userRepository = userRepository;
     _subjectRepository = subjectRepository;
@@ -60,6 +64,7 @@ public class AuthService
     _mapper = mapper;
     _codeGenerator = codeGenerator;
     _httpClientFactory = httpClientFactory;
+    _db = db;
   }
 
   public Task<LoginResponseDto> RegisterStudentAsync(RegisterStudentDto dto)
@@ -70,6 +75,38 @@ public class AuthService
   public Task<LoginResponseDto> RegisterTutorAsync(RegisterTutorDto dto)
   {
     return RegisterAsync(dto, dto);
+  }
+
+  public Task<ApiResponse<LoginResponseDto>> RegisterStudentResponseAsync(RegisterStudentDto dto)
+  {
+    return ServiceResponse.ExecuteAsync(async () =>
+    {
+      var loginResponse = await RegisterStudentAsync(dto);
+      return ApiResponse<LoginResponseDto>.SuccessResult(loginResponse, "Đăng ký học viên thành công", StatusCodes.Status200OK);
+    });
+  }
+
+  public Task<ApiResponse<LoginResponseDto>> RegisterTutorResponseAsync(RegisterTutorDto dto)
+  {
+    return ServiceResponse.ExecuteAsync(async () =>
+    {
+      var loginResponse = await RegisterTutorAsync(dto);
+      return ApiResponse<LoginResponseDto>.SuccessResult(loginResponse, "Đăng ký gia sư thành công", StatusCodes.Status200OK);
+    });
+  }
+
+  public Task<ApiResponse<LoginResponseDto>> GoogleLoginResponseAsync(GoogleLoginRequestDto dto)
+  {
+    return ServiceResponse.ExecuteAsync(async () =>
+    {
+      var loginResponse = await GoogleLoginAsync(dto);
+      return ApiResponse<LoginResponseDto>.SuccessResult(loginResponse, "Google login successful", StatusCodes.Status200OK);
+    });
+  }
+
+  public Task<ApiResponse<LoginResponseDto>> LoginResponseAsync(LoginDto dto)
+  {
+    return ServiceResponse.ExecuteAsync(() => LoginAsync(dto));
   }
 
   public async Task<LoginResponseDto> GoogleLoginAsync(GoogleLoginRequestDto dto)
@@ -87,6 +124,18 @@ public class AuthService
     if (user == null)
     {
       user = await CreateGoogleUserAsync(payload, dto);
+    }
+
+    if (user.Role == UserRole.Tutor && user.Tutor != null)
+    {
+      if (user.Tutor.ApprovalStatus == TutorApprovalStatus.Pending)
+      {
+        throw new AppException("Tài khoản gia sư của bạn đang chờ quản trị viên phê duyệt.", 400, "TUTOR_PENDING_APPROVAL");
+      }
+      if (user.Tutor.ApprovalStatus == TutorApprovalStatus.Rejected)
+      {
+        throw new AppException("Tài khoản gia sư của bạn đã bị từ chối phê duyệt.", 400, "TUTOR_REJECTED");
+      }
     }
 
     _logger.LogInformation("Google login: {Email} | Id: {Id}", user.Email, user.Id);
@@ -219,6 +268,11 @@ public class AuthService
       throw new AppException("Google registration does not support admin accounts", 400, "GOOGLE_ADMIN_NOT_ALLOWED");
     }
 
+    if (role == UserRole.Tutor)
+    {
+      throw new AppException("Không hỗ trợ đăng ký tài khoản gia sư bằng Google.", 400, "GOOGLE_TUTOR_REGISTRATION_NOT_SUPPORTED");
+    }
+
     var user = new User
     {
       FullName = string.IsNullOrWhiteSpace(payload.Name) ? payload.Email : payload.Name.Trim(),
@@ -265,6 +319,18 @@ public class AuthService
     if (user is null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.Password))
     {
       return ApiResponse<LoginResponseDto>.Fail("Email hoặc mật khẩu không đúng", 401);
+    }
+
+    if (user.Role == UserRole.Tutor && user.Tutor != null)
+    {
+      if (user.Tutor.ApprovalStatus == TutorApprovalStatus.Pending)
+      {
+        throw new AppException("Tài khoản gia sư của bạn đang chờ quản trị viên phê duyệt.", 400, "TUTOR_PENDING_APPROVAL");
+      }
+      if (user.Tutor.ApprovalStatus == TutorApprovalStatus.Rejected)
+      {
+        throw new AppException("Tài khoản gia sư của bạn đã bị từ chối phê duyệt.", 400, "TUTOR_REJECTED");
+      }
     }
 
     _logger.LogInformation("User logged in: {Email} | Id: {Id}", user.Email, user.Id);
@@ -315,6 +381,15 @@ public class AuthService
     return await IssueTokenPairAsync(user, refreshToken, rotateRefreshToken: false);
   }
 
+  public Task<ApiResponse<LoginResponseDto>> RefreshTokenResponseAsync(RefreshTokenDto dto)
+  {
+    return ServiceResponse.ExecuteAsync(async () =>
+    {
+      var loginResponse = await RefreshTokenAsync(dto);
+      return ApiResponse<LoginResponseDto>.SuccessResult(loginResponse, "Refresh token Thành công", StatusCodes.Status200OK);
+    });
+  }
+
   public async Task LogoutAsync(LogoutDto dto)
   {
     var user = await _userRepository.GetByRefreshTokenWithProfilesAsync(dto.RefreshToken);
@@ -337,14 +412,45 @@ public class AuthService
     var normalizedEmail = dto.Email.ToLower().Trim();
     var normalizedPhoneNumber = dto.PhoneNumber.Trim();
 
-    if (await _userRepository.ExistsAsync(u => u.Email == normalizedEmail))
-    {
-      throw new AppException("Email đã được sử dụng");
-    }
+    var existingUserByEmail = await _db.Users
+        .Include(u => u.Tutor)
+        .FirstOrDefaultAsync(u => u.Email == normalizedEmail);
 
-    if (await _userRepository.ExistsAsync(u => u.PhoneNumber == normalizedPhoneNumber))
+    var existingUserByPhone = await _db.Users
+        .Include(u => u.Tutor)
+        .FirstOrDefaultAsync(u => u.PhoneNumber == normalizedPhoneNumber);
+
+    if (existingUserByEmail != null || existingUserByPhone != null)
     {
-      throw new AppException("Số điện thoại đã được sử dụng");
+      var existingUser = existingUserByEmail ?? existingUserByPhone;
+      bool canOverwrite = false;
+      if (existingUser.Role == UserRole.Tutor && existingUser.Tutor != null)
+      {
+        if (existingUser.Tutor.ApprovalStatus == TutorApprovalStatus.Rejected || existingUser.Tutor.IsDeleted || existingUser.IsDeleted)
+        {
+          canOverwrite = true;
+        }
+      }
+      else if (existingUser.IsDeleted)
+      {
+        canOverwrite = true;
+      }
+
+      if (canOverwrite)
+      {
+        await HardDeleteUserAsync(existingUser);
+      }
+      else
+      {
+        if (existingUserByEmail != null)
+        {
+          throw new AppException("Email đã được sử dụng");
+        }
+        if (existingUserByPhone != null)
+        {
+          throw new AppException("Số điện thoại đã được sử dụng");
+        }
+      }
     }
 
     var hashedPassword = BCrypt.Net.BCrypt.HashPassword(dto.Password, workFactor: 12);
@@ -403,7 +509,100 @@ public class AuthService
 
     _logger.LogInformation("{Role} registered: {Email} | Id: {Id}", role, user.Email, user.Id);
 
+    if (role == UserRole.Tutor)
+    {
+      throw new AppException("Đăng ký tài khoản gia sư thành công. Vui lòng chờ quản trị viên phê duyệt hồ sơ của bạn.", 400, "TUTOR_REGISTRATION_PENDING");
+    }
+
     return await IssueTokenPairAsync(user);
+  }
+
+  private async Task HardDeleteUserAsync(User user)
+  {
+    if (user.Tutor != null)
+    {
+      var tutor = await _db.Tutors
+          .Include(t => t.TutorSubjects)
+          .Include(t => t.TeachingLevels)
+          .Include(t => t.Address)
+          .FirstOrDefaultAsync(t => t.Id == user.Tutor.Id);
+
+      if (tutor != null)
+      {
+        if (tutor.TutorSubjects.Any())
+        {
+          _db.TutorSubjects.RemoveRange(tutor.TutorSubjects);
+        }
+        if (tutor.TeachingLevels.Any())
+        {
+          _db.TutorTeachingLevels.RemoveRange(tutor.TeachingLevels);
+        }
+        if (tutor.Address != null)
+        {
+          _db.Addresses.Remove(tutor.Address);
+        }
+        if (tutor.CvFileId.HasValue)
+        {
+          var cvFile = await _db.Files.FindAsync(tutor.CvFileId.Value);
+          if (cvFile != null)
+          {
+            _db.Files.Remove(cvFile);
+          }
+        }
+        _db.Tutors.Remove(tutor);
+      }
+    }
+
+    if (user.Student != null)
+    {
+      var student = await _db.Students
+          .Include(s => s.Address)
+          .FirstOrDefaultAsync(s => s.Id == user.Student.Id);
+      if (student != null)
+      {
+        if (student.Address != null)
+        {
+          _db.Addresses.Remove(student.Address);
+        }
+        _db.Students.Remove(student);
+      }
+    }
+
+    var passwordTokens = await _db.PasswordResetTokens.Where(t => t.UserId == user.Id).ToListAsync();
+    if (passwordTokens.Any())
+    {
+      _db.PasswordResetTokens.RemoveRange(passwordTokens);
+    }
+
+    var notifications = await _db.Notifications.Where(n => n.UserId == user.Id).ToListAsync();
+    if (notifications.Any())
+    {
+      _db.Notifications.RemoveRange(notifications);
+    }
+
+    var sentMessages = await _db.Messages.Where(m => m.SenderId == user.Id).ToListAsync();
+    if (sentMessages.Any())
+    {
+      _db.Messages.RemoveRange(sentMessages);
+    }
+
+    var receivedMessages = await _db.Messages.Where(m => m.ReceiverId == user.Id).ToListAsync();
+    if (receivedMessages.Any())
+    {
+      _db.Messages.RemoveRange(receivedMessages);
+    }
+
+    if (user.AvatarFileId.HasValue)
+    {
+      var avatarFile = await _db.Files.FindAsync(user.AvatarFileId.Value);
+      if (avatarFile != null)
+      {
+        _db.Files.Remove(avatarFile);
+      }
+    }
+
+    _db.Users.Remove(user);
+    await _db.SaveChangesAsync();
   }
 
   private void ValidateRegisterDto(RegisterDto dto, RegisterTutorDto? tutorDto)

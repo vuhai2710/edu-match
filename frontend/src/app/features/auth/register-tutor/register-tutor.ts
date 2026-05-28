@@ -17,9 +17,8 @@ import {
 import { AddressService, SubjectsService } from '../../../api/generated/client/services';
 import { SessionService } from '../../../core/auth/session';
 import { UserRole } from '../../../core/auth/session.models';
-import { getApiErrorMessage, unwrapApiData } from '../../../core/http/api-error';
+import { getApiErrorDetails, getApiErrorMessage, unwrapApiData } from '../../../core/http/api-error';
 import { MascotComponent } from '../../../shared/components/mascot/mascot';
-import { GoogleSignInButtonComponent } from '../../../shared/components/google-sign-in-button/google-sign-in-button';
 
 @Component({
   selector: 'app-register-tutor-page',
@@ -29,271 +28,282 @@ import { GoogleSignInButtonComponent } from '../../../shared/components/google-s
     MascotComponent,
     LucideEye,
     LucideEyeOff,
-    GoogleSignInButtonComponent,
   ],
   template: `
     <div class="min-h-[70vh] flex items-center justify-center py-12 px-4">
       <div class="w-full max-w-3xl space-y-6">
-        <div class="text-center">
-          <app-mascot type="tutorWand" [size]="80" />
-          <h1 class="mt-4 font-display text-3xl font-black text-slate-900">Đăng ký Gia sư</h1>
-          <p class="mt-1 text-slate-500">Hoàn thiện hồ sơ để học viên có thể tìm thấy bạn.</p>
-        </div>
-
-        <div class="flex items-center gap-2 px-2">
-          <div class="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
-            <div class="h-full bg-duo-blue rounded-full transition-all duration-500" [style.width.%]="progress()"></div>
-          </div>
-          <span class="text-xs font-bold text-slate-400">{{ progress() }}%</span>
-        </div>
-
-        <form (ngSubmit)="onRegister()" class="tactile-card p-6 sm:p-8 space-y-5">
-          <div class="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
-                Họ và tên <span class="text-red-500">*</span>
-              </label>
-              <input type="text" [(ngModel)]="fullName" name="fullName" class="tactile-input w-full text-sm font-semibold" />
-              @if (fullNameError()) {
-                <span class="text-xs font-bold text-duo-red mt-1 block">{{ fullNameError() }}</span>
-              }
+        @if (isRegisteredPending()) {
+          <div class="tactile-card p-8 text-center space-y-6 max-w-md mx-auto">
+            <div class="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto text-duo-orange">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-10 h-10">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
             </div>
-            <div>
-              <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
-                Email <span class="text-red-500">*</span>
-              </label>
-              <input type="email" [(ngModel)]="email" name="email" placeholder="user@gmail.com" class="tactile-input w-full text-sm font-semibold" />
-              @if (emailError()) {
-                <span class="text-xs font-bold text-duo-red mt-1 block">{{ emailError() }}</span>
-              }
-            </div>
-          </div>
-
-          <div class="grid sm:grid-cols-3 gap-4">
-            <div>
-              <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
-                Mật khẩu <span class="text-red-500">*</span>
-              </label>
-              <div class="relative">
-                <input
-                  [type]="showPassword() ? 'text' : 'password'"
-                  [(ngModel)]="password"
-                  (ngModelChange)="onPasswordChange()"
-                  name="password"
-                  placeholder="Tối thiểu 6 ký tự"
-                  class="tactile-input w-full text-sm font-semibold pr-12"
-                />
-                <button
-                  (click)="showPassword.set(!showPassword())"
-                  type="button"
-                  [attr.aria-label]="showPassword() ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'"
-                  class="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-slate-500 transition-colors hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-duo-blue"
-                >
-                  @if (showPassword()) {
-                    <svg lucideEyeOff class="h-5 w-5"></svg>
-                  } @else {
-                    <svg lucideEye class="h-5 w-5"></svg>
-                  }
-                </button>
-              </div>
-              @if (passwordError()) {
-                <span class="text-xs font-bold text-duo-red mt-1 block">{{ passwordError() }}</span>
-              }
-            </div>
-            <div>
-              <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
-                Số điện thoại <span class="text-red-500">*</span>
-              </label>
-              <input
-                type="tel"
-                [(ngModel)]="phoneNumber"
-                name="phoneNumber"
-                maxlength="10"
-                placeholder="0123456789"
-                class="tactile-input w-full text-sm font-semibold"
-              />
-              @if (phoneNumberError()) {
-                <span class="text-xs font-bold text-duo-red mt-1 block">{{ phoneNumberError() }}</span>
-              }
-            </div>
-            <div>
-              <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Giới tính</label>
-              <select [(ngModel)]="gender" name="gender" class="tactile-input w-full text-sm font-semibold bg-white">
-                @for (item of genderOptions; track item.value) {
-                  <option [ngValue]="item.value">{{ item.label }}</option>
-                }
-              </select>
-            </div>
-          </div>
-
-          <div class="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
-                Tỉnh / thành <span class="text-red-500">*</span>
-              </label>
-              <select [ngModel]="provinceId()" (ngModelChange)="onProvinceChange($event)"
-                      name="provinceId"
-                      class="tactile-input w-full text-sm font-semibold bg-white">
-                <option [ngValue]="null">Chọn tỉnh / thành</option>
-                @for (province of provinces(); track province.provinceId) {
-                  <option [ngValue]="province.provinceId">{{ province.provinceName }}</option>
-                }
-              </select>
-              @if (provinceError()) {
-                <span class="text-xs font-bold text-duo-red mt-1 block">{{ provinceError() }}</span>
-              }
-            </div>
-            <div>
-              <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
-                Phường / xã <span class="text-red-500">*</span>
-              </label>
-              <select [ngModel]="wardCode()" (ngModelChange)="wardCode.set($event)"
-                      name="wardCode"
-                      class="tactile-input w-full text-sm font-semibold bg-white"
-                      [disabled]="!provinceId() || isLoadingWards()">
-                <option [ngValue]="null">{{ isLoadingWards() ? 'Đang tải...' : 'Chọn phường / xã' }}</option>
-                @for (ward of wards(); track ward.wardCode) {
-                  <option [ngValue]="ward.wardCode">{{ ward.wardName }}</option>
-                }
-              </select>
-              @if (wardError()) {
-                <span class="text-xs font-bold text-duo-red mt-1 block">{{ wardError() }}</span>
-              }
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Địa chỉ chi tiết</label>
-            <input type="text" [(ngModel)]="addressDetail" name="addressDetail" class="tactile-input w-full text-sm font-semibold" />
-          </div>
-
-          <div>
-            <label class="block text-sm font-extrabold text-slate-700 mb-2">
-              Môn dạy <span class="text-red-500">*</span>
-            </label>
-            <div class="flex flex-wrap gap-2">
-              @for (subject of subjects(); track subject.id) {
-                <button type="button" (click)="toggleSubject(subject.id)"
-                        [class]="isSubjectSelected(subject.id)
-                          ? 'bg-duo-blue text-white border-duo-blue-dark border-b-2 px-3 py-1.5 rounded-xl text-sm font-bold transition-colors'
-                          : 'bg-white border-2 border-slate-200 px-3 py-1.5 rounded-xl text-sm font-bold text-slate-600 hover:border-slate-300 transition-colors'">
-                  {{ subject.name }}
-                </button>
-              }
-            </div>
-            @if (subjectsError()) {
-              <span class="text-xs font-bold text-duo-red mt-1 block">{{ subjectsError() }}</span>
-            }
-          </div>
-
-          <div class="grid sm:grid-cols-3 gap-4">
-            <div>
-              <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
-                Học phí mong muốn / giờ <span class="text-red-500">*</span>
-              </label>
-              <input type="number" [(ngModel)]="hourlyRate" name="hourlyRate" class="tactile-input w-full text-sm font-semibold" />
-              @if (hourlyRateError()) {
-                <span class="text-xs font-bold text-duo-red mt-1 block">{{ hourlyRateError() }}</span>
-              }
-            </div>
-            <div>
-              <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Trạng thái nghề nghiệp</label>
-              <select [(ngModel)]="careerStatus" name="careerStatus" class="tactile-input w-full text-sm font-semibold bg-white">
-                @for (item of careerOptions; track item.value) {
-                  <option [ngValue]="item.value">{{ item.label }}</option>
-                }
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Bằng cấp</label>
-              <select [(ngModel)]="academicDegree" name="academicDegree" class="tactile-input w-full text-sm font-semibold bg-white">
-                @for (item of degreeOptions; track item.value) {
-                  <option [ngValue]="item.value">{{ item.label }}</option>
-                }
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
-              Chuyên ngành <span class="text-red-500">*</span>
-            </label>
-            <input type="text" [(ngModel)]="major" name="major" class="tactile-input w-full text-sm font-semibold" />
-            @if (majorError()) {
-              <span class="text-xs font-bold text-duo-red mt-1 block">{{ majorError() }}</span>
-            }
-          </div>
-
-          <div>
-            <label class="block text-sm font-extrabold text-slate-700 mb-2">
-              Cấp học có thể dạy <span class="text-red-500">*</span>
-            </label>
-            <div class="flex flex-wrap gap-2">
-              @for (item of teachingLevelOptions; track item.value) {
-                <button type="button" (click)="toggleTeachingLevel(item.value)"
-                        [class]="isTeachingLevelSelected(item.value)
-                          ? 'bg-duo-green text-white border-duo-green-dark border-b-2 px-3 py-1.5 rounded-xl text-sm font-bold transition-colors'
-                          : 'bg-white border-2 border-slate-200 px-3 py-1.5 rounded-xl text-sm font-bold text-slate-600 hover:border-slate-300 transition-colors'">
-                  {{ item.label }}
-                </button>
-              }
-            </div>
-            @if (teachingLevelsError()) {
-              <span class="text-xs font-bold text-duo-red mt-1 block">{{ teachingLevelsError() }}</span>
-            }
-          </div>
-
-          <div>
-            <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Giới thiệu bản thân</label>
-            <textarea [(ngModel)]="profile" name="profile" rows="3" class="tactile-input w-full text-sm font-semibold resize-none"></textarea>
-          </div>
-
-          <div class="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
-                Ảnh đại diện <span class="text-red-500">*</span>
-              </label>
-              <input type="file" accept="image/png,image/jpeg,image/webp" (change)="onAvatarChange($event)"
-                     class="tactile-input w-full text-sm font-semibold bg-white" />
-              @if (avatarError()) {
-                <span class="text-xs font-bold text-duo-red mt-1 block">{{ avatarError() }}</span>
-              }
-            </div>
-            <div>
-              <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
-                CV <span class="text-red-500">*</span>
-              </label>
-              <input type="file" accept=".pdf,.doc,.docx" (change)="onCvChange($event)"
-                     class="tactile-input w-full text-sm font-semibold bg-white" />
-              @if (cvError()) {
-                <span class="text-xs font-bold text-duo-red mt-1 block">{{ cvError() }}</span>
-              }
-            </div>
-          </div>
-
-          <button type="submit" [disabled]="isSubmitting()"
-                  class="tactile-button-green w-full py-3.5 rounded-2xl text-base font-extrabold uppercase disabled:opacity-50 disabled:cursor-not-allowed">
-            {{ isSubmitting() ? 'Đang gửi hồ sơ...' : 'Hoàn tất đăng ký' }}
-          </button>
-
-          <div class="flex items-center gap-4">
-            <div class="flex-1 h-px bg-slate-200"></div>
-            <span class="text-xs font-bold text-slate-400 uppercase">Hoặc</span>
-            <div class="flex-1 h-px bg-slate-200"></div>
-          </div>
-
-          <app-google-sign-in-button text="signup_with" (credential)="onGoogleCredential($event)" />
-
-          @if (errorMessage()) {
-            <p class="rounded-xl border-2 border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-duo-red">
-              {{ errorMessage() }}
+            <h2 class="font-display text-2xl font-black text-slate-800">Đăng ký thành công</h2>
+            <p class="text-sm text-slate-600 font-bold leading-relaxed">
+              {{ registrationSuccessMessage() || 'Đã gửi yêu cầu đăng ký tài khoản gia sư. Vui lòng chờ quản trị viên phê duyệt hồ sơ của bạn.' }}
             </p>
-          }
-        </form>
+            <div class="pt-2">
+              <a routerLink="/" class="tactile-button-blue block text-center w-full py-3 rounded-xl text-sm font-extrabold uppercase">
+                Về trang chủ
+              </a>
+            </div>
+          </div>
+        } @else {
+          <div class="text-center">
+            <app-mascot type="tutorWand" [size]="80" />
+            <h1 class="mt-4 font-display text-3xl font-black text-slate-900">Đăng ký Gia sư</h1>
+            <p class="mt-1 text-slate-500">Hoàn thiện hồ sơ để học viên có thể tìm thấy bạn.</p>
+          </div>
 
-        <p class="text-center text-sm text-slate-500">
-          Đã có tài khoản? <a routerLink="/auth/login" class="font-extrabold text-[#58cc02] hover:underline">Đăng nhập</a>
-        </p>
+          <div class="flex items-center gap-2 px-2">
+            <div class="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+              <div class="h-full bg-duo-blue rounded-full transition-all duration-500" [style.width.%]="progress()"></div>
+            </div>
+            <span class="text-xs font-bold text-slate-400">{{ progress() }}%</span>
+          </div>
+
+          <form (ngSubmit)="onRegister()" class="tactile-card p-6 sm:p-8 space-y-5">
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
+                  Họ và tên <span class="text-red-500">*</span>
+                </label>
+                <input type="text" [(ngModel)]="fullName" name="fullName" class="tactile-input w-full text-sm font-semibold" />
+                @if (fullNameError()) {
+                  <span class="text-xs font-bold text-duo-red mt-1 block">{{ fullNameError() }}</span>
+                }
+              </div>
+              <div>
+                <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
+                  Email <span class="text-red-500">*</span>
+                </label>
+                <input type="email" [(ngModel)]="email" name="email" placeholder="user@gmail.com" class="tactile-input w-full text-sm font-semibold" />
+                @if (emailError()) {
+                  <span class="text-xs font-bold text-duo-red mt-1 block">{{ emailError() }}</span>
+                }
+              </div>
+            </div>
+
+            <div class="grid sm:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
+                  Mật khẩu <span class="text-red-500">*</span>
+                </label>
+                <div class="relative">
+                  <input
+                    [type]="showPassword() ? 'text' : 'password'"
+                    [(ngModel)]="password"
+                    (ngModelChange)="onPasswordChange()"
+                    name="password"
+                    placeholder="Tối thiểu 6 ký tự"
+                    class="tactile-input w-full text-sm font-semibold pr-12"
+                  />
+                  <button
+                    (click)="showPassword.set(!showPassword())"
+                    type="button"
+                    [attr.aria-label]="showPassword() ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'"
+                    class="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-slate-500 transition-colors hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-duo-blue"
+                  >
+                    @if (showPassword()) {
+                      <svg lucideEyeOff class="h-5 w-5"></svg>
+                    } @else {
+                      <svg lucideEye class="h-5 w-5"></svg>
+                    }
+                  </button>
+                </div>
+                @if (passwordError()) {
+                  <span class="text-xs font-bold text-duo-red mt-1 block">{{ passwordError() }}</span>
+                }
+              </div>
+              <div>
+                <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
+                  Số điện thoại <span class="text-red-500">*</span>
+                </label>
+                <input
+                  type="tel"
+                  [(ngModel)]="phoneNumber"
+                  name="phoneNumber"
+                  maxlength="10"
+                  placeholder="0123456789"
+                  class="tactile-input w-full text-sm font-semibold"
+                />
+                @if (phoneNumberError()) {
+                  <span class="text-xs font-bold text-duo-red mt-1 block">{{ phoneNumberError() }}</span>
+                }
+              </div>
+              <div>
+                <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Giới tính</label>
+                <select [(ngModel)]="gender" name="gender" class="tactile-input w-full text-sm font-semibold bg-white">
+                  @for (item of genderOptions; track item.value) {
+                    <option [ngValue]="item.value">{{ item.label }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
+                  Tỉnh / thành <span class="text-red-500">*</span>
+                </label>
+                <select [ngModel]="provinceId()" (ngModelChange)="onProvinceChange($event)"
+                        name="provinceId"
+                        class="tactile-input w-full text-sm font-semibold bg-white">
+                  <option [ngValue]="null">Chọn tỉnh / thành</option>
+                  @for (province of provinces(); track province.provinceId) {
+                    <option [ngValue]="province.provinceId">{{ province.provinceName }}</option>
+                  }
+                </select>
+                @if (provinceError()) {
+                  <span class="text-xs font-bold text-duo-red mt-1 block">{{ provinceError() }}</span>
+                }
+              </div>
+              <div>
+                <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
+                  Phường / xã <span class="text-red-500">*</span>
+                </label>
+                <select [ngModel]="wardCode()" (ngModelChange)="wardCode.set($event)"
+                        name="wardCode"
+                        class="tactile-input w-full text-sm font-semibold bg-white"
+                        [disabled]="!provinceId() || isLoadingWards()">
+                  <option [ngValue]="null">{{ isLoadingWards() ? 'Đang tải...' : 'Chọn phường / xã' }}</option>
+                  @for (ward of wards(); track ward.wardCode) {
+                    <option [ngValue]="ward.wardCode">{{ ward.wardName }}</option>
+                  }
+                </select>
+                @if (wardError()) {
+                  <span class="text-xs font-bold text-duo-red mt-1 block">{{ wardError() }}</span>
+                }
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Địa chỉ chi tiết</label>
+              <input type="text" [(ngModel)]="addressDetail" name="addressDetail" class="tactile-input w-full text-sm font-semibold" />
+            </div>
+
+            <div>
+              <label class="block text-sm font-extrabold text-slate-700 mb-2">
+                Môn dạy <span class="text-red-500">*</span>
+              </label>
+              <div class="flex flex-wrap gap-2">
+                @for (subject of subjects(); track subject.id) {
+                  <button type="button" (click)="toggleSubject(subject.id)"
+                          [class]="isSubjectSelected(subject.id)
+                            ? 'bg-duo-blue text-white border-duo-blue-dark border-b-2 px-3 py-1.5 rounded-xl text-sm font-bold transition-colors'
+                            : 'bg-white border-2 border-slate-200 px-3 py-1.5 rounded-xl text-sm font-bold text-slate-600 hover:border-slate-300 transition-colors'">
+                    {{ subject.name }}
+                  </button>
+                }
+              </div>
+              @if (subjectsError()) {
+                <span class="text-xs font-bold text-duo-red mt-1 block">{{ subjectsError() }}</span>
+              }
+            </div>
+
+            <div class="grid sm:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
+                  Học phí mong muốn / giờ <span class="text-red-500">*</span>
+                </label>
+                <input type="number" [(ngModel)]="hourlyRate" name="hourlyRate" class="tactile-input w-full text-sm font-semibold" />
+                @if (hourlyRateError()) {
+                  <span class="text-xs font-bold text-duo-red mt-1 block">{{ hourlyRateError() }}</span>
+                }
+              </div>
+              <div>
+                <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Trạng thái nghề nghiệp</label>
+                <select [(ngModel)]="careerStatus" name="careerStatus" class="tactile-input w-full text-sm font-semibold bg-white">
+                  @for (item of careerOptions; track item.value) {
+                    <option [ngValue]="item.value">{{ item.label }}</option>
+                  }
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Bằng cấp</label>
+                <select [(ngModel)]="academicDegree" name="academicDegree" class="tactile-input w-full text-sm font-semibold bg-white">
+                  @for (item of degreeOptions; track item.value) {
+                    <option [ngValue]="item.value">{{ item.label }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
+                Chuyên ngành <span class="text-red-500">*</span>
+              </label>
+              <input type="text" [(ngModel)]="major" name="major" class="tactile-input w-full text-sm font-semibold" />
+              @if (majorError()) {
+                <span class="text-xs font-bold text-duo-red mt-1 block">{{ majorError() }}</span>
+              }
+            </div>
+
+            <div>
+              <label class="block text-sm font-extrabold text-slate-700 mb-2">
+                Cấp học có thể dạy <span class="text-red-500">*</span>
+              </label>
+              <div class="flex flex-wrap gap-2">
+                @for (item of teachingLevelOptions; track item.value) {
+                  <button type="button" (click)="toggleTeachingLevel(item.value)"
+                          [class]="isTeachingLevelSelected(item.value)
+                            ? 'bg-duo-green text-white border-duo-green-dark border-b-2 px-3 py-1.5 rounded-xl text-sm font-bold transition-colors'
+                            : 'bg-white border-2 border-slate-200 px-3 py-1.5 rounded-xl text-sm font-bold text-slate-600 hover:border-slate-300 transition-colors'">
+                    {{ item.label }}
+                  </button>
+                }
+              </div>
+              @if (teachingLevelsError()) {
+                <span class="text-xs font-bold text-duo-red mt-1 block">{{ teachingLevelsError() }}</span>
+              }
+            </div>
+
+            <div>
+              <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Giới thiệu bản thân</label>
+              <textarea [(ngModel)]="profile" name="profile" rows="3" class="tactile-input w-full text-sm font-semibold resize-none"></textarea>
+            </div>
+
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
+                  Ảnh đại diện <span class="text-red-500">*</span>
+                </label>
+                <input type="file" accept="image/png,image/jpeg,image/webp" (change)="onAvatarChange($event)"
+                       class="tactile-input w-full text-sm font-semibold bg-white" />
+                @if (avatarError()) {
+                  <span class="text-xs font-bold text-duo-red mt-1 block">{{ avatarError() }}</span>
+                }
+              </div>
+              <div>
+                <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
+                  CV <span class="text-red-500">*</span>
+                </label>
+                <input type="file" accept=".pdf,.doc,.docx" (change)="onCvChange($event)"
+                       class="tactile-input w-full text-sm font-semibold bg-white" />
+                @if (cvError()) {
+                  <span class="text-xs font-bold text-duo-red mt-1 block">{{ cvError() }}</span>
+                }
+              </div>
+            </div>
+
+            <button type="submit" [disabled]="isSubmitting()"
+                    class="tactile-button-green w-full py-3.5 rounded-2xl text-base font-extrabold uppercase disabled:opacity-50 disabled:cursor-not-allowed">
+              {{ isSubmitting() ? 'Đang gửi hồ sơ...' : 'Hoàn tất đăng ký' }}
+            </button>
+
+
+            @if (errorMessage()) {
+              <p class="rounded-xl border-2 border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-duo-red">
+                {{ errorMessage() }}
+              </p>
+            }
+          </form>
+
+          <p class="text-center text-sm text-slate-500">
+            Đã có tài khoản? <a routerLink="/auth/login" class="font-extrabold text-[#58cc02] hover:underline">Đăng nhập</a>
+          </p>
+        }
       </div>
     </div>
   `,
@@ -336,6 +346,8 @@ export class RegisterTutorPage implements OnInit {
   isLoadingWards = signal(false);
   isSubmitting = signal(false);
   errorMessage = signal('');
+  isRegisteredPending = signal(false);
+  registrationSuccessMessage = signal('');
 
   onPasswordChange(): void {
     if (this.password && this.password.length < 6) {
@@ -494,7 +506,13 @@ export class RegisterTutorPage implements OnInit {
       this.session.bootstrapFromLogin(login);
       await this.router.navigateByUrl('/tutor/dashboard');
     } catch (error) {
-      const errMsg = getApiErrorMessage(error, 'Đăng ký gia sư thất bại.');
+      const details = getApiErrorDetails(error);
+      if (details.errorCode === 'TUTOR_REGISTRATION_PENDING') {
+        this.registrationSuccessMessage.set(details.message);
+        this.isRegisteredPending.set(true);
+        return;
+      }
+      const errMsg = details.message || 'Đăng ký gia sư thất bại.';
       if (errMsg.toLowerCase().includes('email')) {
         this.emailError.set(errMsg);
       } else if (errMsg.toLowerCase().includes('số điện thoại') || errMsg.toLowerCase().includes('phone')) {
@@ -502,30 +520,6 @@ export class RegisterTutorPage implements OnInit {
       } else {
         this.errorMessage.set(errMsg);
       }
-    } finally {
-      this.isSubmitting.set(false);
-    }
-  }
-
-  async onGoogleCredential(accessToken: string): Promise<void> {
-    if (this.isSubmitting()) return;
-
-    this.isSubmitting.set(true);
-    this.errorMessage.set('');
-
-    try {
-      const response = await firstValueFrom(
-        this.authApi.googleLogin({
-          accessToken,
-          requestedRole: UserRole.Tutor,
-          registrationIntent: true,
-        }),
-      );
-      const login = unwrapApiData(response);
-      this.session.bootstrapFromLogin(login);
-      await this.router.navigateByUrl('/tutor/settings');
-    } catch (error) {
-      this.errorMessage.set(getApiErrorMessage(error, 'Đăng ký gia sư bằng Google thất bại.'));
     } finally {
       this.isSubmitting.set(false);
     }

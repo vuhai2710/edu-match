@@ -1,6 +1,7 @@
 using AutoMapper;
 using EduMatch.DTOs.User;
 using EduMatch.Models;
+using EduMatch.Common.Enums;
 
 namespace EduMatch.Mappers;
 
@@ -13,6 +14,8 @@ public class UserMapper : Profile
       .ForMember(d => d.Code, opt => opt.MapFrom(s =>
         s.Student != null ? s.Student.Code :
         s.Tutor != null ? s.Tutor.Code :
-        null));
+        null))
+      .ForMember(d => d.TutorApprovalStatus, opt => opt.MapFrom(s => s.Tutor != null ? (TutorApprovalStatus?)s.Tutor.ApprovalStatus : null))
+      .ForMember(d => d.TutorId, opt => opt.MapFrom(s => s.Tutor != null ? (long?)s.Tutor.Id : null));
   }
 }

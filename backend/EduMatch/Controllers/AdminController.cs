@@ -8,6 +8,8 @@ using EduMatch.DTOs.Classes;
 using EduMatch.DTOs.Payment;
 using EduMatch.DTOs.TutorRequests;
 using EduMatch.Services.Interfaces;
+using EduMatch.Repositories;
+using EduMatch.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -24,19 +26,22 @@ namespace EduMatch.Controllers
     private readonly IPaymentService _paymentService;
     private readonly IClassReadService _classReadService;
     private readonly ICancellationRequestService _cancellationRequestService;
+    private readonly ITutorRepository _tutorRepository;
 
     public AdminController(
       IApplicationService applicationService,
       ITutorRequestService tutorRequestService,
       IPaymentService paymentService,
       IClassReadService classReadService,
-      ICancellationRequestService cancellationRequestService)
+      ICancellationRequestService cancellationRequestService,
+      ITutorRepository tutorRepository)
     {
       _applicationService = applicationService;
       _tutorRequestService = tutorRequestService;
       _paymentService = paymentService;
       _classReadService = classReadService;
       _cancellationRequestService = cancellationRequestService;
+      _tutorRepository = tutorRepository;
     }
 
     [HttpGet("applications")]
@@ -144,6 +149,50 @@ namespace EduMatch.Controllers
     public async Task<ActionResult<ApiResponse<CancellationRequestDto>>> ResolveCancellationRequest(long id, [FromBody] ResolveCancellationRequestDto dto)
     {
       return this.OkResponse(await _cancellationRequestService.ResolveAsync(id, GetCurrentUserId(), dto));
+    }
+
+    [HttpPut("tutors/{id:long}/approve")]
+    [SwaggerOperation(OperationId = "approveTutor")]
+    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<bool>>> ApproveTutor(long id)
+    {
+      var tutor = await _tutorRepository.GetByIdAsync(id);
+      if (tutor == null || tutor.IsDeleted)
+      {
+        throw new NotFoundException("Gia sư không tồn tại.");
+      }
+
+      tutor.ApprovalStatus = TutorApprovalStatus.Approved;
+      tutor.UpdatedAt = DateTime.UtcNow;
+      _tutorRepository.Update(tutor);
+      await _tutorRepository.SaveChangesAsync();
+
+      return this.OkResponse(ApiResponse<bool>.SuccessResult(true, "Phê duyệt gia sư thành công."));
+    }
+
+    [HttpPut("tutors/{id:long}/reject")]
+    [SwaggerOperation(OperationId = "rejectTutor")]
+    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<bool>>> RejectTutor(long id)
+    {
+      var tutor = await _tutorRepository.GetByIdAsync(id);
+      if (tutor == null || tutor.IsDeleted)
+      {
+        throw new NotFoundException("Gia sư không tồn tại.");
+      }
+
+      tutor.ApprovalStatus = TutorApprovalStatus.Rejected;
+      tutor.UpdatedAt = DateTime.UtcNow;
+      _tutorRepository.Update(tutor);
+      await _tutorRepository.SaveChangesAsync();
+
+      return this.OkResponse(ApiResponse<bool>.SuccessResult(true, "Từ chối duyệt gia sư thành công."));
     }
 
     private long GetCurrentUserId()

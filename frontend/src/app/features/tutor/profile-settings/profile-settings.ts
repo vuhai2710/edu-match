@@ -265,7 +265,6 @@ import { MascotComponent } from '../../../shared/components/mascot/mascot';
                      class="font-bold text-sm text-duo-blue hover:underline break-all">
                     Xem CV hiện tại
                   </a>
-                  <p class="text-xs text-slate-500 mt-0.5">PDF/DOC đã được lưu trên hệ thống.</p>
                 } @else {
                   <p class="font-bold text-sm text-slate-700">Chưa có CV</p>
                   <p class="text-xs text-slate-500 mt-0.5">Tải lên file PDF hoặc Word để học viên xem.</p>

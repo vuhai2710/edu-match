@@ -34,8 +34,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> RegisterStudent([FromForm] RegisterStudentDto dto)
     {
-      var data = await _authService.RegisterStudentAsync(dto);
-      return Ok(ApiResponse<LoginResponseDto>.SuccessResult(data, "Đăng ký học viên thành công"));
+      return Ok(await _authService.RegisterStudentResponseAsync(dto));
     }
 
     [HttpPost("register/tutor")]
@@ -45,8 +44,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> RegisterTutor([FromForm] RegisterTutorDto dto)
     {
-      var data = await _authService.RegisterTutorAsync(dto);
-      return Ok(ApiResponse<LoginResponseDto>.SuccessResult(data, "Đăng ký gia sư thành công"));
+      return Ok(await _authService.RegisterTutorResponseAsync(dto));
     }
 
     [HttpPost("login")]
@@ -58,7 +56,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login([FromBody] LoginDto dto)
     {
-      return Ok(await _authService.LoginAsync(dto));
+      return Ok(await _authService.LoginResponseAsync(dto));
     }
 
     [HttpPost("google")]
@@ -69,8 +67,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequestDto dto)
     {
-      var data = await _authService.GoogleLoginAsync(dto);
-      return Ok(ApiResponse<LoginResponseDto>.SuccessResult(data, "Google login successful"));
+      return Ok(await _authService.GoogleLoginResponseAsync(dto));
     }
 
     [HttpPost("refresh-token")]
@@ -80,8 +77,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenDto dto)
     {
-      var data = await _authService.RefreshTokenAsync(dto);
-      return Ok(ApiResponse<LoginResponseDto>.SuccessResult(data, "Refresh token thanh cong"));
+      return Ok(await _authService.RefreshTokenResponseAsync(dto));
     }
 
     [HttpPost("logout")]

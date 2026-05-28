@@ -47,7 +47,9 @@ public class TutorService : ITutorService
   {
     return await ServiceResponse.ExecuteAsync(async () =>
     {
-      var pagedProfiles = await _tutorRepository.GetTutorsAsync(parameters);
+      var user = _httpContextAccessor.HttpContext?.User;
+      bool isAdmin = user?.IsInRole("Admin") ?? false;
+      var pagedProfiles = await _tutorRepository.GetTutorsAsync(parameters, isAdmin);
 
       return ApiResponse<PagedResult<TutorDto>>.SuccessResult(new PagedResult<TutorDto>
       {

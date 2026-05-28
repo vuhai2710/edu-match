@@ -6,6 +6,7 @@ namespace EduMatch.Models
   {
     public string Code { get; set; } = null!;
     public long UserId { get; set; }
+    public TutorApprovalStatus ApprovalStatus { get; set; } = TutorApprovalStatus.Pending;
     public long? CvFileId { get; set; }
     public string? Profile { get; set; }
     public decimal HourlyRate { get; set; }

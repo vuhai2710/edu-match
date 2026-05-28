@@ -3,7 +3,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { UserDto, UserRole, TutorDetailDto, StudentDetailDto } from '../../../api/generated/client/models';
-import { UsersService, TutorsService, StudentsService } from '../../../api/generated/client/services';
+import { UsersService, TutorsService, StudentsService, AdminService } from '../../../api/generated/client/services';
 import { ApiErrorDetails, getApiErrorDetails, getApiErrorMessage } from '../../../core/http/api-error';
 import { SessionService } from '../../../core/auth/session';
 import { ErrorBannerComponent } from '../../../shared/components/error-banner/error-banner';
@@ -58,18 +58,39 @@ import {
                 } @else {
                   <span class="rounded-xl bg-red-50 px-3 py-1 text-xs font-black text-duo-red border border-red-200">Đã khóa</span>
                 }
+                @if (u.role === userRole.Tutor && tutorProfile(); as t) {
+                  @if (t.approvalStatus === 'Pending') {
+                    <span class="rounded-xl bg-amber-50 px-3 py-1 text-xs font-black text-amber-600 border border-amber-200">Chờ phê duyệt</span>
+                  } @else if (t.approvalStatus === 'Approved') {
+                    <span class="rounded-xl bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-600 border border-emerald-200">Đã phê duyệt</span>
+                  } @else if (t.approvalStatus === 'Rejected') {
+                    <span class="rounded-xl bg-rose-50 px-3 py-1 text-xs font-black text-rose-600 border border-rose-200">Bị từ chối</span>
+                  }
+                }
               </div>
               @if (subtitle(u)) {
                 <p class="text-sm text-slate-500 font-extrabold tracking-wider">{{ subtitle(u) }}</p>
               }
-              @if (u.id !== session.user()?.id) {
-                <div class="flex flex-wrap items-center justify-center sm:justify-start gap-3 pt-2">
+              <div class="flex flex-wrap items-center justify-center sm:justify-start gap-3 pt-2">
+                @if (u.id !== session.user()?.id) {
                   <a [routerLink]="['/admin/chat']" [queryParams]="{ partnerId: u.id }"
                      class="px-4 py-2 bg-duo-green text-white font-extrabold text-xs uppercase tracking-wider rounded-xl border-b-4 border-duo-green-dark hover:brightness-105 active:border-b-0 active:translate-y-[4px] inline-flex items-center gap-1.5 transition-all">
-                    💬 Nhắn tin
+                    Nhắn tin
                   </a>
-                </div>
-              }
+                }
+                @if (u.role === userRole.Tutor && tutorProfile(); as t) {
+                  @if (t.approvalStatus === 'Pending') {
+                    <button (click)="approveTutor(t.id)" [disabled]="isActionRunning() || isDeleting()"
+                            class="px-4 py-2 bg-emerald-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl border-b-4 border-emerald-700 hover:brightness-105 active:border-b-0 active:translate-y-[4px] disabled:opacity-50 transition-all inline-flex items-center gap-1.5">
+                      Phê duyệt
+                    </button>
+                    <button (click)="rejectTutor(t.id)" [disabled]="isActionRunning() || isDeleting()"
+                            class="px-4 py-2 bg-rose-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl border-b-4 border-rose-700 hover:brightness-105 active:border-b-0 active:translate-y-[4px] disabled:opacity-50 transition-all inline-flex items-center gap-1.5">
+                      Từ chối
+                    </button>
+                  }
+                }
+              </div>
             </div>
             @if (canDelete()) {
               <button (click)="confirmDelete()"
@@ -84,43 +105,42 @@ import {
         <!-- Detail card -->
         <div class="tactile-card p-6 space-y-4">
           <div class="flex items-center gap-2 border-b-2 border-slate-100 pb-3">
-            <span class="text-2xl">📋</span>
             <h2 class="font-display text-xl font-extrabold text-slate-800">Thông tin cá nhân cơ bản</h2>
           </div>
           
           <div class="grid sm:grid-cols-2 gap-4 text-sm">
             @if (u.code) {
               <div class="rounded-xl border-2 border-slate-100 bg-slate-50 px-4 py-3">
-                <p class="text-xs font-black uppercase text-slate-400 tracking-wider">🏷️ Mã định danh</p>
+                <p class="text-xs font-black uppercase text-slate-400 tracking-wider">Mã định danh</p>
                 <p class="mt-1 font-extrabold text-slate-700">{{ u.code }}</p>
               </div>
             }
             <div class="rounded-xl border-2 border-slate-100 bg-slate-50 px-4 py-3">
-              <p class="text-xs font-black uppercase text-slate-400 tracking-wider">🔑 Vai trò hệ thống</p>
+              <p class="text-xs font-black uppercase text-slate-400 tracking-wider">Vai trò hệ thống</p>
               <p class="mt-1 font-extrabold text-slate-700">{{ roleLabel(u.role) }}</p>
             </div>
             <div class="rounded-xl border-2 border-slate-100 bg-slate-50 px-4 py-3">
-              <p class="text-xs font-black uppercase text-slate-400 tracking-wider">📧 Địa chỉ Email</p>
+              <p class="text-xs font-black uppercase text-slate-400 tracking-wider">Địa chỉ Email</p>
               <p class="mt-1 font-extrabold text-slate-700 break-all">{{ u.email || '—' }}</p>
             </div>
             <div class="rounded-xl border-2 border-slate-100 bg-slate-50 px-4 py-3">
-              <p class="text-xs font-black uppercase text-slate-400 tracking-wider">👤 Giới tính</p>
+              <p class="text-xs font-black uppercase text-slate-400 tracking-wider">Giới tính</p>
               <p class="mt-1 font-extrabold text-slate-700">{{ getGenderLabel(u.gender) }}</p>
             </div>
             <div class="rounded-xl border-2 border-slate-100 bg-slate-50 px-4 py-3">
-              <p class="text-xs font-black uppercase text-slate-400 tracking-wider">🎂 Năm sinh</p>
+              <p class="text-xs font-black uppercase text-slate-400 tracking-wider">Năm sinh</p>
               <p class="mt-1 font-extrabold text-slate-700">{{ u.birth ?? '—' }}</p>
             </div>
             <div class="rounded-xl border-2 border-slate-100 bg-slate-50 px-4 py-3">
-              <p class="text-xs font-black uppercase text-slate-400 tracking-wider">🏫 Trường học / Đơn vị</p>
+              <p class="text-xs font-black uppercase text-slate-400 tracking-wider">Trường học / Đơn vị</p>
               <p class="mt-1 font-extrabold text-slate-700">{{ u.school || '—' }}</p>
             </div>
             <div class="rounded-xl border-2 border-slate-100 bg-slate-50 px-4 py-3">
-              <p class="text-xs font-black uppercase text-slate-400 tracking-wider">🛡️ Trạng thái tài khoản</p>
+              <p class="text-xs font-black uppercase text-slate-400 tracking-wider">Trạng thái tài khoản</p>
               <p class="mt-1 font-extrabold text-slate-700">{{ u.isActive ? 'Đang hoạt động' : 'Đã khóa' }}</p>
             </div>
             <div class="rounded-xl border-2 border-slate-100 bg-slate-50 px-4 py-3">
-              <p class="text-xs font-black uppercase text-slate-400 tracking-wider">🌐 Đăng nhập Google</p>
+              <p class="text-xs font-black uppercase text-slate-400 tracking-wider">Đăng nhập Google</p>
               <p class="mt-1 font-extrabold text-slate-700">{{ u.isGoogleAccount ? 'Có' : 'Không' }}</p>
             </div>
           </div>
@@ -137,33 +157,32 @@ import {
         @if (u.role === userRole.Tutor && tutorProfile(); as t) {
           <div class="tactile-card p-6 space-y-4">
             <div class="flex items-center gap-2 border-b-2 border-slate-100 pb-3">
-              <span class="text-2xl">🎓</span>
               <h2 class="font-display text-xl font-bold text-slate-800">Thông tin gia sư chi tiết</h2>
             </div>
             
             <div class="grid sm:grid-cols-2 gap-4 text-sm">
               <div class="rounded-xl border-2 border-slate-100 bg-slate-50 px-4 py-3">
-                <p class="text-xs font-black uppercase text-slate-400 tracking-wider">📞 Số điện thoại</p>
+                <p class="text-xs font-black uppercase text-slate-400 tracking-wider">Số điện thoại</p>
                 <p class="mt-1 font-extrabold text-slate-700">{{ t.phoneNumber || '—' }}</p>
               </div>
               <div class="rounded-xl border-2 border-slate-100 bg-slate-50 px-4 py-3">
-                <p class="text-xs font-black uppercase text-slate-400 tracking-wider">💼 Trạng thái nghề nghiệp</p>
+                <p class="text-xs font-black uppercase text-slate-400 tracking-wider">Trạng thái nghề nghiệp</p>
                 <p class="mt-1 font-extrabold text-slate-700">{{ getCareerStatusLabel(t.careerStatus) }}</p>
               </div>
               <div class="rounded-xl border-2 border-slate-100 bg-slate-50 px-4 py-3">
-                <p class="text-xs font-black uppercase text-slate-400 tracking-wider">📜 Học vị / Bằng cấp</p>
+                <p class="text-xs font-black uppercase text-slate-400 tracking-wider">Học vị / Bằng cấp</p>
                 <p class="mt-1 font-extrabold text-slate-700">{{ getAcademicDegreeLabel(t.academicDegree) }}</p>
               </div>
               <div class="rounded-xl border-2 border-slate-100 bg-slate-50 px-4 py-3">
-                <p class="text-xs font-black uppercase text-slate-400 tracking-wider">📚 Chuyên ngành</p>
+                <p class="text-xs font-black uppercase text-slate-400 tracking-wider">Chuyên ngành</p>
                 <p class="mt-1 font-extrabold text-slate-700">{{ t.major || '—' }}</p>
               </div>
               <div class="rounded-xl border-2 border-slate-100 bg-slate-50 px-4 py-3">
-                <p class="text-xs font-black uppercase text-slate-400 tracking-wider">💸 Học phí yêu cầu</p>
+                <p class="text-xs font-black uppercase text-slate-400 tracking-wider">Học phí yêu cầu</p>
                 <p class="mt-1 font-extrabold text-duo-green text-base">{{ formatPrice(t.hourlyRate) }} / giờ</p>
               </div>
               <div class="rounded-xl border-2 border-slate-100 bg-slate-50 px-4 py-3">
-                <p class="text-xs font-black uppercase text-slate-400 tracking-wider">⭐ Đánh giá gia sư</p>
+                <p class="text-xs font-black uppercase text-slate-400 tracking-wider">Đánh giá gia sư</p>
                 <p class="mt-1 font-extrabold text-slate-700">
                   @if (t.rating && t.rating > 0) {
                     <span class="text-duo-yellow font-extrabold">{{ t.rating }}/5.0 ★</span> ({{ t.totalReviews ?? 0 }} đánh giá)
@@ -173,17 +192,17 @@ import {
                 </p>
               </div>
               <div class="rounded-xl border-2 border-slate-100 bg-slate-50 px-4 py-3 sm:col-span-2">
-                <p class="text-xs font-black uppercase text-slate-400 tracking-wider">📍 Địa chỉ đầy đủ</p>
+                <p class="text-xs font-black uppercase text-slate-400 tracking-wider">Địa chỉ đầy đủ</p>
                 <p class="mt-1 font-extrabold text-slate-700">{{ t.address?.fullAddress || '—' }}</p>
               </div>
               <div class="rounded-xl border-2 border-slate-100 bg-slate-50 px-4 py-3 sm:col-span-2">
-                <p class="text-xs font-black uppercase text-slate-400 tracking-wider">✍️ Giới thiệu bản thân</p>
+                <p class="text-xs font-black uppercase text-slate-400 tracking-wider">Giới thiệu bản thân</p>
                 <p class="mt-1 font-extrabold text-slate-700 leading-relaxed whitespace-pre-line">{{ t.profile || '—' }}</p>
               </div>
 
               @if (t.subjects?.length) {
                 <div class="rounded-xl border-2 border-slate-100 bg-slate-50 px-4 py-3 sm:col-span-2">
-                  <p class="text-xs font-black uppercase text-slate-400 tracking-wider">📖 Môn giảng dạy</p>
+                  <p class="text-xs font-black uppercase text-slate-400 tracking-wider">Môn giảng dạy</p>
                   <div class="flex flex-wrap gap-2 mt-2">
                     @for (subj of t.subjects; track subj.subjectId) {
                       <span class="bg-duo-green-light text-duo-green-dark px-3 py-1 rounded-xl text-xs font-black border border-duo-green/20">
@@ -196,7 +215,7 @@ import {
 
               @if (t.teachingLevels?.length) {
                 <div class="rounded-xl border-2 border-slate-100 bg-slate-50 px-4 py-3 sm:col-span-2">
-                  <p class="text-xs font-black uppercase text-slate-400 tracking-wider">🏫 Cấp lớp giảng dạy</p>
+                  <p class="text-xs font-black uppercase text-slate-400 tracking-wider">Cấp lớp giảng dạy</p>
                   <div class="flex flex-wrap gap-2 mt-2">
                     @for (lvl of t.teachingLevels; track lvl) {
                       <span class="bg-blue-50 text-duo-blue px-3 py-1 rounded-xl text-xs font-black border border-blue-100">
@@ -210,7 +229,7 @@ import {
               @if (t.cvUrl) {
                 <div class="rounded-xl border-2 border-slate-100 bg-slate-50 px-4 py-3 sm:col-span-2 flex items-center justify-between">
                   <div>
-                    <p class="text-xs font-black uppercase text-slate-400 tracking-wider">📄 Hồ sơ năng lực (CV)</p>
+                    <p class="text-xs font-black uppercase text-slate-400 tracking-wider">Hồ sơ năng lực (CV)</p>
                     <p class="text-xs text-slate-400 mt-0.5">Tài liệu minh chứng năng lực giảng dạy</p>
                   </div>
                   <a [href]="t.cvUrl" target="_blank" class="px-5 py-2.5 bg-duo-blue text-white rounded-xl text-xs font-black uppercase shadow-sm border-b-4 border-duo-blue-dark hover:brightness-105 active:border-b-0 active:translate-y-[4px] transition-all">
@@ -226,21 +245,20 @@ import {
         @if (u.role === userRole.Student && studentProfile(); as s) {
           <div class="tactile-card p-6 space-y-4">
             <div class="flex items-center gap-2 border-b-2 border-slate-100 pb-3">
-              <span class="text-2xl">🎒</span>
               <h2 class="font-display text-xl font-bold text-slate-800">Thông tin học viên chi tiết</h2>
             </div>
             
             <div class="grid sm:grid-cols-2 gap-4 text-sm">
               <div class="rounded-xl border-2 border-slate-100 bg-slate-50 px-4 py-3">
-                <p class="text-xs font-black uppercase text-slate-400 tracking-wider">📞 Số điện thoại</p>
+                <p class="text-xs font-black uppercase text-slate-400 tracking-wider">Số điện thoại</p>
                 <p class="mt-1 font-extrabold text-slate-700">{{ s.phoneNumber || '—' }}</p>
               </div>
               <div class="rounded-xl border-2 border-slate-100 bg-slate-50 px-4 py-3">
-                <p class="text-xs font-black uppercase text-slate-400 tracking-wider">🏫 Cấp học hiện tại</p>
+                <p class="text-xs font-black uppercase text-slate-400 tracking-wider">Cấp học hiện tại</p>
                 <p class="mt-1 font-extrabold text-slate-700">{{ getGradeLevelLabel(s.gradeLevel) }}</p>
               </div>
               <div class="rounded-xl border-2 border-slate-100 bg-slate-50 px-4 py-3 sm:col-span-2">
-                <p class="text-xs font-black uppercase text-slate-400 tracking-wider">📍 Địa chỉ đầy đủ</p>
+                <p class="text-xs font-black uppercase text-slate-400 tracking-wider">Địa chỉ đầy đủ</p>
                 <p class="mt-1 font-extrabold text-slate-700">{{ s.address?.fullAddress || '—' }}</p>
               </div>
             </div>
@@ -265,6 +283,7 @@ export class AdminUserDetailPage implements OnInit {
   errorDetails = signal<ApiErrorDetails | null>(null);
   actionError = signal('');
   isDeleting = signal(false);
+  isActionRunning = signal(false);
 
   protected readonly userRole = UserRole;
 
@@ -273,6 +292,7 @@ export class AdminUserDetailPage implements OnInit {
   private readonly usersApi = inject(UsersService);
   private readonly tutorsApi = inject(TutorsService);
   private readonly studentsApi = inject(StudentsService);
+  private readonly adminApi = inject(AdminService);
   protected readonly session = inject(SessionService);
 
   ngOnInit(): void {
@@ -444,6 +464,38 @@ export class AdminUserDetailPage implements OnInit {
       console.error('[admin/user-detail] Failed to load student profile details', e);
     } finally {
       this.isLoadingProfile.set(false);
+    }
+  }
+
+  async approveTutor(tutorId?: number): Promise<void> {
+    if (!tutorId) return;
+
+    this.isActionRunning.set(true);
+    this.actionError.set('');
+    try {
+      await firstValueFrom(this.adminApi.approveTutor(tutorId));
+      await this.loadUser(); // reload
+    } catch (error) {
+      console.error('[admin/user-detail] approve failed', error);
+      this.actionError.set(getApiErrorMessage(error, 'Không thể phê duyệt gia sư.'));
+    } finally {
+      this.isActionRunning.set(false);
+    }
+  }
+
+  async rejectTutor(tutorId?: number): Promise<void> {
+    if (!tutorId) return;
+
+    this.isActionRunning.set(true);
+    this.actionError.set('');
+    try {
+      await firstValueFrom(this.adminApi.rejectTutor(tutorId));
+      await this.loadUser(); // reload
+    } catch (error) {
+      console.error('[admin/user-detail] reject failed', error);
+      this.actionError.set(getApiErrorMessage(error, 'Không thể từ chối gia sư.'));
+    } finally {
+      this.isActionRunning.set(false);
     }
   }
 }
