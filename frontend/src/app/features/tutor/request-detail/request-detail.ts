@@ -77,10 +77,7 @@ import {
 
           @if (isMyProposal(p)) {
             <div class="tactile-card p-6 space-y-4 border-duo-blue bg-blue-50/10">
-              <div class="flex items-center justify-between">
-                <h2 class="font-extrabold text-lg text-slate-900">Đề xuất lịch của bạn</h2>
-                <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-duo-blue">Đang chờ học viên phản hồi</span>
-              </div>
+              <h2 class="font-extrabold text-lg text-slate-900">Đề xuất lịch của bạn</h2>
               <p class="text-sm text-slate-500">Đề xuất lịch mới đang được gửi tới học viên và chờ họ phản hồi.</p>
               
               <div class="grid sm:grid-cols-3 gap-4 text-sm">

@@ -23,6 +23,18 @@ export interface ApiErrorDetails {
   url?: string | null;
 }
 
+/** Thrown by unwrapApiData when the backend returns success=false (HTTP 200 business failure). */
+export class ApiBusinessError extends Error {
+  readonly errorCode: string | null;
+  readonly statusCode: number | null;
+  constructor(message: string, errorCode?: string | null, statusCode?: number | null) {
+    super(message);
+    this.name = 'ApiBusinessError';
+    this.errorCode = errorCode ?? null;
+    this.statusCode = statusCode ?? null;
+  }
+}
+
 export function getApiErrorMessage(
   error: unknown,
   fallback = 'Không thể xử lý yêu cầu. Vui lòng thử lại.',
@@ -71,6 +83,15 @@ export function getApiErrorDetails(
     };
   }
 
+  // HTTP-200 business failure thrown by unwrapApiData
+  if (error instanceof ApiBusinessError) {
+    return {
+      message: error.message || fallback,
+      status: error.statusCode ?? undefined,
+      errorCode: error.errorCode,
+    };
+  }
+
   if (error instanceof Error) {
     return { message: error.message || fallback };
   }
@@ -78,9 +99,13 @@ export function getApiErrorDetails(
   return { message: fallback };
 }
 
-export function unwrapApiData<T>(response: { data?: T; message?: string | null }): T {
-  if (response.data == null) {
-    throw new Error(response.message ?? 'API không trả về dữ liệu.');
+export function unwrapApiData<T>(response: { success?: boolean; data?: T; message?: string | null; errorCode?: string | null; statusCode?: number | null }): T {
+  if (!response.success || response.data == null) {
+    throw new ApiBusinessError(
+      response.message ?? 'API không trả về dữ liệu.',
+      response.errorCode,
+      response.statusCode,
+    );
   }
 
   return response.data;

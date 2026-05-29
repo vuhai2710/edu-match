@@ -67,7 +67,7 @@ namespace EduMatch.Common.Exception
           response = DTOs.ApiResponse.Fail(unauthorizedException.Message, StatusCodes.Status401Unauthorized);
           return true;
         case AppException appException when appException.StatusCode < StatusCodes.Status500InternalServerError:
-          response = DTOs.ApiResponse.Fail(appException.Message, appException.StatusCode);
+          response = DTOs.ApiResponse.Fail(appException.Message, appException.StatusCode, appException.ErrorCode);
           return true;
         default:
           response = null!;

@@ -69,7 +69,7 @@ import { MascotComponent } from '../../../shared/components/mascot/mascot';
                 <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
                   Họ và tên <span class="text-red-500">*</span>
                 </label>
-                <input type="text" [(ngModel)]="fullName" name="fullName" class="tactile-input w-full text-sm font-semibold" />
+                <input type="text" [(ngModel)]="fullName" (ngModelChange)="fullNameError.set('')" name="fullName" class="tactile-input w-full text-sm font-semibold" />
                 @if (fullNameError()) {
                   <span class="text-xs font-bold text-duo-red mt-1 block">{{ fullNameError() }}</span>
                 }
@@ -78,7 +78,7 @@ import { MascotComponent } from '../../../shared/components/mascot/mascot';
                 <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
                   Email <span class="text-red-500">*</span>
                 </label>
-                <input type="email" [(ngModel)]="email" name="email" placeholder="user@gmail.com" class="tactile-input w-full text-sm font-semibold" />
+                <input type="email" [(ngModel)]="email" (ngModelChange)="emailError.set('')" name="email" placeholder="user@gmail.com" class="tactile-input w-full text-sm font-semibold" />
                 @if (emailError()) {
                   <span class="text-xs font-bold text-duo-red mt-1 block">{{ emailError() }}</span>
                 }
@@ -123,13 +123,14 @@ import { MascotComponent } from '../../../shared/components/mascot/mascot';
                 <input
                   type="tel"
                   [(ngModel)]="phoneNumber"
+                  (ngModelChange)="phoneError.set('')"
                   name="phoneNumber"
                   maxlength="10"
                   placeholder="0123456789"
                   class="tactile-input w-full text-sm font-semibold"
                 />
-                @if (phoneNumberError()) {
-                  <span class="text-xs font-bold text-duo-red mt-1 block">{{ phoneNumberError() }}</span>
+                @if (phoneError()) {
+                  <span class="text-xs font-bold text-duo-red mt-1 block">{{ phoneError() }}</span>
                 }
               </div>
               <div>
@@ -163,7 +164,7 @@ import { MascotComponent } from '../../../shared/components/mascot/mascot';
                 <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
                   Phường / xã <span class="text-red-500">*</span>
                 </label>
-                <select [ngModel]="wardCode()" (ngModelChange)="wardCode.set($event)"
+                <select [ngModel]="wardCode()" (ngModelChange)="wardCode.set($event); wardError.set('')"
                         name="wardCode"
                         class="tactile-input w-full text-sm font-semibold bg-white"
                         [disabled]="!provinceId() || isLoadingWards()">
@@ -207,7 +208,7 @@ import { MascotComponent } from '../../../shared/components/mascot/mascot';
                 <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
                   Học phí mong muốn / giờ <span class="text-red-500">*</span>
                 </label>
-                <input type="number" [(ngModel)]="hourlyRate" name="hourlyRate" class="tactile-input w-full text-sm font-semibold" />
+                <input type="number" [(ngModel)]="hourlyRate" (ngModelChange)="hourlyRateError.set('')" name="hourlyRate" class="tactile-input w-full text-sm font-semibold" />
                 @if (hourlyRateError()) {
                   <span class="text-xs font-bold text-duo-red mt-1 block">{{ hourlyRateError() }}</span>
                 }
@@ -234,7 +235,7 @@ import { MascotComponent } from '../../../shared/components/mascot/mascot';
               <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
                 Chuyên ngành <span class="text-red-500">*</span>
               </label>
-              <input type="text" [(ngModel)]="major" name="major" class="tactile-input w-full text-sm font-semibold" />
+              <input type="text" [(ngModel)]="major" (ngModelChange)="majorError.set('')" name="major" class="tactile-input w-full text-sm font-semibold" />
               @if (majorError()) {
                 <span class="text-xs font-bold text-duo-red mt-1 block">{{ majorError() }}</span>
               }
@@ -327,6 +328,7 @@ export class RegisterTutorPage implements OnInit {
   fullNameError = signal('');
   emailError = signal('');
   passwordError = signal('');
+  phoneError = signal('');
   provinceError = signal('');
   wardError = signal('');
   subjectsError = signal('');
@@ -357,13 +359,26 @@ export class RegisterTutorPage implements OnInit {
     }
   }
 
-  phoneNumberError(): string {
+  validatePhone(): boolean {
     const phone = this.phoneNumber.trim();
-    if (!phone) return '';
-    if (!phone.startsWith('0')) return 'Số điện thoại phải bắt đầu bằng số 0.';
-    if (!/^\d+$/.test(phone)) return 'Số điện thoại chỉ được chứa các chữ số.';
-    if (phone.length > 10) return 'Số điện thoại tối đa 10 chữ số.';
-    return '';
+    if (!phone) {
+      this.phoneError.set('Vui lòng nhập số điện thoại.');
+      return false;
+    }
+    if (!phone.startsWith('0')) {
+      this.phoneError.set('Số điện thoại phải bắt đầu bằng số 0.');
+      return false;
+    }
+    if (!/^\d+$/.test(phone)) {
+      this.phoneError.set('Số điện thoại chỉ được chứa các chữ số.');
+      return false;
+    }
+    if (phone.length > 10) {
+      this.phoneError.set('Số điện thoại tối đa 10 chữ số.');
+      return false;
+    }
+    this.phoneError.set('');
+    return true;
   }
 
   protected readonly genderOptions = [
@@ -402,6 +417,8 @@ export class RegisterTutorPage implements OnInit {
     this.provinceId.set(provinceId);
     this.wardCode.set(null);
     this.wards.set([]);
+    this.provinceError.set('');
+    this.wardError.set('');
     if (!provinceId) return;
 
     this.isLoadingWards.set(true);
@@ -417,6 +434,7 @@ export class RegisterTutorPage implements OnInit {
 
   toggleSubject(subjectId?: number): void {
     if (!subjectId) return;
+    this.subjectsError.set('');
     this.selectedSubjectIds.update((current) =>
       current.includes(subjectId)
         ? current.filter((id) => id !== subjectId)
@@ -429,6 +447,7 @@ export class RegisterTutorPage implements OnInit {
   }
 
   toggleTeachingLevel(level: EducationLevel): void {
+    this.teachingLevelsError.set('');
     this.selectedTeachingLevels.update((current) =>
       current.includes(level)
         ? current.filter((item) => item !== level)
@@ -442,17 +461,19 @@ export class RegisterTutorPage implements OnInit {
 
   onAvatarChange(event: Event): void {
     this.avatar = this.readFile(event);
+    this.avatarError.set('');
     if (this.avatar && this.avatar.size > 5 * 1024 * 1024) {
       this.avatar = null;
-      this.errorMessage.set('Ảnh đại diện tối đa 5MB.');
+      this.avatarError.set('Ảnh đại diện tối đa 5MB.');
     }
   }
 
   onCvChange(event: Event): void {
     this.cv = this.readFile(event);
+    this.cvError.set('');
     if (this.cv && this.cv.size > 10 * 1024 * 1024) {
       this.cv = null;
-      this.errorMessage.set('CV tối đa 10MB.');
+      this.cvError.set('CV tối đa 10MB.');
     }
   }
 
@@ -502,21 +523,25 @@ export class RegisterTutorPage implements OnInit {
           academicDegree: this.academicDegree,
         }),
       );
+
+      if (!response.success) {
+        if (response.message.includes('phê duyệt hồ sơ') || response.message.includes('quản trị viên phê duyệt')) {
+          this.registrationSuccessMessage.set(response.message);
+          this.isRegisteredPending.set(true);
+          return;
+        }
+        throw new Error(response.message);
+      }
+
       const login = unwrapApiData(response);
       this.session.bootstrapFromLogin(login);
       await this.router.navigateByUrl('/tutor/dashboard');
     } catch (error) {
-      const details = getApiErrorDetails(error);
-      if (details.errorCode === 'TUTOR_REGISTRATION_PENDING') {
-        this.registrationSuccessMessage.set(details.message);
-        this.isRegisteredPending.set(true);
-        return;
-      }
-      const errMsg = details.message || 'Đăng ký gia sư thất bại.';
+      const errMsg = getApiErrorMessage(error, 'Đăng ký gia sư thất bại.');
       if (errMsg.toLowerCase().includes('email')) {
         this.emailError.set(errMsg);
       } else if (errMsg.toLowerCase().includes('số điện thoại') || errMsg.toLowerCase().includes('phone')) {
-        this.errorMessage.set(errMsg);
+        this.phoneError.set(errMsg);
       } else {
         this.errorMessage.set(errMsg);
       }
@@ -612,10 +637,7 @@ export class RegisterTutorPage implements OnInit {
       isValid = false;
     }
 
-    const phone = this.phoneNumber.trim();
-    if (!phone) {
-      isValid = false;
-    } else if (this.phoneNumberError()) {
+    if (!this.validatePhone()) {
       isValid = false;
     }
 

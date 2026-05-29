@@ -40,6 +40,7 @@ public class AuthService
   private readonly ICodeGeneratorService _codeGenerator;
   private readonly IHttpClientFactory _httpClientFactory;
   private readonly AppDbContext _db;
+  private readonly INotificationService _notificationService;
 
   public AuthService(
     IUserRepository userRepository,
@@ -52,7 +53,8 @@ public class AuthService
     IMapper mapper,
     ICodeGeneratorService codeGenerator,
     IHttpClientFactory httpClientFactory,
-    AppDbContext db)
+    AppDbContext db,
+    INotificationService notificationService)
   {
     _userRepository = userRepository;
     _subjectRepository = subjectRepository;
@@ -65,6 +67,7 @@ public class AuthService
     _codeGenerator = codeGenerator;
     _httpClientFactory = httpClientFactory;
     _db = db;
+    _notificationService = notificationService;
   }
 
   public Task<LoginResponseDto> RegisterStudentAsync(RegisterStudentDto dto)
@@ -511,6 +514,21 @@ public class AuthService
 
     if (role == UserRole.Tutor)
     {
+      // Notify all admins about new tutor registration
+      var adminIds = await _db.Users
+        .Where(u => u.Role == UserRole.Admin && !u.IsDeleted)
+        .Select(u => u.Id)
+        .ToListAsync();
+
+      await _notificationService.SendToMultipleAsync(
+        adminIds,
+        "Yêu cầu đăng ký gia sư mới",
+        $"{user.FullName} vừa gửi yêu cầu đăng ký trở thành gia sư. Vui lòng xem xét và phê duyệt.",
+        NotificationType.BecomeTutorRequest,
+        "Tutor",
+        user.Tutor!.Id,
+        $"/admin/users/{user.Id}");
+
       throw new AppException("Đăng ký tài khoản gia sư thành công. Vui lòng chờ quản trị viên phê duyệt hồ sơ của bạn.", 400, "TUTOR_REGISTRATION_PENDING");
     }
 

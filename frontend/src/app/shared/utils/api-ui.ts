@@ -215,12 +215,23 @@ export function scheduleProposalStatusLabel(status?: ScheduleProposalStatus | nu
 export function notificationRoute(notification: NotificationDto, role: UserRole = UserRole.Student): string {
   const rolePrefix = role === UserRole.Tutor ? '/tutor' : role === UserRole.Admin ? '/admin' : '/student';
 
-  if (notification.actionUrl?.startsWith('/learning-requests/')) {
-    if (role === UserRole.Tutor) {
-      const id = notification.actionUrl.split('/').pop();
-      return `/tutor/requests/${id}`;
+  // Direct actionUrl override – used for admin/users, auth/login, etc.
+  if (notification.actionUrl) {
+    if (notification.actionUrl.startsWith('/learning-requests/')) {
+      if (role === UserRole.Tutor) {
+        const id = notification.actionUrl.split('/').pop();
+        return `/tutor/requests/${id}`;
+      }
+      return `${rolePrefix}${notification.actionUrl}`;
     }
-    return `${rolePrefix}${notification.actionUrl}`;
+    // Admin tutor-profile links (/admin/users/:id)
+    if (notification.actionUrl.startsWith('/admin/')) {
+      return notification.actionUrl;
+    }
+    // Auth links (/auth/login) – just return as-is
+    if (notification.actionUrl.startsWith('/auth/')) {
+      return notification.actionUrl;
+    }
   }
 
   if (notification.referenceType === 'LearningRequest' && notification.referenceId) {
@@ -232,6 +243,13 @@ export function notificationRoute(notification: NotificationDto, role: UserRole 
 
   if (notification.referenceType === 'Class' && notification.referenceId) {
     return `${rolePrefix}/classes/${notification.referenceId}`;
+  }
+
+  // Tutor registration / approval – admin goes to user list, tutor sees their profile
+  if (notification.referenceType === 'Tutor') {
+    if (role === UserRole.Admin) {
+      return `/admin/users`;
+    }
   }
 
   return `${rolePrefix}/notifications`;

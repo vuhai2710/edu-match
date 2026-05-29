@@ -38,7 +38,7 @@ import { GoogleSignInButtonComponent } from '../../../shared/components/google-s
               <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
                 Họ và tên <span class="text-red-500">*</span>
               </label>
-              <input type="text" [(ngModel)]="fullName" name="fullName" class="tactile-input w-full text-sm font-semibold" />
+              <input type="text" [(ngModel)]="fullName" (ngModelChange)="fullNameError.set('')" name="fullName" class="tactile-input w-full text-sm font-semibold" />
               @if (fullNameError()) {
                 <span class="text-xs font-bold text-duo-red mt-1 block">{{ fullNameError() }}</span>
               }
@@ -47,7 +47,7 @@ import { GoogleSignInButtonComponent } from '../../../shared/components/google-s
               <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
                 Email <span class="text-red-500">*</span>
               </label>
-              <input type="email" [(ngModel)]="email" name="email" placeholder="user@gmail.com" class="tactile-input w-full text-sm font-semibold" />
+              <input type="email" [(ngModel)]="email" (ngModelChange)="emailError.set('')" name="email" placeholder="user@gmail.com" class="tactile-input w-full text-sm font-semibold" />
               @if (emailError()) {
                 <span class="text-xs font-bold text-duo-red mt-1 block">{{ emailError() }}</span>
               }
@@ -93,13 +93,14 @@ import { GoogleSignInButtonComponent } from '../../../shared/components/google-s
               <input
                 type="tel"
                 [(ngModel)]="phoneNumber"
+                (ngModelChange)="phoneError.set('')"
                 name="phoneNumber"
                 maxlength="10"
                 placeholder="0123456789"
                 class="tactile-input w-full text-sm font-semibold"
               />
-              @if (phoneNumberError()) {
-                <span class="text-xs font-bold text-duo-red mt-1 block">{{ phoneNumberError() }}</span>
+              @if (phoneError()) {
+                <span class="text-xs font-bold text-duo-red mt-1 block">{{ phoneError() }}</span>
               }
             </div>
             <div>
@@ -141,7 +142,7 @@ import { GoogleSignInButtonComponent } from '../../../shared/components/google-s
               <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
                 Phường / xã <span class="text-red-500">*</span>
               </label>
-              <select [ngModel]="wardCode()" (ngModelChange)="wardCode.set($event)"
+              <select [ngModel]="wardCode()" (ngModelChange)="wardCode.set($event); wardError.set('')"
                       name="wardCode"
                       class="tactile-input w-full text-sm font-semibold bg-white"
                       [disabled]="!provinceId() || isLoadingWards()">
@@ -166,6 +167,9 @@ import { GoogleSignInButtonComponent } from '../../../shared/components/google-s
             <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Ảnh đại diện</label>
             <input type="file" accept="image/png,image/jpeg,image/webp" (change)="onAvatarChange($event)"
                    class="tactile-input w-full text-sm font-semibold bg-white" />
+            @if (avatarError()) {
+              <span class="text-xs font-bold text-duo-red mt-1 block">{{ avatarError() }}</span>
+            }
           </div>
 
           <button type="submit" [disabled]="isSubmitting()"
@@ -209,8 +213,10 @@ export class RegisterStudentPage implements OnInit {
   fullNameError = signal('');
   emailError = signal('');
   passwordError = signal('');
+  phoneError = signal('');
   provinceError = signal('');
   wardError = signal('');
+  avatarError = signal('');
   provinces = signal<ProvinceDto[]>([]);
   wards = signal<WardDto[]>([]);
   provinceId = signal<number | null>(null);
@@ -255,13 +261,26 @@ export class RegisterStudentPage implements OnInit {
     }
   }
 
-  phoneNumberError(): string {
+  validatePhone(): boolean {
     const phone = this.phoneNumber.trim();
-    if (!phone) return '';
-    if (!phone.startsWith('0')) return 'Số điện thoại phải bắt đầu bằng số 0.';
-    if (!/^\d+$/.test(phone)) return 'Số điện thoại chỉ được chứa các chữ số.';
-    if (phone.length > 10) return 'Số điện thoại tối đa 10 chữ số.';
-    return '';
+    if (!phone) {
+      this.phoneError.set('Vui lòng nhập số điện thoại.');
+      return false;
+    }
+    if (!phone.startsWith('0')) {
+      this.phoneError.set('Số điện thoại phải bắt đầu bằng số 0.');
+      return false;
+    }
+    if (!/^\d+$/.test(phone)) {
+      this.phoneError.set('Số điện thoại chỉ được chứa các chữ số.');
+      return false;
+    }
+    if (phone.length > 10) {
+      this.phoneError.set('Số điện thoại tối đa 10 chữ số.');
+      return false;
+    }
+    this.phoneError.set('');
+    return true;
   }
 
   ngOnInit(): void {
@@ -272,6 +291,8 @@ export class RegisterStudentPage implements OnInit {
     this.provinceId.set(provinceId);
     this.wardCode.set(null);
     this.wards.set([]);
+    this.provinceError.set('');
+    this.wardError.set('');
 
     if (!provinceId) return;
 
@@ -288,9 +309,10 @@ export class RegisterStudentPage implements OnInit {
 
   onAvatarChange(event: Event): void {
     this.avatar = this.readFile(event);
+    this.avatarError.set('');
     if (this.avatar && this.avatar.size > 5 * 1024 * 1024) {
       this.avatar = null;
-      this.errorMessage.set('Ảnh đại diện tối đa 5MB.');
+      this.avatarError.set('Ảnh đại diện tối đa 5MB.');
     }
   }
 
@@ -335,7 +357,7 @@ export class RegisterStudentPage implements OnInit {
       if (errMsg.toLowerCase().includes('email')) {
         this.emailError.set(errMsg);
       } else if (errMsg.toLowerCase().includes('số điện thoại') || errMsg.toLowerCase().includes('phone')) {
-        this.errorMessage.set(errMsg);
+        this.phoneError.set(errMsg);
       } else {
         this.errorMessage.set(errMsg);
       }
@@ -431,11 +453,7 @@ export class RegisterStudentPage implements OnInit {
       isValid = false;
     }
 
-    const phone = this.phoneNumber.trim();
-    if (!phone) {
-      // Set the phone error since it's required
-      isValid = false;
-    } else if (this.phoneNumberError()) {
+    if (!this.validatePhone()) {
       isValid = false;
     }
 

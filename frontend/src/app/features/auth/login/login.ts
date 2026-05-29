@@ -208,12 +208,19 @@ export class LoginPage {
       await this.router.navigateByUrl(returnUrl || this.defaultRouteForRole(login.user.role));
     } catch (error) {
       const details = getApiErrorDetails(error);
-      if (details.errorCode === 'TUTOR_PENDING_APPROVAL' || details.errorCode === 'TUTOR_REGISTRATION_PENDING') {
+      const isPending = details.errorCode === 'TUTOR_PENDING_APPROVAL' ||
+                        details.errorCode === 'TUTOR_REGISTRATION_PENDING' ||
+                        details.message.includes('chờ quản trị viên phê duyệt') ||
+                        details.message.includes('phê duyệt hồ sơ');
+      if (isPending) {
         this.pendingTutorStatus.set('Pending');
         this.pendingTutorMessage.set(details.message);
         return;
       }
-      if (details.errorCode === 'TUTOR_REJECTED') {
+
+      const isRejected = details.errorCode === 'TUTOR_REJECTED' ||
+                         details.message.includes('bị từ chối phê duyệt');
+      if (isRejected) {
         this.pendingTutorStatus.set('Rejected');
         this.pendingTutorMessage.set(details.message);
         return;
@@ -252,12 +259,19 @@ export class LoginPage {
       await this.router.navigateByUrl(returnUrl || this.defaultRouteForRole(login.user.role));
     } catch (error) {
       const details = getApiErrorDetails(error);
-      if (details.errorCode === 'TUTOR_PENDING_APPROVAL' || details.errorCode === 'TUTOR_REGISTRATION_PENDING') {
+      const isPending = details.errorCode === 'TUTOR_PENDING_APPROVAL' ||
+                        details.errorCode === 'TUTOR_REGISTRATION_PENDING' ||
+                        details.message.includes('chờ quản trị viên phê duyệt') ||
+                        details.message.includes('phê duyệt hồ sơ');
+      if (isPending) {
         this.pendingTutorStatus.set('Pending');
         this.pendingTutorMessage.set(details.message);
         return;
       }
-      if (details.errorCode === 'TUTOR_REJECTED') {
+
+      const isRejected = details.errorCode === 'TUTOR_REJECTED' ||
+                         details.message.includes('bị từ chối phê duyệt');
+      if (isRejected) {
         this.pendingTutorStatus.set('Rejected');
         this.pendingTutorMessage.set(details.message);
         return;

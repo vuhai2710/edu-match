@@ -306,6 +306,7 @@ public class DepositPolicyService : IDepositPolicyService
     return ApiResponse<DepositPreviewResponseDto>.Fail(
       string.Join(" ", messages),
       StatusCodes.Status400BadRequest,
+      null,
       CreateEmptyPreview());
   }
 

@@ -27,6 +27,7 @@ namespace EduMatch.Controllers
     private readonly IClassReadService _classReadService;
     private readonly ICancellationRequestService _cancellationRequestService;
     private readonly ITutorRepository _tutorRepository;
+    private readonly INotificationService _notificationService;
 
     public AdminController(
       IApplicationService applicationService,
@@ -34,7 +35,8 @@ namespace EduMatch.Controllers
       IPaymentService paymentService,
       IClassReadService classReadService,
       ICancellationRequestService cancellationRequestService,
-      ITutorRepository tutorRepository)
+      ITutorRepository tutorRepository,
+      INotificationService notificationService)
     {
       _applicationService = applicationService;
       _tutorRequestService = tutorRequestService;
@@ -42,6 +44,7 @@ namespace EduMatch.Controllers
       _classReadService = classReadService;
       _cancellationRequestService = cancellationRequestService;
       _tutorRepository = tutorRepository;
+      _notificationService = notificationService;
     }
 
     [HttpGet("applications")]
@@ -177,6 +180,18 @@ namespace EduMatch.Controllers
       _tutorRepository.Update(tutor);
       await _tutorRepository.SaveChangesAsync();
 
+      if (tutor.User != null)
+      {
+        await _notificationService.SendAsync(
+          tutor.User.Id,
+          "Hồ sơ đã được phê duyệt",
+          "Chúc mừng! Hồ sơ đăng ký gia sư của bạn đã được quản trị viên phê duyệt. Bạn đã có thể sử dụng đầy đủ các tính năng của hệ thống.",
+          NotificationType.TutorApproved,
+          "Tutor",
+          tutor.Id,
+          null);
+      }
+
       return this.OkResponse(ApiResponse<bool>.SuccessResult(true, "Phê duyệt gia sư thành công."));
     }
 
@@ -198,6 +213,18 @@ namespace EduMatch.Controllers
       tutor.UpdatedAt = DateTime.UtcNow;
       _tutorRepository.Update(tutor);
       await _tutorRepository.SaveChangesAsync();
+
+      if (tutor.UserId != 0)
+      {
+        await _notificationService.SendAsync(
+          tutor.UserId,
+          "Hồ sơ không được phê duyệt",
+          "Rất tiếc, hồ sơ đăng ký gia sư của bạn đã bị từ chối. Vui lòng liên hệ quản trị viên để biết thêm chi tiết.",
+          NotificationType.TutorRejected,
+          "Tutor",
+          tutor.Id,
+          null);
+      }
 
       return this.OkResponse(ApiResponse<bool>.SuccessResult(true, "Từ chối duyệt gia sư thành công."));
     }
