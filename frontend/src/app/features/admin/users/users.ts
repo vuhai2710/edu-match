@@ -1,6 +1,6 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { RouterLink, ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { UserDto, UserRole, TutorApprovalStatus } from '../../../api/generated/client/models';
@@ -51,7 +51,7 @@ type ActiveFilter = 'all' | 'active' | 'inactive' | 'pending_approval' | 'reject
             <input type="text"
                    [(ngModel)]="searchTerm"
                    (ngModelChange)="onSearchChange()"
-                   placeholder="Tìm theo tên hoặc email..."
+                   placeholder="Tìm theo tên, email, SĐT hoặc mã..."
                    class="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm focus:border-duo-blue outline-none" />
           </div>
         </div>
@@ -270,9 +270,32 @@ export class AdminUsersPage implements OnInit {
   private readonly usersApi = inject(UsersService);
   private readonly adminApi = inject(AdminService);
   protected readonly session = inject(SessionService);
+  private readonly route = inject(ActivatedRoute);
   private searchDebounce?: ReturnType<typeof setTimeout>;
 
   ngOnInit(): void {
+    const params = this.route.snapshot.queryParams;
+    const roleParam = params['role'];
+    const statusParam = params['status'];
+
+    if (roleParam === 'Tutor') {
+      this.activeRole.set(UserRole.Tutor);
+    } else if (roleParam === 'Student') {
+      this.activeRole.set(UserRole.Student);
+    } else if (roleParam === 'Admin') {
+      this.activeRole.set(UserRole.Admin);
+    }
+
+    if (statusParam === 'Pending') {
+      this.activeFilter.set('pending_approval');
+    } else if (statusParam === 'Rejected') {
+      this.activeFilter.set('rejected');
+    } else if (statusParam === 'Active') {
+      this.activeFilter.set('active');
+    } else if (statusParam === 'Inactive') {
+      this.activeFilter.set('inactive');
+    }
+
     void this.loadUsers();
   }
 

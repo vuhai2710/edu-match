@@ -6,7 +6,7 @@ import { ClassDto, ClassStatus } from '../../../api/generated/client/models';
 import { ClassesService } from '../../../api/generated/client/services';
 import { getApiErrorMessage } from '../../../core/http/api-error';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination';
-import { classStatusLabel, formatDate, formatTimeSlots } from '../../../shared/utils/api-ui';
+import { classStatusLabel, classStatusClass, formatDate, formatTimeSlots } from '../../../shared/utils/api-ui';
 import { StudentDetailModalComponent } from '../../../shared/components/student-detail-modal';
 
 @Component({
@@ -52,7 +52,7 @@ import { StudentDetailModalComponent } from '../../../shared/components/student-
                       }
                     </div>
                   </div>
-                  <span class="rounded-full bg-green-50 px-3 py-1 text-xs font-black text-duo-green">{{ label(item.status) }}</span>
+                  <span [class]="statusClass(item.status)" class="rounded-full px-3 py-1 text-xs font-black">{{ label(item.status) }}</span>
                 </div>
                 <p class="text-sm text-slate-500 mt-3">{{ date(item.startDate) }} · {{ slots(item) }}</p>
               </a>
@@ -106,6 +106,10 @@ export class TutorClassesPage implements OnInit {
 
   label(status?: ClassStatus | null): string {
     return classStatusLabel(status);
+  }
+
+  statusClass(status?: ClassStatus | null): string {
+    return classStatusClass(status);
   }
 
   date(value?: Date | null): string {

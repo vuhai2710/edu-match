@@ -1,6 +1,6 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { RouterLink, ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { ClassDto, ClassStatus } from '../../../api/generated/client/models';
@@ -10,6 +10,7 @@ import { ErrorBannerComponent } from '../../../shared/components/error-banner/er
 import { PaginationComponent } from '../../../shared/components/pagination/pagination';
 import {
   classStatusLabel,
+  classStatusClass,
   formatDate,
   formatMoney,
   formatTimeSlots,
@@ -110,9 +111,17 @@ export class AdminClassesPage implements OnInit {
   ];
 
   private readonly adminApi = inject(AdminService);
+  private readonly route = inject(ActivatedRoute);
   private searchDebounce?: ReturnType<typeof setTimeout>;
 
   ngOnInit(): void {
+    const statusParam = this.route.snapshot.queryParams['status'];
+    if (statusParam) {
+      const match = Object.values(ClassStatus).find(val => val === statusParam);
+      if (match) {
+        this.activeStatus.set(match);
+      }
+    }
     void this.loadClasses();
   }
 
@@ -146,18 +155,7 @@ export class AdminClassesPage implements OnInit {
   }
 
   statusBadgeClass(status?: ClassStatus | null): string {
-    switch (status) {
-      case ClassStatus.PendingStart:
-        return 'bg-orange-50 text-duo-orange';
-      case ClassStatus.Active:
-        return 'bg-green-50 text-duo-green';
-      case ClassStatus.CancelledByStudent:
-      case ClassStatus.CancelledByTutor:
-      case ClassStatus.CancelledByAdmin:
-        return 'bg-red-50 text-duo-red';
-      default:
-        return 'bg-slate-100 text-slate-600';
-    }
+    return classStatusClass(status);
   }
 
   date(value?: Date | null): string {

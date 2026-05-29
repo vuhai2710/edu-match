@@ -12,6 +12,7 @@ import {
   formatMoney,
   formatTimeSlots,
   learningRequestStatusLabel,
+  learningRequestStatusClass,
 } from '../../../shared/utils/api-ui';
 
 @Component({
@@ -72,7 +73,7 @@ import {
                         <span>Học viên: {{ request.studentName || 'Đang cập nhật' }}</span>
                       </p>
                     </div>
-                    <span class="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-black text-duo-blue shrink-0">
+                    <span [class]="statusClass(request.status)" class="rounded-full px-2.5 py-1 text-xs font-black shrink-0">
                       {{ label(request.status) }}
                     </span>
                   </div>
@@ -164,7 +165,7 @@ export class TutorLearningRequestsPage implements OnInit {
   readonly tabs = [
     { label: 'Tất cả', status: null },
     { label: 'Đang chờ', status: LearningRequestStatus.Pending },
-    { label: 'Cần phản hồi', status: LearningRequestStatus.Negotiating },
+    { label: 'Chờ học viên phản hồi', status: LearningRequestStatus.Negotiating },
     { label: 'Chờ thanh toán', status: LearningRequestStatus.SoftBooked },
     { label: 'Đã tạo lớp', status: LearningRequestStatus.ConvertedToClass },
   ];
@@ -182,7 +183,14 @@ export class TutorLearningRequestsPage implements OnInit {
   }
 
   label(status?: LearningRequestStatus | null): string {
+    if (status === LearningRequestStatus.Negotiating) {
+      return 'Đang chờ học viên phản hồi';
+    }
     return learningRequestStatusLabel(status);
+  }
+
+  statusClass(status?: LearningRequestStatus | null): string {
+    return learningRequestStatusClass(status);
   }
 
   money(value?: number | null): string {

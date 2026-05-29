@@ -3,7 +3,7 @@ import { firstValueFrom } from 'rxjs';
 
 import { StudentDetailDto } from '../../api/generated/client/models';
 import { StudentsService } from '../../api/generated/client/services';
-import { getApiErrorMessage } from '../../core/http/api-error';
+import { getApiErrorMessage, unwrapApiData } from '../../core/http/api-error';
 import { genderLabel, gradeLabel } from '../utils/api-ui';
 
 @Component({
@@ -165,7 +165,7 @@ export class StudentDetailModalComponent implements OnInit {
     this.errorMessage.set('');
     try {
       const response = await firstValueFrom(this.studentsApi.getStudentById(id));
-      this.student.set(response.data ?? null);
+      this.student.set(unwrapApiData(response));
     } catch (error) {
       this.errorMessage.set(getApiErrorMessage(error, 'Không tải được thông tin học viên.'));
     } finally {

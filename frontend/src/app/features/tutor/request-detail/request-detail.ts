@@ -17,6 +17,7 @@ import {
   formatTimeSlots,
   getStartTimeOptions,
   learningRequestStatusLabel,
+  learningRequestStatusClass,
   validateTimeSlots,
 } from '../../../shared/utils/api-ui';
 
@@ -43,7 +44,7 @@ import {
                 }
               </div>
             </div>
-            <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-duo-blue">{{ label(lr) }}</span>
+            <span [class]="statusClass(lr.status)" class="rounded-full px-3 py-1 text-xs font-black">{{ label(lr) }}</span>
           </div>
 
           <div class="grid sm:grid-cols-2 gap-4 text-sm">
@@ -73,6 +74,7 @@ import {
         </div>
 
         @if (proposal(); as p) {
+
           @if (isMyProposal(p)) {
             <div class="tactile-card p-6 space-y-4 border-duo-blue bg-blue-50/10">
               <div class="flex items-center justify-between">
@@ -137,7 +139,27 @@ import {
             <div class="grid sm:grid-cols-3 gap-4">
               <div>
                 <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Ngày bắt đầu</label>
-                <input type="date" [(ngModel)]="desiredStartDate" class="tactile-input w-full text-sm font-semibold" />
+                <div class="relative cursor-pointer" (click)="desiredStartDateInput.showPicker()">
+                  <input
+                    type="text"
+                    [value]="desiredStartDate ? date(desiredStartDate) : ''"
+                    placeholder="dd/mm/yyyy"
+                    class="tactile-input w-full text-sm font-semibold pl-3 pr-10 py-2.5 bg-white pointer-events-none"
+                    readonly
+                  />
+                  <div class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <input
+                    #desiredStartDateInput
+                    type="date"
+                    [(ngModel)]="desiredStartDate"
+                    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    (click)="$event.stopPropagation(); desiredStartDateInput.showPicker()"
+                  />
+                </div>
                 @if (fieldErrors()['DesiredStartDate']) {
                   <p class="text-xs font-bold text-duo-red mt-1">{{ fieldErrors()['DesiredStartDate'] }}</p>
                 }
@@ -301,7 +323,14 @@ export class TutorRequestDetailPage implements OnInit {
   }
 
   label(request: LearningRequestDto): string {
+    if (request.status === 'Negotiating') {
+      return 'Đang chờ học viên phản hồi';
+    }
     return learningRequestStatusLabel(request.status);
+  }
+
+  statusClass(status?: string | null): string {
+    return learningRequestStatusClass(status as any);
   }
 
   slots(request: LearningRequestDto): string {

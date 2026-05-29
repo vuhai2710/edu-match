@@ -83,6 +83,11 @@ namespace EduMatch.Services
 
           scheduleProposal.Status = ScheduleProposalStatus.Accepted;
           learningRequest = scheduleProposal.LearningRequest;
+          learningRequest.TimeSlots = scheduleProposal.TimeSlots;
+          learningRequest.DesiredStartDate = scheduleProposal.DesiredStartDate;
+          learningRequest.HoursPerSession = scheduleProposal.HoursPerSession;
+          learningRequest.BudgetPerHour = scheduleProposal.HourlyRate;
+          learningRequest.CalculatedDepositAmount = scheduleProposal.CalculatedDepositAmount;
         }
         else if (learningRequest.Status != LearningRequestStatus.Pending)
         {

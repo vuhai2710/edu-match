@@ -49,9 +49,9 @@ import { SignalrService } from '../../core/realtime/signalr.service';
           <nav class="flex-grow p-3 overflow-y-auto space-y-1">
             @for (link of areaLinks(); track link.href) {
               <a [routerLink]="link.href" routerLinkActive="bg-[#d7ffb8] text-[#3f8f01] font-black border-b-2 border-[#b8f582] active"
-                 class="group flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-50 transition-colors uppercase tracking-wide">
+                 class="group flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-50 [&.active]:hover:bg-[#d7ffb8] transition-colors uppercase tracking-wide">
                 <!-- SVG Icon -->
-                <div class="w-5 h-5 shrink-0 flex items-center justify-center text-slate-400 group-hover:text-slate-600 group-[.active]:text-[#3f8f01] transition-colors">
+                <div class="w-5 h-5 shrink-0 flex items-center justify-center text-slate-400 group-hover:text-slate-600 group-[.active]:group-hover:text-[#3f8f01] group-[.active]:text-[#3f8f01] transition-colors">
                   @switch (link.href) {
                     @case ('/admin/dashboard') {
                       <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z" /></svg>
@@ -121,8 +121,8 @@ import { SignalrService } from '../../core/realtime/signalr.service';
               <!-- Profile, Notifications, Chat -->
               <div class="flex items-center gap-1.5 sm:gap-3 shrink-0">
                 <!-- Notifications Bell -->
-                <a [routerLink]="notificationsRoute()" class="p-2 rounded-xl hover:bg-slate-100 transition-colors relative">
-                  <svg class="w-6 h-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <a [routerLink]="notificationsRoute()" routerLinkActive="bg-[#d7ffb8] active" class="group p-2 rounded-xl hover:bg-slate-100 [&.active]:hover:bg-[#d7ffb8] transition-colors relative">
+                  <svg class="w-6 h-6 text-slate-400 group-[.active]:text-[#3f8f01] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                     <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                   </svg>
@@ -134,8 +134,8 @@ import { SignalrService } from '../../core/realtime/signalr.service';
                 </a>
 
                 <!-- Chat Bubble -->
-                <a [routerLink]="chatRoute()" class="p-2 rounded-xl hover:bg-slate-100 transition-colors relative">
-                  <svg class="w-6 h-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <a [routerLink]="chatRoute()" routerLinkActive="bg-[#d7ffb8] active" class="group p-2 rounded-xl hover:bg-slate-100 [&.active]:hover:bg-[#d7ffb8] transition-colors relative">
+                  <svg class="w-6 h-6 text-slate-400 group-[.active]:text-[#3f8f01] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                   </svg>
                   @if (unreadChatCount() > 0) {
@@ -251,8 +251,8 @@ import { SignalrService } from '../../core/realtime/signalr.service';
             <nav class="flex-grow p-3 overflow-y-auto space-y-1">
               @for (link of areaLinks(); track link.href) {
                 <a [routerLink]="link.href" routerLinkActive="bg-[#d7ffb8] text-[#3f8f01] font-black border-b-2 border-[#b8f582] active"
-                   class="group flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-50 transition-colors uppercase tracking-wide">
-                  <div class="w-5 h-5 shrink-0 flex items-center justify-center text-slate-400 group-hover:text-slate-600 group-[.active]:text-[#3f8f01] transition-colors">
+                   class="group flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-50 [&.active]:hover:bg-[#d7ffb8] transition-colors uppercase tracking-wide">
+                  <div class="w-5 h-5 shrink-0 flex items-center justify-center text-slate-400 group-hover:text-slate-600 group-[.active]:group-hover:text-[#3f8f01] group-[.active]:text-[#3f8f01] transition-colors">
                     @switch (link.href) {
                       @case ('/tutor/dashboard') {
                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z" /></svg>
@@ -306,8 +306,8 @@ import { SignalrService } from '../../core/realtime/signalr.service';
 
             <nav class="hidden md:flex items-center gap-1">
               @for (link of areaLinks(); track link.href) {
-                <a [routerLink]="link.href" routerLinkActive="bg-slate-100 text-slate-900 font-black"
-                   class="px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-50 transition-colors uppercase tracking-wide">
+                <a [routerLink]="link.href" routerLinkActive="bg-[#d7ffb8] text-[#3f8f01] font-black border-b-2 border-[#b8f582] active"
+                   class="px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-50 [&.active]:hover:bg-[#d7ffb8] transition-colors uppercase tracking-wide">
                   {{ link.label }}
                 </a>
               }
@@ -315,8 +315,8 @@ import { SignalrService } from '../../core/realtime/signalr.service';
 
             <div class="flex items-center gap-3">
               <!-- Notifications Bell -->
-              <a [routerLink]="notificationsRoute()" class="p-2 rounded-xl hover:bg-slate-100 transition-colors relative">
-                <svg class="w-6 h-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <a [routerLink]="notificationsRoute()" routerLinkActive="bg-[#d7ffb8] active" class="group p-2 rounded-xl hover:bg-slate-100 [&.active]:hover:bg-[#d7ffb8] transition-colors relative">
+                <svg class="w-6 h-6 text-slate-400 group-[.active]:text-[#3f8f01] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                   <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                 </svg>
@@ -328,8 +328,8 @@ import { SignalrService } from '../../core/realtime/signalr.service';
               </a>
 
               <!-- Chat Bubble -->
-              <a [routerLink]="chatRoute()" class="p-2 rounded-xl hover:bg-slate-100 transition-colors relative">
-                <svg class="w-6 h-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <a [routerLink]="chatRoute()" routerLinkActive="bg-[#d7ffb8] active" class="group p-2 rounded-xl hover:bg-slate-100 [&.active]:hover:bg-[#d7ffb8] transition-colors relative">
+                <svg class="w-6 h-6 text-slate-400 group-[.active]:text-[#3f8f01] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                 </svg>
                 @if (unreadChatCount() > 0) {

@@ -90,6 +90,14 @@ button, [role="button"], input[type="button"], input[type="submit"], input[type=
 .tactile-button-gray:hover { background-color: #f8fafc; }
 .tactile-button-gray:active { border-bottom-width: 0; transform: translateY(4px); }
 
+.tactile-button-red {
+  background-color: #ff4b4b; color: #ffffff;
+  border-bottom: 4px solid #ea2b2b;
+  transition: all 0.1s ease; cursor: pointer;
+}
+.tactile-button-red:hover:not(:disabled) { filter: brightness(1.05); }
+.tactile-button-red:active:not(:disabled) { border-bottom-width: 0; transform: translateY(4px); }
+
 /* ===== Tactile Cards & Inputs ===== */
 .tactile-card {
   border: 2px solid #e2e8f0; border-bottom: 6px solid #cbd5e1;

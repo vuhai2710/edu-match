@@ -23,6 +23,8 @@ import { formatDate, formatMoney } from '../../../shared/utils/api-ui';
 
 type PolicyLifecycleStatus = 'active' | 'expired' | 'upcoming';
 
+
+
 @Component({
   selector: 'app-admin-deposit-policy-page',
   imports: [ErrorBannerComponent, FormsModule, PaginationComponent],
@@ -32,7 +34,7 @@ type PolicyLifecycleStatus = 'active' | 'expired' | 'upcoming';
         <h1 class="font-display text-2xl font-black text-slate-900">Chính sách đặt cọc</h1>
         <p class="text-sm text-slate-500 mt-1">
           Quản lý số buổi cọc mặc định và các chính sách giảm giá/thời gian đặc biệt. Hệ thống tự
-          động áp dụng chính sách có thời hạn trước, sau đó fallback về cọc mặc định.
+          động áp dụng chính sách có thời hạn trước, sau đó về cọc mặc định.
         </p>
       </div>
 
@@ -279,7 +281,7 @@ type PolicyLifecycleStatus = 'active' | 'expired' | 'upcoming';
               <button
                 (click)="submitDefault()"
                 [disabled]="isSavingDefault()"
-                class="w-full bg-duo-blue text-white font-extrabold py-3 px-4 rounded-xl border-b-4 border-blue-700 hover:opacity-95 disabled:opacity-60 text-sm transition-all"
+                class="w-full bg-duo-blue text-white font-extrabold py-3 px-4 rounded-xl border-b-4 border-blue-700 hover:opacity-95 disabled:opacity-60 text-sm transition-all uppercase"
               >
                 {{ isSavingDefault() ? 'Đang lưu...' : 'Lưu cọc mặc định' }}
               </button>
@@ -315,7 +317,7 @@ type PolicyLifecycleStatus = 'active' | 'expired' | 'upcoming';
               </div>
 
               <p class="text-xs text-slate-500 leading-relaxed">
-                Thiết lập số buổi cọc đặc biệt và phần trăm chiết khấu tự động cho một khoảng thời
+                Thiết lập số buổi cọc đặc biệt và phần tích chiết khấu tự động cho một khoảng thời
                 gian. Hệ thống sẽ <strong>tự động ưu tiên</strong> áp dụng chính sách này thay cho
                 cọc mặc định khi ngày đặt nằm trong khoảng hiệu lực.
               </p>
@@ -382,11 +384,27 @@ type PolicyLifecycleStatus = 'active' | 'expired' | 'upcoming';
                   <label class="block text-xs font-bold uppercase text-slate-500 tracking-wide"
                     >Hiệu lực từ ngày</label
                   >
-                  <input
-                    type="date"
-                    [(ngModel)]="timeActiveFrom"
-                    class="w-full rounded-xl border-2 border-slate-200 px-3 py-2 focus:border-duo-blue outline-none bg-white text-sm font-bold"
-                  />
+                  <div class="relative cursor-pointer" (click)="timeActiveFromInput.showPicker()">
+                    <input
+                      type="text"
+                      [value]="timeActiveFrom ? formatDate(timeActiveFrom) : ''"
+                      placeholder="dd/mm/yyyy"
+                      class="w-full rounded-xl border-2 border-slate-200 pl-3 pr-10 py-2 bg-white text-sm font-bold pointer-events-none"
+                      readonly
+                    />
+                    <div class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <input
+                      #timeActiveFromInput
+                      type="date"
+                      [(ngModel)]="timeActiveFrom"
+                      class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      (click)="$event.stopPropagation(); timeActiveFromInput.showPicker()"
+                    />
+                  </div>
                 </div>
 
                 <!-- Hiệu lực đến -->
@@ -394,11 +412,27 @@ type PolicyLifecycleStatus = 'active' | 'expired' | 'upcoming';
                   <label class="block text-xs font-bold uppercase text-slate-500 tracking-wide"
                     >Hiệu lực đến ngày</label
                   >
-                  <input
-                    type="date"
-                    [(ngModel)]="timeActiveTo"
-                    class="w-full rounded-xl border-2 border-slate-200 px-3 py-2 focus:border-duo-blue outline-none bg-white text-sm font-bold"
-                  />
+                  <div class="relative cursor-pointer" (click)="timeActiveToInput.showPicker()">
+                    <input
+                      type="text"
+                      [value]="timeActiveTo ? formatDate(timeActiveTo) : ''"
+                      placeholder="dd/mm/yyyy"
+                      class="w-full rounded-xl border-2 border-slate-200 pl-3 pr-10 py-2 bg-white text-sm font-bold pointer-events-none"
+                      readonly
+                    />
+                    <div class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <input
+                      #timeActiveToInput
+                      type="date"
+                      [(ngModel)]="timeActiveTo"
+                      class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      (click)="$event.stopPropagation(); timeActiveToInput.showPicker()"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -407,7 +441,7 @@ type PolicyLifecycleStatus = 'active' | 'expired' | 'upcoming';
               <button
                 (click)="submitTimeBased()"
                 [disabled]="isSubmittingTime()"
-                class="w-full bg-duo-green text-white font-extrabold py-3 px-4 rounded-xl border-b-4 border-duo-green-dark hover:opacity-95 disabled:opacity-60 text-sm transition-all"
+                class="w-full bg-duo-green text-white font-extrabold py-3 px-4 rounded-xl border-b-4 border-duo-green-dark hover:opacity-95 disabled:opacity-60 text-sm transition-all uppercase"
               >
                 {{ isSubmittingTime() ? 'Đang lưu...' : 'Tạo chính sách theo thời gian' }}
               </button>
@@ -482,12 +516,20 @@ type PolicyLifecycleStatus = 'active' | 'expired' | 'upcoming';
                     </td>
                     <td class="px-4 py-3 text-right">
                       @if (!isDefaultPolicy(item)) {
-                        <button
-                          (click)="deleteItem(item)"
-                          class="text-duo-red font-bold text-xs hover:underline"
-                        >
-                          Xóa
-                        </button>
+                        <div class="flex justify-end gap-3">
+                          <button
+                            (click)="editItem(item)"
+                            class="text-duo-blue font-bold text-xs hover:underline cursor-pointer"
+                          >
+                            Sửa
+                          </button>
+                          <button
+                            (click)="confirmToDelete(item)"
+                            class="text-duo-red font-bold text-xs hover:underline cursor-pointer"
+                          >
+                            Xóa
+                          </button>
+                        </div>
                       } @else {
                         <span class="text-xs text-slate-400 italic font-medium">Hệ thống</span>
                       }
@@ -515,6 +557,187 @@ type PolicyLifecycleStatus = 'active' | 'expired' | 'upcoming';
           (pageSizeChange)="onHistoryPageSizeChange($event)"
         />
       </section>
+
+      <!-- ===== Custom Confirmation Modal ===== -->
+      @if (isConfirmVisible()) {
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div class="bg-white rounded-2xl border-2 border-slate-200 max-w-sm w-full p-6 text-center animate-in zoom-in-95 duration-150">
+            <!-- Icon -->
+            <div class="w-16 h-16 mx-auto mb-4 bg-red-50 text-duo-red rounded-2xl flex items-center justify-center animate-pulse-slow">
+              <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </div>
+            
+            <h3 class="font-display text-xl font-black text-slate-800 mb-2">
+              {{ confirmTitle() }}
+            </h3>
+            <p class="text-sm text-slate-500 font-bold leading-relaxed mb-6">
+              {{ confirmMessage() }}
+            </p>
+            
+            <div class="flex gap-3">
+              <button
+                (click)="onConfirmNo()"
+                class="flex-1 tactile-button-gray py-3 rounded-xl text-sm font-extrabold uppercase"
+              >
+                Không
+              </button>
+              <button
+                (click)="onConfirmYes()"
+                class="flex-1 tactile-button-red py-3 rounded-xl text-sm font-extrabold uppercase text-white"
+              >
+                Có
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ===== Custom Edit Policy Modal ===== -->
+      @if (isEditModalVisible()) {
+        <div class="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div class="bg-white rounded-2xl border-2 border-slate-200 max-w-lg w-full p-6 space-y-6 animate-in zoom-in-95 duration-150">
+            <div class="flex items-center justify-between border-b-2 border-slate-100 pb-3">
+              <h3 class="font-display text-xl font-black text-slate-800">
+                Cập nhật chính sách đặt cọc
+              </h3>
+              <button
+                (click)="cancelEditModal()"
+                class="text-slate-400 hover:text-slate-600 font-black text-xl cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            @if (editError()) {
+              <p
+                class="rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-xs font-bold text-duo-red"
+              >
+                {{ editError() }}
+              </p>
+            }
+
+            <div class="space-y-4">
+              <div class="grid sm:grid-cols-2 gap-4">
+                <!-- Số buổi cọc -->
+                <div class="rounded-xl bg-slate-50 px-4 py-3 border border-slate-100 space-y-1">
+                  <label class="block text-xs font-bold uppercase text-slate-500 tracking-wide"
+                    >Số buổi cọc</label
+                  >
+                  <div class="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      [(ngModel)]="editDepositSessionCount"
+                      class="w-full rounded-xl border-2 border-slate-200 px-3 py-1.5 focus:border-duo-blue outline-none bg-white font-bold"
+                    />
+                    <span class="text-xs font-bold text-slate-600">buổi</span>
+                  </div>
+                </div>
+
+                <!-- Giảm giá -->
+                <div class="rounded-xl bg-slate-50 px-4 py-3 border border-slate-100 space-y-1">
+                  <label class="block text-xs font-bold uppercase text-slate-500 tracking-wide"
+                    >Giảm giá</label
+                  >
+                  <div class="relative">
+                    <input
+                      type="number"
+                      min="0"
+                      max="99"
+                      step="1"
+                      [ngModel]="editDiscountPercentDisplay()"
+                      (ngModelChange)="onEditDiscountChange($event)"
+                      class="w-full rounded-xl border-2 border-slate-200 px-3 py-1.5 pr-8 focus:border-duo-blue outline-none bg-white font-bold"
+                    />
+                    <span
+                      class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 font-bold text-xs"
+                      >%</span
+                    >
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid sm:grid-cols-2 gap-4">
+                <!-- Hiệu lực từ -->
+                <div class="space-y-1">
+                  <label class="block text-xs font-bold uppercase text-slate-500 tracking-wide"
+                    >Hiệu lực từ ngày</label
+                  >
+                  <div class="relative cursor-pointer" (click)="editActiveFromInput.showPicker()">
+                    <input
+                      type="text"
+                      [value]="editActiveFrom ? formatDate(editActiveFrom) : ''"
+                      placeholder="dd/mm/yyyy"
+                      class="w-full rounded-xl border-2 border-slate-200 pl-3 pr-10 py-2 bg-white text-sm font-bold pointer-events-none"
+                      readonly
+                    />
+                    <div class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <input
+                      #editActiveFromInput
+                      type="date"
+                      [(ngModel)]="editActiveFrom"
+                      class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      (click)="$event.stopPropagation(); editActiveFromInput.showPicker()"
+                    />
+                  </div>
+                </div>
+
+                <!-- Hiệu lực đến -->
+                <div class="space-y-1">
+                  <label class="block text-xs font-bold uppercase text-slate-500 tracking-wide"
+                    >Hiệu lực đến ngày</label
+                  >
+                  <div class="relative cursor-pointer" (click)="editActiveToInput.showPicker()">
+                    <input
+                      type="text"
+                      [value]="editActiveTo ? formatDate(editActiveTo) : ''"
+                      placeholder="dd/mm/yyyy"
+                      class="w-full rounded-xl border-2 border-slate-200 pl-3 pr-10 py-2 bg-white text-sm font-bold pointer-events-none"
+                      readonly
+                    />
+                    <div class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <input
+                      #editActiveToInput
+                      type="date"
+                      [(ngModel)]="editActiveTo"
+                      class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      (click)="$event.stopPropagation(); editActiveToInput.showPicker()"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex gap-3 pt-3 border-t-2 border-slate-100">
+              <button
+                (click)="cancelEditModal()"
+                [disabled]="isSavingEdit()"
+                class="flex-1 tactile-button-gray py-3 rounded-xl text-sm font-extrabold uppercase"
+              >
+                Hủy
+              </button>
+              <button
+                (click)="submitEdit()"
+                [disabled]="isSavingEdit()"
+                class="flex-1 tactile-button-blue py-3 rounded-xl text-sm font-extrabold uppercase text-white"
+              >
+                {{ isSavingEdit() ? 'Đang lưu...' : 'Lưu thay đổi' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      }
     </div>
   `,
 })
@@ -524,6 +747,22 @@ export class AdminDepositPolicyPage implements OnInit {
   preview = signal<DepositPreviewResponseDto | null>(null);
   previewHourlyRate = 150000;
   previewHoursPerSession = 2;
+
+  // Edit modal state
+  isEditModalVisible = signal(false);
+  editPolicyId = signal<number | null>(null);
+  editDepositSessionCount = 1;
+  editDiscountPercentRaw = signal(0);
+  editActiveFrom = '';
+  editActiveTo = '';
+  editError = signal('');
+  isSavingEdit = signal(false);
+
+  // Custom confirmation modal state
+  isConfirmVisible = signal(false);
+  confirmTitle = signal('');
+  confirmMessage = signal('');
+  confirmCallback = signal<(() => void) | null>(null);
 
   // Default policy state
   defaultPolicy = signal<DepositPolicyDto | null>(null);
@@ -641,25 +880,127 @@ export class AdminDepositPolicyPage implements OnInit {
     this.previewDebounce = setTimeout(() => void this.loadPreview(), 300);
   }
 
-  async deleteItem(p: DepositPolicyDto): Promise<void> {
+  confirmToDelete(p: DepositPolicyDto): void {
     if (!p.id) return;
-    const confirmed = window.confirm(
-      `Xác nhận xóa chính sách (${this.activeRange(p)}, ${this.percentDisplay(p.discountPercent)}%)? Thao tác không thể hoàn tác.`,
+    this.confirmTitle.set('Xác nhận xóa');
+    this.confirmMessage.set(
+      `Bạn có chắc chắn muốn xóa chính sách (${this.activeRange(p)}, ${this.percentDisplay(p.discountPercent)}%)? Thao tác này không thể hoàn tác.`
     );
-    if (!confirmed) return;
+    this.confirmCallback.set(() => {
+      void this.executeDelete(p.id!);
+    });
+    this.isConfirmVisible.set(true);
+  }
 
+  async executeDelete(id: number): Promise<void> {
     this.timeError.set('');
     this.timeSuccess.set('');
     this.defaultError.set('');
     this.defaultSuccess.set('');
 
     try {
-      await firstValueFrom(this.adminApi.delete(p.id));
+      await firstValueFrom(this.adminApi.delete(id));
       this.timeSuccess.set('Đã xóa chính sách thành công.');
       await this.loadAll();
     } catch (error) {
       console.error('[admin/deposit-policy] delete failed', error);
       this.timeError.set(getApiErrorMessage(error, 'Không xóa được chính sách.'));
+    }
+  }
+
+  onConfirmYes(): void {
+    const cb = this.confirmCallback();
+    if (cb) cb();
+    this.isConfirmVisible.set(false);
+    this.confirmCallback.set(null);
+  }
+
+  onConfirmNo(): void {
+    this.isConfirmVisible.set(false);
+    this.confirmCallback.set(null);
+  }
+
+  editItem(p: DepositPolicyDto): void {
+    if (!p.id) return;
+    this.editPolicyId.set(p.id);
+    this.editDepositSessionCount = p.depositSessionCount ?? 1;
+    this.editDiscountPercentRaw.set(p.discountPercent ?? 0);
+    this.editActiveFrom = p.activeFrom ? new Date(p.activeFrom).toISOString().slice(0, 10) : '';
+    this.editActiveTo = p.activeTo ? new Date(p.activeTo).toISOString().slice(0, 10) : '';
+    this.editError.set('');
+    this.isEditModalVisible.set(true);
+  }
+
+  cancelEditModal(): void {
+    this.isEditModalVisible.set(false);
+    this.editPolicyId.set(null);
+  }
+
+  editDiscountPercentDisplay(): number {
+    return Math.round(this.editDiscountPercentRaw() * 100);
+  }
+
+  onEditDiscountChange(value: number): void {
+    const pct = Math.max(0, Math.min(99, Number(value) || 0));
+    this.editDiscountPercentRaw.set(pct / 100);
+  }
+
+  async submitEdit(): Promise<void> {
+    this.editError.set('');
+
+    if (this.editDepositSessionCount <= 0) {
+      this.editError.set('Số buổi cọc phải lớn hơn 0.');
+      return;
+    }
+    const discount = this.editDiscountPercentRaw();
+    if (discount < 0 || discount >= 1) {
+      this.editError.set('Phần trăm giảm giá phải từ 0 đến 99.');
+      return;
+    }
+
+    const fromDate = this.editActiveFrom ? new Date(this.editActiveFrom) : null;
+    const toDate = this.editActiveTo ? new Date(this.editActiveTo) : null;
+
+    if (this.editActiveFrom && (!fromDate || isNaN(fromDate.getTime()))) {
+      this.editError.set('Ngày bắt đầu không hợp lệ.');
+      return;
+    }
+    if (this.editActiveTo && (!toDate || isNaN(toDate.getTime()))) {
+      this.editError.set('Ngày kết thúc không hợp lệ.');
+      return;
+    }
+    if (!fromDate && !toDate) {
+      this.editError.set(
+        'Chính sách theo thời gian cần ít nhất ngày bắt đầu hoặc ngày kết thúc hiệu lực.',
+      );
+      return;
+    }
+    if (fromDate && toDate && toDate < fromDate) {
+      this.editError.set('Ngày kết thúc hiệu lực không được trước ngày bắt đầu.');
+      return;
+    }
+
+    const dto: UpsertDepositPolicyDto = {
+      depositSessionCount: this.editDepositSessionCount,
+      discountPercent: discount,
+      activeFrom: fromDate,
+      activeTo: toDate,
+    };
+
+    const id = this.editPolicyId();
+    if (id === null) return;
+
+    this.isSavingEdit.set(true);
+    try {
+      await firstValueFrom(this.adminApi.update(id, dto));
+      this.isEditModalVisible.set(false);
+      this.timeSuccess.set('Đã cập nhật chính sách đặt cọc thành công.');
+      await this.loadAll();
+    } catch (error) {
+      console.error('[admin/deposit-policy] update failed', error);
+      this.editError.set(getApiErrorMessage(error, 'Không cập nhật được chính sách đặt cọc.'));
+    } finally {
+      this.isSavingEdit.set(false);
     }
   }
 
@@ -705,26 +1046,34 @@ export class AdminDepositPolicyPage implements OnInit {
       this.timeError.set('Phần trăm giảm giá phải từ 0 đến 99.');
       return;
     }
-    if (!this.timeActiveFrom && !this.timeActiveTo) {
+
+    const fromDate = this.timeActiveFrom ? new Date(this.timeActiveFrom) : null;
+    const toDate = this.timeActiveTo ? new Date(this.timeActiveTo) : null;
+
+    if (this.timeActiveFrom && (!fromDate || isNaN(fromDate.getTime()))) {
+      this.timeError.set('Ngày bắt đầu không hợp lệ.');
+      return;
+    }
+    if (this.timeActiveTo && (!toDate || isNaN(toDate.getTime()))) {
+      this.timeError.set('Ngày kết thúc không hợp lệ.');
+      return;
+    }
+    if (!fromDate && !toDate) {
       this.timeError.set(
         'Chính sách theo thời gian cần ít nhất ngày bắt đầu hoặc ngày kết thúc hiệu lực.',
       );
       return;
     }
-    if (
-      this.timeActiveFrom &&
-      this.timeActiveTo &&
-      new Date(this.timeActiveTo) < new Date(this.timeActiveFrom)
-    ) {
-      this.timeError.set('Ngày kế thúc hiệu lực không được trước ngày bắt đầu.');
+    if (fromDate && toDate && toDate < fromDate) {
+      this.timeError.set('Ngày kết thúc hiệu lực không được trước ngày bắt đầu.');
       return;
     }
 
     const dto: UpsertDepositPolicyDto = {
       depositSessionCount: this.timeDepositSessionCount,
       discountPercent: discount,
-      activeFrom: this.timeActiveFrom ? new Date(this.timeActiveFrom) : null,
-      activeTo: this.timeActiveTo ? new Date(this.timeActiveTo) : null,
+      activeFrom: fromDate,
+      activeTo: toDate,
     };
 
     this.isSubmittingTime.set(true);

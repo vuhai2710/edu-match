@@ -177,12 +177,11 @@ public class DepositPolicyService : IDepositPolicyService
         StatusCodes.Status404NotFound);
     }
 
-    var active = await _depositPolicyRepository.GetActivePolicyAsync();
-    if (active != null && active.Id == policy.Id)
+    if (policy.ActiveFrom == null && policy.ActiveTo == null)
     {
       return ApiResponse.Fail(
-        "Không thể xóa chính sách đang áp dụng. Vui lòng tạo chính sách khác thay thế trước khi xóa.",
-        StatusCodes.Status409Conflict);
+        "Không thể xóa chính sách mặc định của hệ thống.",
+        StatusCodes.Status400BadRequest);
     }
 
     policy.IsDeleted = true;

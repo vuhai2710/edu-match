@@ -63,6 +63,15 @@ namespace EduMatch.Services
         }
 
         user.IsDeleted = true;
+        if (user.Tutor != null)
+        {
+          user.Tutor.IsDeleted = true;
+        }
+        if (user.Student != null)
+        {
+          user.Student.IsDeleted = true;
+        }
+
         _userRepository.Update(user);
         await _userRepository.SaveChangesAsync();
 

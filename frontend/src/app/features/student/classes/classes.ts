@@ -8,6 +8,7 @@ import { getApiErrorMessage } from '../../../core/http/api-error';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination';
 import {
   classStatusLabel,
+  classStatusClass,
   formatDate,
   formatMoney,
   formatTimeSlots,
@@ -63,7 +64,7 @@ import {
                     <h2 class="font-extrabold text-slate-900">{{ item.subjectName || item.code }}</h2>
                     <p class="text-sm text-slate-500 mt-1">Gia sư: {{ item.tutorName || 'Đang cập nhật' }}</p>
                   </div>
-                  <span class="rounded-full bg-green-50 px-3 py-1 text-xs font-black text-duo-green">{{ label(item.status) }}</span>
+                  <span [class]="statusClass(item.status)" class="rounded-full px-3 py-1 text-xs font-black">{{ label(item.status) }}</span>
                 </div>
                 <div class="mt-4 space-y-2 text-sm text-slate-600">
                   <p><span class="font-bold">Bắt đầu:</span> {{ date(item.startDate) }}</p>
@@ -123,6 +124,10 @@ export class StudentClassesPage implements OnInit {
 
   label(status?: ClassStatus | null): string {
     return classStatusLabel(status);
+  }
+
+  statusClass(status?: ClassStatus | null): string {
+    return classStatusClass(status);
   }
 
   date(value?: Date | null): string {

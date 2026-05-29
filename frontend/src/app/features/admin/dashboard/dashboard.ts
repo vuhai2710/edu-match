@@ -12,7 +12,15 @@ import {
 import { AdminService, DashboardService } from '../../../api/generated/client/services';
 import { ApiErrorDetails, getApiErrorDetails } from '../../../core/http/api-error';
 import { ErrorBannerComponent } from '../../../shared/components/error-banner/error-banner';
-import { classStatusLabel, formatDateTime, formatMoney, paymentStatusLabel } from '../../../shared/utils/api-ui';
+import {
+  classStatusLabel,
+  cancellationStatusLabel,
+  cancellationStatusClass,
+  formatDateTime,
+  formatMoney,
+  paymentStatusLabel,
+  paymentStatusClass,
+} from '../../../shared/utils/api-ui';
 
 @Component({
   selector: 'app-admin-dashboard-page',
@@ -37,6 +45,14 @@ import { classStatusLabel, formatDateTime, formatMoney, paymentStatusLabel } fro
           }
           <p class="text-xs text-slate-500 font-bold mt-1">Tổng người dùng</p>
         </a>
+        <a routerLink="/admin/users" [queryParams]="{ role: 'Student' }" class="tactile-card p-5 text-center hover:shadow-md transition-shadow">
+          @if (isLoading()) {
+            <div class="h-7 w-12 mx-auto rounded bg-slate-200 animate-pulse"></div>
+          } @else {
+            <p class="font-display text-2xl font-black text-slate-800">{{ dashboard()?.totalStudents ?? 0 }}</p>
+          }
+          <p class="text-xs text-slate-500 font-bold mt-1">Học viên</p>
+        </a>
         <a routerLink="/admin/users" [queryParams]="{ role: 'Tutor' }" class="tactile-card p-5 text-center hover:shadow-md transition-shadow">
           @if (isLoading()) {
             <div class="h-7 w-12 mx-auto rounded bg-slate-200 animate-pulse"></div>
@@ -58,37 +74,41 @@ import { classStatusLabel, formatDateTime, formatMoney, paymentStatusLabel } fro
             <span class="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-duo-orange animate-pulse"></span>
           }
         </a>
-        <a routerLink="/admin/classes" class="tactile-card p-5 text-center hover:shadow-md transition-shadow">
-          @if (isLoading()) {
-            <div class="h-7 w-12 mx-auto rounded bg-slate-200 animate-pulse"></div>
-          } @else {
-            <p class="font-display text-2xl font-black text-duo-orange">{{ dashboard()?.activeClasses ?? 0 }}</p>
-          }
-          <p class="text-xs text-slate-500 font-bold mt-1">Lớp đang học</p>
-        </a>
-        <div class="tactile-card p-5 text-center">
+        <a routerLink="/admin/payments" class="tactile-card p-5 text-center hover:shadow-md transition-shadow">
           @if (isLoading()) {
             <div class="h-7 w-20 mx-auto rounded bg-slate-200 animate-pulse"></div>
           } @else {
             <p class="font-display text-2xl font-black text-duo-purple">{{ money(dashboard()?.revenueThisMonth) }}</p>
           }
           <p class="text-xs text-slate-500 font-bold mt-1">Doanh thu tháng</p>
-        </div>
+        </a>
       </div>
 
       <div class="grid sm:grid-cols-3 gap-4">
-        <div class="tactile-card p-4 text-center">
-          <p class="font-display text-xl font-black text-slate-800">{{ dashboard()?.totalStudents ?? 0 }}</p>
-          <p class="text-xs text-slate-500 font-bold">Học viên</p>
-        </div>
-        <div class="tactile-card p-4 text-center">
-          <p class="font-display text-xl font-black text-slate-800">{{ dashboard()?.pendingClasses ?? 0 }}</p>
-          <p class="text-xs text-slate-500 font-bold">Lớp chờ bắt đầu</p>
-        </div>
-        <div class="tactile-card p-4 text-center">
-          <p class="font-display text-xl font-black text-slate-800">{{ dashboard()?.cancelledClasses ?? 0 }}</p>
-          <p class="text-xs text-slate-500 font-bold">Lớp đã hủy</p>
-        </div>
+        <a routerLink="/admin/classes" [queryParams]="{ status: 'PendingStart' }" class="tactile-card p-4 text-center hover:shadow-md transition-shadow">
+          @if (isLoading()) {
+            <div class="h-7 w-12 mx-auto rounded bg-slate-200 animate-pulse"></div>
+          } @else {
+            <p class="font-display text-xl font-black text-slate-800">{{ dashboard()?.pendingClasses ?? 0 }}</p>
+          }
+          <p class="text-xs text-slate-500 font-bold mt-1">Lớp chờ bắt đầu</p>
+        </a>
+        <a routerLink="/admin/classes" [queryParams]="{ status: 'Active' }" class="tactile-card p-4 text-center hover:shadow-md transition-shadow">
+          @if (isLoading()) {
+            <div class="h-7 w-12 mx-auto rounded bg-slate-200 animate-pulse"></div>
+          } @else {
+            <p class="font-display text-xl font-black text-duo-orange">{{ dashboard()?.activeClasses ?? 0 }}</p>
+          }
+          <p class="text-xs text-slate-500 font-bold mt-1">Lớp đang học</p>
+        </a>
+        <a routerLink="/admin/classes" [queryParams]="{ status: 'CancelledByStudent' }" class="tactile-card p-4 text-center hover:shadow-md transition-shadow">
+          @if (isLoading()) {
+            <div class="h-7 w-12 mx-auto rounded bg-slate-200 animate-pulse"></div>
+          } @else {
+            <p class="font-display text-xl font-black text-slate-800">{{ dashboard()?.cancelledClasses ?? 0 }}</p>
+          }
+          <p class="text-xs text-slate-500 font-bold mt-1">Lớp đã hủy</p>
+        </a>
       </div>
 
       @if (hasNoData() && !errorDetails()) {
@@ -106,7 +126,7 @@ import { classStatusLabel, formatDateTime, formatMoney, paymentStatusLabel } fro
           </div>
           <div class="space-y-3">
             @for (tutor of dashboard()?.pendingTutors ?? []; track tutor.tutorId) {
-              <div class="tactile-card p-4 flex gap-3 items-start">
+              <a [routerLink]="['/admin/users', tutor.userId]" class="tactile-card p-4 flex gap-3 items-start hover:shadow-md transition-shadow cursor-pointer block">
                 @if (tutor.avatarUrl) {
                   <img [src]="tutor.avatarUrl" [alt]="tutor.fullName || ''" class="w-10 h-10 rounded-full object-cover border border-slate-100 shadow-sm" />
                 } @else {
@@ -116,15 +136,15 @@ import { classStatusLabel, formatDateTime, formatMoney, paymentStatusLabel } fro
                 }
                 <div class="flex-1 min-w-0">
                   <div class="flex items-start justify-between gap-1">
-                    <a [routerLink]="['/admin/users', tutor.userId]" class="font-extrabold text-slate-900 hover:text-duo-blue hover:underline block truncate">
+                    <span class="font-extrabold text-slate-900 group-hover:text-duo-blue block truncate">
                       {{ tutor.fullName }}
-                    </a>
+                    </span>
                     <span class="font-extrabold text-duo-green text-xs whitespace-nowrap">{{ money(tutor.hourlyRate) }}/h</span>
                   </div>
                   <p class="text-xs text-slate-500 mt-0.5 line-clamp-2">{{ tutor.profile || 'Chưa cập nhật phần tự giới thiệu.' }}</p>
                   <p class="text-[10px] text-slate-400 font-bold mt-1.5">Yêu cầu: {{ dateTime(tutor.requestedAt) }}</p>
                 </div>
-              </div>
+              </a>
             }
             @if (!isLoading() && !(dashboard()?.pendingTutors?.length)) {
               <div class="tactile-card p-5 text-center font-bold text-slate-500">Không có gia sư nào đang chờ phê duyệt.</div>
@@ -139,16 +159,16 @@ import { classStatusLabel, formatDateTime, formatMoney, paymentStatusLabel } fro
           </div>
           <div class="space-y-3">
             @for (request of cancellationRequests(); track request.id) {
-              <div class="tactile-card p-4">
+              <a [routerLink]="['/admin/cancellation-requests', request.id]" class="tactile-card p-4 block hover:shadow-md transition-shadow cursor-pointer">
                 <div class="flex items-start justify-between gap-3">
                   <div>
                     <p class="font-extrabold text-slate-900">{{ request.requestedByUserName || 'Người dùng' }}</p>
                     <p class="text-sm text-slate-500">Lớp {{ request.classCode }} · {{ classLabel(request) }}</p>
                   </div>
-                  <span class="rounded-full bg-orange-50 px-3 py-1 text-xs font-black text-duo-orange">{{ request.status }}</span>
+                  <span [class]="cancelClass(request)" class="rounded-full px-3 py-1 text-xs font-black">{{ cancelLabel(request) }}</span>
                 </div>
                 <p class="mt-3 text-sm text-slate-600">{{ request.reason || 'Không có lý do.' }}</p>
-              </div>
+              </a>
             }
             @if (!isLoading() && !cancellationRequests().length) {
               <div class="tactile-card p-5 text-center font-bold text-slate-500">Không có yêu cầu hủy đang chờ.</div>
@@ -163,19 +183,19 @@ import { classStatusLabel, formatDateTime, formatMoney, paymentStatusLabel } fro
           </div>
           <div class="space-y-3">
             @for (payment of payments(); track payment.id) {
-              <div class="tactile-card p-4">
+              <a [routerLink]="['/admin/payments', payment.id]" class="tactile-card p-4 block hover:shadow-md transition-shadow cursor-pointer">
                 <div class="flex items-start justify-between gap-3">
                   <div>
                     <p class="font-extrabold text-slate-900">Order #{{ payment.orderCode }}</p>
                     <p class="text-sm text-slate-500">LR #{{ payment.learningRequestId }} · Class #{{ payment.classId || 'chưa có' }}</p>
                   </div>
-                  <span class="rounded-full bg-green-50 px-3 py-1 text-xs font-black text-duo-green">{{ paymentLabel(payment) }}</span>
+                  <span [class]="paymentClass(payment)" class="rounded-full px-3 py-1 text-xs font-black">{{ paymentLabel(payment) }}</span>
                 </div>
                 <div class="mt-3 flex items-center justify-between text-sm">
                   <span class="font-bold text-slate-500">{{ dateTime(payment.createdAt) }}</span>
                   <span class="font-extrabold text-duo-green">{{ money(payment.amount) }}</span>
                 </div>
-              </div>
+              </a>
             }
             @if (!isLoading() && !payments().length) {
               <div class="tactile-card p-5 text-center font-bold text-slate-500">Chưa có thanh toán nào.</div>
@@ -223,8 +243,20 @@ export class AdminDashboardPage implements OnInit {
     return paymentStatusLabel(payment.status);
   }
 
+  paymentClass(payment: PaymentAdminDto): string {
+    return paymentStatusClass(payment.status);
+  }
+
   classLabel(request: CancellationRequestDto): string {
     return classStatusLabel(request.classStatus);
+  }
+
+  cancelLabel(request: CancellationRequestDto): string {
+    return cancellationStatusLabel(request.status);
+  }
+
+  cancelClass(request: CancellationRequestDto): string {
+    return cancellationStatusClass(request.status);
   }
 
   private async loadDashboard(): Promise<void> {

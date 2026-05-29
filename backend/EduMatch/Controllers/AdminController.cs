@@ -159,7 +159,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<bool>>> ApproveTutor(long id)
     {
-      var tutor = await _tutorRepository.GetByIdAsync(id);
+      var tutor = await _tutorRepository.GetTutorProfileDetailAsync(id);
       if (tutor == null || tutor.IsDeleted)
       {
         throw new NotFoundException("Gia sư không tồn tại.");
@@ -167,6 +167,13 @@ namespace EduMatch.Controllers
 
       tutor.ApprovalStatus = TutorApprovalStatus.Approved;
       tutor.UpdatedAt = DateTime.UtcNow;
+
+      if (tutor.User != null && tutor.User.Role != UserRole.Tutor)
+      {
+        tutor.User.Role = UserRole.Tutor;
+        tutor.User.UpdatedAt = DateTime.UtcNow;
+      }
+
       _tutorRepository.Update(tutor);
       await _tutorRepository.SaveChangesAsync();
 

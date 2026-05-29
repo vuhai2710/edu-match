@@ -17,6 +17,7 @@ import {
   formatDateTime,
   formatMoney,
   userRoleLabel,
+  cancellationStatusClass,
 } from '../../../shared/utils/api-ui';
 
 @Component({
@@ -179,9 +180,7 @@ export class AdminCancellationRequestDetailPage implements OnInit {
   roleLabel = userRoleLabel;
 
   statusBadgeClass(status?: CancellationRequestStatus | null): string {
-    return status === CancellationRequestStatus.Resolved
-      ? 'bg-green-50 text-duo-green'
-      : 'bg-orange-50 text-duo-orange';
+    return cancellationStatusClass(status);
   }
 
   dateTime(value?: Date | null): string {

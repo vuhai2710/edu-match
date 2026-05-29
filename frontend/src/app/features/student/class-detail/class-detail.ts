@@ -5,19 +5,22 @@ import { firstValueFrom } from 'rxjs';
 
 import { StudentDetailModalComponent } from '../../../shared/components/student-detail-modal';
 
-import { CancellationRequestDto, ClassDto, ClassStatus, CancellationRequestStatus } from '../../../api/generated/client/models';
+import { CancellationRequestDto, ClassDto, ClassStatus, CancellationRequestStatus, PaymentStatus } from '../../../api/generated/client/models';
 import { ClassesService, CancellationRequestsService } from '../../../api/generated/client/services';
 import { SessionService } from '../../../core/auth/session';
 import { getApiErrorMessage, unwrapApiData } from '../../../core/http/api-error';
 import {
   classStatusLabel,
+  classStatusClass,
   cancellationStatusLabel,
+  cancellationStatusClass,
   userRoleLabel,
   formatDate,
   formatDateTime,
   formatMoney,
   formatTimeSlots,
   paymentStatusLabel,
+  paymentStatusClass,
 } from '../../../shared/utils/api-ui';
 
 @Component({
@@ -77,8 +80,10 @@ import {
               <p class="font-extrabold text-duo-green">{{ money(item.paymentSummary?.amount ?? item.depositAmountSnapshot) }}</p>
             </div>
             <div>
-              <p class="text-slate-500 font-bold">Trạng thái</p>
-              <p class="font-extrabold text-slate-900">{{ paymentLabel(item.paymentSummary?.status) }}</p>
+              <p class="text-slate-500 font-bold mb-1">Trạng thái</p>
+              <span [class]="paymentBadgeClass(item.paymentSummary?.status)" class="rounded-full px-2.5 py-0.5 text-xs font-black">
+                {{ paymentLabel(item.paymentSummary?.status) }}
+              </span>
             </div>
             <div>
               <p class="text-slate-500 font-bold">Đã thanh toán lúc</p>
@@ -256,21 +261,15 @@ export class StudentClassDetailPage implements OnInit {
   }
 
   statusBadgeClass(status?: ClassStatus | null): string {
-    if (!status) return 'bg-slate-50 text-slate-500';
-    switch (status) {
-      case 'PendingStart':
-        return 'bg-blue-50 text-duo-blue';
-      case 'Active':
-        return 'bg-green-50 text-duo-green';
-      default:
-        return 'bg-red-50 text-duo-red';
-    }
+    return classStatusClass(status);
   }
 
   reqBadgeClass(status?: CancellationRequestStatus | null): string {
-    return status === 'Resolved'
-      ? 'bg-green-50 text-duo-green'
-      : 'bg-orange-50 text-duo-orange';
+    return cancellationStatusClass(status);
+  }
+
+  paymentBadgeClass(status?: PaymentStatus | null): string {
+    return paymentStatusClass(status);
   }
 
   private async loadClass(): Promise<void> {

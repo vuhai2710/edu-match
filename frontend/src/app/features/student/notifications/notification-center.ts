@@ -44,23 +44,25 @@ import { formatDateTime, notificationRoute } from '../../../shared/utils/api-ui'
         @for (noti of notifications(); track noti.id) {
           <button (click)="openNotification(noti)"
                   class="tactile-card p-4 w-full text-left flex items-start gap-4 transition-all"
+                  [class.bg-[#d7ffb8]/20]="!noti.isRead"
                   [class.border-l-4]="!noti.isRead"
-                  [class.border-l-duo-blue]="!noti.isRead">
-            <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 bg-blue-100 text-duo-blue font-black">
+                  [class.border-l-[#58cc02]]="!noti.isRead">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 font-black transition-colors"
+                 [class]="!noti.isRead ? 'bg-[#d7ffb8] text-[#3f8f01]' : 'bg-slate-100 text-slate-400'">
               !
             </div>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2">
                 <h3 class="font-extrabold text-sm text-slate-900 truncate">{{ noti.title }}</h3>
                 @if (!noti.isRead) {
-                  <span class="w-2 h-2 rounded-full bg-duo-blue shrink-0"></span>
+                  <span class="w-2 h-2 rounded-full bg-[#58cc02] shrink-0"></span>
                 }
               </div>
               <p class="text-sm text-slate-500 mt-1 line-clamp-2">{{ noti.content }}</p>
               <div class="flex items-center justify-between mt-2">
                 <span class="text-xs text-slate-400">{{ dateTime(noti.createdAt) }}</span>
                 @if (!noti.isRead) {
-                  <span class="text-xs font-bold text-duo-blue">Cần đọc</span>
+                  <span class="text-xs font-bold text-[#3f8f01]">Cần đọc</span>
                 }
               </div>
             </div>

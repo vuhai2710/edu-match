@@ -11,6 +11,7 @@ import {
   formatMoney,
   formatTimeSlots,
   learningRequestStatusLabel,
+  learningRequestStatusClass,
 } from '../../../shared/utils/api-ui';
 
 @Component({
@@ -68,7 +69,7 @@ import {
                     <h2 class="font-extrabold text-slate-900">{{ request.subjectName || 'Môn học' }}</h2>
                     <p class="text-sm text-slate-500 mt-1">Gia sư: {{ request.tutorName || 'Đang cập nhật' }}</p>
                   </div>
-                  <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-duo-blue">
+                  <span [class]="statusClass(request.status)" class="rounded-full px-3 py-1 text-xs font-black">
                     {{ label(request.status) }}
                   </span>
                 </div>
@@ -132,6 +133,10 @@ export class LearningRequestsPage implements OnInit {
 
   label(status?: LearningRequestStatus | null): string {
     return learningRequestStatusLabel(status);
+  }
+
+  statusClass(status?: LearningRequestStatus | null): string {
+    return learningRequestStatusClass(status);
   }
 
   money(value?: number | null): string {

@@ -30,8 +30,10 @@ export interface ChatConversation extends ConversationSummaryDto {
         <div class="flex-1 overflow-y-auto">
           @for (conversation of filteredConversations(); track conversation.partnerId) {
             <button (click)="selectConversation(conversation.partnerId)"
-                    class="w-full text-left p-3 flex items-center gap-3 hover:bg-slate-50 transition-colors border-b border-slate-50"
-                    [class.bg-blue-50]="activePartnerId() === conversation.partnerId">
+                    class="w-full text-left p-3 flex items-center gap-3 transition-colors border-b border-slate-50 border-l-4 border-l-transparent transition-all"
+                    [class.bg-[#d7ffb8]/30]="activePartnerId() === conversation.partnerId"
+                    [class.border-l-[#58cc02]]="activePartnerId() === conversation.partnerId"
+                    [class.hover:bg-slate-50]="activePartnerId() !== conversation.partnerId">
               @if (conversation.partnerAvatar) {
                 <img [src]="conversation.partnerAvatar" class="w-10 h-10 rounded-full object-cover shrink-0 border border-slate-100" />
               } @else {
@@ -58,7 +60,12 @@ export interface ChatConversation extends ConversationSummaryDto {
                     </span>
                   }
                 </div>
-                <p class="text-xs text-slate-400 truncate mt-1">{{ conversation.lastMessage }}</p>
+                <p class="text-xs truncate mt-1"
+                   [class.font-extrabold]="(conversation.unreadCount ?? 0) > 0"
+                   [class.text-slate-800]="(conversation.unreadCount ?? 0) > 0"
+                   [class.text-slate-400]="!(conversation.unreadCount ?? 0)">
+                  {{ conversation.lastMessage }}
+                </p>
               </div>
             </button>
           }

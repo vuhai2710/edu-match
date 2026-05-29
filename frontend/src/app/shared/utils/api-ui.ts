@@ -304,3 +304,51 @@ export function getStartTimeOptions(dayValue: string): string[] {
   return options;
 }
 
+export function learningRequestStatusClass(status?: LearningRequestStatus | null): string {
+  if (!status) return 'bg-slate-50 text-slate-500 border-slate-200';
+  const classes: Record<LearningRequestStatus, string> = {
+    [LearningRequestStatus.Pending]: 'bg-yellow-50 text-duo-yellow-dark border-yellow-100',
+    [LearningRequestStatus.Negotiating]: 'bg-orange-50 text-duo-orange border-orange-100',
+    [LearningRequestStatus.SoftBooked]: 'bg-blue-50 text-duo-blue border-blue-100',
+    [LearningRequestStatus.ConvertedToClass]: 'bg-green-50 text-duo-green border-green-100',
+    [LearningRequestStatus.TutorRejected]: 'bg-red-50 text-duo-red border-red-100',
+    [LearningRequestStatus.StudentRejected]: 'bg-red-50 text-duo-red border-red-100',
+    [LearningRequestStatus.ScheduleExpired]: 'bg-slate-100 text-slate-500 border-slate-200',
+    [LearningRequestStatus.PaymentExpired]: 'bg-slate-100 text-slate-500 border-slate-200',
+  };
+  return `border ${classes[status] || 'bg-slate-50 text-slate-500 border-slate-200'}`;
+}
+
+export function classStatusClass(status?: ClassStatus | null): string {
+  if (!status) return 'bg-slate-50 text-slate-500 border-slate-200';
+  const classes: Record<ClassStatus, string> = {
+    [ClassStatus.PendingStart]: 'bg-blue-50 text-duo-blue border-blue-100',
+    [ClassStatus.Active]: 'bg-green-50 text-duo-green border-green-100',
+    [ClassStatus.CancelledByStudent]: 'bg-red-50 text-duo-red border-red-100',
+    [ClassStatus.CancelledByTutor]: 'bg-red-50 text-duo-red border-red-100',
+    [ClassStatus.CancelledByAdmin]: 'bg-red-50 text-duo-red border-red-100',
+  };
+  return `border ${classes[status] || 'bg-slate-50 text-slate-500 border-slate-200'}`;
+}
+
+export function paymentStatusClass(status?: PaymentStatus | null): string {
+  if (!status) return 'bg-slate-50 text-slate-500 border-slate-200';
+  const classes: Record<PaymentStatus, string> = {
+    [PaymentStatus.Pending]: 'bg-yellow-50 text-duo-yellow-dark border-yellow-100',
+    [PaymentStatus.Success]: 'bg-green-50 text-duo-green border-green-100',
+    [PaymentStatus.Failed]: 'bg-red-50 text-duo-red border-red-100',
+    [PaymentStatus.Cancelled]: 'bg-slate-100 text-slate-500 border-slate-200',
+  };
+  return `border ${classes[status] || 'bg-slate-50 text-slate-500 border-slate-200'}`;
+}
+
+export function cancellationStatusClass(status?: CancellationRequestStatus | null): string {
+  if (!status) return 'bg-slate-50 text-slate-500 border-slate-200';
+  const classes: Record<CancellationRequestStatus, string> = {
+    [CancellationRequestStatus.Pending]: 'bg-orange-50 text-duo-orange border-orange-100',
+    [CancellationRequestStatus.Resolved]: 'bg-green-50 text-duo-green border-green-100',
+  };
+  return `border ${classes[status] || 'bg-slate-50 text-slate-500 border-slate-200'}`;
+}
+
+

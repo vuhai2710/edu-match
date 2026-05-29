@@ -12,11 +12,13 @@ import { ApiErrorDetails, getApiErrorDetails } from '../../../core/http/api-erro
 import { ErrorBannerComponent } from '../../../shared/components/error-banner/error-banner';
 import {
   classStatusLabel,
+  classStatusClass,
   formatDate,
   formatDateTime,
   formatMoney,
   formatTimeSlots,
   paymentStatusLabel,
+  paymentStatusClass,
 } from '../../../shared/utils/api-ui';
 
 @Component({
@@ -97,8 +99,10 @@ import {
                 <p class="mt-1 font-bold text-duo-green">{{ money(pay.amount) }}</p>
               </div>
               <div class="rounded-xl bg-slate-50 px-4 py-3">
-                <p class="text-xs font-bold uppercase text-slate-500 tracking-wide">Trạng thái</p>
-                <p class="mt-1 font-bold text-slate-800">{{ paymentLabel(pay.status) }}</p>
+                <p class="text-xs font-bold uppercase text-slate-500 tracking-wide mb-1">Trạng thái</p>
+                <span [class]="paymentBadgeClass(pay.status)" class="rounded-full px-2.5 py-0.5 text-xs font-black">
+                  {{ paymentLabel(pay.status) }}
+                </span>
               </div>
               <div class="rounded-xl bg-slate-50 px-4 py-3">
                 <p class="text-xs font-bold uppercase text-slate-500 tracking-wide">Thanh toán lúc</p>
@@ -142,18 +146,11 @@ export class AdminClassDetailPage implements OnInit {
   }
 
   statusBadgeClass(status?: ClassStatus | null): string {
-    switch (status) {
-      case ClassStatus.PendingStart:
-        return 'bg-orange-50 text-duo-orange';
-      case ClassStatus.Active:
-        return 'bg-green-50 text-duo-green';
-      case ClassStatus.CancelledByStudent:
-      case ClassStatus.CancelledByTutor:
-      case ClassStatus.CancelledByAdmin:
-        return 'bg-red-50 text-duo-red';
-      default:
-        return 'bg-slate-100 text-slate-600';
-    }
+    return classStatusClass(status);
+  }
+
+  paymentBadgeClass(status?: any | null): string {
+    return paymentStatusClass(status);
   }
 
   date(value?: Date | null): string {

@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Subject, Subscription, firstValueFrom } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
 
@@ -452,6 +452,7 @@ export class HomePage implements OnInit, OnDestroy {
   private filterSubscription?: Subscription;
 
   private readonly session = inject(SessionService);
+  private readonly router = inject(Router);
   private readonly tutorsApi = inject(TutorsService);
   private readonly subjectsApi = inject(SubjectsService);
   private readonly addressApi = inject(AddressService);
@@ -478,6 +479,20 @@ export class HomePage implements OnInit, OnDestroy {
   ];
 
   ngOnInit(): void {
+    if (this.session.isAuthenticated()) {
+      const role = this.session.role();
+      if (role === 'Tutor') {
+        void this.router.navigateByUrl('/tutor/dashboard');
+        return;
+      } else if (role === 'Admin') {
+        void this.router.navigateByUrl('/admin/dashboard');
+        return;
+      } else if (role === 'Student') {
+        void this.router.navigateByUrl('/student/dashboard');
+        return;
+      }
+    }
+
     void this.loadInitialData();
 
     this.filterSubscription = this.filterSubject.pipe(debounceTime(300)).subscribe(() => {

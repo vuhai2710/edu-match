@@ -18,10 +18,12 @@ import {
 import { getApiErrorMessage } from '../../../core/http/api-error';
 import {
   classStatusLabel,
+  classStatusClass,
   formatDate,
   formatMoney,
   formatTimeSlots,
   learningRequestStatusLabel,
+  learningRequestStatusClass,
 } from '../../../shared/utils/api-ui';
 
 @Component({
@@ -77,7 +79,7 @@ import {
                   </p>
                   <p class="text-xs text-slate-400 mt-1">{{ slots(request) }}</p>
                 </div>
-                <span class="text-xs font-black text-duo-blue bg-blue-50 rounded-full px-2 py-1">{{
+                <span [class]="requestClass(request)" class="text-xs font-black rounded-full px-2.5 py-1">{{
                   requestLabel(request)
                 }}</span>
               </div>
@@ -162,7 +164,8 @@ import {
                 </p>
               </div>
               <span
-                class="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full"
+                [class]="classClass(item)"
+                class="text-xs font-black px-3 py-1 rounded-full"
                 >{{ classLabel(item) }}</span
               >
             </a>
@@ -222,11 +225,22 @@ export class TutorDashboardPage implements OnInit {
   }
 
   requestLabel(request: LearningRequestDto): string {
+    if (request.status === LearningRequestStatus.Negotiating) {
+      return 'Đang chờ học viên phản hồi';
+    }
     return learningRequestStatusLabel(request.status);
+  }
+
+  requestClass(request: LearningRequestDto): string {
+    return learningRequestStatusClass(request.status);
   }
 
   classLabel(item: ClassDto): string {
     return classStatusLabel(item.status);
+  }
+
+  classClass(item: ClassDto): string {
+    return classStatusClass(item.status);
   }
 
   money(value?: number | null): string {

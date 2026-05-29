@@ -8,7 +8,7 @@ import { AdminService } from '../../../api/generated/client/services';
 import { ApiErrorDetails, getApiErrorDetails } from '../../../core/http/api-error';
 import { ErrorBannerComponent } from '../../../shared/components/error-banner/error-banner';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination';
-import { formatDateTime, formatMoney, paymentStatusLabel } from '../../../shared/utils/api-ui';
+import { formatDateTime, formatMoney, paymentStatusLabel, paymentStatusClass } from '../../../shared/utils/api-ui';
 
 @Component({
   selector: 'app-admin-payments-page',
@@ -153,17 +153,7 @@ export class AdminPaymentsPage implements OnInit {
   label = paymentStatusLabel;
 
   badgeClass(status?: PaymentStatus | null): string {
-    switch (status) {
-      case PaymentStatus.Success:
-        return 'bg-green-50 text-duo-green';
-      case PaymentStatus.Pending:
-        return 'bg-orange-50 text-duo-orange';
-      case PaymentStatus.Failed:
-      case PaymentStatus.Cancelled:
-        return 'bg-red-50 text-duo-red';
-      default:
-        return 'bg-slate-100 text-slate-600';
-    }
+    return paymentStatusClass(status);
   }
 
   money(value?: number | null): string {

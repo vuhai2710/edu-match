@@ -3,12 +3,13 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
-import { TimeSlotInputDto, TutorDetailDto } from '../../../api/generated/client/models';
-import { LearningRequestsService, TutorsService } from '../../../api/generated/client/services';
+import { DepositPreviewResponseDto, TimeSlotInputDto, TutorDetailDto } from '../../../api/generated/client/models';
+import { DepositPolicyService, LearningRequestsService, TutorsService } from '../../../api/generated/client/services';
 import { getApiErrorDetails, getApiErrorMessage, unwrapApiData } from '../../../core/http/api-error';
 import {
   DAY_OPTIONS,
   buildEndTime,
+  formatDate,
   formatMoney,
   getStartTimeOptions,
   validateTimeSlots,
@@ -45,7 +46,27 @@ import {
             </div>
             <div>
               <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Ngày bắt đầu mong muốn</label>
-              <input type="date" [(ngModel)]="desiredStartDate" class="tactile-input w-full text-sm font-semibold" />
+              <div class="relative cursor-pointer" (click)="desiredStartDateInput.showPicker()">
+                <input
+                  type="text"
+                  [value]="desiredStartDate ? formatDate(desiredStartDate) : ''"
+                  placeholder="dd/mm/yyyy"
+                  class="tactile-input w-full text-sm font-semibold pl-3 pr-10 py-2.5 bg-white pointer-events-none"
+                  readonly
+                />
+                <div class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <input
+                  #desiredStartDateInput
+                  type="date"
+                  [(ngModel)]="desiredStartDate"
+                  class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  (click)="$event.stopPropagation(); desiredStartDateInput.showPicker()"
+                />
+              </div>
               @if (fieldErrors()['DesiredStartDate']) {
                 <p class="text-xs font-bold text-duo-red mt-1">{{ fieldErrors()['DesiredStartDate'] }}</p>
               }
@@ -64,7 +85,7 @@ import {
             </div>
             <div>
               <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Ngân sách / giờ</label>
-              <input type="number" [(ngModel)]="budgetPerHour" class="tactile-input w-full text-sm font-semibold" />
+              <input type="number" [(ngModel)]="budgetPerHour" (ngModelChange)="updateDepositPreview()" class="tactile-input w-full text-sm font-semibold" />
               @if (fieldErrors()['BudgetPerHour']) {
                 <p class="text-xs font-bold text-duo-red mt-1">{{ fieldErrors()['BudgetPerHour'] }}</p>
               }
@@ -135,14 +156,36 @@ import {
               <span class="font-bold text-slate-900">{{ t.fullName }}</span>
             </div>
             <div class="flex justify-between text-sm">
-              <span class="text-slate-500">Học phí tham khảo</span>
-              <span class="font-bold text-slate-900">{{ formatPrice(t.hourlyRate) }}/h</span>
+              <span class="text-slate-500">Học phí đề xuất</span>
+              <span class="font-bold text-slate-900">{{ formatPrice(budgetPerHour) }}/h</span>
             </div>
             <div class="flex justify-between">
               <span class="font-bold text-slate-700">Cọc dự kiến</span>
-              <span class="font-display text-xl font-black text-duo-green">{{ formatPrice((budgetPerHour || 0) * hoursPerSession) }}</span>
+              <span class="font-display text-xl font-black text-duo-green">
+                {{ formatPrice(depositPreview()?.depositAmount ?? (budgetPerHour || 0) * hoursPerSession) }}
+              </span>
             </div>
           </div>
+
+          <!-- Chính sách đặt cọc info banner -->
+          @if (depositPreview(); as prev) {
+            <div class="bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-xs space-y-2 text-slate-600">
+              <div class="flex items-center gap-1.5 font-bold text-slate-700 uppercase tracking-wide">
+                <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Chính sách đặt cọc
+              </div>
+              <ul class="list-disc list-inside space-y-1 pl-1 leading-relaxed">
+                <li>Hệ thống áp dụng đặt cọc <strong>{{ prev.depositSessionCount }} buổi</strong> học đề xuất ban đầu (tương đương <strong>{{ (prev.depositSessionCount ?? 0) * hoursPerSession }} giờ học</strong>).</li>
+                @if (prev.discountPercent && prev.discountPercent > 0) {
+                  <li>Được ưu đãi giảm giá <strong>{{ prev.discountPercent * 100 }}%</strong> trên tiền đặt cọc.</li>
+                }
+                <li>Tiền cọc này dùng để giữ chỗ và cam kết lịch học giữa học viên và gia sư.</li>
+                <li><strong>Chính sách hoàn cọc:</strong> Hoàn trả <strong>100%</strong> tiền đặt cọc nếu gia sư từ chối yêu cầu, hoặc lớp học không thể bắt đầu theo đúng quy định của EduMatch.</li>
+              </ul>
+            </div>
+          }
 
           @if (fieldErrors()['TimeSlots']) {
             <p class="rounded-xl border-2 border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-duo-red">
@@ -182,6 +225,7 @@ export class CreateBookingPage implements OnInit {
   isSubmitting = signal(false);
   errorMessage = signal('');
   fieldErrors = signal<Record<string, string>>({});
+  depositPreview = signal<DepositPreviewResponseDto | null>(null);
   readonly dayOptions = DAY_OPTIONS;
   readonly getStartTimeOptions = getStartTimeOptions;
 
@@ -189,6 +233,7 @@ export class CreateBookingPage implements OnInit {
   private readonly router = inject(Router);
   private readonly tutorsApi = inject(TutorsService);
   private readonly learningRequestsApi = inject(LearningRequestsService);
+  private readonly depositPolicyApi = inject(DepositPolicyService);
 
   ngOnInit(): void {
     void this.loadTutor();
@@ -230,6 +275,22 @@ export class CreateBookingPage implements OnInit {
         endTime: buildEndTime(slot.startTime, this.hoursPerSession),
       })),
     );
+    void this.updateDepositPreview();
+  }
+
+  async updateDepositPreview(): Promise<void> {
+    const rate = this.budgetPerHour;
+    const hours = this.hoursPerSession;
+    if (!rate || rate <= 0 || !hours || hours <= 0) {
+      this.depositPreview.set(null);
+      return;
+    }
+    try {
+      const response = await firstValueFrom(this.depositPolicyApi.previewDeposit(rate, hours));
+      this.depositPreview.set(response.data ?? null);
+    } catch {
+      this.depositPreview.set(null);
+    }
   }
 
   async onSubmit(): Promise<void> {
@@ -284,6 +345,11 @@ export class CreateBookingPage implements OnInit {
     return formatMoney(value);
   }
 
+  formatDate(value: string | Date | undefined | null): string {
+    if (!value) return '';
+    return formatDate(value);
+  }
+
   getFixedSubjectName(): string {
     const sub = this.tutor()?.subjects?.find((s) => s.subjectId === this.subjectId);
     return sub?.subjectName || '';
@@ -312,6 +378,7 @@ export class CreateBookingPage implements OnInit {
         this.isSubjectFixed = false;
       }
       this.budgetPerHour = tutor.hourlyRate ?? null;
+      void this.updateDepositPreview();
     } catch (error) {
       this.errorMessage.set(getApiErrorMessage(error, 'Không tải được gia sư.'));
     } finally {

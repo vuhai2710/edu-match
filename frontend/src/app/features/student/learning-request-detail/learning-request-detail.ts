@@ -26,6 +26,7 @@ import {
   formatMoney,
   formatTimeSlots,
   learningRequestStatusLabel,
+  learningRequestStatusClass,
   validateTimeSlots,
 } from '../../../shared/utils/api-ui';
 
@@ -43,7 +44,7 @@ import {
               <h1 class="font-display text-2xl font-black text-slate-900">{{ lr.subjectName || 'Yêu cầu học' }}</h1>
               <p class="text-sm text-slate-500 mt-1">Gia sư: {{ lr.tutorName || 'Đang cập nhật' }}</p>
             </div>
-            <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-duo-blue">
+            <span [class]="statusClass(lr.status)" class="rounded-full px-3 py-1 text-xs font-black">
               {{ label(lr.status) }}
             </span>
           </div>
@@ -186,6 +187,10 @@ export class LearningRequestDetailPage implements OnInit {
 
   label(status?: LearningRequestStatus | null): string {
     return learningRequestStatusLabel(status);
+  }
+
+  statusClass(status?: LearningRequestStatus | null): string {
+    return learningRequestStatusClass(status);
   }
 
   money(value?: number | null): string {
