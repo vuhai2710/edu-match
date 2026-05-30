@@ -53,6 +53,7 @@ coverage.json
 coverage.opencover.xml
 *.trx
 *.coveragexml
+EduMatch.Tests/
 
 *_backup.cs
 
