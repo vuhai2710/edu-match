@@ -8,9 +8,11 @@ namespace EduMatch.Repositories.Interfaces
     {
         Task<Payment?> GetByOrderCodeAsync(long orderCode);
         Task<Payment?> GetByOrderCodeWithLearningRequestAsync(long orderCode);
+        Task<Payment?> GetLatestByLearningRequestIdWithDetailsAsync(long learningRequestId);
         Task<bool> HasPendingPaymentForLearningRequestAsync(long learningRequestId);
-        Task<PagedResult<Payment>> GetPagedAsync(int page, int pageSize, PaymentStatus? status);
+        Task<PagedResult<Payment>> GetPagedAsync(int page, int pageSize, PaymentStatus? status, DateTime? fromDate, DateTime? toDate);
         Task<Payment?> GetSuccessfulPaymentByClassIdAsync(long classId);
         Task<Dictionary<long, Payment>> GetSuccessfulPaymentsByClassIdsAsync(IEnumerable<long> classIds);
+        Task<PagedResult<Payment>> GetPagedByUserIdAsync(long userId, int page, int pageSize, PaymentStatus? status);
     }
 }

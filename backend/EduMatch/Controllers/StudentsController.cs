@@ -6,7 +6,6 @@ using EduMatch.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
-using System.Security.Claims;
 
 namespace EduMatch.Controllers
 {
@@ -27,8 +26,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ApiResponse<PagedResult<StudentDto>>>> GetStudents([FromQuery] StudentQueryParameters parameters)
     {
-      var result = await _studentService.GetStudentsAsync(parameters);
-      return this.OkResponse(ApiResponse<PagedResult<StudentDto>>.SuccessResult(result));
+      return this.OkResponse(await _studentService.GetStudentsAsync(parameters));
     }
 
     [HttpGet("{id}")]
@@ -40,46 +38,37 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<StudentDetailDto>>> GetStudentById([FromRoute(Name = "id")] long studentId)
     {
-      var result = await _studentService.GetStudentByIdAsync(studentId);
-      return this.OkResponse(ApiResponse<StudentDetailDto>.SuccessResult(result));
+      return this.OkResponse(await _studentService.GetStudentByIdAsync(studentId));
     }
 
     [HttpGet("me")]
     [Authorize(Roles = "Student")]
     [SwaggerOperation(OperationId = "getMyStudentProfile")]
     [ProducesResponseType(typeof(ApiResponse<StudentDetailDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<StudentDetailDto>>> GetMyProfile()
     {
-      var result = await _studentService.GetMyProfileAsync(GetCurrentUserId());
-      return this.OkResponse(ApiResponse<StudentDetailDto>.SuccessResult(result));
+      return this.OkResponse(await _studentService.GetMyProfileAsync(GetCurrentUserId()));
     }
 
     [HttpPut("me")]
     [Authorize(Roles = "Student")]
     [SwaggerOperation(OperationId = "updateMyStudentProfile")]
     [ProducesResponseType(typeof(ApiResponse<StudentDetailDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<StudentDetailDto>>> UpdateMyProfile([FromBody] UpdateStudentDto dto)
     {
-      var result = await _studentService.UpdateMyProfileAsync(GetCurrentUserId(), dto);
-      return this.OkResponse(ApiResponse<StudentDetailDto>.SuccessResult(result, "Cập nhật hồ sơ thành công"));
+      return this.OkResponse(await _studentService.UpdateMyProfileAsync(GetCurrentUserId(), dto));
     }
 
     private long GetCurrentUserId()
     {
-      var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-      if (!long.TryParse(userIdClaim, out var userId))
-      {
-        throw new UnauthorizedException("Không thể xác thực người dùng.");
-      }
-
-      return userId;
+      return User.GetRequiredUserId();
     }
   }
 }

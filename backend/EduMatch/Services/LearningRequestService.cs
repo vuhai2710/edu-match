@@ -28,6 +28,7 @@ namespace EduMatch.Services
     private readonly INotificationService _notificationService;
     private readonly IBookingScheduleService _bookingScheduleService;
     private readonly IDepositCalculator _depositCalculator;
+    private readonly IBookingConflictService _bookingConflictService;
 
     public LearningRequestService(
       ILearningRequestRepository learningRequestRepository,
@@ -37,7 +38,8 @@ namespace EduMatch.Services
       IDepositPolicyRepository depositPolicyRepository,
       INotificationService notificationService,
       IBookingScheduleService bookingScheduleService,
-      IDepositCalculator depositCalculator)
+      IDepositCalculator depositCalculator,
+      IBookingConflictService bookingConflictService)
     {
       _learningRequestRepository = learningRequestRepository;
       _studentRepository = studentRepository;
@@ -47,125 +49,158 @@ namespace EduMatch.Services
       _notificationService = notificationService;
       _bookingScheduleService = bookingScheduleService;
       _depositCalculator = depositCalculator;
+      _bookingConflictService = bookingConflictService;
     }
 
-    public async Task<LearningRequestDto> CreateAsync(long currentUserId, CreateLearningRequestDto dto)
+    public async Task<ApiResponse<LearningRequestDto>> CreateAsync(long currentUserId, CreateLearningRequestDto dto)
     {
-      ValidateDesiredStartDate(dto.DesiredStartDate);
-
-      var student = await _studentRepository.GetStudentDetailByUserIdAsync(currentUserId);
-      if (student == null)
+      return await ServiceResponse.ExecuteAsync(async () =>
       {
-        throw new NotFoundException("Không tìm thấy thông tin học viên.", "STUDENT_NOT_FOUND");
-      }
+        ValidateDesiredStartDate(dto.DesiredStartDate);
 
-      var tutor = await _tutorRepository.GetTutorProfileDetailAsync(dto.TutorId);
-      if (tutor == null)
-      {
-        throw new NotFoundException("Không tìm thấy thông tin gia sư.", "TUTOR_NOT_FOUND");
-      }
-
-      var subject = await _subjectRepository.GetByIdAsync(dto.SubjectId);
-      if (subject == null)
-      {
-        throw new NotFoundException("Không tìm thấy môn học.", "SUBJECT_NOT_FOUND");
-      }
-
-      var validatedTimeSlots = _bookingScheduleService.Validate(
-        dto.TimeSlots.Select(slot => new BookingTimeSlotInput
+        var student = await _studentRepository.GetStudentDetailByUserIdAsync(currentUserId);
+        if (student == null)
         {
-          Day = slot.Day,
-          StartTime = slot.StartTime,
-          EndTime = slot.EndTime
-        }),
-        dto.HoursPerSession);
+          throw new NotFoundException("Không tìm thấy thông tin học viên.", "STUDENT_NOT_FOUND");
+        }
 
-      var activePolicy = await _depositPolicyRepository.GetActivePolicyAsync();
-      if (activePolicy == null)
-      {
-        throw new NotFoundException("Không tìm thấy chính sách đặt cọc đang hiệu lực.", "DEPOSIT_POLICY_NOT_FOUND");
-      }
+        var tutor = await _tutorRepository.GetTutorProfileDetailAsync(dto.TutorId);
+        if (tutor == null)
+        {
+          throw new NotFoundException("Không tìm thấy thông tin gia sư.", "TUTOR_NOT_FOUND");
+        }
 
-      var totalAmount = CalculateTotalAmount(dto.BudgetPerHour, dto.HoursPerSession, activePolicy);
-      var depositCalculation = _depositCalculator.Calculate(new DepositCalculationRequest
-      {
-        TotalAmount = totalAmount,
-        FixedAmount = totalAmount
+        var subject = await _subjectRepository.GetByIdAsync(dto.SubjectId);
+        if (subject == null)
+        {
+          throw new NotFoundException("Không tìm thấy môn học.", "SUBJECT_NOT_FOUND");
+        }
+
+        var validatedTimeSlots = _bookingScheduleService.Validate(
+          dto.TimeSlots.Select(slot => new BookingTimeSlotInput
+          {
+            Day = slot.Day,
+            StartTime = slot.StartTime,
+            EndTime = slot.EndTime
+          }),
+          dto.HoursPerSession);
+
+        await _bookingConflictService.CheckForStudentConflictsAsync(currentUserId, validatedTimeSlots);
+
+        var activePolicy = await _depositPolicyRepository.GetActivePolicyAsync()
+          ?? CreateFallbackDefaultPolicy();
+
+        var totalAmount = CalculateTotalAmount(dto.BudgetPerHour, dto.HoursPerSession, activePolicy);
+        var depositCalculation = _depositCalculator.Calculate(new DepositCalculationRequest
+        {
+          TotalAmount = totalAmount,
+          FixedAmount = totalAmount
+        });
+
+        var entity = new LearningRequest
+        {
+          StudentId = currentUserId,
+          TutorId = tutor.Id,
+          SubjectId = subject.Id,
+          Note = string.IsNullOrWhiteSpace(dto.Note) ? null : dto.Note.Trim(),
+          TimeSlots = SerializeTimeSlots(validatedTimeSlots),
+          DesiredStartDate = ToUtc(dto.DesiredStartDate),
+          HoursPerSession = dto.HoursPerSession,
+          BudgetPerHour = dto.BudgetPerHour,
+          CalculatedDepositAmount = depositCalculation.DepositAmount,
+          ScheduleExpiresAt = DateTime.UtcNow.AddHours(24),
+          Status = LearningRequestStatus.Pending
+        };
+
+        await _learningRequestRepository.AddAsync(entity);
+        await _learningRequestRepository.SaveChangesAsync();
+
+        entity.Student = student.User;
+        entity.Tutor = tutor;
+        entity.Subject = subject;
+
+        await _notificationService.SendAsync(
+          tutor.UserId,
+          "Yêu cầu học tập mới",
+          $"Học viên {student.User.FullName} đã gửi yêu cầu học {subject.Name}.",
+          NotificationType.LearningRequestCreated,
+          "LearningRequest",
+          entity.Id,
+          $"/learning-requests/{entity.Id}");
+
+        return ApiResponse<LearningRequestDto>.SuccessResult(
+          LearningRequestMapper.ToDto(entity, validatedTimeSlots),
+          "Tạo yêu cầu học tập thành công.",
+          StatusCodes.Status201Created);
       });
-
-      var entity = new LearningRequest
-      {
-        StudentId = currentUserId,
-        TutorId = tutor.Id,
-        SubjectId = subject.Id,
-        Note = string.IsNullOrWhiteSpace(dto.Note) ? null : dto.Note.Trim(),
-        TimeSlots = SerializeTimeSlots(validatedTimeSlots),
-        DesiredStartDate = ToUtc(dto.DesiredStartDate),
-        HoursPerSession = dto.HoursPerSession,
-        BudgetPerHour = dto.BudgetPerHour,
-        CalculatedDepositAmount = depositCalculation.DepositAmount,
-        ScheduleExpiresAt = DateTime.UtcNow.AddHours(24),
-        Status = LearningRequestStatus.Pending
-      };
-
-      await _learningRequestRepository.AddAsync(entity);
-      await _learningRequestRepository.SaveChangesAsync();
-
-      entity.Student = student.User;
-      entity.Tutor = tutor;
-      entity.Subject = subject;
-
-      await _notificationService.SendAsync(
-        tutor.UserId,
-        "Yêu cầu học tập mới",
-        $"Học viên {student.User.FullName} đã gửi yêu cầu học {subject.Name}.",
-        NotificationType.LearningRequestCreated,
-        "LearningRequest",
-        entity.Id,
-        $"/learning-requests/{entity.Id}");
-
-      return LearningRequestMapper.ToDto(entity, validatedTimeSlots);
     }
 
-    public async Task<PagedResult<LearningRequestDto>> GetMyRequestsAsync(long currentUserId, LearningRequestQueryParameters parameters)
+    public async Task<ApiResponse<PagedResult<LearningRequestDto>>> GetMyRequestsAsync(long currentUserId, LearningRequestQueryParameters parameters)
     {
-      var student = await _studentRepository.GetStudentDetailByUserIdAsync(currentUserId);
-      if (student == null)
+      return await ServiceResponse.ExecuteAsync(async () =>
       {
-        throw new NotFoundException("Không tìm thấy thông tin học viên.", "STUDENT_NOT_FOUND");
-      }
+        var student = await _studentRepository.GetStudentDetailByUserIdAsync(currentUserId);
+        if (student == null)
+        {
+          throw new NotFoundException("Không tìm thấy thông tin học viên.", "STUDENT_NOT_FOUND");
+        }
 
-      var pagedRequests = await _learningRequestRepository.GetByStudentIdAsync(currentUserId, parameters);
+        var pagedRequests = await _learningRequestRepository.GetByStudentIdAsync(currentUserId, parameters);
 
-      return new PagedResult<LearningRequestDto>
-      {
-        Items = pagedRequests.Items
-          .Select(request => LearningRequestMapper.ToDto(
-            request,
-            _bookingScheduleService.ParseAndValidate(request.TimeSlots, request.HoursPerSession)))
-          .ToList(),
-        TotalCount = pagedRequests.TotalCount,
-        Page = pagedRequests.Page,
-        PageSize = pagedRequests.PageSize,
-        TotalPages = pagedRequests.TotalPages
-      };
+        return ApiResponse<PagedResult<LearningRequestDto>>.SuccessResult(new PagedResult<LearningRequestDto>
+        {
+          Items = pagedRequests.Items
+            .Select(request => LearningRequestMapper.ToDto(
+              request,
+              _bookingScheduleService.ParseAndValidate(request.TimeSlots, request.HoursPerSession)))
+            .ToList(),
+          TotalCount = pagedRequests.TotalCount,
+          Page = pagedRequests.Page,
+          PageSize = pagedRequests.PageSize,
+          TotalPages = pagedRequests.TotalPages
+        });
+      });
     }
 
-    public async Task<LearningRequestDto> GetByIdAsync(long id, long currentUserId)
+    public async Task<ApiResponse<LearningRequestDto>> GetByIdAsync(long id, long currentUserId, UserRole role, long? tutorProfileId = null)
     {
-      var request = await _learningRequestRepository.GetByIdWithDetailsAsync(id);
-      if (request == null)
+      return await ServiceResponse.ExecuteAsync(async () =>
       {
-        throw new NotFoundException("Không tìm thấy yêu cầu học tập.", "LEARNING_REQUEST_NOT_FOUND");
+        var request = await _learningRequestRepository.GetByIdWithDetailsAsync(id);
+        if (request == null)
+        {
+          throw new NotFoundException("Không tìm thấy yêu cầu học tập.", "LEARNING_REQUEST_NOT_FOUND");
+        }
+
+        EnsureCanViewRequest(request, currentUserId, role, tutorProfileId);
+
+        var timeSlots = _bookingScheduleService.ParseAndValidate(request.TimeSlots, request.HoursPerSession);
+        return ApiResponse<LearningRequestDto>.SuccessResult(LearningRequestMapper.ToDto(request, timeSlots));
+      });
+    }
+
+    private static void EnsureCanViewRequest(
+      LearningRequest request,
+      long currentUserId,
+      UserRole role,
+      long? tutorProfileId)
+    {
+      if (role == UserRole.Admin)
+      {
+        return;
       }
 
-      if (request.StudentId != currentUserId)
+      if (role == UserRole.Student && request.StudentId == currentUserId)
       {
-        throw new ForbiddenException("Bạn không có quyền xem yêu cầu học tập này.", "LEARNING_REQUEST_FORBIDDEN");
+        return;
       }
 
-      var timeSlots = _bookingScheduleService.ParseAndValidate(request.TimeSlots, request.HoursPerSession);
-      return LearningRequestMapper.ToDto(request, timeSlots);
+      if (role == UserRole.Tutor && tutorProfileId.HasValue && request.TutorId == tutorProfileId.Value)
+      {
+        return;
+      }
+
+      throw new ForbiddenException("Bạn không có quyền xem yêu cầu học tập này.", "LEARNING_REQUEST_FORBIDDEN");
     }
 
     private static decimal CalculateTotalAmount(decimal budgetPerHour, decimal hoursPerSession, DepositPolicy policy)
@@ -175,6 +210,15 @@ namespace EduMatch.Services
         grossAmount * (1 - policy.DiscountPercent),
         2,
         MidpointRounding.AwayFromZero);
+    }
+
+    private static DepositPolicy CreateFallbackDefaultPolicy()
+    {
+      return new DepositPolicy
+      {
+        DepositSessionCount = DepositPolicyDefaults.SessionCount,
+        DiscountPercent = DepositPolicyDefaults.DiscountPercent
+      };
     }
 
     private static string SerializeTimeSlots(IEnumerable<BookingTimeSlot> timeSlots)
@@ -196,7 +240,7 @@ namespace EduMatch.Services
         throw new ValidationException(
           new Dictionary<string, string[]>
           {
-            [nameof(CreateLearningRequestDto.DesiredStartDate)] = ["DesiredStartDate khong duoc de trong."]
+            [nameof(CreateLearningRequestDto.DesiredStartDate)] = ["DesiredStartDate không được để trống."]
           },
           "INVALID_DESIRED_START_DATE");
       }

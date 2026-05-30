@@ -24,8 +24,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ApiResponse<List<SubjectListItemDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<List<SubjectListItemDto>>>> GetSubjects()
     {
-      var result = await _subjectService.GetSubjectsAsync();
-      return this.OkResponse(ApiResponse<List<SubjectListItemDto>>.SuccessResult(result));
+      return this.OkResponse(await _subjectService.GetSubjectsAsync());
     }
 
     [HttpGet("{id:long}/tutors")]
@@ -36,8 +35,7 @@ namespace EduMatch.Controllers
       long id,
       [FromQuery] TutorBySubjectQueryParameters parameters)
     {
-      var result = await _subjectService.GetTutorsBySubjectAsync(id, parameters);
-      return this.OkResponse(ApiResponse<PagedResult<TutorCardDto>>.SuccessResult(result));
+      return this.OkResponse(await _subjectService.GetTutorsBySubjectAsync(id, parameters));
     }
 
     [HttpGet("{id:long}")]
@@ -46,13 +44,13 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<SubjectResponseDto>>> GetSubjectById(long id)
     {
-      var result = await _subjectService.GetSubjectByIdAsync(id);
-      return this.OkResponse(ApiResponse<SubjectResponseDto>.SuccessResult(result));
+      return this.OkResponse(await _subjectService.GetSubjectByIdAsync(id));
     }
 
     [HttpPost]
     [Authorize(Roles = "Admin")]
     [SwaggerOperation(OperationId = "createSubject")]
+    [ProducesResponseType(typeof(ApiResponse<SubjectResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<SubjectResponseDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
@@ -61,7 +59,12 @@ namespace EduMatch.Controllers
     public async Task<ActionResult<ApiResponse<SubjectResponseDto>>> CreateSubject([FromBody] SubjectDto dto)
     {
       var result = await _subjectService.CreateSubjectAsync(dto);
-      return this.CreatedResponse($"/api/subjects/{result.Id}", ApiResponse<SubjectResponseDto>.SuccessResult(result));
+      if (!result.Success)
+      {
+        return this.OkResponse(result);
+      }
+
+      return this.CreatedResponse($"/api/subjects/{result.Data!.Id}", result);
     }
 
     [HttpPut("{id:long}")]
@@ -75,21 +78,19 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<ApiResponse<SubjectResponseDto>>> UpdateSubject(long id, [FromBody] SubjectDto dto)
     {
-      var result = await _subjectService.UpdateSubjectAsync(id, dto);
-      return this.OkResponse(ApiResponse<SubjectResponseDto>.SuccessResult(result));
+      return this.OkResponse(await _subjectService.UpdateSubjectAsync(id, dto));
     }
 
     [HttpDelete("{id:long}")]
     [Authorize(Roles = "Admin")]
     [SwaggerOperation(OperationId = "deleteSubject")]
-    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ApiResponse<bool>>> DeleteSubject(long id)
+    public async Task<ActionResult<ApiResponse>> DeleteSubject(long id)
     {
-      await _subjectService.DeleteSubjectAsync(id);
-      return this.OkResponse(ApiResponse<bool>.SuccessResult(true));
+      return this.OkResponse(await _subjectService.DeleteSubjectAsync(id));
     }
   }
 }

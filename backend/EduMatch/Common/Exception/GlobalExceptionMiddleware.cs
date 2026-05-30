@@ -4,10 +4,6 @@ namespace EduMatch.Common.Exception
 {
   public class GlobalExceptionMiddleware
   {
-    private const string DefaultNotFoundMessage = "Không tìm thấy dữ liệu";
-    private const string DefaultForbiddenMessage = "Bạn không có quyền thực hiện thao tác này";
-    private const string DefaultUnauthorizedMessage = "Phiên đăng nhập hết hạn";
-    private const string DefaultSystemErrorMessage = "Lỗi hệ thống, vui lòng thử lại";
     private readonly RequestDelegate _next;
     private readonly ILogger<GlobalExceptionMiddleware> _logger;
 
@@ -23,6 +19,14 @@ namespace EduMatch.Common.Exception
       {
         await _next(context);
       }
+      catch (OperationCanceledException exception) when (context.RequestAborted.IsCancellationRequested)
+      {
+        _logger.LogDebug(
+          exception,
+          "Request was canceled by the client for [{Method}] {Path}",
+          context.Request.Method,
+          context.Request.Path);
+      }
       catch (System.Exception exception)
       {
         if (context.Response.HasStarted)
@@ -36,24 +40,59 @@ namespace EduMatch.Common.Exception
           throw;
         }
 
-        var error = MapException(exception);
+        if (TryMapBusinessFailure(exception, out var businessFailure))
+        {
+          LogBusinessFailure(context, businessFailure, exception);
+          await context.Response.WriteApiResponseAsync(businessFailure, StatusCodes.Status200OK, context.RequestAborted);
+          return;
+        }
+
+        var error = ExceptionMapper.Map(exception);
         LogException(context, error, exception);
 
         await context.Response.WriteErrorResponseAsync(
           error.StatusCode,
           error.Message,
           error.ErrorCode,
+          error.Errors,
           context.RequestAborted);
       }
     }
 
-    private void LogException(HttpContext context, ErrorDescriptor error, System.Exception exception)
+    private static bool TryMapBusinessFailure(System.Exception exception, out DTOs.ApiResponse response)
+    {
+      switch (exception)
+      {
+        case UnauthorizedException unauthorizedException:
+          response = DTOs.ApiResponse.Fail(unauthorizedException.Message, StatusCodes.Status401Unauthorized);
+          return true;
+        case AppException appException when appException.StatusCode < StatusCodes.Status500InternalServerError:
+          response = DTOs.ApiResponse.Fail(appException.Message, appException.StatusCode, appException.ErrorCode);
+          return true;
+        default:
+          response = null!;
+          return false;
+      }
+    }
+
+    private void LogBusinessFailure(HttpContext context, DTOs.ApiResponse response, System.Exception exception)
+    {
+      _logger.LogWarning(
+        exception,
+        "[{Method}] {Path} -> 200 (business failure {BusinessStatusCode}): {Message}",
+        context.Request.Method,
+        context.Request.Path,
+        response.StatusCode,
+        response.Message);
+    }
+
+    private void LogException(HttpContext context, ExceptionDescriptor error, System.Exception exception)
     {
       if (error.StatusCode >= StatusCodes.Status500InternalServerError)
       {
         _logger.LogError(
           exception,
-          "[{Method}] {Path} → {StatusCode}: {Message}",
+          "[{Method}] {Path} -> {StatusCode}: {Message}",
           context.Request.Method,
           context.Request.Path,
           error.StatusCode,
@@ -63,74 +102,12 @@ namespace EduMatch.Common.Exception
       }
 
       _logger.LogWarning(
-        "[{Method}] {Path} → {StatusCode}: {Message}",
+        exception,
+        "[{Method}] {Path} -> {StatusCode}: {Message}",
         context.Request.Method,
         context.Request.Path,
         error.StatusCode,
         error.Message);
     }
-
-    private static ErrorDescriptor MapException(System.Exception exception)
-    {
-      return exception switch
-      {
-        NotFoundException notFoundException => new(
-          StatusCodes.Status404NotFound,
-          DefaultNotFoundMessage,
-          notFoundException.ErrorCode),
-
-        ConflictException conflictException => new(
-          StatusCodes.Status409Conflict,
-          conflictException.Message,
-          conflictException.ErrorCode),
-
-        ForbiddenException forbiddenException => new(
-          StatusCodes.Status403Forbidden,
-          DefaultForbiddenMessage,
-          forbiddenException.ErrorCode),
-
-        ValidationException validationException => new(
-          StatusCodes.Status400BadRequest,
-          BuildValidationMessage(validationException),
-          validationException.ErrorCode),
-
-        UnauthorizedAccessException => new(
-          StatusCodes.Status401Unauthorized,
-          DefaultUnauthorizedMessage,
-          "UNAUTHORIZED"),
-
-        AppException appException => new(
-          appException.StatusCode,
-          appException.Message,
-          appException.ErrorCode),
-
-        _ => new(
-          StatusCodes.Status500InternalServerError,
-          DefaultSystemErrorMessage,
-          "INTERNAL_SERVER_ERROR")
-      };
-    }
-
-    private static string BuildValidationMessage(ValidationException exception)
-    {
-      var messages = exception.Errors
-        .SelectMany(entry => entry.Value.Select(error =>
-          string.IsNullOrWhiteSpace(entry.Key)
-            ? error
-            : $"{entry.Key}: {error}"))
-        .Where(message => !string.IsNullOrWhiteSpace(message))
-        .ToArray();
-
-      if (messages.Length > 0)
-      {
-        return string.Join("; ", messages);
-      }
-
-      return string.IsNullOrWhiteSpace(exception.Message)
-        ? "Dữ liệu không hợp lệ."
-        : exception.Message;
-    }
-
-    private sealed record ErrorDescriptor(int StatusCode, string Message, string? ErrorCode);
   }
 }

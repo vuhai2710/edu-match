@@ -1,4 +1,5 @@
 using EduMatch.Common.Enums;
+using EduMatch.Domain.Booking.Payments;
 using EduMatch.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,7 +10,6 @@ namespace EduMatch.Data
     private const string AdminFullName = "Admin";
     private const string AdminEmail = "admin@gmail.com";
     private const string AdminPassword = "123456";
-
     public static async Task Initialize(IServiceProvider serviceProvider)
     {
       using var context = new AppDbContext(
@@ -27,6 +27,16 @@ namespace EduMatch.Data
       adminUser.Password = BCrypt.Net.BCrypt.HashPassword(AdminPassword, workFactor: 12);
       adminUser.Role = UserRole.Admin;
       adminUser.IsActive = true;
+
+      if (!await context.DepositPolicies.AnyAsync(x => x.ActiveFrom == null && x.ActiveTo == null))
+      {
+        await context.DepositPolicies.AddAsync(new DepositPolicy
+        {
+          DepositSessionCount = DepositPolicyDefaults.SessionCount,
+          DiscountPercent = DepositPolicyDefaults.DiscountPercent
+        });
+      }
+
       await context.SaveChangesAsync();
     }
   }

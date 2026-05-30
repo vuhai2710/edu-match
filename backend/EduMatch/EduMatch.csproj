@@ -11,6 +11,10 @@
     <Content Remove="obj\**" />
     <EmbeddedResource Remove="obj\**" />
     <None Remove="obj\**" />
+    <Compile Remove="EduMatch.Tests\**" />
+    <Content Remove="EduMatch.Tests\**" />
+    <EmbeddedResource Remove="EduMatch.Tests\**" />
+    <None Remove="EduMatch.Tests\**" />
   </ItemGroup>
 
   <ItemGroup>

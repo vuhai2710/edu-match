@@ -1,4 +1,5 @@
 using EduMatch.Common.Exception;
+using EduMatch.Common.Extensions;
 using EduMatch.DTOs;
 using EduMatch.DTOs.Auth;
 using EduMatch.DTOs.User;
@@ -33,8 +34,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> RegisterStudent([FromForm] RegisterStudentDto dto)
     {
-      var data = await _authService.RegisterStudentAsync(dto);
-      return Ok(ApiResponse<LoginResponseDto>.SuccessResult(data, "Đăng ký học viên thành công"));
+      return Ok(await _authService.RegisterStudentResponseAsync(dto));
     }
 
     [HttpPost("register/tutor")]
@@ -44,8 +44,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> RegisterTutor([FromForm] RegisterTutorDto dto)
     {
-      var data = await _authService.RegisterTutorAsync(dto);
-      return Ok(ApiResponse<LoginResponseDto>.SuccessResult(data, "Đăng ký gia sư thành công"));
+      return Ok(await _authService.RegisterTutorResponseAsync(dto));
     }
 
     [HttpPost("login")]
@@ -57,20 +56,18 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login([FromBody] LoginDto dto)
     {
-      var data = await _authService.LoginAsync(dto);
-      return Ok(ApiResponse<LoginResponseDto>.SuccessResult(data, "Đăng nhập thành công"));
+      return Ok(await _authService.LoginResponseAsync(dto));
     }
 
     [HttpPost("google")]
     [AllowAnonymous]
     [SwaggerOperation(OperationId = "googleLogin")]
-    [ProducesResponseType(typeof(ApiResponse<GoogleAuthResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequestDto dto)
     {
-      var data = await _authService.GoogleLoginAsync(dto);
-      return Ok(ApiResponse<GoogleAuthResponseDto>.SuccessResult(data, "Google login successful"));
+      return Ok(await _authService.GoogleLoginResponseAsync(dto));
     }
 
     [HttpPost("refresh-token")]
@@ -80,8 +77,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenDto dto)
     {
-      var data = await _authService.RefreshTokenAsync(dto);
-      return Ok(ApiResponse<LoginResponseDto>.SuccessResult(data, "Refresh token thanh cong"));
+      return Ok(await _authService.RefreshTokenResponseAsync(dto));
     }
 
     [HttpPost("logout")]
@@ -100,16 +96,9 @@ namespace EduMatch.Controllers
     [SwaggerOperation(OperationId = "getCurrentUser")]
     [ProducesResponseType(typeof(ApiResponse<UserDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> Me()
+    public async Task<ActionResult<ApiResponse<UserDto>>> Me()
     {
-      var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-      if (!long.TryParse(userIdClaim, out var userId))
-      {
-        throw new UnauthorizedException("Không thể xác thực người dùng");
-      }
-
-      var userDto = await _userService.GetUserByIdAsync(userId);
-      return Ok(ApiResponse<UserDto>.SuccessResult(userDto));
+      return this.OkResponse(await _userService.GetUserByIdAsync(User.GetRequiredUserId()));
     }
 
     [HttpPost("forgot-password")]
@@ -118,10 +107,9 @@ namespace EduMatch.Controllers
     [SwaggerOperation(OperationId = "forgotPassword")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto dto)
+    public async Task<ActionResult<ApiResponse>> ForgotPassword([FromBody] ForgotPasswordRequestDto dto)
     {
-      await _passwordResetService.ForgotPasswordAsync(dto.Email);
-      return Ok(ApiResponse.Ok("Link đặt lại mật khẩu đã được gửi"));
+      return this.OkResponse(await _passwordResetService.ForgotPasswordAsync(dto.Email));
     }
 
     [HttpPost("reset-password")]
@@ -129,10 +117,9 @@ namespace EduMatch.Controllers
     [SwaggerOperation(OperationId = "resetPassword")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequestDto dto)
+    public async Task<ActionResult<ApiResponse>> ResetPassword([FromBody] ResetPasswordRequestDto dto)
     {
-      await _passwordResetService.ResetPasswordAsync(dto.Token, dto.NewPassword);
-      return Ok(ApiResponse.Ok("Đặt lại mật khẩu thành công"));
+      return this.OkResponse(await _passwordResetService.ResetPasswordAsync(dto.Token, dto.NewPassword));
     }
 
     [HttpGet("validate-reset-token")]
@@ -140,11 +127,18 @@ namespace EduMatch.Controllers
     [SwaggerOperation(OperationId = "validateResetToken")]
     [ProducesResponseType(typeof(ApiResponse<ValidateResetTokenResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> ValidateResetToken([FromQuery] string token)
+    public async Task<ActionResult<ApiResponse<ValidateResetTokenResponseDto>>> ValidateResetToken([FromQuery] string token)
     {
-      var isValid = await _passwordResetService.ValidateTokenAsync(token);
-      return Ok(ApiResponse<ValidateResetTokenResponseDto>.SuccessResult(
-        new ValidateResetTokenResponseDto { IsValid = isValid }));
+      var result = await _passwordResetService.ValidateTokenAsync(token);
+      if (!result.Success)
+      {
+        return this.OkResponse(ApiResponse<ValidateResetTokenResponseDto>.Fail(result.Message, result.StatusCode));
+      }
+
+      return this.OkResponse(ApiResponse<ValidateResetTokenResponseDto>.SuccessResult(
+        new ValidateResetTokenResponseDto { IsValid = result.Data },
+        result.Message,
+        result.StatusCode));
     }
   }
 }

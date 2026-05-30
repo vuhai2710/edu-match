@@ -1,5 +1,4 @@
 using EduMatch.Common.Enums;
-using EduMatch.DTOs.Address;
 using System.ComponentModel.DataAnnotations;
 
 namespace EduMatch.DTOs.Auth
@@ -10,7 +9,7 @@ namespace EduMatch.DTOs.Auth
     public string FullName { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Email không được để trống")]
-    [RegularExpression(@"^[a-zA-Z0-9._%+-]+@gmail\.com$", ErrorMessage = "Email phải đúng định dạng example@gmail.com")]
+    [RegularExpression(@"^[a-zA-Z0-9._%+-]+@gmail\.com$", ErrorMessage = "Email phải đúng định dạng @gmail.com")]
     public string Email { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Mật khẩu không được để trống")]
@@ -24,7 +23,18 @@ namespace EduMatch.DTOs.Auth
     [Required(ErrorMessage = "Giới tính không được để trống")]
     public Gender? Gender { get; set; }
 
-    [Required(ErrorMessage = "Địa chỉ không được để trống")]
-    public CreateAddressDto? Address { get; set; }
+    [Range(1, int.MaxValue, ErrorMessage = "ProvinceId phải lớn hơn 0")]
+    public int ProvinceId { get; set; }
+
+    [Required(ErrorMessage = "ProvinceName không được để trống")]
+    public string ProvinceName { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "WardCode không được để trống")]
+    public string WardCode { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "WardName không được để trống")]
+    public string WardName { get; set; } = string.Empty;
+
+    public string? AddressDetail { get; set; }
   }
 }

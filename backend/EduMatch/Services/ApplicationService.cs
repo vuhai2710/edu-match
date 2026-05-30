@@ -73,7 +73,7 @@ namespace EduMatch.Services
 
       await _applicationRepository.CreateAsync(application);
 
-      var tutorUser = tutorProfile.User ?? throw new InvalidOperationException("Tutor user was not loaded.");
+      var tutorUser = tutorProfile.User ?? throw new DataConsistencyException("Tutor user relationship was not loaded.");
       application.Tutor = tutorProfile;
       application.TutorRequest = request;
 
@@ -466,12 +466,12 @@ namespace EduMatch.Services
 
     private static EduMatch.Models.Tutor EnsureTutorLoaded(EduMatch.Models.Application application)
     {
-      return application.Tutor ?? throw new InvalidOperationException("Application tutor was not loaded.");
+      return application.Tutor ?? throw new DataConsistencyException("Application tutor relationship was not loaded.");
     }
 
     private static EduMatch.Models.TutorRequest EnsureTutorRequestLoaded(EduMatch.Models.Application application)
     {
-      return application.TutorRequest ?? throw new InvalidOperationException("Application tutor request was not loaded.");
+      return application.TutorRequest ?? throw new DataConsistencyException("Application tutor request relationship was not loaded.");
     }
 
     private static ApplicationResponseDto MapApplication(EduMatch.Models.Application application)

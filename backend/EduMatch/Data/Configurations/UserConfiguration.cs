@@ -1,4 +1,4 @@
-﻿using EduMatch.Models;
+using EduMatch.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

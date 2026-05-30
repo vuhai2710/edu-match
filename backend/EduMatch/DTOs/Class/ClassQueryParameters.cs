@@ -7,4 +7,10 @@ public class ClassQueryParameters : BaseQueryParameters
 {
   [FromQuery(Name = "status")]
   public ClassStatus? Status { get; set; }
+
+  [FromQuery(Name = "subjectId")]
+  public long? SubjectId { get; set; }
+
+  [FromQuery(Name = "dayOfWeek")]
+  public DayOfWeek? DayOfWeek { get; set; }
 }

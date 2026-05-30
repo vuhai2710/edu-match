@@ -6,8 +6,9 @@ namespace EduMatch.Repositories
 {
   public interface ITutorRepository : IRepository<Tutor>
   {
-    Task<PagedResult<Tutor>> GetTutorsAsync(TutorQueryParameters parameters);
+    Task<PagedResult<Tutor>> GetTutorsAsync(TutorQueryParameters parameters, bool isAdmin = false);
     Task<Tutor?> GetTutorProfileDetailAsync(long id);
+    Task<Tutor?> GetTutorProfileDetailByCodeAsync(string code);
     Task<Tutor?> GetTutorProfileByUserIdAsync(long userId);
   }
 }

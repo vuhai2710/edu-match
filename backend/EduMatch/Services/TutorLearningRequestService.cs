@@ -47,50 +47,70 @@ namespace EduMatch.Services
       };
     }
 
-    public async Task<LearningRequestDto> AcceptAsync(long id, long tutorProfileId)
+    public async Task<ApiResponse<LearningRequestDto>> AcceptAsync(long id, long tutorProfileId)
     {
-      var request = await GetOwnedRequestAsync(id, tutorProfileId);
-      EnsurePendingStatus(request, "Không thể chấp nhận yêu cầu học tập ở trạng thái hiện tại.");
+      try
+      {
+        var request = await GetOwnedRequestAsync(id, tutorProfileId);
+        EnsurePendingStatus(request, "Không thể chấp nhận yêu cầu học tập ở trạng thái hiện tại.");
 
-      var requestedSlots = _bookingScheduleService.ParseAndValidate(request.TimeSlots, request.HoursPerSession);
-      await _bookingOrchestrator.SoftBookAsync(request.Id, tutorProfileId, requestedSlots);
-      request = await GetOwnedRequestAsync(id, tutorProfileId);
-      requestedSlots = _bookingScheduleService.ParseAndValidate(request.TimeSlots, request.HoursPerSession);
+        var requestedSlots = _bookingScheduleService.ParseAndValidate(request.TimeSlots, request.HoursPerSession);
+        await _bookingOrchestrator.SoftBookAsync(request.Id, tutorProfileId, requestedSlots);
+        request = await GetOwnedRequestAsync(id, tutorProfileId);
+        requestedSlots = _bookingScheduleService.ParseAndValidate(request.TimeSlots, request.HoursPerSession);
 
-      await _notificationService.SendAsync(
-        request.StudentId,
-        "Yêu cầu học tập được chấp nhận",
-        $"Gia sư {request.Tutor?.User?.FullName ?? string.Empty} đã chấp nhận yêu cầu học {request.Subject?.Name ?? string.Empty} của bạn.",
-        NotificationType.LearningRequestAccepted,
-        "LearningRequest",
-        request.Id,
-        $"/learning-requests/{request.Id}");
+        await _notificationService.SendAsync(
+          request.StudentId,
+          "Yêu cầu học tập được chấp nhận",
+          $"Gia sư {request.Tutor?.User?.FullName ?? string.Empty} đã chấp nhận yêu cầu học {request.Subject?.Name ?? string.Empty} của bạn.",
+          NotificationType.LearningRequestAccepted,
+          "LearningRequest",
+          request.Id,
+          $"/learning-requests/{request.Id}");
 
-      return LearningRequestMapper.ToDto(request, requestedSlots);
+        return ApiResponse<LearningRequestDto>.SuccessResult(
+          LearningRequestMapper.ToDto(request, requestedSlots),
+          "Chấp nhận yêu cầu học tập thành công.",
+          200);
+      }
+      catch (ConflictException ex)
+      {
+        return ApiResponse<LearningRequestDto>.Fail(ex.Message, ex.StatusCode);
+      }
     }
 
-    public async Task<LearningRequestDto> RejectAsync(long id, long tutorProfileId)
+    public async Task<ApiResponse<LearningRequestDto>> RejectAsync(long id, long tutorProfileId)
     {
-      var request = await GetOwnedRequestAsync(id, tutorProfileId);
-      EnsurePendingStatus(request, "Không thể từ chối yêu cầu học tập ở trạng thái hiện tại.");
+      try
+      {
+        var request = await GetOwnedRequestAsync(id, tutorProfileId);
+        EnsurePendingStatus(request, "Không thể từ chối yêu cầu học tập ở trạng thái hiện tại.");
 
-      request.Status = LearningRequestStatus.TutorRejected;
+        request.Status = LearningRequestStatus.TutorRejected;
 
-      _learningRequestRepository.Update(request);
-      await _learningRequestRepository.SaveChangesAsync();
+        _learningRequestRepository.Update(request);
+        await _learningRequestRepository.SaveChangesAsync();
 
-      var requestedSlots = _bookingScheduleService.ParseAndValidate(request.TimeSlots, request.HoursPerSession);
+        var requestedSlots = _bookingScheduleService.ParseAndValidate(request.TimeSlots, request.HoursPerSession);
 
-      await _notificationService.SendAsync(
-        request.StudentId,
-        "Yêu cầu học tập bị từ chối",
-        $"Gia sư {request.Tutor?.User?.FullName ?? string.Empty} đã từ chối yêu cầu học {request.Subject?.Name ?? string.Empty} của bạn.",
-        NotificationType.LearningRequestRejected,
-        "LearningRequest",
-        request.Id,
-        $"/learning-requests/{request.Id}");
+        await _notificationService.SendAsync(
+          request.StudentId,
+          "Yêu cầu học tập bị từ chối",
+          $"Gia sư {request.Tutor?.User?.FullName ?? string.Empty} đã từ chối yêu cầu học {request.Subject?.Name ?? string.Empty} của bạn.",
+          NotificationType.LearningRequestRejected,
+          "LearningRequest",
+          request.Id,
+          $"/learning-requests/{request.Id}");
 
-      return LearningRequestMapper.ToDto(request, requestedSlots);
+        return ApiResponse<LearningRequestDto>.SuccessResult(
+          LearningRequestMapper.ToDto(request, requestedSlots),
+          "Từ chối yêu cầu học tập thành công.",
+          200);
+      }
+      catch (ConflictException ex)
+      {
+        return ApiResponse<LearningRequestDto>.Fail(ex.Message, ex.StatusCode);
+      }
     }
 
     private async Task<LearningRequest> GetOwnedRequestAsync(long id, long tutorProfileId)

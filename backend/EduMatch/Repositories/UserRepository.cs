@@ -17,6 +17,8 @@ namespace EduMatch.Repositories
     {
       return await _dbSet
         .Include(u => u.AvatarFile)
+        .Include(u => u.Tutor)
+        .Include(u => u.Student)
         .FirstOrDefaultAsync(u => u.Id == id);
     }
 
@@ -58,7 +60,19 @@ namespace EduMatch.Repositories
     {
       var query = _dbSet
         .Include(u => u.AvatarFile)
+        .Include(u => u.Tutor)
+        .Include(u => u.Student)
         .AsQueryable();
+
+      // Default: only show non-deleted users; isDeleted=true shows deleted users only
+      if (parameters.IsDeleted.HasValue)
+      {
+        query = query.Where(u => u.IsDeleted == parameters.IsDeleted.Value);
+      }
+      else
+      {
+        query = query.Where(u => !u.IsDeleted);
+      }
 
       if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
       {
@@ -66,17 +80,31 @@ namespace EduMatch.Repositories
         query = query.Where(u =>
             (u.FullName != null && u.FullName.ToLower().Contains(searchTerm)) ||
             (u.Email != null && u.Email.ToLower().Contains(searchTerm)) ||
-            (u.PhoneNumber != null && u.PhoneNumber.Contains(searchTerm)));
+            (u.PhoneNumber != null && u.PhoneNumber.Contains(searchTerm)) ||
+            (u.Tutor != null && u.Tutor.Code != null && u.Tutor.Code.ToLower().Contains(searchTerm)) ||
+            (u.Student != null && u.Student.Code != null && u.Student.Code.ToLower().Contains(searchTerm)));
       }
 
       if (parameters.Role.HasValue)
       {
-        query = query.Where(u => u.Role == parameters.Role.Value);
+        if (parameters.Role.Value == EduMatch.Common.Enums.UserRole.Tutor)
+        {
+          query = query.Where(u => u.Role == EduMatch.Common.Enums.UserRole.Tutor || u.Tutor != null);
+        }
+        else
+        {
+          query = query.Where(u => u.Role == parameters.Role.Value);
+        }
       }
 
       if (parameters.IsActive.HasValue)
       {
         query = query.Where(u => u.IsActive == parameters.IsActive.Value);
+      }
+
+      if (parameters.TutorApprovalStatus.HasValue)
+      {
+        query = query.Where(u => u.Tutor != null && u.Tutor.ApprovalStatus == parameters.TutorApprovalStatus.Value);
       }
 
       var isDescending = string.Equals(parameters.SortDirection, "desc", StringComparison.OrdinalIgnoreCase);

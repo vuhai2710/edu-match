@@ -31,6 +31,18 @@ namespace EduMatch.Repositories
                 .FirstOrDefaultAsync(p => p.OrderCode == orderCode);
         }
 
+        public async Task<Payment?> GetLatestByLearningRequestIdWithDetailsAsync(long learningRequestId)
+        {
+            return await _context.Payments
+                .Include(p => p.LearningRequest)
+                    .ThenInclude(lr => lr!.Tutor)
+                .Include(p => p.Class)
+                .Where(p => p.LearningRequestId == learningRequestId)
+                .OrderByDescending(p => p.Status == PaymentStatus.Pending)
+                .ThenByDescending(p => p.CreatedAt)
+                .FirstOrDefaultAsync();
+        }
+
         public async Task<bool> HasPendingPaymentForLearningRequestAsync(long learningRequestId)
         {
             return await _context.Payments
@@ -38,11 +50,162 @@ namespace EduMatch.Repositories
                     && p.Status == Common.Enums.PaymentStatus.Pending);
         }
 
-        public async Task<PagedResult<Payment>> GetPagedAsync(int page, int pageSize, PaymentStatus? status)
+        public async Task<PagedResult<Payment>> GetPagedAsync(int page, int pageSize, PaymentStatus? status, DateTime? fromDate, DateTime? toDate)
         {
             var query = _context.Payments
+                .Include(p => p.PaidByUser)
+                    .ThenInclude(u => u!.Student)
+                .Include(p => p.PaidByUser)
+                    .ThenInclude(u => u!.Tutor)
                 .Include(p => p.Tutor)
+                    .ThenInclude(t => t!.User)
+                .Include(p => p.LearningRequest)
+                    .ThenInclude(lr => lr!.Tutor)
+                        .ThenInclude(t => t!.User)
                 .Include(p => p.Class)
+                .AsQueryable();
+
+            if (status.HasValue)
+            {
+                query = query.Where(p => p.Status == status.Value);
+            }
+
+            if (fromDate.HasValue)
+            {
+                var fromDateUtc = StartOfDayUtc(fromDate.Value);
+                query = query.Where(p => p.CreatedAt >= fromDateUtc);
+            }
+
+            if (toDate.HasValue)
+            {
+                var toDateExclusiveUtc = StartOfDayUtc(toDate.Value).AddDays(1);
+                query = query.Where(p => p.CreatedAt < toDateExclusiveUtc);
+            }
+
+            var totalItems = await query.CountAsync();
+
+            var items = await query
+                .OrderByDescending(p => p.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return new PagedResult<Payment>
+            {
+                Items = items,
+                TotalCount = totalItems,
+                Page = page,
+                PageSize = pageSize,
+                TotalPages = (int)Math.Ceiling(totalItems / (double)pageSize)
+            };
+        }
+
+        private static DateTime StartOfDayUtc(DateTime value)
+        {
+            return new DateTime(value.Year, value.Month, value.Day, 0, 0, 0, DateTimeKind.Utc);
+        }
+
+        public override async Task<Payment?> GetByIdAsync(long id)
+        {
+            return await _context.Payments
+                .Include(p => p.PaidByUser)
+                    .ThenInclude(u => u!.Student)
+                .Include(p => p.PaidByUser)
+                    .ThenInclude(u => u!.Tutor)
+                .Include(p => p.Tutor)
+                    .ThenInclude(t => t!.User)
+                .Include(p => p.LearningRequest)
+                    .ThenInclude(lr => lr!.Tutor)
+                        .ThenInclude(t => t!.User)
+                .Include(p => p.Class)
+                .FirstOrDefaultAsync(p => p.Id == id);
+        }
+
+        public async Task<Payment?> GetSuccessfulPaymentByClassIdAsync(long classId)
+        {
+            return await _context.Payments
+                .AsNoTracking()
+                .Include(p => p.PaidByUser)
+                .Where(p => p.ClassId == classId && p.Status == PaymentStatus.Success)
+                .OrderByDescending(p => p.PaidAt ?? p.CreatedAt)
+                .ThenByDescending(p => p.Id)
+                .FirstOrDefaultAsync();
+        }
+
+        public async Task<Dictionary<long, Payment>> GetSuccessfulPaymentsByClassIdsAsync(IEnumerable<long> classIds)
+        {
+            var normalizedClassIds = classIds
+                .Distinct()
+                .ToList();
+
+            if (normalizedClassIds.Count == 0)
+            {
+                return [];
+            }
+
+            var paymentRows = await _context.Payments
+                .AsNoTracking()
+                .Where(p => p.ClassId.HasValue
+                    && normalizedClassIds.Contains(p.ClassId.Value)
+                    && p.Status == PaymentStatus.Success)
+                .OrderByDescending(p => p.PaidAt ?? p.CreatedAt)
+                .ThenByDescending(p => p.Id)
+                .Select(p => new
+                {
+                    p.Id,
+                    ClassId = p.ClassId!.Value,
+                    p.PaidByUserId,
+                    PaidByUserName = p.PaidByUser != null ? p.PaidByUser.FullName : null,
+                    p.Amount,
+                    p.Status,
+                    p.PaidAt
+                })
+                .ToListAsync();
+
+            if (paymentRows.Count == 0)
+            {
+                return [];
+            }
+
+            return paymentRows
+                .GroupBy(row => row.ClassId)
+                .ToDictionary(
+                    group => group.Key,
+                    group =>
+                    {
+                        var latestPayment = group.First();
+                        return new Payment
+                        {
+                            Id = latestPayment.Id,
+                            ClassId = latestPayment.ClassId,
+                            PaidByUserId = latestPayment.PaidByUserId,
+                            PaidByUser = latestPayment.PaidByUserName == null
+                                ? null
+                                : new User
+                                {
+                                    FullName = latestPayment.PaidByUserName
+                                },
+                            Amount = latestPayment.Amount,
+                            Status = latestPayment.Status,
+                            PaidAt = latestPayment.PaidAt
+                        };
+                    });
+        }
+
+        public async Task<PagedResult<Payment>> GetPagedByUserIdAsync(long userId, int page, int pageSize, PaymentStatus? status)
+        {
+            var query = _context.Payments
+                .Include(p => p.PaidByUser)
+                    .ThenInclude(u => u!.Student)
+                .Include(p => p.PaidByUser)
+                    .ThenInclude(u => u!.Tutor)
+                .Include(p => p.Tutor)
+                    .ThenInclude(t => t!.User)
+                .Include(p => p.LearningRequest)
+                    .ThenInclude(lr => lr!.Tutor)
+                        .ThenInclude(t => t!.User)
+                .Include(p => p.Class)
+                .Where(p => p.PaidByUserId == userId)
                 .AsQueryable();
 
             if (status.HasValue)
@@ -66,54 +229,6 @@ namespace EduMatch.Repositories
                 PageSize = pageSize,
                 TotalPages = (int)Math.Ceiling(totalItems / (double)pageSize)
             };
-        }
-
-        public async Task<Payment?> GetSuccessfulPaymentByClassIdAsync(long classId)
-        {
-            return await _context.Payments
-                .Include(p => p.PaidByUser)
-                .Where(p => p.ClassId == classId && p.Status == PaymentStatus.Success)
-                .OrderByDescending(p => p.PaidAt ?? p.CreatedAt)
-                .FirstOrDefaultAsync();
-        }
-
-        public async Task<Dictionary<long, Payment>> GetSuccessfulPaymentsByClassIdsAsync(IEnumerable<long> classIds)
-        {
-            var normalizedClassIds = classIds
-                .Distinct()
-                .ToList();
-
-            if (normalizedClassIds.Count == 0)
-            {
-                return [];
-            }
-
-            var latestPayments = await _context.Payments
-                .Where(p => p.ClassId.HasValue
-                    && normalizedClassIds.Contains(p.ClassId.Value)
-                    && p.Status == PaymentStatus.Success)
-                .GroupBy(p => p.ClassId!.Value)
-                .Select(group => group
-                    .OrderByDescending(p => p.PaidAt ?? p.CreatedAt)
-                    .First())
-                .Select(p => new { p.Id, ClassId = p.ClassId!.Value })
-                .ToListAsync();
-
-            var paymentIds = latestPayments
-                .Select(item => item.Id)
-                .ToList();
-
-            if (paymentIds.Count == 0)
-            {
-                return [];
-            }
-
-            var payments = await _context.Payments
-                .Include(p => p.PaidByUser)
-                .Where(p => paymentIds.Contains(p.Id))
-                .ToListAsync();
-
-            return payments.ToDictionary(p => p.ClassId!.Value);
         }
     }
 }

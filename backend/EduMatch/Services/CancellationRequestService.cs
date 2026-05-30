@@ -33,134 +33,176 @@ namespace EduMatch.Services
 
     public async Task<ApiResponse<CancellationRequestDto>> CreateAsync(long currentUserId, UserRole role, CreateCancellationRequestDto dto)
     {
-      var classEntity = await _classRepository.GetByIdWithDetailsAsync(dto.ClassId);
-      if (classEntity == null)
+      try
       {
-        throw new NotFoundException("Class not found.", "CLASS_NOT_FOUND");
+        var classEntity = await _classRepository.GetByIdWithDetailsAsync(dto.ClassId);
+        if (classEntity == null)
+        {
+          throw new NotFoundException("Class not found.", "CLASS_NOT_FOUND");
+        }
+
+        var requester = await _userRepository.GetByIdAsync(currentUserId);
+        if (requester == null)
+        {
+          throw new NotFoundException("User not found.", "USER_NOT_FOUND");
+        }
+
+        EnsureUserCanCreate(role, currentUserId, classEntity);
+        EnsureClassCanCreate(role, classEntity);
+        ValidateReason(dto.Reason);
+
+        if (await _cancellationRequestRepository.HasPendingRequestForClassAsync(dto.ClassId))
+        {
+          throw new ConflictException("This class already has a pending cancellation request.", "CANCELLATION_REQUEST_ALREADY_PENDING");
+        }
+
+        if (role != UserRole.Admin && HasRefundInput(dto))
+        {
+          throw new ValidationException("Only admin can set refund information when creating a cancellation request.", "REFUND_INFO_NOT_ALLOWED");
+        }
+
+        var request = new CancellationRequest
+        {
+          ClassId = classEntity.Id,
+          Class = classEntity,
+          RequestedByUserId = currentUserId,
+          RequestedByUser = requester,
+          RequestedByRole = role,
+          Reason = dto.Reason.Trim(),
+          Status = CancellationRequestStatus.Pending
+        };
+
+        await _cancellationRequestRepository.AddAsync(request);
+
+        if (role == UserRole.Admin)
+        {
+          ApplyResolution(
+            request,
+            classEntity,
+            requester,
+            dto.RefundAmount,
+            dto.RefundNote,
+            dto.IsRefunded ?? false);
+        }
+
+        await _cancellationRequestRepository.SaveChangesAsync();
+
+        if (role == UserRole.Admin)
+        {
+          await NotifyCancellationCreatedAsync(request, classEntity);
+          await NotifyCancellationResolvedAsync(request, classEntity);
+          await NotifyClassCancelledAsync(request, classEntity);
+        }
+        else
+        {
+          await NotifyAdminsOfPendingRequestAsync(request, classEntity);
+        }
+
+        _logger.LogInformation(
+          "CancellationRequest {RequestId} created for Class {ClassId} by {Role} {UserId}",
+          request.Id,
+          classEntity.Id,
+          role,
+          currentUserId);
+
+        return ApiResponse<CancellationRequestDto>.SuccessResult(
+          CancellationRequestMapper.ToDto(request),
+          role == UserRole.Admin
+            ? "Cancellation request created and resolved successfully."
+            : "Cancellation request created successfully.");
       }
-
-      var requester = await _userRepository.GetByIdAsync(currentUserId);
-      if (requester == null)
+      catch (ConflictException ex)
       {
-        throw new NotFoundException("User not found.", "USER_NOT_FOUND");
+        return ApiResponse<CancellationRequestDto>.Fail(ex.Message, ex.StatusCode);
       }
-
-      EnsureUserCanCreate(role, currentUserId, classEntity);
-      EnsureClassCanCreate(role, classEntity);
-      ValidateReason(dto.Reason);
-
-      if (await _cancellationRequestRepository.HasPendingRequestForClassAsync(dto.ClassId))
+      catch (ValidationException ex)
       {
-        throw new ConflictException("This class already has a pending cancellation request.", "CANCELLATION_REQUEST_ALREADY_PENDING");
+        return ApiResponse<CancellationRequestDto>.Fail(ex.Message, StatusCodes.Status400BadRequest);
       }
-
-      if (role != UserRole.Admin && HasRefundInput(dto))
-      {
-        throw new ValidationException("Only admin can set refund information when creating a cancellation request.", "REFUND_INFO_NOT_ALLOWED");
-      }
-
-      var request = new CancellationRequest
-      {
-        ClassId = classEntity.Id,
-        Class = classEntity,
-        RequestedByUserId = currentUserId,
-        RequestedByUser = requester,
-        RequestedByRole = role,
-        Reason = dto.Reason.Trim(),
-        Status = CancellationRequestStatus.Pending
-      };
-
-      await _cancellationRequestRepository.AddAsync(request);
-
-      if (role == UserRole.Admin)
-      {
-        ApplyResolution(
-          request,
-          classEntity,
-          requester,
-          dto.RefundAmount,
-          dto.RefundNote,
-          dto.IsRefunded ?? false);
-      }
-
-      await _cancellationRequestRepository.SaveChangesAsync();
-
-      if (role == UserRole.Admin)
-      {
-        await NotifyCancellationCreatedAsync(request, classEntity);
-        await NotifyCancellationResolvedAsync(request, classEntity);
-        await NotifyClassCancelledAsync(request, classEntity);
-      }
-      else
-      {
-        await NotifyAdminsOfPendingRequestAsync(request, classEntity);
-      }
-
-      _logger.LogInformation(
-        "CancellationRequest {RequestId} created for Class {ClassId} by {Role} {UserId}",
-        request.Id,
-        classEntity.Id,
-        role,
-        currentUserId);
-
-      return ApiResponse<CancellationRequestDto>.SuccessResult(
-        CancellationRequestMapper.ToDto(request),
-        role == UserRole.Admin
-          ? "Cancellation request created and resolved successfully."
-          : "Cancellation request created successfully.");
     }
 
     public async Task<ApiResponse<CancellationRequestDto>> ResolveAsync(long requestId, long adminUserId, ResolveCancellationRequestDto dto)
     {
-      var request = await _cancellationRequestRepository.GetByIdWithDetailsAsync(requestId);
-      if (request == null)
+      try
       {
-        throw new NotFoundException("Cancellation request not found.", "CANCELLATION_REQUEST_NOT_FOUND");
-      }
+        var request = await _cancellationRequestRepository.GetByIdWithDetailsAsync(requestId);
+        if (request == null)
+        {
+          throw new NotFoundException("Cancellation request not found.", "CANCELLATION_REQUEST_NOT_FOUND");
+        }
 
-      if (request.Status != CancellationRequestStatus.Pending)
+        if (request.Status != CancellationRequestStatus.Pending)
+        {
+          throw new ConflictException("Cancellation request has already been resolved.", "CANCELLATION_REQUEST_ALREADY_RESOLVED");
+        }
+
+        var adminUser = await _userRepository.GetByIdAsync(adminUserId);
+        if (adminUser == null)
+        {
+          throw new NotFoundException("Admin user not found.", "USER_NOT_FOUND");
+        }
+
+        var classEntity = request.Class ?? throw new DataConsistencyException("Cancellation request class relationship was not loaded.");
+        if (IsCancelledStatus(classEntity.Status))
+        {
+          throw new ConflictException("Class is already cancelled.", "CLASS_ALREADY_CANCELLED");
+        }
+
+        ApplyResolution(
+          request,
+          classEntity,
+          adminUser,
+          dto.RefundAmount,
+          dto.RefundNote,
+          dto.IsRefunded);
+
+        await _cancellationRequestRepository.SaveChangesAsync();
+
+        await NotifyCancellationResolvedAsync(request, classEntity);
+        await NotifyClassCancelledAsync(request, classEntity);
+
+        _logger.LogInformation(
+          "CancellationRequest {RequestId} resolved by Admin {AdminUserId}",
+          request.Id,
+          adminUserId);
+
+        return ApiResponse<CancellationRequestDto>.SuccessResult(
+          CancellationRequestMapper.ToDto(request),
+          "Cancellation request resolved successfully.");
+      }
+      catch (ConflictException ex)
       {
-        throw new ConflictException("Cancellation request has already been resolved.", "CANCELLATION_REQUEST_ALREADY_RESOLVED");
+        return ApiResponse<CancellationRequestDto>.Fail(ex.Message, ex.StatusCode);
       }
-
-      var adminUser = await _userRepository.GetByIdAsync(adminUserId);
-      if (adminUser == null)
+      catch (ValidationException ex)
       {
-        throw new NotFoundException("Admin user not found.", "USER_NOT_FOUND");
+        return ApiResponse<CancellationRequestDto>.Fail(ex.Message, StatusCodes.Status400BadRequest);
       }
-
-      var classEntity = request.Class ?? throw new InvalidOperationException("Cancellation request class was not loaded.");
-      if (IsCancelledStatus(classEntity.Status))
-      {
-        throw new ConflictException("Class is already cancelled.", "CLASS_ALREADY_CANCELLED");
-      }
-
-      ApplyResolution(
-        request,
-        classEntity,
-        adminUser,
-        dto.RefundAmount,
-        dto.RefundNote,
-        dto.IsRefunded);
-
-      await _cancellationRequestRepository.SaveChangesAsync();
-
-      await NotifyCancellationResolvedAsync(request, classEntity);
-      await NotifyClassCancelledAsync(request, classEntity);
-
-      _logger.LogInformation(
-        "CancellationRequest {RequestId} resolved by Admin {AdminUserId}",
-        request.Id,
-        adminUserId);
-
-      return ApiResponse<CancellationRequestDto>.SuccessResult(
-        CancellationRequestMapper.ToDto(request),
-        "Cancellation request resolved successfully.");
     }
 
     public async Task<ApiResponse<PagedResult<CancellationRequestDto>>> GetAllForAdminAsync(CancellationRequestQueryParameters parameters)
     {
       var pagedRequests = await _cancellationRequestRepository.GetPagedWithDetailsAsync(parameters);
+      var result = new PagedResult<CancellationRequestDto>
+      {
+        Items = pagedRequests.Items.Select(CancellationRequestMapper.ToDto).ToList(),
+        TotalCount = pagedRequests.TotalCount,
+        Page = pagedRequests.Page,
+        PageSize = pagedRequests.PageSize,
+        TotalPages = pagedRequests.TotalPages
+      };
+
+      return ApiResponse<PagedResult<CancellationRequestDto>>.SuccessResult(result);
+    }
+
+    public async Task<ApiResponse<PagedResult<CancellationRequestDto>>> GetMineAsync(long currentUserId, UserRole role, CancellationRequestQueryParameters parameters)
+    {
+      if (role is not (UserRole.Student or UserRole.Tutor))
+      {
+        throw new ForbiddenException("You cannot view cancellation requests with this role.", "CANCELLATION_REQUEST_FORBIDDEN");
+      }
+
+      var pagedRequests = await _cancellationRequestRepository.GetPagedForUserWithDetailsAsync(currentUserId, role, parameters);
       var result = new PagedResult<CancellationRequestDto>
       {
         Items = pagedRequests.Items.Select(CancellationRequestMapper.ToDto).ToList(),
@@ -184,6 +226,25 @@ namespace EduMatch.Services
       return ApiResponse<CancellationRequestDto>.SuccessResult(CancellationRequestMapper.ToDto(request));
     }
 
+    public async Task<ApiResponse<CancellationRequestDto>> GetLatestByClassIdAsync(long classId, long currentUserId, UserRole role)
+    {
+      var classEntity = await _classRepository.GetByIdWithDetailsAsync(classId);
+      if (classEntity == null)
+      {
+        throw new NotFoundException("Class not found.", "CLASS_NOT_FOUND");
+      }
+
+      EnsureUserCanView(role, currentUserId, classEntity);
+
+      var request = await _cancellationRequestRepository.GetLatestByClassIdWithDetailsAsync(classId);
+      if (request == null)
+      {
+        return ApiResponse<CancellationRequestDto>.SuccessResult(null!);
+      }
+
+      return ApiResponse<CancellationRequestDto>.SuccessResult(CancellationRequestMapper.ToDto(request));
+    }
+
     private static void EnsureUserCanCreate(UserRole role, long currentUserId, Class classEntity)
     {
       switch (role)
@@ -192,6 +253,21 @@ namespace EduMatch.Services
           throw new ForbiddenException("You cannot create a cancellation request for this class.", "CANCELLATION_REQUEST_CREATE_FORBIDDEN");
         case UserRole.Tutor when classEntity.Tutor?.UserId != currentUserId:
           throw new ForbiddenException("You cannot create a cancellation request for this class.", "CANCELLATION_REQUEST_CREATE_FORBIDDEN");
+      }
+    }
+
+    private static void EnsureUserCanView(UserRole role, long currentUserId, Class classEntity)
+    {
+      switch (role)
+      {
+        case UserRole.Admin:
+          return;
+        case UserRole.Student when classEntity.StudentId == currentUserId:
+          return;
+        case UserRole.Tutor when classEntity.Tutor?.UserId == currentUserId:
+          return;
+        default:
+          throw new ForbiddenException("You cannot view this cancellation request.", "CANCELLATION_REQUEST_FORBIDDEN");
       }
     }
 
@@ -345,7 +421,7 @@ namespace EduMatch.Services
       var tutorUserId = classEntity.Tutor?.UserId;
       if (!tutorUserId.HasValue)
       {
-        throw new InvalidOperationException("Class tutor user was not loaded.");
+        throw new DataConsistencyException("Class tutor user relationship was not loaded.");
       }
 
       return new[] { classEntity.StudentId, tutorUserId.Value }

@@ -6,11 +6,11 @@ namespace EduMatch.Services
 {
   public interface ITutorService
   {
-    Task<PagedResult<TutorDto>> GetTutorsAsync(TutorQueryParameters parameters);
-    Task<TutorDetailDto> GetTutorByIdAsync(long id);
-    Task<TutorDetailDto> GetTutorByUserIdAsync(long userId);
-    Task<TutorDetailDto> UpdateTutorProfileAsync(long userId, UpdateTutorDto dto);
-    Task<FileDto> UpdateCvAsync(long userId, IFormFile file);
-    Task DeleteCvAsync(long userId);
+    Task<ApiResponse<PagedResult<TutorDto>>> GetTutorsAsync(TutorQueryParameters parameters);
+    Task<ApiResponse<TutorDetailDto>> GetTutorByIdOrCodeAsync(string idOrCode);
+    Task<ApiResponse<TutorDetailDto>> GetTutorByUserIdAsync(long userId);
+    Task<ApiResponse<TutorDetailDto>> UpdateTutorProfileAsync(long userId, UpdateTutorDto dto);
+    Task<ApiResponse<FileDto>> UpdateCvAsync(long userId, IFormFile file);
+    Task<ApiResponse> DeleteCvAsync(long userId);
   }
 }

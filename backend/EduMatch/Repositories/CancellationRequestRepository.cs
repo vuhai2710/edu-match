@@ -64,6 +64,61 @@ namespace EduMatch.Repositories
       };
     }
 
+    public async Task<PagedResult<CancellationRequest>> GetPagedForUserWithDetailsAsync(
+      long userId,
+      UserRole role,
+      CancellationRequestQueryParameters parameters)
+    {
+      var query = BuildDetailsQuery();
+
+      query = role switch
+      {
+        UserRole.Student => query.Where(x => x.Class.StudentId == userId),
+        UserRole.Tutor => query.Where(x => x.Class.Tutor.UserId == userId),
+        _ => query.Where(x => false)
+      };
+
+      if (parameters.Status.HasValue)
+      {
+        query = query.Where(x => x.Status == parameters.Status.Value);
+      }
+
+      if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
+      {
+        var searchTerm = parameters.SearchTerm.Trim().ToLower();
+        query = query.Where(x =>
+          x.Class.Code.ToLower().Contains(searchTerm) ||
+          x.RequestedByUser.FullName.ToLower().Contains(searchTerm) ||
+          x.Class.Student.FullName.ToLower().Contains(searchTerm) ||
+          x.Class.Tutor.User.FullName.ToLower().Contains(searchTerm));
+      }
+
+      query = ApplySorting(query, parameters);
+
+      var totalCount = await query.CountAsync();
+      var items = await query
+        .Skip((parameters.Page - 1) * parameters.PageSize)
+        .Take(parameters.PageSize)
+        .ToListAsync();
+
+      return new PagedResult<CancellationRequest>
+      {
+        Items = items,
+        TotalCount = totalCount,
+        Page = parameters.Page,
+        PageSize = parameters.PageSize,
+        TotalPages = totalCount == 0 ? 0 : (int)Math.Ceiling(totalCount / (double)parameters.PageSize)
+      };
+    }
+
+    public async Task<CancellationRequest?> GetLatestByClassIdWithDetailsAsync(long classId)
+    {
+      return await BuildDetailsQuery()
+        .Where(x => x.ClassId == classId)
+        .OrderByDescending(x => x.CreatedAt)
+        .FirstOrDefaultAsync();
+    }
+
     private IQueryable<CancellationRequest> BuildDetailsQuery()
     {
       return _dbSet

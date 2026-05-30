@@ -1,5 +1,4 @@
-using System.Security.Claims;
-using EduMatch.Common.Exception;
+using EduMatch.Common.Enums;
 using EduMatch.Common.Extensions;
 using EduMatch.DTOs;
 using EduMatch.DTOs.ScheduleProposals;
@@ -24,6 +23,7 @@ namespace EduMatch.Controllers
     [HttpPost]
     [Authorize(Roles = "Tutor")]
     [SwaggerOperation(OperationId = "createScheduleProposal")]
+    [ProducesResponseType(typeof(ApiResponse<ScheduleProposalDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<ScheduleProposalDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
@@ -33,9 +33,28 @@ namespace EduMatch.Controllers
     public async Task<ActionResult<ApiResponse<ScheduleProposalDto>>> Create([FromBody] CreateScheduleProposalDto dto)
     {
       var result = await _scheduleProposalService.CreateAsync(GetCurrentTutorId(), dto);
-      return this.CreatedResponse(
-        $"/api/schedule-proposals/{result.Id}",
-        ApiResponse<ScheduleProposalDto>.SuccessResult(result, "Tạo đề xuất lịch học thành công."));
+      if (!result.Success)
+      {
+        return this.OkResponse(result);
+      }
+
+      return this.CreatedResponse($"/api/schedule-proposals/{result.Data!.Id}", result);
+    }
+
+    [HttpGet("{id:long}")]
+    [Authorize(Roles = "Student,Tutor,Admin")]
+    [SwaggerOperation(OperationId = "getScheduleProposalById")]
+    [ProducesResponseType(typeof(ApiResponse<ScheduleProposalDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<ScheduleProposalDto>>> GetById(long id)
+    {
+      return this.OkResponse(await _scheduleProposalService.GetByIdAsync(
+        id,
+        GetCurrentUserId(),
+        GetCurrentUserRole(),
+        TryGetCurrentTutorId()));
     }
 
     [HttpPut("{id:long}/accept")]
@@ -45,11 +64,9 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<ApiResponse<ScheduleProposalDto>>> Accept(long id)
     {
-      var result = await _scheduleProposalService.AcceptAsync(id, GetCurrentUserId());
-      return this.OkResponse(ApiResponse<ScheduleProposalDto>.SuccessResult(result, "Chấp nhận đề xuất lịch học thành công."));
+      return this.OkResponse(await _scheduleProposalService.AcceptAsync(id, GetCurrentUserId()));
     }
 
     [HttpPut("{id:long}/reject")]
@@ -59,33 +76,29 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<ApiResponse<ScheduleProposalDto>>> Reject(long id)
     {
-      var result = await _scheduleProposalService.RejectAsync(id, GetCurrentUserId());
-      return this.OkResponse(ApiResponse<ScheduleProposalDto>.SuccessResult(result, "Từ chối đề xuất lịch học thành công."));
+      return this.OkResponse(await _scheduleProposalService.RejectAsync(id, GetCurrentUserId()));
     }
 
     private long GetCurrentUserId()
     {
-      var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-      if (!long.TryParse(userIdClaim, out var userId))
-      {
-        throw new UnauthorizedException("Không thể xác thực người dùng.");
-      }
-
-      return userId;
+      return User.GetRequiredUserId();
     }
 
     private long GetCurrentTutorId()
     {
-      var tutorIdClaim = User.FindFirstValue("tutorId");
-      if (!long.TryParse(tutorIdClaim, out var tutorId))
-      {
-        throw new UnauthorizedException("Không thể xác thực gia sư.");
-      }
+      return User.GetRequiredTutorId();
+    }
 
-      return tutorId;
+    private long? TryGetCurrentTutorId()
+    {
+      return User.TryGetLongClaim("tutorId");
+    }
+
+    private UserRole GetCurrentUserRole()
+    {
+      return User.GetRequiredUserRole();
     }
   }
 }

@@ -5,6 +5,7 @@ using EduMatch.Common.Enums;
 using EduMatch.Common.Exception;
 using EduMatch.Configurations;
 using EduMatch.Domain.Booking.Scheduling;
+using EduMatch.DTOs;
 using EduMatch.DTOs.Payment;
 using EduMatch.Models;
 using EduMatch.Repositories.Interfaces;
@@ -51,149 +52,170 @@ namespace EduMatch.Services
       _httpClient.DefaultRequestHeaders.Add("x-api-key", _settings.ApiKey);
     }
 
-    public async Task<PaymentResponseDto> CreateDepositAsync(long callerUserId, CreateDepositPaymentRequest dto)
+    public async Task<ApiResponse<PaymentResponseDto>> CreateDepositAsync(long callerUserId, CreateDepositPaymentRequest dto)
     {
-      var lr = await _learningRequestRepo.GetByIdWithDetailsAsync(dto.LearningRequestId);
-      if (lr == null)
+      return await ServiceResponse.ExecuteAsync(async () =>
       {
-        throw new NotFoundException("Không tìm thấy yêu cầu học tập.", "LEARNING_REQUEST_NOT_FOUND");
-      }
+        var lr = await _learningRequestRepo.GetByIdWithDetailsAsync(dto.LearningRequestId);
+        if (lr == null)
+        {
+          throw new NotFoundException("Không tìm thấy yêu cầu học tập.", "LEARNING_REQUEST_NOT_FOUND");
+        }
 
-      // Authorization: caller must be either the student or the tutor of this LearningRequest
-      var isStudent = callerUserId == lr.StudentId;
-      var isTutor = callerUserId == lr.Tutor.UserId;
-      if (!isStudent && !isTutor)
+        var isStudent = callerUserId == lr.StudentId;
+        var isTutor = callerUserId == lr.Tutor.UserId;
+        if (!isStudent && !isTutor)
+        {
+          throw new ForbiddenException(
+            "Bạn không có quyền thanh toán cho yêu cầu học tập này.",
+            "DEPOSIT_PAYMENT_FORBIDDEN");
+        }
+
+        if (lr.Status != LearningRequestStatus.SoftBooked)
+        {
+          throw new ConflictException(
+            "Chỉ có thể thanh toán đặt cọc khi yêu cầu học tập ở trạng thái SoftBooked.",
+            "LEARNING_REQUEST_NOT_SOFT_BOOKED");
+        }
+
+        if (lr.PaymentExpiresAt.HasValue && lr.PaymentExpiresAt.Value < DateTime.UtcNow)
+        {
+          throw new ConflictException(
+            "Thời hạn thanh toán đặt cọc đã hết hạn.",
+            "PAYMENT_WINDOW_EXPIRED");
+        }
+
+        var hasPending = await _paymentRepo.HasPendingPaymentForLearningRequestAsync(dto.LearningRequestId);
+        if (hasPending)
+        {
+          throw new ConflictException(
+            "Đã tồn tại một khoản thanh toán đang chờ cho yêu cầu học tập này.",
+            "DUPLICATE_PENDING_PAYMENT");
+        }
+
+        var depositAmount = lr.CalculatedDepositAmount;
+        if (depositAmount <= 0)
+        {
+          throw new ValidationException(
+            "Số tiền đặt cọc không hợp lệ.",
+            "INVALID_DEPOSIT_AMOUNT");
+        }
+
+        long orderCode = GenerateOrderCode();
+        string description = $"Dat coc LR#{dto.LearningRequestId}"
+          .Substring(0, Math.Min(25, $"Dat coc LR#{dto.LearningRequestId}".Length));
+
+        var payment = new Payment
+        {
+          LearningRequestId = dto.LearningRequestId,
+          PaidByUserId = callerUserId,
+          TutorId = lr.TutorId,
+          Amount = depositAmount,
+          OrderCode = orderCode,
+          Description = description,
+          Status = PaymentStatus.Pending
+        };
+
+        await _paymentRepo.AddAsync(payment);
+        await _paymentRepo.SaveChangesAsync();
+
+        var reqData = new
+        {
+          orderCode,
+          amount = (int)depositAmount,
+          description,
+          cancelUrl = _settings.CancelUrl,
+          returnUrl = _settings.ReturnUrl + "?orderCode=" + orderCode
+        };
+
+        string signatureData = $"amount={reqData.amount}&cancelUrl={reqData.cancelUrl}&description={reqData.description}&orderCode={reqData.orderCode}&returnUrl={reqData.returnUrl}";
+        string signature = ComputeHmacSha256(signatureData, _settings.ChecksumKey);
+
+        var payOsPayload = new
+        {
+          reqData.orderCode,
+          reqData.amount,
+          reqData.description,
+          reqData.cancelUrl,
+          reqData.returnUrl,
+          signature
+        };
+
+        var response = await _httpClient.PostAsJsonAsync("/v2/payment-requests", payOsPayload);
+
+        if (!response.IsSuccessStatusCode)
+        {
+          var errorText = await response.Content.ReadAsStringAsync();
+          _logger.LogError("PayOS API Error: {Error}", errorText);
+          throw new AppException("KhÃ´ng thá»ƒ táº¡o thanh toÃ¡n vá»›i PayOS.", StatusCodes.Status502BadGateway, "PAYOS_API_ERROR");
+        }
+
+        var rsString = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(rsString);
+        var root = doc.RootElement;
+        var code = root.GetProperty("code").GetString();
+        if (code != "00")
+        {
+          _logger.LogError("PayOS API returned code {Code}, msg: {Msg}", code, root.GetProperty("desc").GetString());
+          throw new AppException("PayOS từ chối yêu cầu thanh toán.", StatusCodes.Status502BadGateway, "PAYOS_API_REJECTED");
+        }
+
+        var dataElem = root.GetProperty("data");
+        var checkoutUrl = dataElem.GetProperty("checkoutUrl").GetString()!;
+
+        payment.CheckoutUrl = checkoutUrl;
+        _paymentRepo.Update(payment);
+        await _paymentRepo.SaveChangesAsync();
+
+        _logger.LogInformation(
+          "Created deposit payment for LearningRequest {LearningRequestId}, orderCode={OrderCode}, paidBy={UserId}",
+          dto.LearningRequestId, orderCode, callerUserId);
+
+        await _notificationService.SendToMultipleAsync(
+          new[] { lr.StudentId, lr.Tutor.UserId },
+          "Yêu cầu thanh toán đặt cọc",
+          $"Yêu cầu thanh toán đặt cọc đã được tạo cho yêu cầu học tập #{dto.LearningRequestId}.",
+          NotificationType.DepositPaymentCreated,
+          "Payment",
+          payment.Id,
+          $"/payments/deposit?orderCode={orderCode}");
+
+        return ApiResponse<PaymentResponseDto>.SuccessResult(new PaymentResponseDto
+        {
+          LearningRequestId = dto.LearningRequestId,
+          OrderCode = orderCode,
+          CheckoutUrl = checkoutUrl,
+          Status = payment.Status
+        });
+      });
+    }
+
+    public async Task<ApiResponse<DepositPaymentDto?>> GetByLearningRequestAsync(long callerUserId, bool isAdmin, long learningRequestId)
+    {
+      return await ServiceResponse.ExecuteAsync(async () =>
       {
-        throw new ForbiddenException(
-          "Bạn không có quyền thanh toán cho yêu cầu học tập này.",
-          "DEPOSIT_PAYMENT_FORBIDDEN");
-      }
+        var lr = await _learningRequestRepo.GetByIdWithDetailsAsync(learningRequestId);
+        if (lr == null)
+        {
+          throw new NotFoundException("Không tìm thấy yêu cầu học tập.", "LEARNING_REQUEST_NOT_FOUND");
+        }
 
-      if (lr.Status != LearningRequestStatus.SoftBooked)
-      {
-        throw new ConflictException(
-          "Chỉ có thể thanh toán đặt cọc khi yêu cầu học tập ở trạng thái SoftBooked.",
-          "LEARNING_REQUEST_NOT_SOFT_BOOKED");
-      }
+        if (!isAdmin && callerUserId != lr.StudentId && callerUserId != lr.Tutor.UserId)
+        {
+          throw new ForbiddenException(
+            "Bạn không có quyền xem thanh toán cho yêu cầu học tập này.",
+            "DEPOSIT_PAYMENT_FORBIDDEN");
+        }
 
-      if (lr.PaymentExpiresAt.HasValue && lr.PaymentExpiresAt.Value < DateTime.UtcNow)
-      {
-        throw new ConflictException(
-          "Thời hạn thanh toán đặt cọc đã hết hạn.",
-          "PAYMENT_WINDOW_EXPIRED");
-      }
-
-      // Prevent duplicate pending payments
-      var hasPending = await _paymentRepo.HasPendingPaymentForLearningRequestAsync(dto.LearningRequestId);
-      if (hasPending)
-      {
-        throw new ConflictException(
-          "Đã tồn tại một khoản thanh toán đang chờ cho yêu cầu học tập này.",
-          "DUPLICATE_PENDING_PAYMENT");
-      }
-
-      var depositAmount = lr.CalculatedDepositAmount;
-      if (depositAmount <= 0)
-      {
-        throw new ValidationException(
-          "Số tiền đặt cọc không hợp lệ.",
-          "INVALID_DEPOSIT_AMOUNT");
-      }
-
-      long orderCode = GenerateOrderCode();
-      string description = $"Dat coc LR#{dto.LearningRequestId}"
-        .Substring(0, Math.Min(25, $"Dat coc LR#{dto.LearningRequestId}".Length));
-
-      var payment = new Payment
-      {
-        LearningRequestId = dto.LearningRequestId,
-        PaidByUserId = callerUserId,
-        Amount = depositAmount,
-        OrderCode = orderCode,
-        Description = description,
-        Status = PaymentStatus.Pending
-      };
-
-      await _paymentRepo.AddAsync(payment);
-      await _paymentRepo.SaveChangesAsync();
-
-      // Call PayOS API
-      var reqData = new
-      {
-        orderCode,
-        amount = (int)depositAmount,
-        description,
-        cancelUrl = _settings.CancelUrl,
-        returnUrl = _settings.ReturnUrl + "?orderCode=" + orderCode
-      };
-
-      string signatureData = $"amount={reqData.amount}&cancelUrl={reqData.cancelUrl}&description={reqData.description}&orderCode={reqData.orderCode}&returnUrl={reqData.returnUrl}";
-      string signature = ComputeHmacSha256(signatureData, _settings.ChecksumKey);
-
-      var payOsPayload = new
-      {
-        reqData.orderCode,
-        reqData.amount,
-        reqData.description,
-        reqData.cancelUrl,
-        reqData.returnUrl,
-        signature
-      };
-
-      var response = await _httpClient.PostAsJsonAsync("/v2/payment-requests", payOsPayload);
-
-      if (!response.IsSuccessStatusCode)
-      {
-        var errorText = await response.Content.ReadAsStringAsync();
-        _logger.LogError("PayOS API Error: {Error}", errorText);
-        throw new AppException("Không thể tạo thanh toán với PayOS.", StatusCodes.Status502BadGateway, "PAYOS_API_ERROR");
-      }
-
-      var rsString = await response.Content.ReadAsStringAsync();
-      using var doc = JsonDocument.Parse(rsString);
-      var root = doc.RootElement;
-      var code = root.GetProperty("code").GetString();
-      if (code != "00")
-      {
-        _logger.LogError("PayOS API returned code {Code}, msg: {Msg}", code, root.GetProperty("desc").GetString());
-        throw new AppException("PayOS từ chối yêu cầu thanh toán.", StatusCodes.Status502BadGateway, "PAYOS_API_REJECTED");
-      }
-
-      var dataElem = root.GetProperty("data");
-      var checkoutUrl = dataElem.GetProperty("checkoutUrl").GetString()!;
-
-      payment.CheckoutUrl = checkoutUrl;
-      _paymentRepo.Update(payment);
-      await _paymentRepo.SaveChangesAsync();
-
-      _logger.LogInformation(
-        "Created deposit payment for LearningRequest {LearningRequestId}, orderCode={OrderCode}, paidBy={UserId}",
-        dto.LearningRequestId, orderCode, callerUserId);
-
-      // Notify both student and tutor about deposit payment creation
-      await _notificationService.SendToMultipleAsync(
-        new[] { lr.StudentId, lr.Tutor.UserId },
-        "Yêu cầu thanh toán đặt cọc",
-        $"Yêu cầu thanh toán đặt cọc đã được tạo cho yêu cầu học tập #{dto.LearningRequestId}.",
-        NotificationType.DepositPaymentCreated,
-        "Payment",
-        payment.Id,
-        $"/payments/deposit?orderCode={orderCode}");
-
-      return new PaymentResponseDto
-      {
-        LearningRequestId = dto.LearningRequestId,
-        OrderCode = orderCode,
-        CheckoutUrl = checkoutUrl,
-        Status = payment.Status
-      };
+        var payment = await _paymentRepo.GetLatestByLearningRequestIdWithDetailsAsync(learningRequestId);
+        return ApiResponse<DepositPaymentDto?>.SuccessResult(payment == null ? null : MapDepositPayment(payment));
+      });
     }
 
     public async Task HandleWebhookAsync(PayOSWebhookDto dto)
     {
       if (dto.Data == null) return;
 
-      // Verify webhook signature
       var isValid = VerifyWebhookSignature(dto);
       if (!isValid)
       {
@@ -212,9 +234,17 @@ namespace EduMatch.Services
         throw new AppException("Số tiền không khớp.", StatusCodes.Status400BadRequest, "AMOUNT_MISMATCH");
       }
 
-      // Idempotency: skip if already processed
       if (payment.Status == PaymentStatus.Success)
       {
+        if (!payment.ClassId.HasValue && payment.LearningRequest != null)
+        {
+          await MarkPaymentSuccessfulAndFinalizeAsync(
+            payment,
+            payment.RawWebhookData ?? "{}",
+            payment.TransactionId,
+            "webhook-idempotent");
+        }
+
         return;
       }
 
@@ -222,28 +252,12 @@ namespace EduMatch.Services
 
       if (dto.Code == "00" && dto.Data.Code == "00")
       {
-        payment.Status = PaymentStatus.Success;
-        payment.TransactionId = dto.Data.Reference;
-        payment.PaidAt = DateTime.UtcNow;
-        payment.RawWebhookData = dataJson;
-
-        _paymentRepo.Update(payment);
-
-        // Finalize: create Class from LearningRequest
-        if (payment.LearningRequest != null)
-        {
-          var newClass = await FinalizeClassFromLearningRequest(payment);
-          payment.ClassId = newClass.Id;
-          _paymentRepo.Update(payment);
-        }
-
-        await _paymentRepo.SaveChangesAsync();
+        await MarkPaymentSuccessfulAndFinalizeAsync(payment, dataJson, dto.Data.Reference, "webhook");
 
         _logger.LogInformation(
           "Webhook success for order {OrderCode}, LearningRequest {LearningRequestId}",
           dto.Data.OrderCode, payment.LearningRequestId);
 
-        // Notify both student and tutor
         if (payment.LearningRequest != null)
         {
           await _notificationService.SendToMultipleAsync(
@@ -269,31 +283,156 @@ namespace EduMatch.Services
       }
     }
 
-    public async Task<PaymentStatusDto> GetStatusAsync(long orderCode)
+    public async Task<ApiResponse<PaymentStatusDto>> GetStatusAsync(long orderCode)
     {
-      var payment = await _paymentRepo.GetByOrderCodeAsync(orderCode);
-      if (payment == null)
+      return await ServiceResponse.ExecuteAsync(async () =>
       {
-        throw new NotFoundException("Không tìm thấy thanh toán.", "PAYMENT_NOT_FOUND");
-      }
+        var payment = await _paymentRepo.GetByOrderCodeWithLearningRequestAsync(orderCode);
+        if (payment == null)
+        {
+          throw new NotFoundException("Không tìm thấy thanh toán.", "PAYMENT_NOT_FOUND");
+        }
 
-      return new PaymentStatusDto
-      {
-        OrderCode = payment.OrderCode,
-        LearningRequestId = payment.LearningRequestId,
-        Amount = payment.Amount,
-        Status = payment.Status,
-        PaidAt = payment.PaidAt
-      };
+        if (payment.Status == PaymentStatus.Pending)
+        {
+          await SyncPendingPaymentFromPayOSAsync(payment);
+        }
+
+        if (payment.Status == PaymentStatus.Success
+            && !payment.ClassId.HasValue
+            && payment.LearningRequest != null)
+        {
+          await MarkPaymentSuccessfulAndFinalizeAsync(
+            payment,
+            payment.RawWebhookData ?? "{}",
+            payment.TransactionId,
+            "status-read");
+        }
+
+        return ApiResponse<PaymentStatusDto>.SuccessResult(new PaymentStatusDto
+        {
+          OrderCode = payment.OrderCode,
+          LearningRequestId = payment.LearningRequestId,
+          ClassId = payment.ClassId,
+          Amount = payment.Amount,
+          Status = payment.Status,
+          PaidAt = payment.PaidAt
+        });
+      });
     }
 
-    // ──────────────── Private helpers ────────────────
+    private async Task SyncPendingPaymentFromPayOSAsync(Payment payment)
+    {
+      HttpResponseMessage response;
+      try
+      {
+        response = await _httpClient.GetAsync($"/v2/payment-requests/{payment.OrderCode}");
+      }
+      catch (HttpRequestException ex)
+      {
+        _logger.LogWarning(ex, "Unable to sync pending payment {OrderCode} from PayOS", payment.OrderCode);
+        return;
+      }
 
-    private async Task<Class> FinalizeClassFromLearningRequest(Payment payment)
+      if (!response.IsSuccessStatusCode)
+      {
+        var errorText = await response.Content.ReadAsStringAsync();
+        _logger.LogWarning(
+          "PayOS payment sync failed for order {OrderCode}: HTTP {StatusCode}, body={Body}",
+          payment.OrderCode,
+          response.StatusCode,
+          errorText);
+        return;
+      }
+
+      var responseText = await response.Content.ReadAsStringAsync();
+      using var doc = JsonDocument.Parse(responseText);
+      var root = doc.RootElement;
+
+      if (!root.TryGetProperty("code", out var codeElement)
+          || codeElement.GetString() != "00"
+          || !root.TryGetProperty("data", out var data))
+      {
+        _logger.LogWarning(
+          "PayOS payment sync returned non-success response for order {OrderCode}: {Response}",
+          payment.OrderCode,
+          responseText);
+        return;
+      }
+
+      var payOsOrderCode = GetInt64(data, "orderCode");
+      if (payOsOrderCode != payment.OrderCode)
+      {
+        _logger.LogWarning(
+          "PayOS payment sync order mismatch: local={LocalOrderCode}, remote={RemoteOrderCode}",
+          payment.OrderCode,
+          payOsOrderCode);
+        throw new AppException(
+          "Ma thanh toan PayOS khong khop.",
+          StatusCodes.Status400BadRequest,
+          "PAYOS_ORDER_MISMATCH");
+      }
+
+      var payOsAmount = GetDecimal(data, "amount");
+      if (payOsAmount != payment.Amount)
+      {
+        _logger.LogWarning(
+          "PayOS payment sync amount mismatch for order {OrderCode}: expected={Expected}, received={Received}",
+          payment.OrderCode,
+          payment.Amount,
+          payOsAmount);
+        throw new AppException(
+          "So tien PayOS khong khop.",
+          StatusCodes.Status400BadRequest,
+          "PAYOS_AMOUNT_MISMATCH");
+      }
+
+      var payOsStatus = GetString(data, "status");
+      if (string.Equals(payOsStatus, "PAID", StringComparison.OrdinalIgnoreCase))
+      {
+        var transactionId = GetString(data, "id") ?? GetString(data, "paymentLinkId");
+        await MarkPaymentSuccessfulAndFinalizeAsync(payment, data.GetRawText(), transactionId, "status-sync");
+        return;
+      }
+
+      if (string.Equals(payOsStatus, "CANCELLED", StringComparison.OrdinalIgnoreCase))
+      {
+        payment.Status = PaymentStatus.Cancelled;
+        payment.RawWebhookData = data.GetRawText();
+        _paymentRepo.Update(payment);
+        await _paymentRepo.SaveChangesAsync();
+      }
+    }
+
+    private async Task MarkPaymentSuccessfulAndFinalizeAsync(
+      Payment payment,
+      string rawData,
+      string? transactionId,
+      string source)
+    {
+      payment.Status = PaymentStatus.Success;
+      payment.TransactionId = string.IsNullOrWhiteSpace(transactionId)
+        ? payment.TransactionId
+        : transactionId;
+      payment.PaidAt ??= DateTime.UtcNow;
+      payment.RawWebhookData = rawData;
+
+      _paymentRepo.Update(payment);
+
+      if (!payment.ClassId.HasValue && payment.LearningRequest != null)
+      {
+        var newClass = await FinalizeClassFromLearningRequest(payment, source);
+        payment.ClassId = newClass.Id;
+        _paymentRepo.Update(payment);
+      }
+
+      await _paymentRepo.SaveChangesAsync();
+    }
+
+    private async Task<Class> FinalizeClassFromLearningRequest(Payment payment, string source)
     {
       var lr = payment.LearningRequest!;
 
-      // Determine schedule source and time slots
       string timeSlotsJson;
       decimal hoursPerSession;
       AcceptedScheduleSource scheduleSource;
@@ -308,33 +447,28 @@ namespace EduMatch.Services
 
       if (acceptedProposal != null)
       {
-        // R2: copy from ScheduleProposal
         scheduleSource = AcceptedScheduleSource.R2;
         acceptedProposalId = acceptedProposal.Id;
         hoursPerSession = acceptedProposal.HoursPerSession;
         depositSnapshot = acceptedProposal.CalculatedDepositAmount;
         startDate = acceptedProposal.DesiredStartDate;
 
-        // Normalize schedule through domain service
         var normalizedSlots = _bookingScheduleService.ParseAndValidate(
           acceptedProposal.TimeSlots, hoursPerSession);
         timeSlotsJson = SerializeTimeSlots(normalizedSlots);
       }
       else
       {
-        // R1: copy from LearningRequest
         scheduleSource = AcceptedScheduleSource.R1;
         hoursPerSession = lr.HoursPerSession;
         depositSnapshot = lr.CalculatedDepositAmount;
         startDate = lr.DesiredStartDate;
 
-        // Normalize schedule through domain service
         var normalizedSlots = _bookingScheduleService.ParseAndValidate(
           lr.TimeSlots, hoursPerSession);
         timeSlotsJson = SerializeTimeSlots(normalizedSlots);
       }
 
-      // Create class
       var newClass = new Class
       {
         StudentId = lr.StudentId,
@@ -354,19 +488,36 @@ namespace EduMatch.Services
       await _classRepo.AddAsync(newClass);
       await _classRepo.SaveChangesAsync();
 
-      // Update class code with proper format
       newClass.Code = _codeGeneratorService.GenerateClassCode(newClass.Id);
       _classRepo.Update(newClass);
 
-      // Transition LearningRequest to ConvertedToClass
       lr.Status = LearningRequestStatus.ConvertedToClass;
       await _paymentRepo.SaveChangesAsync();
 
       _logger.LogInformation(
         "Created Class {ClassId} from LearningRequest {LearningRequestId}, source={Source}",
-        newClass.Id, lr.Id, scheduleSource);
+        newClass.Id, lr.Id, source);
 
       return newClass;
+    }
+
+    private static DepositPaymentDto MapDepositPayment(Payment payment)
+    {
+      return new DepositPaymentDto
+      {
+        Id = payment.Id,
+        LearningRequestId = payment.LearningRequestId,
+        PaidByUserId = payment.PaidByUserId,
+        ClassId = payment.ClassId,
+        TutorId = payment.TutorId ?? payment.LearningRequest?.TutorId,
+        OrderCode = payment.OrderCode,
+        Amount = payment.Amount,
+        CheckoutUrl = payment.CheckoutUrl,
+        Status = payment.Status,
+        TransactionId = payment.TransactionId,
+        PaidAt = payment.PaidAt,
+        CreatedAt = payment.CreatedAt
+      };
     }
 
     private bool VerifyWebhookSignature(PayOSWebhookDto dto)
@@ -376,7 +527,6 @@ namespace EduMatch.Services
         return false;
       }
 
-      // PayOS webhook signature: HMAC-SHA256 of sorted data fields
       var sortedData = new SortedDictionary<string, string>(StringComparer.Ordinal)
       {
         ["accountNumber"] = dto.Data.AccountNumber ?? "",
@@ -410,6 +560,48 @@ namespace EduMatch.Services
       return BitConverter.ToString(hash).Replace("-", "").ToLower();
     }
 
+    private static long GetInt64(JsonElement element, string propertyName)
+    {
+      if (!element.TryGetProperty(propertyName, out var value))
+      {
+        return 0;
+      }
+
+      return value.ValueKind switch
+      {
+        JsonValueKind.Number when value.TryGetInt64(out var number) => number,
+        JsonValueKind.String when long.TryParse(value.GetString(), out var number) => number,
+        _ => 0
+      };
+    }
+
+    private static decimal GetDecimal(JsonElement element, string propertyName)
+    {
+      if (!element.TryGetProperty(propertyName, out var value))
+      {
+        return 0m;
+      }
+
+      return value.ValueKind switch
+      {
+        JsonValueKind.Number when value.TryGetDecimal(out var number) => number,
+        JsonValueKind.String when decimal.TryParse(value.GetString(), out var number) => number,
+        _ => 0m
+      };
+    }
+
+    private static string? GetString(JsonElement element, string propertyName)
+    {
+      if (!element.TryGetProperty(propertyName, out var value)
+          || value.ValueKind == JsonValueKind.Null
+          || value.ValueKind == JsonValueKind.Undefined)
+      {
+        return null;
+      }
+
+      return value.GetString();
+    }
+
     private static long GenerateOrderCode()
     {
       return long.Parse(DateTime.Now.ToString("yyMMddHHmmss") + new Random().Next(100, 999).ToString());
@@ -428,6 +620,75 @@ namespace EduMatch.Services
       {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
       });
+    }
+
+    public async Task<ApiResponse<PagedResult<PaymentAdminDto>>> GetMyPaymentsAsync(long userId, int page, int pageSize, PaymentStatus? status)
+    {
+      return await ServiceResponse.ExecuteAsync(async () =>
+      {
+        var pagedPayments = await _paymentRepo.GetPagedByUserIdAsync(userId, page, pageSize, status);
+        var mappedItems = pagedPayments.Items.Select(MapPayment).ToList();
+
+        var result = new PagedResult<PaymentAdminDto>
+        {
+          Items = mappedItems,
+          TotalCount = pagedPayments.TotalCount,
+          Page = pagedPayments.Page,
+          PageSize = pagedPayments.PageSize,
+          TotalPages = pagedPayments.TotalPages
+        };
+
+        return ApiResponse<PagedResult<PaymentAdminDto>>.SuccessResult(result);
+      });
+    }
+
+    public async Task<ApiResponse<PaymentAdminDto>> GetMyPaymentByIdAsync(long userId, long id)
+    {
+      return await ServiceResponse.ExecuteAsync(async () =>
+      {
+        var payment = await _paymentRepo.GetByIdAsync(id);
+        if (payment == null)
+        {
+          throw new NotFoundException("Không tìm thấy thông tin thanh toán.", "PAYMENT_NOT_FOUND");
+        }
+
+        if (payment.PaidByUserId != userId && payment.TutorId != userId && payment.LearningRequest?.TutorId != userId)
+        {
+          throw new ForbiddenException("Bạn không có quyền xem thông tin thanh toán này.", "PAYMENT_ACCESS_FORBIDDEN");
+        }
+
+        return ApiResponse<PaymentAdminDto>.SuccessResult(MapPayment(payment));
+      });
+    }
+
+    private static PaymentAdminDto MapPayment(Payment payment)
+    {
+      string? paidByUserName = payment.PaidByUser?.FullName;
+      string? paidByUserCode = payment.PaidByUser?.Student?.Code ?? payment.PaidByUser?.Tutor?.Code;
+      var tutor = payment.Tutor ?? payment.LearningRequest?.Tutor;
+      string? tutorName = tutor?.User?.FullName;
+      string? tutorCode = tutor?.Code;
+
+      return new PaymentAdminDto
+      {
+        Id = payment.Id,
+        LearningRequestId = payment.LearningRequestId,
+        PaidByUserId = payment.PaidByUserId,
+        ClassId = payment.ClassId,
+        TutorId = payment.TutorId ?? payment.LearningRequest?.TutorId,
+        OrderCode = payment.OrderCode,
+        Amount = payment.Amount,
+        Description = payment.Description,
+        Status = payment.Status,
+        CheckoutUrl = payment.CheckoutUrl,
+        TransactionId = payment.TransactionId,
+        PaidAt = payment.PaidAt,
+        CreatedAt = payment.CreatedAt,
+        PaidByUserName = paidByUserName,
+        PaidByUserCode = paidByUserCode,
+        TutorName = tutorName,
+        TutorCode = tutorCode
+      };
     }
   }
 }

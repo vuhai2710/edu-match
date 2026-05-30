@@ -35,41 +35,54 @@ public class ClassReadService : IClassReadService
     _bookingScheduleService = bookingScheduleService;
   }
 
-  public async Task<PagedResult<ClassDto>> GetStudentClassesAsync(long currentUserId, ClassQueryParameters parameters)
+  public async Task<ApiResponse<PagedResult<ClassDto>>> GetStudentClassesAsync(long currentUserId, ClassQueryParameters parameters)
   {
-    var pagedClasses = await _classRepository.GetPagedWithDetailsAsync(parameters, studentId: currentUserId);
-    return await MapPagedAsync(pagedClasses);
-  }
-
-  public async Task<PagedResult<ClassDto>> GetTutorClassesAsync(long tutorProfileId, ClassQueryParameters parameters)
-  {
-    var pagedClasses = await _classRepository.GetPagedWithDetailsAsync(parameters, tutorId: tutorProfileId);
-    return await MapPagedAsync(pagedClasses);
-  }
-
-  public async Task<ClassDto> GetByIdAsync(long id, long currentUserId, bool isAdmin = false)
-  {
-    var classEntity = await _classRepository.GetByIdWithDetailsAsync(id);
-    if (classEntity == null)
+    return await ServiceResponse.ExecuteAsync(async () =>
     {
-      throw new NotFoundException("Không tìm thấy lớp học.", "CLASS_NOT_FOUND");
-    }
-
-    if (!isAdmin
-      && classEntity.StudentId != currentUserId
-      && classEntity.Tutor?.UserId != currentUserId)
-    {
-      throw new ForbiddenException("Bạn không có quyền xem lớp học này.", "CLASS_VIEW_FORBIDDEN");
-    }
-
-    var payment = await _paymentRepository.GetSuccessfulPaymentByClassIdAsync(classEntity.Id);
-    return ClassMapper.ToDto(classEntity, ParseClassTimeSlots(classEntity.TimeSlotsJson), payment);
+      var pagedClasses = await _classRepository.GetPagedWithDetailsAsync(parameters, studentId: currentUserId);
+      return ApiResponse<PagedResult<ClassDto>>.SuccessResult(await MapPagedAsync(pagedClasses));
+    });
   }
 
-  public async Task<PagedResult<ClassDto>> GetAdminClassesAsync(ClassQueryParameters parameters)
+  public async Task<ApiResponse<PagedResult<ClassDto>>> GetTutorClassesAsync(long tutorProfileId, ClassQueryParameters parameters)
   {
-    var pagedClasses = await _classRepository.GetPagedWithDetailsAsync(parameters);
-    return await MapPagedAsync(pagedClasses);
+    return await ServiceResponse.ExecuteAsync(async () =>
+    {
+      var pagedClasses = await _classRepository.GetPagedWithDetailsAsync(parameters, tutorId: tutorProfileId);
+      return ApiResponse<PagedResult<ClassDto>>.SuccessResult(await MapPagedAsync(pagedClasses));
+    });
+  }
+
+  public async Task<ApiResponse<ClassDto>> GetByIdAsync(long id, long currentUserId, bool isAdmin = false)
+  {
+    return await ServiceResponse.ExecuteAsync(async () =>
+    {
+      var classEntity = await _classRepository.GetByIdWithDetailsAsync(id);
+      if (classEntity == null)
+      {
+        throw new NotFoundException("Không tìm thấy lớp học.", "CLASS_NOT_FOUND");
+      }
+
+      if (!isAdmin
+        && classEntity.StudentId != currentUserId
+        && classEntity.Tutor?.UserId != currentUserId)
+      {
+        throw new ForbiddenException("Bạn không có quyền xem lớp học này.", "CLASS_VIEW_FORBIDDEN");
+      }
+
+      var payment = await _paymentRepository.GetSuccessfulPaymentByClassIdAsync(classEntity.Id);
+      return ApiResponse<ClassDto>.SuccessResult(
+        ClassMapper.ToDto(classEntity, ParseClassTimeSlots(classEntity.TimeSlotsJson), payment));
+    });
+  }
+
+  public async Task<ApiResponse<PagedResult<ClassDto>>> GetAdminClassesAsync(ClassQueryParameters parameters)
+  {
+    return await ServiceResponse.ExecuteAsync(async () =>
+    {
+      var pagedClasses = await _classRepository.GetPagedWithDetailsAsync(parameters);
+      return ApiResponse<PagedResult<ClassDto>>.SuccessResult(await MapPagedAsync(pagedClasses));
+    });
   }
 
   private async Task<PagedResult<ClassDto>> MapPagedAsync(PagedResult<Class> pagedClasses)
@@ -116,6 +129,6 @@ public class ClassReadService : IClassReadService
       }
     }
 
-    throw lastValidationException ?? new ValidationException("TimeSlotsJson không hợp lệ.", "INVALID_TIME_SLOTS");
+    throw lastValidationException ?? new ValidationException("TimeSlotsJson khÃ´ng há»£p lá»‡.", "INVALID_TIME_SLOTS");
   }
 }

@@ -6,7 +6,6 @@ using EduMatch.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
-using System.Security.Claims;
 
 namespace EduMatch.Controllers
 {
@@ -25,8 +24,8 @@ namespace EduMatch.Controllers
     [HttpGet]
     [SwaggerOperation(OperationId = "getNotifications")]
     [ProducesResponseType(typeof(ApiResponse<PagedResult<NotificationDto>>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<PagedResult<NotificationDto>>>> GetNotifications([FromQuery] NotificationQueryParameters parameters)
     {
       var userId = GetCurrentUserId();
@@ -40,7 +39,7 @@ namespace EduMatch.Controllers
     [HttpGet("unread-count")]
     [SwaggerOperation(OperationId = "getUnreadNotificationCount")]
     [ProducesResponseType(typeof(ApiResponse<int>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<int>>> GetUnreadCount()
     {
       var userId = GetCurrentUserId();
@@ -52,8 +51,8 @@ namespace EduMatch.Controllers
     [HttpPut("{id:long}/read")]
     [SwaggerOperation(OperationId = "markNotificationAsRead")]
     [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<bool>>> MarkAsRead(long id)
     {
       var userId = GetCurrentUserId();
@@ -65,7 +64,7 @@ namespace EduMatch.Controllers
     [HttpPut("read-all")]
     [SwaggerOperation(OperationId = "markAllNotificationsAsRead")]
     [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<bool>>> MarkAllAsRead()
     {
       var userId = GetCurrentUserId();
@@ -76,13 +75,7 @@ namespace EduMatch.Controllers
 
     private long GetCurrentUserId()
     {
-      var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-      if (long.TryParse(userIdStr, out var userId))
-      {
-        return userId;
-      }
-
-      throw new UnauthorizedException("Không thể xác thực người dùng.");
+      return User.GetRequiredUserId();
     }
   }
 }

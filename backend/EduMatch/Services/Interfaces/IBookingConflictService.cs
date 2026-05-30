@@ -8,5 +8,10 @@ namespace EduMatch.Services.Interfaces
       long tutorProfileId,
       IReadOnlyList<BookingTimeSlot> requestedSlots,
       long? excludeLearningRequestId = null);
+
+    Task CheckForStudentConflictsAsync(
+      long studentUserId,
+      IReadOnlyList<BookingTimeSlot> requestedSlots,
+      long? excludeLearningRequestId = null);
   }
 }

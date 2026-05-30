@@ -1,10 +1,12 @@
+using EduMatch.Common.Enums;
+using EduMatch.Common.Exception;
+using EduMatch.Common.Extensions;
 using EduMatch.DTOs;
 using EduMatch.DTOs.Payment;
 using EduMatch.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
-using System.Security.Claims;
 
 namespace EduMatch.Controllers
 {
@@ -30,14 +32,22 @@ namespace EduMatch.Controllers
     public async Task<ActionResult<ApiResponse<PaymentResponseDto>>> CreateDepositPayment(
       [FromBody] CreateDepositPaymentRequest dto)
     {
-      var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-      if (string.IsNullOrEmpty(userIdStr) || !long.TryParse(userIdStr, out long userId))
-      {
-        return Unauthorized(ErrorResponse.Create("Invalid token", "UNAUTHORIZED"));
-      }
+      return this.OkResponse(await _depositPaymentService.CreateDepositAsync(GetCurrentUserId(), dto));
+    }
 
-      var result = await _depositPaymentService.CreateDepositAsync(userId, dto);
-      return Ok(ApiResponse<PaymentResponseDto>.SuccessResult(result));
+    [HttpGet("learning-requests/{learningRequestId:long}")]
+    [Authorize(Roles = "Student,Tutor,Admin")]
+    [SwaggerOperation(OperationId = "getPaymentByLearningRequest")]
+    [ProducesResponseType(typeof(ApiResponse<DepositPaymentDto?>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<DepositPaymentDto?>>> GetByLearningRequest(long learningRequestId)
+    {
+      return this.OkResponse(await _depositPaymentService.GetByLearningRequestAsync(
+        GetCurrentUserId(),
+        User.IsInRole("Admin"),
+        learningRequestId));
     }
 
     [HttpGet("status/{orderCode}")]
@@ -46,8 +56,7 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<PaymentStatusDto>>> GetStatus(long orderCode)
     {
-      var result = await _depositPaymentService.GetStatusAsync(orderCode);
-      return Ok(ApiResponse<PaymentStatusDto>.SuccessResult(result));
+      return this.OkResponse(await _depositPaymentService.GetStatusAsync(orderCode));
     }
 
     [HttpPost("webhook")]
@@ -60,19 +69,34 @@ namespace EduMatch.Controllers
       return Ok(ApiResponse.Ok("Webhook processed"));
     }
 
-    // Legacy Endpoints (Disabled — 410 Gone after v2 cutover)
-
-    [Obsolete("Use POST /api/payments/deposit instead")]
-    [HttpPost("create")]
-    [SwaggerOperation(OperationId = "createPayment")]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status410Gone)]
-    public ActionResult<ApiResponse<PaymentResponseDto>> CreatePayment(
-      [FromBody] CreatePaymentRequestDto dto)
+    [HttpGet("my")]
+    [Authorize(Roles = "Student,Tutor")]
+    [SwaggerOperation(OperationId = "getMyPayments")]
+    [ProducesResponseType(typeof(ApiResponse<PagedResult<PaymentAdminDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<ApiResponse<PagedResult<PaymentAdminDto>>>> GetMyPayments(
+      [FromQuery] int page = 1,
+      [FromQuery] int pageSize = 10,
+      [FromQuery] PaymentStatus? status = null)
     {
-      return StatusCode(StatusCodes.Status410Gone,
-        ErrorResponse.Create(
-          "Endpoint đã ngừng sử dụng. Vui lòng dùng POST /api/payments/deposit.",
-          "LEGACY_FLOW_DISABLED"));
+      return this.OkResponse(await _depositPaymentService.GetMyPaymentsAsync(GetCurrentUserId(), page, pageSize, status));
+    }
+
+    [HttpGet("my/{id:long}")]
+    [Authorize(Roles = "Student,Tutor")]
+    [SwaggerOperation(OperationId = "getMyPaymentById")]
+    [ProducesResponseType(typeof(ApiResponse<PaymentAdminDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<PaymentAdminDto>>> GetMyPaymentById(long id)
+    {
+      return this.OkResponse(await _depositPaymentService.GetMyPaymentByIdAsync(GetCurrentUserId(), id));
+    }
+
+    private long GetCurrentUserId()
+    {
+      return User.GetRequiredUserId();
     }
   }
 }

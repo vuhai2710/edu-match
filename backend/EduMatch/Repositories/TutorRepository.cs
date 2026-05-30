@@ -12,7 +12,7 @@ namespace EduMatch.Repositories
     {
     }
 
-    public async Task<PagedResult<Tutor>> GetTutorsAsync(TutorQueryParameters parameters)
+    public async Task<PagedResult<Tutor>> GetTutorsAsync(TutorQueryParameters parameters, bool isAdmin = false)
     {
       var query = _dbSet
         .Include(t => t.User)
@@ -21,7 +21,13 @@ namespace EduMatch.Repositories
         .Include(t => t.TeachingLevels)
         .Include(t => t.TutorSubjects)
           .ThenInclude(ts => ts.Subject)
+        .Where(t => t.User != null && !t.User.IsDeleted)
         .AsQueryable();
+
+      if (!isAdmin)
+      {
+        query = query.Where(t => t.ApprovalStatus == EduMatch.Common.Enums.TutorApprovalStatus.Approved);
+      }
 
       if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
       {
@@ -47,6 +53,16 @@ namespace EduMatch.Repositories
       if (parameters.SubjectId.HasValue)
       {
         query = query.Where(t => t.TutorSubjects.Any(ts => ts.SubjectId == parameters.SubjectId.Value));
+      }
+
+      if (parameters.MinPrice.HasValue)
+      {
+        query = query.Where(t => t.HourlyRate >= parameters.MinPrice.Value);
+      }
+
+      if (parameters.MaxPrice.HasValue)
+      {
+        query = query.Where(t => t.HourlyRate <= parameters.MaxPrice.Value);
       }
 
       var isDescending = string.Equals(parameters.SortDirection, "desc", StringComparison.OrdinalIgnoreCase);
@@ -94,6 +110,21 @@ namespace EduMatch.Repositories
         .Include(t => t.TutorSubjects)
           .ThenInclude(ts => ts.Subject)
         .FirstOrDefaultAsync(t => t.Id == id && !t.IsDeleted);
+    }
+
+    public async Task<Tutor?> GetTutorProfileDetailByCodeAsync(string code)
+    {
+      var normalizedCode = code.Trim().ToUpper();
+
+      return await _dbSet
+        .Include(t => t.User)
+          .ThenInclude(u => u.AvatarFile)
+        .Include(t => t.Address)
+        .Include(t => t.CvFile)
+        .Include(t => t.TeachingLevels)
+        .Include(t => t.TutorSubjects)
+          .ThenInclude(ts => ts.Subject)
+        .FirstOrDefaultAsync(t => !t.IsDeleted && t.Code.ToUpper() == normalizedCode);
     }
 
     public async Task<Tutor?> GetTutorProfileByUserIdAsync(long userId)

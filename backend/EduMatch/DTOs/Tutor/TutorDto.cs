@@ -19,6 +19,7 @@ namespace EduMatch.DTOs.Tutor
     public string Major { get; set; } = string.Empty;
     public AcademicDegree? AcademicDegree { get; set; }
     public string? School { get; set; }
+    public TutorApprovalStatus ApprovalStatus { get; set; }
     public AddressDto? Address { get; set; }
     public List<EducationLevel> TeachingLevels { get; set; } = [];
     public List<TutorSubjectDto> Subjects { get; set; } = [];

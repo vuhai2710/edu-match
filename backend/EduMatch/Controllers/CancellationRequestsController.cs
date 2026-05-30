@@ -1,6 +1,4 @@
-using System.Security.Claims;
 using EduMatch.Common.Enums;
-using EduMatch.Common.Exception;
 using EduMatch.Common.Extensions;
 using EduMatch.DTOs;
 using EduMatch.DTOs.CancellationRequests;
@@ -25,6 +23,7 @@ namespace EduMatch.Controllers
     [HttpPost]
     [Authorize(Roles = "Student,Tutor,Admin")]
     [SwaggerOperation(OperationId = "createCancellationRequest")]
+    [ProducesResponseType(typeof(ApiResponse<CancellationRequestDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<CancellationRequestDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
@@ -38,29 +37,37 @@ namespace EduMatch.Controllers
         GetCurrentUserRole(),
         dto);
 
+      if (!response.Success)
+      {
+        return this.OkResponse(response);
+      }
+
       return this.CreatedResponse($"/api/admin/cancellation-requests/{response.Data?.Id}", response);
+    }
+
+    [HttpGet("me")]
+    [Authorize(Roles = "Student,Tutor")]
+    [SwaggerOperation(OperationId = "getMyCancellationRequests")]
+    [ProducesResponseType(typeof(ApiResponse<PagedResult<CancellationRequestDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<ApiResponse<PagedResult<CancellationRequestDto>>>> GetMine([FromQuery] CancellationRequestQueryParameters parameters)
+    {
+      return this.OkResponse(await _cancellationRequestService.GetMineAsync(
+        GetCurrentUserId(),
+        GetCurrentUserRole(),
+        parameters));
     }
 
     private long GetCurrentUserId()
     {
-      var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-      if (!long.TryParse(userIdClaim, out var userId))
-      {
-        throw new UnauthorizedException("Cannot authenticate user.");
-      }
-
-      return userId;
+      return User.GetRequiredUserId();
     }
 
     private UserRole GetCurrentUserRole()
     {
-      var roleClaim = User.FindFirstValue(ClaimTypes.Role);
-      if (!Enum.TryParse<UserRole>(roleClaim, true, out var role))
-      {
-        throw new UnauthorizedException("Cannot determine user role.");
-      }
-
-      return role;
+      return User.GetRequiredUserRole();
     }
   }
 }

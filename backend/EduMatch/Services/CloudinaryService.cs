@@ -1,5 +1,6 @@
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
+using EduMatch.Common.Exception;
 using EduMatch.Configuration;
 using EduMatch.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
@@ -11,6 +12,7 @@ namespace EduMatch.Services
   {
     private const long AvatarMaxSizeInBytes = 5 * 1024 * 1024;
     private const long CvMaxSizeInBytes = 10 * 1024 * 1024;
+    private static readonly TimeSpan DefaultRawDownloadUrlTtl = TimeSpan.FromMinutes(30);
 
     private static readonly HashSet<string> AvatarExtensions = [".jpg", ".jpeg", ".png", ".webp"];
     private static readonly HashSet<string> AvatarContentTypes = ["image/jpeg", "image/png", "image/webp"];
@@ -68,7 +70,16 @@ namespace EduMatch.Services
       var uploadParams = new RawUploadParams
       {
         File = new FileDescription(file.FileName, stream),
-        Folder = folder
+        Folder = folder,
+        Type = "upload",
+        AccessMode = "public",
+        AccessControl =
+        [
+          new AccessControlRule
+          {
+            AccessType = AccessType.Anonymous
+          }
+        ]
       };
 
       var result = await _cloudinary.UploadAsync(uploadParams);
@@ -78,6 +89,24 @@ namespace EduMatch.Services
       }
 
       return (result.SecureUrl?.ToString() ?? string.Empty, result.PublicId);
+    }
+
+    public string BuildSignedRawDownloadUrl(string fileUrl, TimeSpan? expiresIn = null, bool attachment = false)
+    {
+      EnsureConfigured();
+
+      var rawAsset = ResolveRawAsset(fileUrl);
+      var expiresAt = DateTimeOffset.UtcNow
+        .Add(expiresIn ?? DefaultRawDownloadUrlTtl)
+        .ToUnixTimeSeconds();
+
+      return _cloudinary.DownloadPrivate(
+        rawAsset.PublicId,
+        attachment,
+        format: null,
+        type: rawAsset.DeliveryType,
+        expiresAt,
+        resourceType: rawAsset.ResourceType);
     }
 
     public async Task DeleteAsync(string publicId, ResourceType type)
@@ -103,24 +132,75 @@ namespace EduMatch.Services
 
     private void EnsureConfigured()
     {
-      if (string.IsNullOrWhiteSpace(_settings.CloudName) ||
-          string.IsNullOrWhiteSpace(_settings.ApiKey) ||
-          string.IsNullOrWhiteSpace(_settings.ApiSecret))
+      if (string.IsNullOrWhiteSpace(_settings.CloudName)
+          || string.IsNullOrWhiteSpace(_settings.ApiKey)
+          || string.IsNullOrWhiteSpace(_settings.ApiSecret))
       {
         throw new System.Exception("Cloudinary chưa được cấu hình.");
       }
     }
 
+    private (string PublicId, string DeliveryType, string ResourceType) ResolveRawAsset(string fileUrl)
+    {
+      if (!Uri.TryCreate(fileUrl, UriKind.Absolute, out var uri)
+          || !string.Equals(uri.Host, "res.cloudinary.com", StringComparison.OrdinalIgnoreCase))
+      {
+        throw new ValidationException("URL Cloudinary không hợp lệ.", "INVALID_CLOUDINARY_URL");
+      }
+
+      var segments = uri.AbsolutePath
+        .Split('/', StringSplitOptions.RemoveEmptyEntries)
+        .Select(Uri.UnescapeDataString)
+        .ToArray();
+
+      if (segments.Length < 5
+          || !string.Equals(segments[0], _settings.CloudName, StringComparison.OrdinalIgnoreCase)
+          || !string.Equals(segments[1], "raw", StringComparison.OrdinalIgnoreCase))
+      {
+        throw new ValidationException("URL CV Cloudinary không hợp lệ.", "INVALID_CLOUDINARY_CV_URL");
+      }
+
+      var publicIdStartIndex = 3;
+      if (segments.Length > publicIdStartIndex
+          && segments[publicIdStartIndex].Length > 1
+          && segments[publicIdStartIndex][0] == 'v'
+          && long.TryParse(segments[publicIdStartIndex][1..], out _))
+      {
+        publicIdStartIndex++;
+      }
+
+      if (segments.Length <= publicIdStartIndex)
+      {
+        throw new ValidationException("URL CV Cloudinary thiếu public id.", "INVALID_CLOUDINARY_PUBLIC_ID");
+      }
+
+      var publicId = string.Join('/', segments[publicIdStartIndex..]);
+      if (!publicId.StartsWith("edumatch/cvs/", StringComparison.OrdinalIgnoreCase))
+      {
+        throw new ValidationException("URL không thuộc thư mục CV của hệ thống.", "INVALID_CLOUDINARY_CV_FOLDER");
+      }
+
+      return (publicId, segments[2], segments[1]);
+    }
+
     private static void ValidateAvatar(IFormFile file)
     {
-      ValidateFile(file, AvatarMaxSizeInBytes, AvatarExtensions, AvatarContentTypes,
+      ValidateFile(
+        file,
+        AvatarMaxSizeInBytes,
+        AvatarExtensions,
+        AvatarContentTypes,
         "Ảnh đại diện chỉ hỗ trợ định dạng JPG, PNG hoặc WEBP.",
         "Ảnh đại diện không được vượt quá 5MB.");
     }
 
     private static void ValidateCv(IFormFile file)
     {
-      ValidateFile(file, CvMaxSizeInBytes, CvExtensions, CvContentTypes,
+      ValidateFile(
+        file,
+        CvMaxSizeInBytes,
+        CvExtensions,
+        CvContentTypes,
         "CV chỉ hỗ trợ định dạng PDF, DOC hoặc DOCX.",
         "CV không được vượt quá 10MB.");
     }
@@ -135,7 +215,12 @@ namespace EduMatch.Services
     {
       if (file == null || file.Length == 0)
       {
-        throw new ArgumentException("Tệp tải lên không hợp lệ.");
+        throw new ValidationException(
+          new Dictionary<string, string[]>
+          {
+            ["file"] = ["Tệp tải lên không hợp lệ."]
+          },
+          "INVALID_FILE_UPLOAD");
       }
 
       var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
@@ -143,12 +228,22 @@ namespace EduMatch.Services
 
       if (!allowedExtensions.Contains(extension) || !allowedContentTypes.Contains(contentType))
       {
-        throw new ArgumentException(invalidTypeMessage);
+        throw new ValidationException(
+          new Dictionary<string, string[]>
+          {
+            ["file"] = [invalidTypeMessage]
+          },
+          "INVALID_FILE_TYPE");
       }
 
       if (file.Length > maxSizeInBytes)
       {
-        throw new ArgumentException(invalidSizeMessage);
+        throw new ValidationException(
+          new Dictionary<string, string[]>
+          {
+            ["file"] = [invalidSizeMessage]
+          },
+          "FILE_SIZE_EXCEEDED");
       }
     }
   }

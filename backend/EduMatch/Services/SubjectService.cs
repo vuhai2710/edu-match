@@ -19,107 +19,128 @@ namespace EduMatch.Services
       _mapper = mapper;
     }
 
-    public async Task<List<SubjectListItemDto>> GetSubjectsAsync()
+    public async Task<ApiResponse<List<SubjectListItemDto>>> GetSubjectsAsync()
     {
-      var subjects = await _subjectRepository.GetAllActiveSubjectsWithTutorCountAsync();
-
-      return subjects.Select(s => new SubjectListItemDto
+      return await ServiceResponse.ExecuteAsync(async () =>
       {
-        Id = s.Id,
-        Name = s.Name,
-        Description = s.Description,
-        TutorCount = s.TutorSubjects.Count
-      }).ToList();
+        var subjects = await _subjectRepository.GetAllActiveSubjectsWithTutorCountAsync();
+
+        return ApiResponse<List<SubjectListItemDto>>.SuccessResult(subjects.Select(s => new SubjectListItemDto
+        {
+          Id = s.Id,
+          Name = s.Name,
+          Description = s.Description,
+          TutorCount = s.TutorSubjects.Count
+        }).ToList());
+      });
     }
 
-    public async Task<PagedResult<TutorCardDto>> GetTutorsBySubjectAsync(
+    public async Task<ApiResponse<PagedResult<TutorCardDto>>> GetTutorsBySubjectAsync(
       long subjectId,
       TutorBySubjectQueryParameters parameters)
     {
-      var subjectExists = await _subjectRepository.ExistsAsync(s => s.Id == subjectId);
-      if (!subjectExists)
+      return await ServiceResponse.ExecuteAsync(async () =>
       {
-        throw new NotFoundException("Không tìm thấy môn học.", "SUBJECT_NOT_FOUND");
-      }
+        var subjectExists = await _subjectRepository.ExistsAsync(s => s.Id == subjectId);
+        if (!subjectExists)
+        {
+          throw new NotFoundException("Không tìm thấy môn học.", "SUBJECT_NOT_FOUND");
+        }
 
-      var pagedTutors = await _subjectRepository.GetTutorsBySubjectAsync(subjectId, parameters);
+        var pagedTutors = await _subjectRepository.GetTutorsBySubjectAsync(subjectId, parameters);
 
-      return new PagedResult<TutorCardDto>
-      {
-        Items = pagedTutors.Items.Select(MapToTutorCard).ToList(),
-        TotalCount = pagedTutors.TotalCount,
-        Page = pagedTutors.Page,
-        PageSize = pagedTutors.PageSize,
-        TotalPages = pagedTutors.TotalPages
-      };
+        return ApiResponse<PagedResult<TutorCardDto>>.SuccessResult(new PagedResult<TutorCardDto>
+        {
+          Items = pagedTutors.Items.Select(MapToTutorCard).ToList(),
+          TotalCount = pagedTutors.TotalCount,
+          Page = pagedTutors.Page,
+          PageSize = pagedTutors.PageSize,
+          TotalPages = pagedTutors.TotalPages
+        });
+      });
     }
 
-    public async Task<SubjectResponseDto> GetSubjectByIdAsync(long id)
+    public async Task<ApiResponse<SubjectResponseDto>> GetSubjectByIdAsync(long id)
     {
-      var subject = await _subjectRepository.GetByIdAsync(id);
-      if (subject == null || subject.IsDeleted)
+      return await ServiceResponse.ExecuteAsync(async () =>
       {
-        throw new NotFoundException("Không tìm thấy môn học.", "SUBJECT_NOT_FOUND");
-      }
-      return _mapper.Map<SubjectResponseDto>(subject);
+        var subject = await _subjectRepository.GetByIdAsync(id);
+        if (subject == null || subject.IsDeleted)
+        {
+          throw new NotFoundException("Không tìm thấy môn học.", "SUBJECT_NOT_FOUND");
+        }
+
+        return ApiResponse<SubjectResponseDto>.SuccessResult(_mapper.Map<SubjectResponseDto>(subject));
+      });
     }
 
-    public async Task<SubjectResponseDto> CreateSubjectAsync(SubjectDto dto)
+    public async Task<ApiResponse<SubjectResponseDto>> CreateSubjectAsync(SubjectDto dto)
     {
-      var trimmedName = dto.Name.Trim();
-      var nameExists = await _subjectRepository.ExistsAsync(s => s.Name.ToLower() == trimmedName.ToLower() && !s.IsDeleted);
-      if (nameExists)
+      return await ServiceResponse.ExecuteAsync(async () =>
       {
-        throw new ConflictException("Môn học với tên này đã tồn tại.", "SUBJECT_NAME_ALREADY_EXISTS");
-      }
+        var trimmedName = dto.Name.Trim();
+        var nameExists = await _subjectRepository.ExistsAsync(s => s.Name.ToLower() == trimmedName.ToLower() && !s.IsDeleted);
+        if (nameExists)
+        {
+          throw new ConflictException("Môn học với tên này đã tồn tại.", "SUBJECT_NAME_ALREADY_EXISTS");
+        }
 
-      var subject = _mapper.Map<Subject>(dto);
-      subject.Name = trimmedName;
+        var subject = _mapper.Map<Subject>(dto);
+        subject.Name = trimmedName;
 
-      await _subjectRepository.AddAsync(subject);
-      await _subjectRepository.SaveChangesAsync();
+        await _subjectRepository.AddAsync(subject);
+        await _subjectRepository.SaveChangesAsync();
 
-      return _mapper.Map<SubjectResponseDto>(subject);
+        return ApiResponse<SubjectResponseDto>.SuccessResult(_mapper.Map<SubjectResponseDto>(subject));
+      });
     }
 
-    public async Task<SubjectResponseDto> UpdateSubjectAsync(long id, SubjectDto dto)
+    public async Task<ApiResponse<SubjectResponseDto>> UpdateSubjectAsync(long id, SubjectDto dto)
     {
-      var subject = await _subjectRepository.GetByIdAsync(id);
-      if (subject == null || subject.IsDeleted)
+      return await ServiceResponse.ExecuteAsync(async () =>
       {
-        throw new NotFoundException("Không tìm thấy môn học.", "SUBJECT_NOT_FOUND");
-      }
+        var subject = await _subjectRepository.GetByIdAsync(id);
+        if (subject == null || subject.IsDeleted)
+        {
+          throw new NotFoundException("Không tìm thấy môn học.", "SUBJECT_NOT_FOUND");
+        }
 
-      var trimmedName = dto.Name.Trim();
-      var nameExists = await _subjectRepository.ExistsAsync(s => s.Id != id && s.Name.ToLower() == trimmedName.ToLower() && !s.IsDeleted);
-      if (nameExists)
-      {
-        throw new ConflictException("Môn học với tên này đã tồn tại.", "SUBJECT_NAME_ALREADY_EXISTS");
-      }
+        var trimmedName = dto.Name.Trim();
+        var nameExists = await _subjectRepository.ExistsAsync(s => s.Id != id && s.Name.ToLower() == trimmedName.ToLower() && !s.IsDeleted);
+        if (nameExists)
+        {
+          throw new ConflictException("Môn học với tên này đã tồn tại.", "SUBJECT_NAME_ALREADY_EXISTS");
+        }
 
-      _mapper.Map(dto, subject);
-      subject.Name = trimmedName;
-      subject.UpdatedAt = DateTime.UtcNow;
+        _mapper.Map(dto, subject);
+        subject.Name = trimmedName;
+        subject.UpdatedAt = DateTime.UtcNow;
 
-      _subjectRepository.Update(subject);
-      await _subjectRepository.SaveChangesAsync();
+        _subjectRepository.Update(subject);
+        await _subjectRepository.SaveChangesAsync();
 
-      return _mapper.Map<SubjectResponseDto>(subject);
+        return ApiResponse<SubjectResponseDto>.SuccessResult(_mapper.Map<SubjectResponseDto>(subject));
+      });
     }
 
-    public async Task DeleteSubjectAsync(long id)
+    public async Task<ApiResponse> DeleteSubjectAsync(long id)
     {
-      var subject = await _subjectRepository.GetByIdAsync(id);
-      if (subject == null || subject.IsDeleted)
+      return await ServiceResponse.ExecuteAsync(async () =>
       {
-        throw new NotFoundException("Không tìm thấy môn học.", "SUBJECT_NOT_FOUND");
-      }
+        var subject = await _subjectRepository.GetByIdAsync(id);
+        if (subject == null || subject.IsDeleted)
+        {
+          throw new NotFoundException("Không tìm thấy môn học.", "SUBJECT_NOT_FOUND");
+        }
 
-      subject.IsDeleted = true;
-      subject.UpdatedAt = DateTime.UtcNow;
+        subject.IsDeleted = true;
+        subject.UpdatedAt = DateTime.UtcNow;
 
-      _subjectRepository.Update(subject);
-      await _subjectRepository.SaveChangesAsync();
+        _subjectRepository.Update(subject);
+        await _subjectRepository.SaveChangesAsync();
+
+        return ApiResponse.Ok();
+      });
     }
 
     private static TutorCardDto MapToTutorCard(Tutor tutor)

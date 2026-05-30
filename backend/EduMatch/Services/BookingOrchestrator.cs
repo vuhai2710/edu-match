@@ -83,6 +83,11 @@ namespace EduMatch.Services
 
           scheduleProposal.Status = ScheduleProposalStatus.Accepted;
           learningRequest = scheduleProposal.LearningRequest;
+          learningRequest.TimeSlots = scheduleProposal.TimeSlots;
+          learningRequest.DesiredStartDate = scheduleProposal.DesiredStartDate;
+          learningRequest.HoursPerSession = scheduleProposal.HoursPerSession;
+          learningRequest.BudgetPerHour = scheduleProposal.HourlyRate;
+          learningRequest.CalculatedDepositAmount = scheduleProposal.CalculatedDepositAmount;
         }
         else if (learningRequest.Status != LearningRequestStatus.Pending)
         {
@@ -92,6 +97,7 @@ namespace EduMatch.Services
         }
 
         await _bookingConflictService.CheckForConflictsAsync(tutorProfileId, slots, learningRequestId);
+        await _bookingConflictService.CheckForStudentConflictsAsync(learningRequest.StudentId, slots, learningRequestId);
 
         learningRequest.Status = LearningRequestStatus.SoftBooked;
         learningRequest.PaymentExpiresAt = DateTime.UtcNow.AddHours(24);
