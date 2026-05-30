@@ -1,13 +1,44 @@
-import { HttpContextToken, HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { HttpContextToken, HttpErrorResponse, HttpInterceptorFn, HttpResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { catchError, switchMap, throwError } from 'rxjs';
+import { catchError, map, switchMap, throwError } from 'rxjs';
 
 import { AuthApiService } from '../../api/facades/auth-api';
 import { SessionService } from '../auth/session';
 import { unwrapApiData } from './api-error';
 
 const AUTH_REFRESH_ATTEMPTED = new HttpContextToken<boolean>(() => false);
+
+function toTitleCase(str: string): string {
+  if (!str) return '';
+  return str
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+function normalizeUserNames(obj: any): any {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(item => normalizeUserNames(item));
+  }
+  if (typeof obj === 'object' && (obj.constructor === Object || !obj.constructor)) {
+    const keysToFormat = ['fullname', 'studentname', 'tutorname'];
+    for (const key of Object.keys(obj)) {
+      const lowerKey = key.toLowerCase();
+      if (keysToFormat.includes(lowerKey) && typeof obj[key] === 'string') {
+        obj[key] = toTitleCase(obj[key]);
+      } else {
+        obj[key] = normalizeUserNames(obj[key]);
+      }
+    }
+  }
+  return obj;
+}
 
 export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const session = inject(SessionService);
@@ -61,6 +92,12 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
           return throwError(() => refreshError);
         }),
       );
+    }),
+    map((event) => {
+      if (event instanceof HttpResponse && event.body) {
+        return event.clone({ body: normalizeUserNames(event.body) });
+      }
+      return event;
     }),
   );
 };

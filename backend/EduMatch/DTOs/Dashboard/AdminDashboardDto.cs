@@ -17,6 +17,7 @@ namespace EduMatch.DTOs.Dashboard
 
     public decimal TotalRevenue { get; set; }
     public decimal RevenueThisMonth { get; set; }
+    public List<MonthlyRevenueDto> MonthlyRevenues { get; set; } = [];
 
     public List<RecentApplicationItemDto> RecentApplications { get; set; } = [];
     public List<PendingTutorItemDto> PendingTutors { get; set; } = [];

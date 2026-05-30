@@ -110,7 +110,7 @@ import {
               </div>
               <div class="sm:col-span-2">
                 <a [routerLink]="['/admin/payments', pay.paymentId]" class="text-duo-blue font-bold text-sm hover:underline">
-                  Xem chi tiết payment →
+                  Xem chi tiết thanh toán →
                 </a>
               </div>
             </div>

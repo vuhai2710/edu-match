@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ScheduleCalendarComponent } from '../../../shared/components/schedule-calendar';
@@ -7,6 +7,7 @@ import { SessionService } from '../../../core/auth/session';
 
 import {
   ClassDto,
+  ClassStatus,
   LearningRequestDto,
   StudentDashboardDto,
 } from '../../../api/generated/client/models';
@@ -113,12 +114,19 @@ import {
               </div>
 
               <div class="space-y-3">
-                @for (request of requests(); track request.id) {
+                @for (request of requests().slice(0, 3); track request.id) {
                   <a
                     [routerLink]="['/student/learning-requests', request.id]"
                     class="tactile-card p-4 block hover:shadow-md transition-all duration-300 hover:-translate-y-0.5"
                   >
-                    <div class="flex items-start justify-between gap-3">
+                    <div class="flex flex-col gap-2">
+                      <div class="flex items-center justify-between">
+                        <span
+                          [class]="requestClass(request)"
+                          class="text-[10px] font-black rounded-full px-2.5 py-1 uppercase tracking-wider"
+                          >{{ requestLabel(request) }}</span
+                        >
+                      </div>
                       <div>
                         <p class="font-extrabold text-slate-900 group-hover:text-duo-blue transition-colors">
                           {{ request.subjectName || 'Yêu cầu học' }}
@@ -127,11 +135,6 @@ import {
                           Gia sư: <span class="font-bold text-slate-700">{{ request.tutorName || 'Đang cập nhật' }}</span>
                         </p>
                       </div>
-                      <span
-                        [class]="requestClass(request)"
-                        class="text-[10px] font-black rounded-full px-2.5 py-1 uppercase tracking-wider shrink-0"
-                        >{{ requestLabel(request) }}</span
-                      >
                     </div>
                     <div class="border-t border-slate-100 mt-3 pt-2 flex items-center justify-between">
                       <p class="text-[10px] text-slate-400 font-bold uppercase">Học phí dự kiến</p>
@@ -175,23 +178,25 @@ import {
               </div>
 
               <div class="space-y-3">
-                @for (item of classes(); track item.id) {
+                @for (item of upcomingClasses().slice(0, 3); track item.id) {
                   <a
                     [routerLink]="['/student/classes', item.id]"
                     class="tactile-card p-4 block hover:shadow-md transition-all duration-300 hover:-translate-y-0.5"
                   >
-                    <div class="flex items-start justify-between gap-3">
+                    <div class="flex flex-col gap-2">
+                      <div class="flex items-center justify-between">
+                        <span
+                          [class]="classClass(item)"
+                          class="text-[10px] font-black rounded-full px-2.5 py-1 uppercase tracking-wider"
+                          >{{ classLabel(item) }}</span
+                        >
+                      </div>
                       <div>
                         <p class="font-extrabold text-slate-900">{{ item.subjectName || item.code }}</p>
                         <p class="text-xs text-slate-500 font-medium mt-1">
                           Gia sư: <span class="font-bold text-slate-700">{{ item.tutorName || 'Đang cập nhật' }}</span>
                         </p>
                       </div>
-                      <span
-                        [class]="classClass(item)"
-                        class="text-[10px] font-black rounded-full px-2.5 py-1 uppercase tracking-wider shrink-0"
-                        >{{ classLabel(item) }}</span
-                      >
                     </div>
                     <div class="border-t border-slate-100 mt-3 pt-2 flex items-center justify-between">
                       <p class="text-[10px] text-slate-400 font-bold uppercase">Ngày bắt đầu</p>
@@ -201,8 +206,7 @@ import {
                     </div>
                   </a>
                 }
-
-                @if (!classes().length) {
+                @if (!upcomingClasses().length) {
                   <div class="flex flex-col items-center justify-center py-10 text-center px-4">
                     <div class="w-16 h-16 rounded-2xl bg-green-50 border-2 border-green-100 flex items-center justify-center mb-4 text-duo-green hover:scale-110 transition-transform duration-300">
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
@@ -261,6 +265,7 @@ export class StudentDashboardPage implements OnInit {
   dashboard = signal<StudentDashboardDto | null>(null);
   requests = signal<LearningRequestDto[]>([]);
   classes = signal<ClassDto[]>([]);
+  upcomingClasses = computed(() => this.classes().filter(c => c.status === ClassStatus.PendingStart || c.status === ClassStatus.Active));
   errorMessage = signal('');
 
   private readonly session = inject(SessionService);
@@ -336,14 +341,14 @@ export class StudentDashboardPage implements OnInit {
           this.learningRequestsApi.getMyLearningRequests(
             undefined,
             1,
-            5,
+            3,
             undefined,
             'createdAt',
             'desc',
           ),
         ),
         firstValueFrom(
-          this.classesApi.getMyClasses(undefined, undefined, undefined, 1, 5, undefined, 'createdAt', 'desc', 'body'),
+          this.classesApi.getMyClasses(undefined, undefined, undefined, 1, 20, undefined, 'createdAt', 'desc', 'body'),
         ),
       ]);
       this.dashboard.set(dashboardResponse.data ?? null);

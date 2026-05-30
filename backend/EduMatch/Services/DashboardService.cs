@@ -48,6 +48,20 @@ namespace EduMatch.Services
                                          && !p.IsDeleted)
                                 .SumAsync(p => (decimal?)p.Amount);
 
+        var monthlyRevenues = await _db.Payments
+                                .Where(p => p.Status == PaymentStatus.Success && p.PaidAt != null && !p.IsDeleted)
+                                .GroupBy(p => new { p.PaidAt!.Value.Year, p.PaidAt!.Value.Month })
+                                .Select(g => new MonthlyRevenueDto
+                                {
+                                  Year = g.Key.Year,
+                                  Month = g.Key.Month,
+                                  Revenue = g.Sum(p => p.Amount)
+                                })
+                                .OrderByDescending(r => r.Year)
+                                .ThenByDescending(r => r.Month)
+                                .Take(6)
+                                .ToListAsync();
+
         var recentApps = await _db.Applications
           .Where(a => !a.IsDeleted)
           .OrderByDescending(a => a.CreatedAt)
@@ -97,6 +111,7 @@ namespace EduMatch.Services
           CancelledClasses = cancelledCls,
           TotalRevenue = revTotal ?? 0m,
           RevenueThisMonth = revMonth ?? 0m,
+          MonthlyRevenues = monthlyRevenues,
           RecentApplications = recentApps,
           PendingTutors = pendingTutorsList
         });

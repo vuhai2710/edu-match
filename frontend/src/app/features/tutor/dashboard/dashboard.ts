@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
@@ -9,6 +9,7 @@ import { SessionService } from '../../../core/auth/session';
 
 import {
   ClassDto,
+  ClassStatus,
   LearningRequestDto,
   LearningRequestStatus,
   TutorDashboardDto,
@@ -88,9 +89,15 @@ import {
               class="tactile-card p-4 text-center block border-b-6 border-slate-200"
             >
               <div class="flex flex-col items-center justify-center">
-                <p class="font-display text-xl sm:text-2xl font-black text-duo-orange leading-none">
-                  {{ dashboard()?.averageRating ?? 0 }}/5
-                </p>
+                @if ((dashboard()?.averageRating ?? 0) > 0) {
+                  <p class="font-display text-xl sm:text-2xl font-black text-duo-orange leading-none">
+                    {{ dashboard()?.averageRating }}/5
+                  </p>
+                } @else {
+                  <p class="text-[10px] sm:text-xs font-black text-slate-400 leading-none h-[20px] sm:h-[24px] flex items-center justify-center">
+                    Chưa có đánh giá
+                  </p>
+                }
                 <p class="text-[10px] sm:text-xs text-slate-500 font-bold mt-1">Đánh giá TB</p>
               </div>
             </div>
@@ -116,22 +123,28 @@ import {
               </div>
 
               <div class="space-y-3">
-                @for (request of incomingRequests(); track request.id) {
+                @for (request of incomingRequests().slice(0, 3); track request.id) {
                   <div class="tactile-card p-5 hover:-translate-y-0.5 hover:shadow-md transition-all duration-300">
-                    <div class="flex items-start justify-between gap-4">
+                    <div class="flex flex-col gap-3">
+                      <div class="flex items-center justify-between">
+                        <span [class]="requestClass(request)" class="text-[10px] font-black rounded-full px-2.5 py-1 uppercase tracking-wider">{{
+                          requestLabel(request)
+                        }}</span>
+                      </div>
                       <div>
                         <p class="font-extrabold text-slate-900">
                           {{ request.studentName || 'Học viên' }}
                         </p>
                         <p class="text-xs text-slate-500 font-medium mt-1">
-                          {{ request.subjectName }} · <span class="font-bold text-slate-700">{{ request.hoursPerSession }}h/buổi</span>
+                          {{ request.subjectName }}
                         </p>
-                        <p class="text-xs text-slate-700 font-black mt-1">{{ money(request.budgetPerHour) }}/h</p>
+                        <p class="text-xs text-slate-700 font-black mt-1">
+                          {{ money(request.budgetPerHour) }}/h
+                          <span class="mx-1.5 text-slate-300 font-normal">|</span>
+                          <span class="font-bold text-slate-500">{{ request.hoursPerSession }}h/buổi</span>
+                        </p>
                         <p class="text-[10px] text-slate-400 mt-2 font-bold uppercase tracking-wider">{{ slots(request) }}</p>
                       </div>
-                      <span [class]="requestClass(request)" class="text-[10px] font-black rounded-full px-2.5 py-1 uppercase tracking-wider shrink-0">{{
-                        requestLabel(request)
-                      }}</span>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-4">
                       @if (request.status === 'Pending') {
@@ -211,7 +224,7 @@ import {
                       <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                     </svg>
                   </div>
-                  <h2 class="font-display font-black text-base text-slate-800">Lớp dạy sắp tới</h2>
+                  <h2 class="font-display font-black text-base text-slate-800">Lớp dạy của bạn</h2>
                 </div>
                 <a routerLink="/tutor/classes" class="text-xs font-bold text-duo-blue hover:text-duo-blue-dark transition-colors flex items-center gap-0.5">
                   Xem tất cả →
@@ -219,7 +232,7 @@ import {
               </div>
 
               <div class="space-y-3">
-                @for (item of classes(); track item.id) {
+                @for (item of upcomingClasses().slice(0, 3); track item.id) {
                   <a
                     [routerLink]="['/tutor/classes', item.id]"
                     class="tactile-card p-4 flex items-center justify-between gap-3 block hover:-translate-y-0.5 hover:shadow-md transition-all duration-300"
@@ -237,7 +250,7 @@ import {
                     >
                   </a>
                 }
-                @if (!classes().length) {
+                @if (!upcomingClasses().length) {
                   <div class="flex flex-col items-center justify-center py-10 text-center px-4">
                     <div class="w-16 h-16 rounded-2xl bg-green-50 border-2 border-green-100 flex items-center justify-center mb-4 text-duo-green hover:scale-110 transition-transform duration-300">
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
@@ -273,6 +286,7 @@ export class TutorDashboardPage implements OnInit {
   dashboard = signal<TutorDashboardDto | null>(null);
   incomingRequests = signal<LearningRequestDto[]>([]);
   classes = signal<ClassDto[]>([]);
+  upcomingClasses = computed(() => this.classes().filter(c => c.status === ClassStatus.PendingStart || c.status === ClassStatus.Active));
   isWorking = signal(false);
   errorMessage = signal('');
   selectedStudentId = signal<number | null>(null);
@@ -388,7 +402,7 @@ export class TutorDashboardPage implements OnInit {
             ),
           ),
           firstValueFrom(
-            this.classesApi.getTutorClasses(undefined, undefined, undefined, 1, 5, undefined, 'createdAt', 'desc', 'body'),
+            this.classesApi.getTutorClasses(undefined, undefined, undefined, 1, 20, undefined, 'createdAt', 'desc', 'body'),
           ),
         ]);
       this.dashboard.set(dashboardResponse.data ?? null);

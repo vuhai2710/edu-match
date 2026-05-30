@@ -29,6 +29,12 @@ export interface AddressDto {
     fullAddress?: string | null;
 }
 
+export interface MonthlyRevenueDto {
+    year?: number;
+    month?: number;
+    revenue?: number;
+}
+
 export interface AdminDashboardDto {
     totalUsers?: number;
     totalStudents?: number;
@@ -42,6 +48,7 @@ export interface AdminDashboardDto {
     cancelledClasses?: number;
     totalRevenue?: number;
     revenueThisMonth?: number;
+    monthlyRevenues?: Array<MonthlyRevenueDto>;
     recentApplications?: Array<RecentApplicationItemDto>;
     pendingTutors?: Array<PendingTutorItemDto>;
 }
