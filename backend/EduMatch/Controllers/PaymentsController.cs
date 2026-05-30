@@ -1,3 +1,4 @@
+using EduMatch.Common.Enums;
 using EduMatch.Common.Exception;
 using EduMatch.Common.Extensions;
 using EduMatch.DTOs;
@@ -66,6 +67,31 @@ namespace EduMatch.Controllers
     {
       await _depositPaymentService.HandleWebhookAsync(dto);
       return Ok(ApiResponse.Ok("Webhook processed"));
+    }
+
+    [HttpGet("my")]
+    [Authorize(Roles = "Student,Tutor")]
+    [SwaggerOperation(OperationId = "getMyPayments")]
+    [ProducesResponseType(typeof(ApiResponse<PagedResult<PaymentAdminDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<ApiResponse<PagedResult<PaymentAdminDto>>>> GetMyPayments(
+      [FromQuery] int page = 1,
+      [FromQuery] int pageSize = 10,
+      [FromQuery] PaymentStatus? status = null)
+    {
+      return this.OkResponse(await _depositPaymentService.GetMyPaymentsAsync(GetCurrentUserId(), page, pageSize, status));
+    }
+
+    [HttpGet("my/{id:long}")]
+    [Authorize(Roles = "Student,Tutor")]
+    [SwaggerOperation(OperationId = "getMyPaymentById")]
+    [ProducesResponseType(typeof(ApiResponse<PaymentAdminDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<PaymentAdminDto>>> GetMyPaymentById(long id)
+    {
+      return this.OkResponse(await _depositPaymentService.GetMyPaymentByIdAsync(GetCurrentUserId(), id));
     }
 
     private long GetCurrentUserId()

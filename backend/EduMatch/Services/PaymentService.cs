@@ -70,9 +70,9 @@ namespace EduMatch.Services
             };
         }
 
-        public async Task<PagedResult<PaymentAdminDto>> GetPagedAsync(int page, int pageSize, PaymentStatus? status)
+        public async Task<PagedResult<PaymentAdminDto>> GetPagedAsync(int page, int pageSize, PaymentStatus? status, DateTime? fromDate, DateTime? toDate)
         {
-            var pagedPayments = await _paymentRepo.GetPagedAsync(page, pageSize, status);
+            var pagedPayments = await _paymentRepo.GetPagedAsync(page, pageSize, status, fromDate, toDate);
 
             return new PagedResult<PaymentAdminDto>
             {
@@ -92,13 +92,19 @@ namespace EduMatch.Services
 
         private static PaymentAdminDto MapPayment(Payment payment)
         {
+            string? paidByUserName = payment.PaidByUser?.FullName;
+            string? paidByUserCode = payment.PaidByUser?.Student?.Code ?? payment.PaidByUser?.Tutor?.Code;
+            var tutor = payment.Tutor ?? payment.LearningRequest?.Tutor;
+            string? tutorName = tutor?.User?.FullName;
+            string? tutorCode = tutor?.Code;
+
             return new PaymentAdminDto
             {
                 Id = payment.Id,
                 LearningRequestId = payment.LearningRequestId,
                 PaidByUserId = payment.PaidByUserId,
                 ClassId = payment.ClassId,
-                TutorId = payment.TutorId,
+                TutorId = payment.TutorId ?? payment.LearningRequest?.TutorId,
                 OrderCode = payment.OrderCode,
                 Amount = payment.Amount,
                 Description = payment.Description,
@@ -106,7 +112,11 @@ namespace EduMatch.Services
                 CheckoutUrl = payment.CheckoutUrl,
                 TransactionId = payment.TransactionId,
                 PaidAt = payment.PaidAt,
-                CreatedAt = payment.CreatedAt
+                CreatedAt = payment.CreatedAt,
+                PaidByUserName = paidByUserName,
+                PaidByUserCode = paidByUserCode,
+                TutorName = tutorName,
+                TutorCode = tutorCode
             };
         }
 

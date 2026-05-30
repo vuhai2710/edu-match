@@ -10,7 +10,7 @@ namespace EduMatch.Services.Interfaces
         Task<PaymentResponseDto> CreatePaymentAsync(long tutorId, CreatePaymentRequestDto dto);
         Task HandleWebhookAsync(PayOSWebhookDto dto);
         Task<PaymentStatusDto> GetStatusAsync(long orderCode);
-        Task<PagedResult<PaymentAdminDto>> GetPagedAsync(int page, int pageSize, PaymentStatus? status);
+        Task<PagedResult<PaymentAdminDto>> GetPagedAsync(int page, int pageSize, PaymentStatus? status, DateTime? fromDate, DateTime? toDate);
         Task<PaymentAdminDto?> GetByIdAsync(long id);
     }
 }

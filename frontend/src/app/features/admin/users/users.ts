@@ -111,11 +111,11 @@ type ActiveFilter = 'all' | 'active' | 'inactive' | 'pending_approval' | 'reject
                 
                 @if (user.role === userRole.Tutor && user.tutorApprovalStatus === tutorApprovalStatus.Pending) {
                   <div class="flex gap-2">
-                    <button (click)="approveTutor(user.tutorId)" [disabled]="isActionRunning()"
+                    <button (click)="approveTutor(user.tutorId ?? undefined)" [disabled]="isActionRunning()"
                             class="px-2.5 py-1 bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-[10px] uppercase rounded-lg border-b-2 border-emerald-700 hover:brightness-105 active:border-b-0 active:translate-y-[2px] disabled:opacity-50 transition-all cursor-pointer">
                       Duyệt
                     </button>
-                    <button (click)="rejectTutor(user.tutorId)" [disabled]="isActionRunning()"
+                    <button (click)="rejectTutor(user.tutorId ?? undefined)" [disabled]="isActionRunning()"
                             class="px-2.5 py-1 bg-rose-500 hover:bg-rose-600 text-white font-extrabold text-[10px] uppercase rounded-lg border-b-2 border-rose-700 hover:brightness-105 active:border-b-0 active:translate-y-[2px] disabled:opacity-50 transition-all cursor-pointer">
                       Từ chối
                     </button>
@@ -189,11 +189,11 @@ type ActiveFilter = 'all' | 'active' | 'inactive' | 'pending_approval' | 'reject
                       }
                       <a [routerLink]="['/admin/users', user.id]" class="text-duo-blue font-bold text-xs hover:underline mr-1">Xem chi tiết</a>
                       @if (user.role === userRole.Tutor && user.tutorApprovalStatus === tutorApprovalStatus.Pending) {
-                        <button (click)="approveTutor(user.tutorId)" [disabled]="isActionRunning()"
+                        <button (click)="approveTutor(user.tutorId ?? undefined)" [disabled]="isActionRunning()"
                                 class="px-2.5 py-1 bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-[10px] uppercase rounded-lg border-b-2 border-emerald-700 hover:brightness-105 active:border-b-0 active:translate-y-[2px] disabled:opacity-50 transition-all cursor-pointer">
                           Duyệt
                         </button>
-                        <button (click)="rejectTutor(user.tutorId)" [disabled]="isActionRunning()"
+                        <button (click)="rejectTutor(user.tutorId ?? undefined)" [disabled]="isActionRunning()"
                                 class="px-2.5 py-1 bg-rose-500 hover:bg-rose-600 text-white font-extrabold text-[10px] uppercase rounded-lg border-b-2 border-rose-700 hover:brightness-105 active:border-b-0 active:translate-y-[2px] disabled:opacity-50 transition-all cursor-pointer">
                           Từ chối
                         </button>
@@ -374,12 +374,13 @@ export class AdminUsersPage implements OnInit {
           this.activeRole() ?? undefined,
           isActive,
           isDeleted,
+          approvalStatus,
           this.page(),
           this.pageSize(),
           search,
           'createdAt',
           'desc',
-          approvalStatus,
+          'body'
         ),
       );
       this.users.set(response.data?.items ?? []);

@@ -12,7 +12,7 @@ import { inject, Injectable } from "@angular/core";
 import { Observable } from "rxjs";
 import { BASE_PATH_DEFAULT, CLIENT_CONTEXT_TOKEN_DEFAULT } from "../tokens";
 import { HttpParamsBuilder } from "../utils/http-params-builder";
-import { ClassStatus, RequestOptions, ClassDtoPagedResultApiResponse, ClassDtoApiResponse, ReviewEligibilityDtoApiResponse, CancellationRequestDtoApiResponse } from "../models";
+import { ClassStatus, DayOfWeek, RequestOptions, ClassDtoPagedResultApiResponse, ClassDtoApiResponse, ReviewEligibilityDtoApiResponse, CancellationRequestDtoApiResponse } from "../models";
 
 @Injectable({ providedIn: "root" })
 export class ClassesService {
@@ -25,15 +25,21 @@ export class ClassesService {
         return context.set(this.clientContextToken, 'default');
     }
 
-    getMyClasses(status?: ClassStatus, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'body', options?: RequestOptions<'json'>): Observable<ClassDtoPagedResultApiResponse>;
-    getMyClasses(status?: ClassStatus, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<ClassDtoPagedResultApiResponse>>;
-    getMyClasses(status?: ClassStatus, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<ClassDtoPagedResultApiResponse>>;
-    getMyClasses(status?: ClassStatus, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
+    getMyClasses(status?: ClassStatus, subjectId?: number, dayOfWeek?: DayOfWeek, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'body', options?: RequestOptions<'json'>): Observable<ClassDtoPagedResultApiResponse>;
+    getMyClasses(status?: ClassStatus, subjectId?: number, dayOfWeek?: DayOfWeek, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<ClassDtoPagedResultApiResponse>>;
+    getMyClasses(status?: ClassStatus, subjectId?: number, dayOfWeek?: DayOfWeek, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<ClassDtoPagedResultApiResponse>>;
+    getMyClasses(status?: ClassStatus, subjectId?: number, dayOfWeek?: DayOfWeek, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
         const url = `${this.basePath}/api/classes/me`;
 
         let params = new HttpParams();
         if (status != null) {
             params = HttpParamsBuilder.addToHttpParams(params, status, 'status');
+        }
+        if (subjectId != null) {
+            params = HttpParamsBuilder.addToHttpParams(params, subjectId, 'subjectId');
+        }
+        if (dayOfWeek != null) {
+            params = HttpParamsBuilder.addToHttpParams(params, dayOfWeek, 'dayOfWeek');
         }
         if (page != null) {
             params = HttpParamsBuilder.addToHttpParams(params, page, 'page');
@@ -70,15 +76,21 @@ export class ClassesService {
         return this.httpClient.get(url, requestOptions);
     }
 
-    getTutorClasses(status?: ClassStatus, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'body', options?: RequestOptions<'json'>): Observable<ClassDtoPagedResultApiResponse>;
-    getTutorClasses(status?: ClassStatus, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<ClassDtoPagedResultApiResponse>>;
-    getTutorClasses(status?: ClassStatus, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<ClassDtoPagedResultApiResponse>>;
-    getTutorClasses(status?: ClassStatus, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
+    getTutorClasses(status?: ClassStatus, subjectId?: number, dayOfWeek?: DayOfWeek, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'body', options?: RequestOptions<'json'>): Observable<ClassDtoPagedResultApiResponse>;
+    getTutorClasses(status?: ClassStatus, subjectId?: number, dayOfWeek?: DayOfWeek, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<ClassDtoPagedResultApiResponse>>;
+    getTutorClasses(status?: ClassStatus, subjectId?: number, dayOfWeek?: DayOfWeek, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<ClassDtoPagedResultApiResponse>>;
+    getTutorClasses(status?: ClassStatus, subjectId?: number, dayOfWeek?: DayOfWeek, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
         const url = `${this.basePath}/api/classes/tutor`;
 
         let params = new HttpParams();
         if (status != null) {
             params = HttpParamsBuilder.addToHttpParams(params, status, 'status');
+        }
+        if (subjectId != null) {
+            params = HttpParamsBuilder.addToHttpParams(params, subjectId, 'subjectId');
+        }
+        if (dayOfWeek != null) {
+            params = HttpParamsBuilder.addToHttpParams(params, dayOfWeek, 'dayOfWeek');
         }
         if (page != null) {
             params = HttpParamsBuilder.addToHttpParams(params, page, 'page');

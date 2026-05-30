@@ -12,7 +12,7 @@ import { inject, Injectable } from "@angular/core";
 import { Observable } from "rxjs";
 import { BASE_PATH_DEFAULT, CLIENT_CONTEXT_TOKEN_DEFAULT } from "../tokens";
 import { HttpParamsBuilder } from "../utils/http-params-builder";
-import { ApplicationStatus, RequestOptions, ApplicationResponseDtoPagedResultApiResponse, TutorRequestStatus, TutorRequestResponseDtoPagedResultApiResponse, PaymentStatus, PaymentAdminDtoPagedResultApiResponse, PaymentAdminDtoApiResponse, ClassStatus, ClassDtoPagedResultApiResponse, ClassDtoApiResponse, CancellationRequestStatus, CancellationRequestDtoPagedResultApiResponse, CancellationRequestDtoApiResponse, ResolveCancellationRequestDto, BooleanApiResponse } from "../models";
+import { ApplicationStatus, RequestOptions, ApplicationResponseDtoPagedResultApiResponse, TutorRequestStatus, TutorRequestResponseDtoPagedResultApiResponse, PaymentStatus, PaymentAdminDtoPagedResultApiResponse, PaymentAdminDtoApiResponse, ClassStatus, DayOfWeek, ClassDtoPagedResultApiResponse, ClassDtoApiResponse, CancellationRequestStatus, CancellationRequestDtoPagedResultApiResponse, CancellationRequestDtoApiResponse, ResolveCancellationRequestDto, BooleanApiResponse } from "../models";
 
 @Injectable({ providedIn: "root" })
 export class AdminService {
@@ -124,10 +124,10 @@ export class AdminService {
         return this.httpClient.get(url, requestOptions);
     }
 
-    getAllPayments(page?: number, pageSize?: number, status?: PaymentStatus, observe?: 'body', options?: RequestOptions<'json'>): Observable<PaymentAdminDtoPagedResultApiResponse>;
-    getAllPayments(page?: number, pageSize?: number, status?: PaymentStatus, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<PaymentAdminDtoPagedResultApiResponse>>;
-    getAllPayments(page?: number, pageSize?: number, status?: PaymentStatus, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<PaymentAdminDtoPagedResultApiResponse>>;
-    getAllPayments(page?: number, pageSize?: number, status?: PaymentStatus, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
+    getAllPayments(page?: number, pageSize?: number, status?: PaymentStatus, fromDate?: Date, toDate?: Date, observe?: 'body', options?: RequestOptions<'json'>): Observable<PaymentAdminDtoPagedResultApiResponse>;
+    getAllPayments(page?: number, pageSize?: number, status?: PaymentStatus, fromDate?: Date, toDate?: Date, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<PaymentAdminDtoPagedResultApiResponse>>;
+    getAllPayments(page?: number, pageSize?: number, status?: PaymentStatus, fromDate?: Date, toDate?: Date, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<PaymentAdminDtoPagedResultApiResponse>>;
+    getAllPayments(page?: number, pageSize?: number, status?: PaymentStatus, fromDate?: Date, toDate?: Date, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
         const url = `${this.basePath}/api/Admin/payments`;
 
         let params = new HttpParams();
@@ -139,6 +139,12 @@ export class AdminService {
         }
         if (status != null) {
             params = HttpParamsBuilder.addToHttpParams(params, status, 'status');
+        }
+        if (fromDate != null) {
+            params = HttpParamsBuilder.addToHttpParams(params, fromDate, 'fromDate');
+        }
+        if (toDate != null) {
+            params = HttpParamsBuilder.addToHttpParams(params, toDate, 'toDate');
         }
 
         let headers: HttpHeaders;
@@ -184,15 +190,21 @@ export class AdminService {
         return this.httpClient.get(url, requestOptions);
     }
 
-    getAllClasses(status?: ClassStatus, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, subjectId?: number, dayOfWeek?: number, observe?: 'body', options?: RequestOptions<'json'>): Observable<ClassDtoPagedResultApiResponse>;
-    getAllClasses(status?: ClassStatus, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, subjectId?: number, dayOfWeek?: number, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<ClassDtoPagedResultApiResponse>>;
-    getAllClasses(status?: ClassStatus, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, subjectId?: number, dayOfWeek?: number, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<ClassDtoPagedResultApiResponse>>;
-    getAllClasses(status?: ClassStatus, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, subjectId?: number, dayOfWeek?: number, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
+    getAllClasses(status?: ClassStatus, subjectId?: number, dayOfWeek?: DayOfWeek, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'body', options?: RequestOptions<'json'>): Observable<ClassDtoPagedResultApiResponse>;
+    getAllClasses(status?: ClassStatus, subjectId?: number, dayOfWeek?: DayOfWeek, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<ClassDtoPagedResultApiResponse>>;
+    getAllClasses(status?: ClassStatus, subjectId?: number, dayOfWeek?: DayOfWeek, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<ClassDtoPagedResultApiResponse>>;
+    getAllClasses(status?: ClassStatus, subjectId?: number, dayOfWeek?: DayOfWeek, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
         const url = `${this.basePath}/api/Admin/classes`;
 
         let params = new HttpParams();
         if (status != null) {
             params = HttpParamsBuilder.addToHttpParams(params, status, 'status');
+        }
+        if (subjectId != null) {
+            params = HttpParamsBuilder.addToHttpParams(params, subjectId, 'subjectId');
+        }
+        if (dayOfWeek != null) {
+            params = HttpParamsBuilder.addToHttpParams(params, dayOfWeek, 'dayOfWeek');
         }
         if (page != null) {
             params = HttpParamsBuilder.addToHttpParams(params, page, 'page');
@@ -208,12 +220,6 @@ export class AdminService {
         }
         if (sortDirection != null) {
             params = HttpParamsBuilder.addToHttpParams(params, sortDirection, 'sortDirection');
-        }
-        if (subjectId != null) {
-            params = HttpParamsBuilder.addToHttpParams(params, subjectId, 'subjectId');
-        }
-        if (dayOfWeek != null) {
-            params = HttpParamsBuilder.addToHttpParams(params, dayOfWeek, 'dayOfWeek');
         }
 
         let headers: HttpHeaders;

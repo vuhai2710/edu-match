@@ -75,9 +75,9 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult<ApiResponse<PagedResult<PaymentAdminDto>>>> GetAllPayments([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] PaymentStatus? status = null)
+    public async Task<ActionResult<ApiResponse<PagedResult<PaymentAdminDto>>>> GetAllPayments([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] PaymentStatus? status = null, [FromQuery] DateTime? fromDate = null, [FromQuery] DateTime? toDate = null)
     {
-      return this.OkResponse(ApiResponse<PagedResult<PaymentAdminDto>>.SuccessResult(await _paymentService.GetPagedAsync(page, pageSize, status)));
+      return this.OkResponse(ApiResponse<PagedResult<PaymentAdminDto>>.SuccessResult(await _paymentService.GetPagedAsync(page, pageSize, status, fromDate, toDate)));
     }
 
     [HttpGet("payments/{id:long}")]

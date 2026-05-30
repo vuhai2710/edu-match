@@ -35,106 +35,110 @@ import {
   imports: [FormsModule, RouterLink],
   template: `
     @if (request(); as lr) {
-      <div class="max-w-3xl mx-auto space-y-6">
+      <div class="mx-auto space-y-6" [class.max-w-6xl]="proposal()" [class.max-w-3xl]="!proposal()">
         <a routerLink="/student/learning-requests" class="text-sm font-bold text-slate-500 hover:text-slate-800">← Quay lại</a>
 
-        <div class="tactile-card p-6 space-y-5">
-          <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <h1 class="font-display text-2xl font-black text-slate-900">{{ lr.subjectName || 'Yêu cầu học' }}</h1>
-              <p class="text-sm text-slate-500 mt-1">Gia sư: {{ lr.tutorName || 'Đang cập nhật' }}</p>
+        <div [class]="proposal() ? 'grid grid-cols-1 lg:grid-cols-2 gap-6' : 'space-y-6'">
+          <div class="tactile-card p-6 space-y-5 h-full">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h1 class="font-display text-2xl font-black text-slate-900">{{ lr.subjectName || 'Yêu cầu học' }}</h1>
+                <p class="text-sm text-slate-500 mt-1">Gia sư: {{ lr.tutorName || 'Đang cập nhật' }}</p>
+              </div>
+              <span [class]="statusClass(lr.status)" class="rounded-full px-3 py-1 text-xs font-black">
+                {{ label(lr.status) }}
+              </span>
             </div>
-            <span [class]="statusClass(lr.status)" class="rounded-full px-3 py-1 text-xs font-black">
-              {{ label(lr.status) }}
-            </span>
+
+            <div class="grid sm:grid-cols-2 gap-4 text-sm">
+              <div class="rounded-2xl bg-slate-50 p-4">
+                <p class="font-bold text-slate-500">Lịch đề xuất ban đầu</p>
+                <p class="mt-1 font-extrabold text-slate-900">{{ slots(lr) }}</p>
+              </div>
+              <div class="rounded-2xl bg-slate-50 p-4">
+                <p class="font-bold text-slate-500">Ngày bắt đầu</p>
+                <p class="mt-1 font-extrabold text-slate-900">{{ date(lr.desiredStartDate) }}</p>
+              </div>
+              <div class="rounded-2xl bg-slate-50 p-4">
+                <p class="font-bold text-slate-500">Ngân sách / giờ</p>
+                <p class="mt-1 font-extrabold text-slate-900">{{ money(lr.budgetPerHour) }}</p>
+              </div>
+              <div class="rounded-2xl bg-slate-50 p-4">
+                <p class="font-bold text-slate-500">Tiền đặt cọc</p>
+                <p class="mt-1 font-extrabold text-duo-green">{{ money(lr.calculatedDepositAmount) }}</p>
+              </div>
+            </div>
+
+            @if (lr.note) {
+              <div>
+                <p class="font-bold text-slate-500 text-sm">Ghi chú</p>
+                <p class="mt-1 text-sm text-slate-700">{{ lr.note }}</p>
+              </div>
+            }
+
+            <div class="grid sm:grid-cols-2 gap-4 text-xs text-slate-500 font-bold">
+              <p>Hạn phản hồi lịch: {{ dateTime(lr.scheduleExpiresAt) }}</p>
+              <p>Hạn thanh toán: {{ dateTime(lr.paymentExpiresAt) }}</p>
+            </div>
           </div>
 
-          <div class="grid sm:grid-cols-2 gap-4 text-sm">
-            <div class="rounded-2xl bg-slate-50 p-4">
-              <p class="font-bold text-slate-500">Lịch đề xuất ban đầu</p>
-              <p class="mt-1 font-extrabold text-slate-900">{{ slots(lr) }}</p>
-            </div>
-            <div class="rounded-2xl bg-slate-50 p-4">
-              <p class="font-bold text-slate-500">Ngày bắt đầu</p>
-              <p class="mt-1 font-extrabold text-slate-900">{{ date(lr.desiredStartDate) }}</p>
-            </div>
-            <div class="rounded-2xl bg-slate-50 p-4">
-              <p class="font-bold text-slate-500">Ngân sách / giờ</p>
-              <p class="mt-1 font-extrabold text-slate-900">{{ money(lr.budgetPerHour) }}</p>
-            </div>
-            <div class="rounded-2xl bg-slate-50 p-4">
-              <p class="font-bold text-slate-500">Tiền đặt cọc</p>
-              <p class="mt-1 font-extrabold text-duo-green">{{ money(lr.calculatedDepositAmount) }}</p>
-            </div>
-          </div>
-
-          @if (lr.note) {
-            <div>
-              <p class="font-bold text-slate-500 text-sm">Ghi chú</p>
-              <p class="mt-1 text-sm text-slate-700">{{ lr.note }}</p>
-            </div>
+          @if (proposal(); as p) {
+            @if (isMyProposal(p)) {
+              <div class="tactile-card p-6 space-y-4 border-duo-blue bg-blue-50/10 h-full">
+                <div class="flex items-center justify-between">
+                  <h2 class="font-extrabold text-lg text-slate-900">Đề xuất lịch của bạn</h2>
+                  <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-duo-blue">Đang chờ phản hồi</span>
+                </div>
+                <p class="text-sm text-slate-500">Đề xuất lịch mới đang được gửi tới gia sư và chờ phản hồi từ họ.</p>
+                
+                <div class="grid sm:grid-cols-3 gap-4 text-sm">
+                  <div class="rounded-2xl bg-slate-50 p-4 border-2 border-slate-100">
+                    <p class="font-bold text-slate-500">Đề xuất lịch</p>
+                    <p class="mt-1 font-extrabold text-slate-900">{{ proposalSlots(p) }}</p>
+                  </div>
+                  <div class="rounded-2xl bg-slate-50 p-4 border-2 border-slate-100">
+                    <p class="font-bold text-slate-500">Ngày bắt đầu</p>
+                    <p class="mt-1 font-extrabold text-slate-900">{{ date(p.desiredStartDate) }}</p>
+                  </div>
+                  <div class="rounded-2xl bg-slate-50 p-4 border-2 border-slate-100">
+                    <p class="font-bold text-slate-500">Học phí mong muốn</p>
+                    <p class="mt-1 font-extrabold text-duo-green">{{ money(p.hourlyRate) }}/h</p>
+                  </div>
+                </div>
+              </div>
+            } @else {
+              <div class="tactile-card p-6 border-duo-blue flex flex-col justify-between h-full">
+                <div class="space-y-4">
+                  <h2 class="font-extrabold text-lg text-slate-900">Đề xuất lịch từ gia sư</h2>
+                  <div class="grid sm:grid-cols-3 gap-4 text-sm">
+                    <div class="rounded-2xl bg-blue-50 p-4">
+                      <p class="font-bold text-slate-500">Lịch mới</p>
+                      <p class="mt-1 font-extrabold text-slate-900">{{ proposalSlots(p) }}</p>
+                    </div>
+                    <div class="rounded-2xl bg-blue-50 p-4">
+                      <p class="font-bold text-slate-500">Ngày bắt đầu</p>
+                      <p class="mt-1 font-extrabold text-slate-900">{{ date(p.desiredStartDate) }}</p>
+                    </div>
+                    <div class="rounded-2xl bg-blue-50 p-4">
+                      <p class="font-bold text-slate-500">Học phí / giờ</p>
+                      <p class="mt-1 font-extrabold text-duo-green">{{ money(p.hourlyRate) }}</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3 mt-6">
+                  <button (click)="acceptProposal(p)" [disabled]="isWorking()"
+                          class="w-full sm:flex-1 tactile-button-green py-2.5 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60 text-center">
+                    Chấp nhận
+                  </button>
+                  <button (click)="rejectProposal(p)" [disabled]="isWorking()"
+                          class="w-full sm:flex-1 tactile-button-gray py-2.5 rounded-xl text-sm font-bold disabled:opacity-60 text-center">
+                    Từ chối
+                  </button>
+                </div>
+              </div>
+            }
           }
-
-          <div class="grid sm:grid-cols-2 gap-4 text-xs text-slate-500 font-bold">
-            <p>Hạn phản hồi lịch: {{ dateTime(lr.scheduleExpiresAt) }}</p>
-            <p>Hạn thanh toán: {{ dateTime(lr.paymentExpiresAt) }}</p>
-          </div>
         </div>
-
-        @if (proposal(); as p) {
-          @if (isMyProposal(p)) {
-            <div class="tactile-card p-6 space-y-4 border-duo-blue bg-blue-50/10">
-              <div class="flex items-center justify-between">
-                <h2 class="font-extrabold text-lg text-slate-900">Đề xuất lịch của bạn</h2>
-                <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-duo-blue">Đang chờ phản hồi</span>
-              </div>
-              <p class="text-sm text-slate-500">Đề xuất lịch mới đang được gửi tới gia sư và chờ phản hồi từ họ.</p>
-              
-              <div class="grid sm:grid-cols-3 gap-4 text-sm">
-                <div class="rounded-2xl bg-slate-50 p-4 border-2 border-slate-100">
-                  <p class="font-bold text-slate-500">Đề xuất lịch</p>
-                  <p class="mt-1 font-extrabold text-slate-900">{{ proposalSlots(p) }}</p>
-                </div>
-                <div class="rounded-2xl bg-slate-50 p-4 border-2 border-slate-100">
-                  <p class="font-bold text-slate-500">Ngày bắt đầu</p>
-                  <p class="mt-1 font-extrabold text-slate-900">{{ date(p.desiredStartDate) }}</p>
-                </div>
-                <div class="rounded-2xl bg-slate-50 p-4 border-2 border-slate-100">
-                  <p class="font-bold text-slate-500">Học phí mong muốn</p>
-                  <p class="mt-1 font-extrabold text-duo-green">{{ money(p.hourlyRate) }}/h</p>
-                </div>
-              </div>
-            </div>
-          } @else {
-            <div class="tactile-card p-6 space-y-4 border-duo-blue">
-              <h2 class="font-extrabold text-lg text-slate-900">Đề xuất lịch từ gia sư</h2>
-              <div class="grid sm:grid-cols-3 gap-4 text-sm">
-                <div class="rounded-2xl bg-blue-50 p-4">
-                  <p class="font-bold text-slate-500">Lịch mới</p>
-                  <p class="mt-1 font-extrabold text-slate-900">{{ proposalSlots(p) }}</p>
-                </div>
-                <div class="rounded-2xl bg-blue-50 p-4">
-                  <p class="font-bold text-slate-500">Ngày bắt đầu</p>
-                  <p class="mt-1 font-extrabold text-slate-900">{{ date(p.desiredStartDate) }}</p>
-                </div>
-                <div class="rounded-2xl bg-blue-50 p-4">
-                  <p class="font-bold text-slate-500">Học phí / giờ</p>
-                  <p class="mt-1 font-extrabold text-duo-green">{{ money(p.hourlyRate) }}</p>
-                </div>
-              </div>
-              <div class="flex flex-col sm:flex-row gap-3">
-                <button (click)="acceptProposal(p)" [disabled]="isWorking()"
-                        class="w-full sm:flex-1 tactile-button-green py-2.5 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60 text-center">
-                  Chấp nhận
-                </button>
-                <button (click)="rejectProposal(p)" [disabled]="isWorking()"
-                        class="w-full sm:flex-1 tactile-button-gray py-2.5 rounded-xl text-sm font-bold disabled:opacity-60 text-center">
-                  Từ chối
-                </button>
-              </div>
-            </div>
-          }
-        }
 
 
         @if (lr.status === softBookedStatus) {

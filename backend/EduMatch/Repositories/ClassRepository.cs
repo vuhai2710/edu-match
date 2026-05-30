@@ -89,9 +89,11 @@ namespace EduMatch.Repositories
 
             if (parameters.DayOfWeek.HasValue)
             {
-                // TimeSlotsJson contains serialized day names like "day":"Monday"
                 var dayName = parameters.DayOfWeek.Value.ToString();
-                query = query.Where(c => c.TimeSlotsJson != null && EF.Functions.Like(c.TimeSlotsJson, $"%\"day\":\"{dayName}\"%"));
+                var dayFilterJson = $"[{{\"day\":\"{dayName}\"}}]";
+                query = query.Where(c =>
+                    c.TimeSlotsJson != null &&
+                    EF.Functions.JsonContains(c.TimeSlotsJson, dayFilterJson));
             }
 
             if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))

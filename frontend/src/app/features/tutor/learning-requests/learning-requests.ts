@@ -264,7 +264,7 @@ export class TutorLearningRequestsPage implements OnInit {
 
   readonly tabs = [
     { label: 'Tất cả', status: null },
-    { label: 'Đang chờ', status: LearningRequestStatus.Pending },
+    { label: 'Cần phản hồi', status: LearningRequestStatus.Pending },
     { label: 'Chờ học viên phản hồi', status: LearningRequestStatus.Negotiating },
     { label: 'Chờ thanh toán', status: LearningRequestStatus.SoftBooked },
     { label: 'Đã tạo lớp', status: LearningRequestStatus.ConvertedToClass },

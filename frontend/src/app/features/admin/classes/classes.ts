@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
-import { ClassDto, ClassStatus, SubjectListItemDto } from '../../../api/generated/client/models';
+import { ClassDto, ClassStatus, SubjectListItemDto, DayOfWeek } from '../../../api/generated/client/models';
 import { AdminService, SubjectsService } from '../../../api/generated/client/services';
 import { ApiErrorDetails, getApiErrorDetails } from '../../../core/http/api-error';
 import { ErrorBannerComponent } from '../../../shared/components/error-banner/error-banner';
@@ -16,15 +16,15 @@ import {
   formatTimeSlots,
 } from '../../../shared/utils/api-ui';
 
-// .NET DayOfWeek enum: 0=Sunday, 1=Monday, ..., 6=Saturday
-const DAY_OPTIONS: Array<{ label: string; value: number }> = [
-  { label: 'Thứ 2', value: 1 },
-  { label: 'Thứ 3', value: 2 },
-  { label: 'Thứ 4', value: 3 },
-  { label: 'Thứ 5', value: 4 },
-  { label: 'Thứ 6', value: 5 },
-  { label: 'Thứ 7', value: 6 },
-  { label: 'Chủ nhật', value: 0 },
+// .NET DayOfWeek enum
+const DAY_OPTIONS: Array<{ label: string; value: DayOfWeek }> = [
+  { label: 'Thứ 2', value: DayOfWeek.Monday },
+  { label: 'Thứ 3', value: DayOfWeek.Tuesday },
+  { label: 'Thứ 4', value: DayOfWeek.Wednesday },
+  { label: 'Thứ 5', value: DayOfWeek.Thursday },
+  { label: 'Thứ 6', value: DayOfWeek.Friday },
+  { label: 'Thứ 7', value: DayOfWeek.Saturday },
+  { label: 'Chủ nhật', value: DayOfWeek.Sunday },
 ];
 
 @Component({
@@ -157,7 +157,7 @@ export class AdminClassesPage implements OnInit {
   subjects = signal<SubjectListItemDto[]>([]);
   activeStatus = signal<ClassStatus | null>(null);
   selectedSubjectId: number | null = null;
-  selectedDayOfWeek: number | null = null;
+  selectedDayOfWeek: DayOfWeek | null = null;
   searchTerm = '';
   page = signal(1);
   pageSize = signal(5);
@@ -279,13 +279,14 @@ export class AdminClassesPage implements OnInit {
       const response = await firstValueFrom(
         this.adminApi.getAllClasses(
           this.activeStatus() ?? undefined,
+          this.selectedSubjectId ?? undefined,
+          this.selectedDayOfWeek ?? undefined,
           this.page(),
           this.pageSize(),
           search,
           'createdAt',
           'desc',
-          this.selectedSubjectId ?? undefined,
-          this.selectedDayOfWeek ?? undefined,
+          'body'
         ),
       );
       this.classes.set(response.data?.items ?? []);

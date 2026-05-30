@@ -109,6 +109,7 @@ namespace EduMatch.Services
         {
           LearningRequestId = dto.LearningRequestId,
           PaidByUserId = callerUserId,
+          TutorId = lr.TutorId,
           Amount = depositAmount,
           OrderCode = orderCode,
           Description = description,
@@ -619,6 +620,75 @@ namespace EduMatch.Services
       {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
       });
+    }
+
+    public async Task<ApiResponse<PagedResult<PaymentAdminDto>>> GetMyPaymentsAsync(long userId, int page, int pageSize, PaymentStatus? status)
+    {
+      return await ServiceResponse.ExecuteAsync(async () =>
+      {
+        var pagedPayments = await _paymentRepo.GetPagedByUserIdAsync(userId, page, pageSize, status);
+        var mappedItems = pagedPayments.Items.Select(MapPayment).ToList();
+
+        var result = new PagedResult<PaymentAdminDto>
+        {
+          Items = mappedItems,
+          TotalCount = pagedPayments.TotalCount,
+          Page = pagedPayments.Page,
+          PageSize = pagedPayments.PageSize,
+          TotalPages = pagedPayments.TotalPages
+        };
+
+        return ApiResponse<PagedResult<PaymentAdminDto>>.SuccessResult(result);
+      });
+    }
+
+    public async Task<ApiResponse<PaymentAdminDto>> GetMyPaymentByIdAsync(long userId, long id)
+    {
+      return await ServiceResponse.ExecuteAsync(async () =>
+      {
+        var payment = await _paymentRepo.GetByIdAsync(id);
+        if (payment == null)
+        {
+          throw new NotFoundException("Không tìm thấy thông tin thanh toán.", "PAYMENT_NOT_FOUND");
+        }
+
+        if (payment.PaidByUserId != userId && payment.TutorId != userId && payment.LearningRequest?.TutorId != userId)
+        {
+          throw new ForbiddenException("Bạn không có quyền xem thông tin thanh toán này.", "PAYMENT_ACCESS_FORBIDDEN");
+        }
+
+        return ApiResponse<PaymentAdminDto>.SuccessResult(MapPayment(payment));
+      });
+    }
+
+    private static PaymentAdminDto MapPayment(Payment payment)
+    {
+      string? paidByUserName = payment.PaidByUser?.FullName;
+      string? paidByUserCode = payment.PaidByUser?.Student?.Code ?? payment.PaidByUser?.Tutor?.Code;
+      var tutor = payment.Tutor ?? payment.LearningRequest?.Tutor;
+      string? tutorName = tutor?.User?.FullName;
+      string? tutorCode = tutor?.Code;
+
+      return new PaymentAdminDto
+      {
+        Id = payment.Id,
+        LearningRequestId = payment.LearningRequestId,
+        PaidByUserId = payment.PaidByUserId,
+        ClassId = payment.ClassId,
+        TutorId = payment.TutorId ?? payment.LearningRequest?.TutorId,
+        OrderCode = payment.OrderCode,
+        Amount = payment.Amount,
+        Description = payment.Description,
+        Status = payment.Status,
+        CheckoutUrl = payment.CheckoutUrl,
+        TransactionId = payment.TransactionId,
+        PaidAt = payment.PaidAt,
+        CreatedAt = payment.CreatedAt,
+        PaidByUserName = paidByUserName,
+        PaidByUserCode = paidByUserCode,
+        TutorName = tutorName,
+        TutorCode = tutorCode
+      };
     }
   }
 }

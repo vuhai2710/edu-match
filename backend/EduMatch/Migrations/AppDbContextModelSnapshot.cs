@@ -270,6 +270,11 @@ namespace EduMatch.Migrations
 
                     b.HasIndex("SubjectId");
 
+                    b.HasIndex("TimeSlotsJson")
+                        .HasFilter("\"TimeSlotsJson\" IS NOT NULL")
+                        .HasMethod("gin")
+                        .HasOperators(new[] { "jsonb_path_ops" });
+
                     b.HasIndex("TutorId");
 
                     b.ToTable("Classes");

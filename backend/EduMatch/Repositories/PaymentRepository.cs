@@ -50,16 +50,36 @@ namespace EduMatch.Repositories
                     && p.Status == Common.Enums.PaymentStatus.Pending);
         }
 
-        public async Task<PagedResult<Payment>> GetPagedAsync(int page, int pageSize, PaymentStatus? status)
+        public async Task<PagedResult<Payment>> GetPagedAsync(int page, int pageSize, PaymentStatus? status, DateTime? fromDate, DateTime? toDate)
         {
             var query = _context.Payments
+                .Include(p => p.PaidByUser)
+                    .ThenInclude(u => u!.Student)
+                .Include(p => p.PaidByUser)
+                    .ThenInclude(u => u!.Tutor)
                 .Include(p => p.Tutor)
+                    .ThenInclude(t => t!.User)
+                .Include(p => p.LearningRequest)
+                    .ThenInclude(lr => lr!.Tutor)
+                        .ThenInclude(t => t!.User)
                 .Include(p => p.Class)
                 .AsQueryable();
 
             if (status.HasValue)
             {
                 query = query.Where(p => p.Status == status.Value);
+            }
+
+            if (fromDate.HasValue)
+            {
+                var fromDateUtc = StartOfDayUtc(fromDate.Value);
+                query = query.Where(p => p.CreatedAt >= fromDateUtc);
+            }
+
+            if (toDate.HasValue)
+            {
+                var toDateExclusiveUtc = StartOfDayUtc(toDate.Value).AddDays(1);
+                query = query.Where(p => p.CreatedAt < toDateExclusiveUtc);
             }
 
             var totalItems = await query.CountAsync();
@@ -78,6 +98,27 @@ namespace EduMatch.Repositories
                 PageSize = pageSize,
                 TotalPages = (int)Math.Ceiling(totalItems / (double)pageSize)
             };
+        }
+
+        private static DateTime StartOfDayUtc(DateTime value)
+        {
+            return new DateTime(value.Year, value.Month, value.Day, 0, 0, 0, DateTimeKind.Utc);
+        }
+
+        public override async Task<Payment?> GetByIdAsync(long id)
+        {
+            return await _context.Payments
+                .Include(p => p.PaidByUser)
+                    .ThenInclude(u => u!.Student)
+                .Include(p => p.PaidByUser)
+                    .ThenInclude(u => u!.Tutor)
+                .Include(p => p.Tutor)
+                    .ThenInclude(t => t!.User)
+                .Include(p => p.LearningRequest)
+                    .ThenInclude(lr => lr!.Tutor)
+                        .ThenInclude(t => t!.User)
+                .Include(p => p.Class)
+                .FirstOrDefaultAsync(p => p.Id == id);
         }
 
         public async Task<Payment?> GetSuccessfulPaymentByClassIdAsync(long classId)
@@ -149,6 +190,45 @@ namespace EduMatch.Repositories
                             PaidAt = latestPayment.PaidAt
                         };
                     });
+        }
+
+        public async Task<PagedResult<Payment>> GetPagedByUserIdAsync(long userId, int page, int pageSize, PaymentStatus? status)
+        {
+            var query = _context.Payments
+                .Include(p => p.PaidByUser)
+                    .ThenInclude(u => u!.Student)
+                .Include(p => p.PaidByUser)
+                    .ThenInclude(u => u!.Tutor)
+                .Include(p => p.Tutor)
+                    .ThenInclude(t => t!.User)
+                .Include(p => p.LearningRequest)
+                    .ThenInclude(lr => lr!.Tutor)
+                        .ThenInclude(t => t!.User)
+                .Include(p => p.Class)
+                .Where(p => p.PaidByUserId == userId)
+                .AsQueryable();
+
+            if (status.HasValue)
+            {
+                query = query.Where(p => p.Status == status.Value);
+            }
+
+            var totalItems = await query.CountAsync();
+
+            var items = await query
+                .OrderByDescending(p => p.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return new PagedResult<Payment>
+            {
+                Items = items,
+                TotalCount = totalItems,
+                Page = page,
+                PageSize = pageSize,
+                TotalPages = (int)Math.Ceiling(totalItems / (double)pageSize)
+            };
         }
     }
 }

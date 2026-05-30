@@ -5,6 +5,8 @@ using EduMatch.Models;
 using EduMatch.Repositories.Interfaces;
 using EduMatch.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.SignalR;
+using EduMatch.Configuration;
 
 namespace EduMatch.Services;
 
@@ -12,6 +14,7 @@ public class DepositPolicyService : IDepositPolicyService
 {
   private readonly IDepositPolicyRepository _depositPolicyRepository;
   private readonly IDepositCalculator _depositCalculator;
+  private readonly IHubContext<NotificationHub> _hubContext;
 
   public DepositPolicyService(
     IDepositPolicyRepository depositPolicyRepository,
@@ -19,6 +22,7 @@ public class DepositPolicyService : IDepositPolicyService
   {
     _depositPolicyRepository = depositPolicyRepository;
     _depositCalculator = serviceProvider.GetRequiredService<IDepositCalculator>();
+    _hubContext = serviceProvider.GetRequiredService<IHubContext<NotificationHub>>();
   }
 
   public async Task<ApiResponse<DepositPolicyDto?>> GetCurrentActivePolicyAsync()
@@ -88,6 +92,7 @@ public class DepositPolicyService : IDepositPolicyService
 
         _depositPolicyRepository.Update(defaultPolicy);
         await _depositPolicyRepository.SaveChangesAsync();
+        await BroadcastPolicyUpdatedAsync();
 
         return ApiResponse<DepositPolicyDto?>.SuccessResult(
           MapToDto(defaultPolicy),
@@ -112,6 +117,7 @@ public class DepositPolicyService : IDepositPolicyService
 
     await _depositPolicyRepository.AddAsync(policy);
     await _depositPolicyRepository.SaveChangesAsync();
+    await BroadcastPolicyUpdatedAsync();
 
     return ApiResponse<DepositPolicyDto?>.SuccessResult(
       MapToDto(policy),
@@ -168,6 +174,7 @@ public class DepositPolicyService : IDepositPolicyService
 
     _depositPolicyRepository.Update(policy);
     await _depositPolicyRepository.SaveChangesAsync();
+    await BroadcastPolicyUpdatedAsync();
 
     return ApiResponse<DepositPolicyDto?>.SuccessResult(
       MapToDto(policy),
@@ -204,6 +211,7 @@ public class DepositPolicyService : IDepositPolicyService
     policy.UpdatedAt = DateTime.UtcNow;
     _depositPolicyRepository.Update(policy);
     await _depositPolicyRepository.SaveChangesAsync();
+    await BroadcastPolicyUpdatedAsync();
 
     return ApiResponse.Ok("Xóa chính sách đặt cọc thành công.", StatusCodes.Status200OK);
   }
@@ -338,5 +346,20 @@ public class DepositPolicyService : IDepositPolicyService
       CreatedAt = policy.CreatedAt,
       UpdatedAt = policy.UpdatedAt
     };
+  }
+
+  private async Task BroadcastPolicyUpdatedAsync()
+  {
+    try
+    {
+      await _hubContext.Clients.All.SendAsync("DepositPolicyUpdated", new
+      {
+        message = "Chính sách đặt cọc đã được cập nhật."
+      });
+    }
+    catch (System.Exception)
+    {
+      // Swallow exceptions to keep response flow unaffected if hub fails
+    }
   }
 }

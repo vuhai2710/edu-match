@@ -439,11 +439,14 @@ export class TutorClassesPage implements OnInit {
       const response = await firstValueFrom(
         this.classesApi.getTutorClasses(
           this.activeStatus() ?? undefined,
+          undefined,
+          undefined,
           1,
           1000,
           undefined,
           'createdAt',
           'desc',
+          'body'
         ),
       );
       const items = response.data?.items ?? [];
@@ -452,7 +455,7 @@ export class TutorClassesPage implements OnInit {
       // Fetch review status for tutor
       if (this.activeTabIsReview() && items.length > 0) {
         // Find tutor ID from items
-        const tutorId = items.find(c => c.tutorId)?.tutorId;
+        const tutorId = items.find((c: ClassDto) => c.tutorId)?.tutorId;
         if (tutorId) {
           this.isLoadingEligibility.set(true);
           try {
@@ -461,7 +464,7 @@ export class TutorClassesPage implements OnInit {
             const reviewsList = reviewsRes.data ?? [];
             
             // 2. Fetch parallel review eligibility, fallback to reviewsList check
-            const eligibilityPromises = items.map(async (c) => {
+            const eligibilityPromises = items.map(async (c: ClassDto) => {
               if (!c.id) return null;
               const review = reviewsList.find(r => r.classId === c.id);
               const rating = review?.rating;

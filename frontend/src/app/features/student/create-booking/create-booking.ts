@@ -1,11 +1,13 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, DestroyRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { DepositPreviewResponseDto, TimeSlotInputDto, TutorDetailDto } from '../../../api/generated/client/models';
 import { DepositPolicyService, LearningRequestsService, TutorsService } from '../../../api/generated/client/services';
 import { getApiErrorDetails, getApiErrorMessage, unwrapApiData } from '../../../core/http/api-error';
+import { SignalrService } from '../../../core/realtime/signalr.service';
 import {
   DAY_OPTIONS,
   buildEndTime,
@@ -29,6 +31,17 @@ import {
           <h1 class="font-display text-2xl font-black text-slate-900">Đặt lịch học</h1>
           <p class="text-slate-500 mt-1">Gửi yêu cầu học tới {{ t.fullName }}</p>
         </div>
+
+        @if (policyUpdateMessage(); as msg) {
+          <div class="border-2 border-amber-500 border-b-4 bg-amber-50 text-amber-900 rounded-2xl p-4 flex items-start gap-3 shadow-md animate-pulse">
+            <span class="text-lg mt-0.5">🔔</span>
+            <div class="flex-1 space-y-1">
+              <p class="font-extrabold text-sm">{{ msg }}</p>
+              <p class="text-xs text-amber-700 font-bold">Số tiền cọc dự kiến của bạn đã được cập nhật lại theo chính sách mới nhất.</p>
+            </div>
+            <button (click)="policyUpdateMessage.set(null)" class="text-amber-500 hover:text-amber-800 font-black ml-4 text-base p-1 leading-none">✕</button>
+          </div>
+        }
 
         <div class="tactile-card p-6 space-y-5">
           <div class="grid sm:grid-cols-2 gap-4">
@@ -216,6 +229,7 @@ import {
 })
 export class CreateBookingPage implements OnInit {
   tutor = signal<TutorDetailDto | null>(null);
+  policyUpdateMessage = signal<string | null>(null);
   slots = signal<TimeSlotInputDto[]>([
     { day: 'Monday', startTime: '17:00', endTime: '19:00' },
   ]);
@@ -238,9 +252,17 @@ export class CreateBookingPage implements OnInit {
   private readonly tutorsApi = inject(TutorsService);
   private readonly learningRequestsApi = inject(LearningRequestsService);
   private readonly depositPolicyApi = inject(DepositPolicyService);
+  private readonly signalrService = inject(SignalrService);
+  private readonly destroyRef = inject(DestroyRef);
 
   ngOnInit(): void {
     void this.loadTutor();
+    this.signalrService.depositPolicyUpdated$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((data) => {
+        this.policyUpdateMessage.set(data.message);
+        void this.updateDepositPreview();
+      });
   }
 
   addSlot(): void {

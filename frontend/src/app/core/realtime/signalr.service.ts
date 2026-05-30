@@ -20,6 +20,7 @@ export class SignalrService {
   readonly messagesRead$ = new Subject<{ readBy: number }>();
   readonly notificationUpdated$ = new Subject<{ unreadCount?: number }>();
   readonly chatUnreadUpdated$ = new Subject<{ readByPartnerId: number; count: number }>();
+  readonly depositPolicyUpdated$ = new Subject<{ message: string }>();
 
   // Connection status signals
   readonly notificationConnected = signal(false);
@@ -68,6 +69,10 @@ export class SignalrService {
 
     this.notificationConnection.on('ReceiveNotification', (notification: NotificationDto) => {
       this.notification$.next(notification);
+    });
+
+    this.notificationConnection.on('DepositPolicyUpdated', (data: { message: string }) => {
+      this.depositPolicyUpdated$.next(data);
     });
 
     try {

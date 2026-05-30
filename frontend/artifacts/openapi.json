@@ -407,6 +407,22 @@
             "schema": {
               "$ref": "#/components/schemas/PaymentStatus"
             }
+          },
+          {
+            "name": "fromDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "toDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
           }
         ],
         "responses": {
@@ -606,6 +622,21 @@
             "in": "query",
             "schema": {
               "$ref": "#/components/schemas/ClassStatus"
+            }
+          },
+          {
+            "name": "subjectId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "dayOfWeek",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/DayOfWeek"
             }
           },
           {
@@ -1236,6 +1267,208 @@
         }
       }
     },
+    "/api/Admin/tutors/{id}/approve": {
+      "put": {
+        "tags": [
+          "Admin"
+        ],
+        "operationId": "approveTutor",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BooleanApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BooleanApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BooleanApiResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Admin/tutors/{id}/reject": {
+      "put": {
+        "tags": [
+          "Admin"
+        ],
+        "operationId": "rejectTutor",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BooleanApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BooleanApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BooleanApiResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Applications/{id}": {
       "get": {
         "tags": [
@@ -1678,6 +1911,9 @@
                     "type": "string",
                     "format": "binary"
                   },
+                  "GradeLevel": {
+                    "$ref": "#/components/schemas/Grade"
+                  },
                   "FullName": {
                     "type": "string"
                   },
@@ -1718,6 +1954,9 @@
               },
               "encoding": {
                 "Avatar": {
+                  "style": "form"
+                },
+                "GradeLevel": {
                   "style": "form"
                 },
                 "FullName": {
@@ -2582,6 +2821,26 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CancellationRequestDtoApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CancellationRequestDtoApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CancellationRequestDtoApiResponse"
+                }
+              }
+            }
+          },
           "201": {
             "description": "Created",
             "content": {
@@ -2949,6 +3208,21 @@
             }
           },
           {
+            "name": "subjectId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "dayOfWeek",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/DayOfWeek"
+            }
+          },
+          {
             "name": "page",
             "in": "query",
             "schema": {
@@ -3086,6 +3360,21 @@
             "in": "query",
             "schema": {
               "$ref": "#/components/schemas/ClassStatus"
+            }
+          },
+          {
+            "name": "subjectId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "dayOfWeek",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/DayOfWeek"
             }
           },
           {
@@ -4194,6 +4483,13 @@
         "operationId": "viewCloudinaryFile",
         "parameters": [
           {
+            "name": "url",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "fileUrl",
             "in": "query",
             "schema": {
@@ -4254,6 +4550,26 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/LearningRequestDtoApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LearningRequestDtoApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LearningRequestDtoApiResponse"
+                }
+              }
+            }
+          },
           "201": {
             "description": "Created",
             "content": {
@@ -4896,26 +5212,6 @@
                 }
               }
             }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
           }
         }
       }
@@ -5000,26 +5296,6 @@
           },
           "404": {
             "description": "Not Found",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
             "content": {
               "text/plain": {
                 "schema": {
@@ -5702,6 +5978,184 @@
         }
       }
     },
+    "/api/Payments/my": {
+      "get": {
+        "tags": [
+          "Payments"
+        ],
+        "operationId": "getMyPayments",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/PaymentStatus"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentAdminDtoPagedResultApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentAdminDtoPagedResultApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentAdminDtoPagedResultApiResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Payments/my/{id}": {
+      "get": {
+        "tags": [
+          "Payments"
+        ],
+        "operationId": "getMyPaymentById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentAdminDtoApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentAdminDtoApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentAdminDtoApiResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Reviews": {
       "post": {
         "tags": [
@@ -5728,6 +6182,26 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewDtoApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewDtoApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewDtoApiResponse"
+                }
+              }
+            }
+          },
           "201": {
             "description": "Created",
             "content": {
@@ -5938,6 +6412,26 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleProposalDtoApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleProposalDtoApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleProposalDtoApiResponse"
+                }
+              }
+            }
+          },
           "201": {
             "description": "Created",
             "content": {
@@ -6259,26 +6753,6 @@
                 }
               }
             }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
           }
         }
       }
@@ -6363,26 +6837,6 @@
           },
           "404": {
             "description": "Not Found",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
             "content": {
               "text/plain": {
                 "schema": {
@@ -6846,6 +7300,26 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubjectResponseDtoApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubjectResponseDtoApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubjectResponseDtoApiResponse"
+                }
+              }
+            }
+          },
           "201": {
             "description": "Created",
             "content": {
@@ -7322,17 +7796,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/BooleanApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BooleanApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BooleanApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -8319,6 +8793,20 @@
             }
           },
           {
+            "name": "isDeleted",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "tutorApprovalStatus",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/TutorApprovalStatus"
+            }
+          },
+          {
             "name": "page",
             "in": "query",
             "schema": {
@@ -8561,8 +9049,25 @@
           }
         ],
         "responses": {
-          "204": {
-            "description": "No Content"
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BooleanApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BooleanApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BooleanApiResponse"
+                }
+              }
+            }
           },
           "401": {
             "description": "Unauthorized",
@@ -9068,6 +9573,10 @@
             "format": "int32",
             "nullable": true
           },
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          },
           "data": {
             "$ref": "#/components/schemas/AdminDashboardDto"
           }
@@ -9087,6 +9596,10 @@
           "statusCode": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          },
+          "errorCode": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -9149,6 +9662,10 @@
             "format": "int32",
             "nullable": true
           },
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          },
           "data": {
             "$ref": "#/components/schemas/ApplicationResponseDto"
           }
@@ -9207,6 +9724,10 @@
             "format": "int32",
             "nullable": true
           },
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          },
           "data": {
             "$ref": "#/components/schemas/ApplicationResponseDtoPagedResult"
           }
@@ -9240,6 +9761,10 @@
           "statusCode": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          },
+          "errorCode": {
+            "type": "string",
             "nullable": true
           },
           "data": {
@@ -9357,6 +9882,10 @@
             "format": "int32",
             "nullable": true
           },
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          },
           "data": {
             "$ref": "#/components/schemas/CancellationRequestDto"
           }
@@ -9413,6 +9942,10 @@
           "statusCode": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          },
+          "errorCode": {
+            "type": "string",
             "nullable": true
           },
           "data": {
@@ -9530,6 +10063,10 @@
             "format": "int32",
             "nullable": true
           },
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          },
           "data": {
             "$ref": "#/components/schemas/ClassDto"
           }
@@ -9586,6 +10123,10 @@
           "statusCode": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          },
+          "errorCode": {
+            "type": "string",
             "nullable": true
           },
           "data": {
@@ -9654,6 +10195,10 @@
             "type": "string",
             "nullable": true
           },
+          "partnerCode": {
+            "type": "string",
+            "nullable": true
+          },
           "lastMessage": {
             "type": "string",
             "nullable": true
@@ -9682,6 +10227,10 @@
           "statusCode": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          },
+          "errorCode": {
+            "type": "string",
             "nullable": true
           },
           "data": {
@@ -9889,6 +10438,18 @@
         },
         "additionalProperties": false
       },
+      "DayOfWeek": {
+        "enum": [
+          "Sunday",
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday"
+        ],
+        "type": "string"
+      },
       "DepositPaymentDto": {
         "type": "object",
         "properties": {
@@ -9962,6 +10523,10 @@
             "format": "int32",
             "nullable": true
           },
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          },
           "data": {
             "$ref": "#/components/schemas/DepositPaymentDto"
           }
@@ -10018,6 +10583,10 @@
           "statusCode": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          },
+          "errorCode": {
+            "type": "string",
             "nullable": true
           },
           "data": {
@@ -10078,6 +10647,10 @@
             "format": "int32",
             "nullable": true
           },
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          },
           "data": {
             "$ref": "#/components/schemas/DepositPolicyDtoPagedResult"
           }
@@ -10123,6 +10696,10 @@
           "statusCode": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          },
+          "errorCode": {
+            "type": "string",
             "nullable": true
           },
           "data": {
@@ -10226,6 +10803,10 @@
             "format": "int32",
             "nullable": true
           },
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          },
           "data": {
             "$ref": "#/components/schemas/FileDto"
           }
@@ -10306,6 +10887,10 @@
           "statusCode": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          },
+          "errorCode": {
+            "type": "string",
             "nullable": true
           },
           "data": {
@@ -10407,6 +10992,10 @@
             "format": "int32",
             "nullable": true
           },
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          },
           "data": {
             "$ref": "#/components/schemas/LearningRequestDto"
           }
@@ -10463,6 +11052,10 @@
           "statusCode": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          },
+          "errorCode": {
+            "type": "string",
             "nullable": true
           },
           "data": {
@@ -10533,6 +11126,10 @@
           "statusCode": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          },
+          "errorCode": {
+            "type": "string",
             "nullable": true
           },
           "data": {
@@ -10608,6 +11205,10 @@
           "statusCode": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          },
+          "errorCode": {
+            "type": "string",
             "nullable": true
           },
           "data": {
@@ -10735,6 +11336,10 @@
             "format": "int32",
             "nullable": true
           },
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          },
           "data": {
             "$ref": "#/components/schemas/NotificationDtoPagedResult"
           }
@@ -10855,6 +11460,22 @@
           "createdAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "paidByUserName": {
+            "type": "string",
+            "nullable": true
+          },
+          "paidByUserCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "tutorName": {
+            "type": "string",
+            "nullable": true
+          },
+          "tutorCode": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -10872,6 +11493,10 @@
           "statusCode": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          },
+          "errorCode": {
+            "type": "string",
             "nullable": true
           },
           "data": {
@@ -10932,6 +11557,10 @@
             "format": "int32",
             "nullable": true
           },
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          },
           "data": {
             "$ref": "#/components/schemas/PaymentAdminDtoPagedResult"
           }
@@ -10972,6 +11601,10 @@
           "statusCode": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          },
+          "errorCode": {
+            "type": "string",
             "nullable": true
           },
           "data": {
@@ -11036,6 +11669,10 @@
             "format": "int32",
             "nullable": true
           },
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          },
           "data": {
             "$ref": "#/components/schemas/PaymentStatusDto"
           }
@@ -11046,6 +11683,10 @@
         "type": "object",
         "properties": {
           "tutorId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "userId": {
             "type": "integer",
             "format": "int64"
           },
@@ -11126,6 +11767,10 @@
           "statusCode": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          },
+          "errorCode": {
+            "type": "string",
             "nullable": true
           },
           "data": {
@@ -11304,6 +11949,10 @@
             "format": "int32",
             "nullable": true
           },
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          },
           "data": {
             "$ref": "#/components/schemas/ReviewDto"
           }
@@ -11323,6 +11972,10 @@
           "statusCode": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          },
+          "errorCode": {
+            "type": "string",
             "nullable": true
           },
           "data": {
@@ -11377,6 +12030,10 @@
           "statusCode": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          },
+          "errorCode": {
+            "type": "string",
             "nullable": true
           },
           "data": {
@@ -11493,6 +12150,10 @@
             "format": "int32",
             "nullable": true
           },
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          },
           "data": {
             "$ref": "#/components/schemas/ScheduleProposalDto"
           }
@@ -11520,6 +12181,10 @@
           "statusCode": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          },
+          "errorCode": {
+            "type": "string",
             "nullable": true
           },
           "data": {
@@ -11587,6 +12252,10 @@
           "statusCode": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          },
+          "errorCode": {
+            "type": "string",
             "nullable": true
           },
           "data": {
@@ -11660,6 +12329,10 @@
           "statusCode": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          },
+          "errorCode": {
+            "type": "string",
             "nullable": true
           },
           "data": {
@@ -11764,6 +12437,10 @@
             "format": "int32",
             "nullable": true
           },
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          },
           "data": {
             "$ref": "#/components/schemas/StudentDtoPagedResult"
           }
@@ -11825,6 +12502,10 @@
             "format": "int32",
             "nullable": true
           },
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          },
           "data": {
             "type": "array",
             "items": {
@@ -11870,6 +12551,10 @@
           "statusCode": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          },
+          "errorCode": {
+            "type": "string",
             "nullable": true
           },
           "data": {
@@ -11918,6 +12603,14 @@
           }
         },
         "additionalProperties": false
+      },
+      "TutorApprovalStatus": {
+        "enum": [
+          "Pending",
+          "Approved",
+          "Rejected"
+        ],
+        "type": "string"
       },
       "TutorCardDto": {
         "type": "object",
@@ -12035,6 +12728,10 @@
             "format": "int32",
             "nullable": true
           },
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          },
           "data": {
             "$ref": "#/components/schemas/TutorCardDtoPagedResult"
           }
@@ -12117,6 +12814,10 @@
             "format": "int32",
             "nullable": true
           },
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          },
           "data": {
             "$ref": "#/components/schemas/TutorDashboardDto"
           }
@@ -12196,6 +12897,9 @@
           "academicDegree": {
             "$ref": "#/components/schemas/AcademicDegree"
           },
+          "approvalStatus": {
+            "$ref": "#/components/schemas/TutorApprovalStatus"
+          },
           "address": {
             "$ref": "#/components/schemas/AddressDto"
           },
@@ -12229,6 +12933,10 @@
           "statusCode": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          },
+          "errorCode": {
+            "type": "string",
             "nullable": true
           },
           "data": {
@@ -12293,6 +13001,9 @@
           "school": {
             "type": "string",
             "nullable": true
+          },
+          "approvalStatus": {
+            "$ref": "#/components/schemas/TutorApprovalStatus"
           },
           "address": {
             "$ref": "#/components/schemas/AddressDto"
@@ -12364,6 +13075,10 @@
           "statusCode": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          },
+          "errorCode": {
+            "type": "string",
             "nullable": true
           },
           "data": {
@@ -12477,6 +13192,10 @@
             "format": "int32",
             "nullable": true
           },
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          },
           "data": {
             "$ref": "#/components/schemas/TutorRequestResponseDto"
           }
@@ -12533,6 +13252,10 @@
           "statusCode": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          },
+          "errorCode": {
+            "type": "string",
             "nullable": true
           },
           "data": {
@@ -12738,8 +13461,19 @@
           "isActive": {
             "type": "boolean"
           },
+          "isDeleted": {
+            "type": "boolean"
+          },
           "isGoogleAccount": {
             "type": "boolean"
+          },
+          "tutorApprovalStatus": {
+            "$ref": "#/components/schemas/TutorApprovalStatus"
+          },
+          "tutorId": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -12757,6 +13491,10 @@
           "statusCode": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          },
+          "errorCode": {
+            "type": "string",
             "nullable": true
           },
           "data": {
@@ -12817,6 +13555,10 @@
             "format": "int32",
             "nullable": true
           },
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          },
           "data": {
             "$ref": "#/components/schemas/UserDtoPagedResult"
           }
@@ -12855,6 +13597,10 @@
             "format": "int32",
             "nullable": true
           },
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          },
           "data": {
             "$ref": "#/components/schemas/ValidateResetTokenResponseDto"
           }
@@ -12888,6 +13634,10 @@
           "statusCode": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          },
+          "errorCode": {
+            "type": "string",
             "nullable": true
           },
           "data": {

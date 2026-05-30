@@ -17,5 +17,9 @@ namespace EduMatch.DTOs.Payment
     public string? TransactionId { get; set; }
     public DateTime? PaidAt { get; set; }
     public DateTime CreatedAt { get; set; }
+    public string? PaidByUserName { get; set; }
+    public string? PaidByUserCode { get; set; }
+    public string? TutorName { get; set; }
+    public string? TutorCode { get; set; }
   }
 }

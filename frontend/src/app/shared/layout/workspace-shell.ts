@@ -650,6 +650,21 @@ import { SignalrService } from '../../core/realtime/signalr.service';
                           />
                         </svg>
                       }
+                      @case ('/student/payments') {
+                        <svg
+                          class="w-5 h-5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          stroke-width="2"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                          />
+                        </svg>
+                      }
                     }
                   </div>
                   <span class="truncate">{{ link.label }}</span>
@@ -901,6 +916,17 @@ import { SignalrService } from '../../core/realtime/signalr.service';
         <main class="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 md:py-8">
           <router-outlet />
         </main>
+
+        @if (globalToast(); as toast) {
+          <div class="fixed bottom-6 right-6 z-50 max-w-sm rounded-2xl border-2 border-amber-500 border-b-4 bg-amber-50 p-4 text-sm font-extrabold text-amber-900 shadow-xl flex items-start gap-3 animate-pulse">
+            <span class="text-lg">🔔</span>
+            <div class="flex-1 space-y-1">
+              <p class="font-extrabold text-sm">{{ toast.title }}</p>
+              <p class="text-xs text-amber-700 font-bold">{{ toast.message }}</p>
+            </div>
+            <button (click)="globalToast.set(null)" class="text-amber-500 hover:text-amber-800 font-black ml-2 text-base leading-none">✕</button>
+          </div>
+        }
       </div>
     }
   `,
@@ -913,6 +939,7 @@ export class WorkspaceShellComponent implements OnInit, OnDestroy {
   private readonly authApi = inject(AuthApiService);
   private readonly signalrService = inject(SignalrService);
 
+  protected readonly globalToast = signal<{ title: string; message: string } | null>(null);
   protected readonly showProfile = signal(false);
   protected readonly avatarError = signal(false);
   protected readonly unreadCount = signal(0);
@@ -994,6 +1021,22 @@ export class WorkspaceShellComponent implements OnInit, OnDestroy {
     );
 
     this.signalrSub.add(
+      this.signalrService.depositPolicyUpdated$.subscribe((data) => {
+        if (this.session.role() === UserRole.Student) {
+          this.globalToast.set({
+            title: 'Chính sách đặt cọc thay đổi',
+            message: data.message || 'Chính sách đặt cọc đã được cập nhật.'
+          });
+          setTimeout(() => {
+            if (this.globalToast()?.message === (data.message || 'Chính sách đặt cọc đã được cập nhật.')) {
+              this.globalToast.set(null);
+            }
+          }, 8000);
+        }
+      })
+    );
+
+    this.signalrSub.add(
       this.router.events
         .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
         .subscribe(() => {
@@ -1059,6 +1102,7 @@ export class WorkspaceShellComponent implements OnInit, OnDestroy {
         { label: 'Tìm gia sư', href: '/student/discover' },
         { label: 'Yêu cầu', href: '/student/learning-requests' },
         { label: 'Lớp học', href: '/student/classes' },
+        { label: 'Thanh toán', href: '/student/payments' },
       ],
       tutor: [
         { label: 'Trang chủ', href: '/tutor/dashboard' },

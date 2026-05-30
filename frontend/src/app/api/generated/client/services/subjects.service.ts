@@ -12,7 +12,7 @@ import { inject, Injectable } from "@angular/core";
 import { Observable } from "rxjs";
 import { BASE_PATH_DEFAULT, CLIENT_CONTEXT_TOKEN_DEFAULT } from "../tokens";
 import { HttpParamsBuilder } from "../utils/http-params-builder";
-import { RequestOptions, SubjectListItemDtoListApiResponse, SubjectDto, SubjectResponseDtoApiResponse, TutorCardDtoPagedResultApiResponse, BooleanApiResponse } from "../models";
+import { RequestOptions, SubjectListItemDtoListApiResponse, SubjectDto, SubjectResponseDtoApiResponse, TutorCardDtoPagedResultApiResponse, ApiResponse } from "../models";
 
 @Injectable({ providedIn: "root" })
 export class SubjectsService {
@@ -183,9 +183,9 @@ export class SubjectsService {
         return this.httpClient.put(url, subjectDto, requestOptions);
     }
 
-    deleteSubject(id: number, observe?: 'body', options?: RequestOptions<'json'>): Observable<BooleanApiResponse>;
-    deleteSubject(id: number, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<BooleanApiResponse>>;
-    deleteSubject(id: number, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<BooleanApiResponse>>;
+    deleteSubject(id: number, observe?: 'body', options?: RequestOptions<'json'>): Observable<ApiResponse>;
+    deleteSubject(id: number, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<ApiResponse>>;
+    deleteSubject(id: number, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<ApiResponse>>;
     deleteSubject(id: number, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
         const url = `${this.basePath}/api/Subjects/${id}`;
 

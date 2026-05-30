@@ -12,7 +12,7 @@ import { inject, Injectable } from "@angular/core";
 import { Observable } from "rxjs";
 import { BASE_PATH_DEFAULT, CLIENT_CONTEXT_TOKEN_DEFAULT } from "../tokens";
 import { HttpParamsBuilder } from "../utils/http-params-builder";
-import { CreateDepositPaymentRequest, RequestOptions, PaymentResponseDtoApiResponse, DepositPaymentDtoApiResponse, PaymentStatusDtoApiResponse, PayOSWebhookDto, ApiResponse } from "../models";
+import { CreateDepositPaymentRequest, RequestOptions, PaymentResponseDtoApiResponse, DepositPaymentDtoApiResponse, PaymentStatusDtoApiResponse, PayOSWebhookDto, ApiResponse, PaymentStatus, PaymentAdminDtoPagedResultApiResponse, PaymentAdminDtoApiResponse } from "../models";
 
 @Injectable({ providedIn: "root" })
 export class PaymentsService {
@@ -127,5 +127,65 @@ export class PaymentsService {
         };
 
         return this.httpClient.post(url, payOSWebhookDto, requestOptions);
+    }
+
+    getMyPayments(page?: number, pageSize?: number, status?: PaymentStatus, observe?: 'body', options?: RequestOptions<'json'>): Observable<PaymentAdminDtoPagedResultApiResponse>;
+    getMyPayments(page?: number, pageSize?: number, status?: PaymentStatus, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<PaymentAdminDtoPagedResultApiResponse>>;
+    getMyPayments(page?: number, pageSize?: number, status?: PaymentStatus, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<PaymentAdminDtoPagedResultApiResponse>>;
+    getMyPayments(page?: number, pageSize?: number, status?: PaymentStatus, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
+        const url = `${this.basePath}/api/Payments/my`;
+
+        let params = new HttpParams();
+        if (page != null) {
+            params = HttpParamsBuilder.addToHttpParams(params, page, 'page');
+        }
+        if (pageSize != null) {
+            params = HttpParamsBuilder.addToHttpParams(params, pageSize, 'pageSize');
+        }
+        if (status != null) {
+            params = HttpParamsBuilder.addToHttpParams(params, status, 'status');
+        }
+
+        let headers: HttpHeaders;
+        if (options?.headers instanceof HttpHeaders) {
+            headers = options.headers;
+        } else {
+            headers = new HttpHeaders(options?.headers);
+        }
+
+        const requestOptions: any = {
+            observe: observe as any,
+            headers,
+            params,
+            reportProgress: options?.reportProgress,
+            withCredentials: options?.withCredentials,
+            context: this.createContextWithClientId(options?.context)
+        };
+
+        return this.httpClient.get(url, requestOptions);
+    }
+
+    getMyPaymentById(id: number, observe?: 'body', options?: RequestOptions<'json'>): Observable<PaymentAdminDtoApiResponse>;
+    getMyPaymentById(id: number, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<PaymentAdminDtoApiResponse>>;
+    getMyPaymentById(id: number, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<PaymentAdminDtoApiResponse>>;
+    getMyPaymentById(id: number, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
+        const url = `${this.basePath}/api/Payments/my/${id}`;
+
+        let headers: HttpHeaders;
+        if (options?.headers instanceof HttpHeaders) {
+            headers = options.headers;
+        } else {
+            headers = new HttpHeaders(options?.headers);
+        }
+
+        const requestOptions: any = {
+            observe: observe as any,
+            headers,
+            reportProgress: options?.reportProgress,
+            withCredentials: options?.withCredentials,
+            context: this.createContextWithClientId(options?.context)
+        };
+
+        return this.httpClient.get(url, requestOptions);
     }
 }

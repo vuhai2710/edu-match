@@ -53,6 +53,16 @@ export const STUDENT_ROUTES: Routes = [
           import('./class-detail/class-detail').then(m => m.StudentClassDetailPage),
       },
       {
+        path: 'payments',
+        loadComponent: () =>
+          import('./payments/payments').then(m => m.StudentPaymentsPage),
+      },
+      {
+        path: 'payments/:id',
+        loadComponent: () =>
+          import('./payments/payment-detail').then(m => m.StudentPaymentDetailPage),
+      },
+      {
         path: 'notifications',
         loadComponent: () =>
           import('./notifications/notification-center').then(m => m.NotificationCenterPage),

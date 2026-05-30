@@ -433,11 +433,14 @@ export class StudentClassesPage implements OnInit {
       const response = await firstValueFrom(
         this.classesApi.getMyClasses(
           this.activeStatus() ?? undefined,
+          undefined,
+          undefined,
           1,
-          1000, // Load all classes of active status for client-side sorting and filtering
+          1000,
           undefined,
           'createdAt',
           'desc',
+          'body'
         ),
       );
       const items = response.data?.items ?? [];
@@ -447,7 +450,7 @@ export class StudentClassesPage implements OnInit {
       if (this.activeTabIsReview() && items.length > 0) {
         this.isLoadingEligibility.set(true);
         try {
-          const eligibilityPromises = items.map(async (c) => {
+          const eligibilityPromises = items.map(async (c: ClassDto) => {
             if (!c.id) return null;
             try {
               const res = await firstValueFrom(this.classesApi.getClassReviewEligibility(c.id));

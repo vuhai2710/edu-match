@@ -50,6 +50,7 @@ export interface AdminDashboardDtoApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: AdminDashboardDto;
 }
 
@@ -57,6 +58,7 @@ export interface ApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
 }
 
 export interface ApplicationResponseDto {
@@ -75,6 +77,7 @@ export interface ApplicationResponseDtoApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: ApplicationResponseDto;
 }
 
@@ -92,6 +95,7 @@ export interface ApplicationResponseDtoPagedResultApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: ApplicationResponseDtoPagedResult;
 }
 
@@ -111,6 +115,7 @@ export interface BooleanApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: boolean;
 }
 
@@ -143,6 +148,7 @@ export interface CancellationRequestDtoApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: CancellationRequestDto;
 }
 
@@ -160,6 +166,7 @@ export interface CancellationRequestDtoPagedResultApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: CancellationRequestDtoPagedResult;
 }
 
@@ -195,6 +202,7 @@ export interface ClassDtoApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: ClassDto;
 }
 
@@ -212,6 +220,7 @@ export interface ClassDtoPagedResultApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: ClassDtoPagedResult;
 }
 
@@ -247,6 +256,7 @@ export interface ConversationSummaryDtoListApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: Array<ConversationSummaryDto>;
 }
 
@@ -294,6 +304,16 @@ export interface CreateScheduleProposalDto {
     hourlyRate: number;
 }
 
+export enum DayOfWeek {
+    Sunday = "Sunday",
+    Monday = "Monday",
+    Tuesday = "Tuesday",
+    Wednesday = "Wednesday",
+    Thursday = "Thursday",
+    Friday = "Friday",
+    Saturday = "Saturday"
+}
+
 export interface DepositPaymentDto {
     id?: number;
     learningRequestId?: number | null;
@@ -313,6 +333,7 @@ export interface DepositPaymentDtoApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: DepositPaymentDto;
 }
 
@@ -330,6 +351,7 @@ export interface DepositPolicyDtoApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: DepositPolicyDto;
 }
 
@@ -347,6 +369,7 @@ export interface DepositPolicyDtoPagedResultApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: DepositPolicyDtoPagedResult;
 }
 
@@ -362,6 +385,7 @@ export interface DepositPreviewResponseDtoApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: DepositPreviewResponseDto;
 }
 
@@ -397,6 +421,7 @@ export interface FileDtoApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: FileDto;
 }
 
@@ -438,6 +463,7 @@ export interface Int32ApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: number;
 }
 
@@ -465,6 +491,7 @@ export interface LearningRequestDtoApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: LearningRequestDto;
 }
 
@@ -482,6 +509,7 @@ export interface LearningRequestDtoPagedResultApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: LearningRequestDtoPagedResult;
 }
 
@@ -511,6 +539,7 @@ export interface LoginResponseDtoApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: LoginResponseDto;
 }
 
@@ -534,6 +563,7 @@ export interface MessageDtoListApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: Array<MessageDto>;
 }
 
@@ -570,6 +600,7 @@ export interface NotificationDtoPagedResultApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: NotificationDtoPagedResult;
 }
 
@@ -627,12 +658,17 @@ export interface PaymentAdminDto {
     transactionId?: string | null;
     paidAt?: Date | null;
     createdAt?: Date;
+    paidByUserName?: string | null;
+    paidByUserCode?: string | null;
+    tutorName?: string | null;
+    tutorCode?: string | null;
 }
 
 export interface PaymentAdminDtoApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: PaymentAdminDto;
 }
 
@@ -650,6 +686,7 @@ export interface PaymentAdminDtoPagedResultApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: PaymentAdminDtoPagedResult;
 }
 
@@ -664,6 +701,7 @@ export interface PaymentResponseDtoApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: PaymentResponseDto;
 }
 
@@ -687,6 +725,7 @@ export interface PaymentStatusDtoApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: PaymentStatusDto;
 }
 
@@ -717,6 +756,7 @@ export interface ProvinceDtoListApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: Array<ProvinceDto>;
 }
 
@@ -769,6 +809,7 @@ export interface ReviewDtoApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: ReviewDto;
 }
 
@@ -776,6 +817,7 @@ export interface ReviewDtoListApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: Array<ReviewDto>;
 }
 
@@ -792,6 +834,7 @@ export interface ReviewEligibilityDtoApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: ReviewEligibilityDto;
 }
 
@@ -823,6 +866,7 @@ export interface ScheduleProposalDtoApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: ScheduleProposalDto;
 }
 
@@ -836,6 +880,7 @@ export interface StringApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: string | null;
 }
 
@@ -855,6 +900,7 @@ export interface StudentDashboardDtoApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: StudentDashboardDto;
 }
 
@@ -877,6 +923,7 @@ export interface StudentDetailDtoApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: StudentDetailDto;
 }
 
@@ -907,6 +954,7 @@ export interface StudentDtoPagedResultApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: StudentDtoPagedResult;
 }
 
@@ -926,6 +974,7 @@ export interface SubjectListItemDtoListApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: Array<SubjectListItemDto>;
 }
 
@@ -940,6 +989,7 @@ export interface SubjectResponseDtoApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: SubjectResponseDto;
 }
 
@@ -953,6 +1003,12 @@ export interface TimeSlotInputDto {
     day: string;
     startTime: string;
     endTime: string;
+}
+
+export enum TutorApprovalStatus {
+    Pending = "Pending",
+    Approved = "Approved",
+    Rejected = "Rejected"
 }
 
 export interface TutorCardDto {
@@ -985,6 +1041,7 @@ export interface TutorCardDtoPagedResultApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: TutorCardDtoPagedResult;
 }
 
@@ -1012,13 +1069,8 @@ export interface TutorDashboardDtoApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: TutorDashboardDto;
-}
-
-export enum TutorApprovalStatus {
-    Pending = "Pending",
-    Approved = "Approved",
-    Rejected = "Rejected"
 }
 
 export interface TutorDetailDto {
@@ -1040,16 +1092,17 @@ export interface TutorDetailDto {
     careerStatus?: TutorCareerStatus;
     major?: string | null;
     academicDegree?: AcademicDegree;
+    approvalStatus?: TutorApprovalStatus;
     address?: AddressDto;
     teachingLevels?: Array<EducationLevel>;
     subjects?: Array<TutorSubjectDto>;
-    approvalStatus?: TutorApprovalStatus;
 }
 
 export interface TutorDetailDtoApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: TutorDetailDto;
 }
 
@@ -1068,10 +1121,10 @@ export interface TutorDto {
     major?: string | null;
     academicDegree?: AcademicDegree;
     school?: string | null;
+    approvalStatus?: TutorApprovalStatus;
     address?: AddressDto;
     teachingLevels?: Array<EducationLevel>;
     subjects?: Array<TutorSubjectDto>;
-    approvalStatus?: TutorApprovalStatus;
 }
 
 export interface TutorDtoPagedResult {
@@ -1088,6 +1141,7 @@ export interface TutorDtoPagedResultApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: TutorDtoPagedResult;
 }
 
@@ -1119,6 +1173,7 @@ export interface TutorRequestResponseDtoApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: TutorRequestResponseDto;
 }
 
@@ -1136,6 +1191,7 @@ export interface TutorRequestResponseDtoPagedResultApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: TutorRequestResponseDtoPagedResult;
 }
 
@@ -1202,13 +1258,14 @@ export interface UserDto {
     isDeleted?: boolean;
     isGoogleAccount?: boolean;
     tutorApprovalStatus?: TutorApprovalStatus;
-    tutorId?: number;
+    tutorId?: number | null;
 }
 
 export interface UserDtoApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: UserDto;
 }
 
@@ -1226,6 +1283,7 @@ export interface UserDtoPagedResultApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: UserDtoPagedResult;
 }
 
@@ -1243,6 +1301,7 @@ export interface ValidateResetTokenResponseDtoApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: ValidateResetTokenResponseDto;
 }
 
@@ -1255,6 +1314,7 @@ export interface WardDtoListApiResponse {
     success?: boolean;
     message?: string | null;
     statusCode?: number | null;
+    errorCode?: string | null;
     data?: Array<WardDto>;
 }
 

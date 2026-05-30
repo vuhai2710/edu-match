@@ -52,6 +52,11 @@ namespace EduMatch.Data.Configurations
       builder.Property(c => c.TimeSlotsJson)
           .HasColumnType("jsonb");
 
+      builder.HasIndex(c => c.TimeSlotsJson)
+          .HasMethod("gin")
+          .HasOperators("jsonb_path_ops")
+          .HasFilter("\"TimeSlotsJson\" IS NOT NULL");
+
       builder.Property(c => c.AcceptedScheduleSource)
           .HasConversion<string>()
           .HasMaxLength(10);

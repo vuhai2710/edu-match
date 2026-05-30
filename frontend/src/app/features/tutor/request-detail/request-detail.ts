@@ -5,9 +5,20 @@ import { firstValueFrom } from 'rxjs';
 
 import { StudentDetailModalComponent } from '../../../shared/components/student-detail-modal';
 
-import { LearningRequestDto, TimeSlotInputDto, ScheduleProposalDto } from '../../../api/generated/client/models';
-import { LearningRequestsService, ScheduleProposalsService } from '../../../api/generated/client/services';
-import { getApiErrorDetails, getApiErrorMessage, unwrapApiData } from '../../../core/http/api-error';
+import {
+  LearningRequestDto,
+  TimeSlotInputDto,
+  ScheduleProposalDto,
+} from '../../../api/generated/client/models';
+import {
+  LearningRequestsService,
+  ScheduleProposalsService,
+} from '../../../api/generated/client/services';
+import {
+  getApiErrorDetails,
+  getApiErrorMessage,
+  unwrapApiData,
+} from '../../../core/http/api-error';
 import { SessionService } from '../../../core/auth/session';
 import {
   DAY_OPTIONS,
@@ -25,232 +36,406 @@ import {
   selector: 'app-tutor-request-detail-page',
   imports: [FormsModule, RouterLink, StudentDetailModalComponent],
   template: `
-
     @if (request(); as lr) {
-      <div class="max-w-3xl mx-auto space-y-6">
-        <a routerLink="/tutor/dashboard" class="text-sm font-bold text-slate-500 hover:text-slate-800">← Quay lại</a>
+      <div
+        class="mx-auto space-y-6"
+        [class.max-w-6xl]="proposal() || proposalFormVisible()"
+        [class.max-w-3xl]="!proposal() && !proposalFormVisible()"
+      >
+        <a
+          routerLink="/tutor/dashboard"
+          class="text-sm font-bold text-slate-500 hover:text-slate-800"
+          >← Quay lại</a
+        >
 
-        <div class="tactile-card p-6 space-y-4">
-          <div class="flex items-start justify-between gap-3">
-            <div>
-              <h1 class="font-display text-2xl font-black text-slate-900">{{ lr.subjectName || 'Yêu cầu học' }}</h1>
-              <div class="flex items-center gap-2 mt-1">
-                <p class="text-sm text-slate-500">Học viên: {{ lr.studentName || 'Đang cập nhật' }}</p>
-                @if (lr.studentId) {
-                  <button (click)="openStudentDetail(lr.studentId)" 
-                          class="text-xs font-extrabold text-duo-blue hover:text-duo-blue-dark hover:underline flex items-center gap-0.5">
-                    (Xem chi tiết)
-                  </button>
-                }
+        <div
+          [class]="
+            proposal() || proposalFormVisible()
+              ? 'grid grid-cols-1 lg:grid-cols-2 gap-6'
+              : 'space-y-6'
+          "
+        >
+          <div class="tactile-card p-6 h-full flex flex-col justify-between">
+            <div class="space-y-4">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <h1 class="font-display text-2xl font-black text-slate-900">
+                    {{ lr.subjectName || 'Yêu cầu học' }}
+                  </h1>
+                  <div class="flex items-center gap-2 mt-1">
+                    <p class="text-sm text-slate-500">
+                      Học viên: {{ lr.studentName || 'Đang cập nhật' }}
+                    </p>
+                    @if (lr.studentId) {
+                      <button
+                        (click)="openStudentDetail(lr.studentId)"
+                        class="text-xs font-extrabold text-duo-blue hover:text-duo-blue-dark hover:underline flex items-center gap-0.5"
+                      >
+                        (Xem chi tiết)
+                      </button>
+                    }
+                  </div>
+                </div>
+                <span
+                  [class]="statusClass(lr.status)"
+                  class="rounded-full px-3 py-1 text-xs font-black"
+                  >{{ label(lr) }}</span
+                >
+              </div>
+
+              <div class="grid sm:grid-cols-2 gap-4 text-sm">
+                <div class="rounded-2xl bg-slate-50 p-4">
+                  <p class="font-bold text-slate-500">Lịch học viên đề xuất</p>
+                  <p class="mt-1 font-extrabold text-slate-900">{{ slots(lr) }}</p>
+                </div>
+                <div class="rounded-2xl bg-slate-50 p-4">
+                  <p class="font-bold text-slate-500">Ngân sách</p>
+                  <p class="mt-1 font-extrabold text-duo-green">{{ money(lr.budgetPerHour) }}/h</p>
+                </div>
               </div>
             </div>
-            <span [class]="statusClass(lr.status)" class="rounded-full px-3 py-1 text-xs font-black">{{ label(lr) }}</span>
+
+            @if (lr.status === 'Pending') {
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-4">
+                <button
+                  (click)="acceptRequest(lr)"
+                  [disabled]="isWorking()"
+                  class="tactile-button-green w-full py-2.5 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60"
+                >
+                  Chấp nhận
+                </button>
+                <button
+                  (click)="openProposalForm()"
+                  [disabled]="isWorking() || proposalFormVisible()"
+                  class="tactile-button-blue w-full py-2.5 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60"
+                >
+                  Đề xuất lịch khác
+                </button>
+                <button
+                  (click)="rejectRequest(lr)"
+                  [disabled]="isWorking()"
+                  class="tactile-button-gray w-full py-2.5 rounded-xl text-sm font-bold disabled:opacity-60"
+                >
+                  Từ chối
+                </button>
+              </div>
+            }
           </div>
 
-          <div class="grid sm:grid-cols-2 gap-4 text-sm">
-            <div class="rounded-2xl bg-slate-50 p-4">
-              <p class="font-bold text-slate-500">Lịch học viên đề xuất</p>
-              <p class="mt-1 font-extrabold text-slate-900">{{ slots(lr) }}</p>
-            </div>
-            <div class="rounded-2xl bg-slate-50 p-4">
-              <p class="font-bold text-slate-500">Ngân sách</p>
-              <p class="mt-1 font-extrabold text-duo-green">{{ money(lr.budgetPerHour) }}/h</p>
-            </div>
-          </div>
+          @if (proposal() || proposalFormVisible()) {
+            <div class="flex flex-col gap-6 h-full">
+              @if (proposal(); as p) {
+                @if (isMyProposal(p)) {
+                  <div class="tactile-card p-6 space-y-4 border-duo-blue bg-blue-50/10 flex-1">
+                    <h2 class="font-extrabold text-lg text-slate-900">Đề xuất lịch của bạn</h2>
+                    <p class="text-sm text-slate-500">
+                      Đề xuất lịch mới đang được gửi tới học viên và chờ phản hồi.
+                    </p>
 
-          @if (lr.status === 'Pending') {
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <button (click)="acceptRequest(lr)" [disabled]="isWorking()" class="tactile-button-green w-full py-2.5 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60">
-                Chấp nhận
-              </button>
-              <button (click)="openProposalForm()" [disabled]="isWorking() || proposalFormVisible()" class="tactile-button-blue w-full py-2.5 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60">
-                Đề xuất lịch khác
-              </button>
-              <button (click)="rejectRequest(lr)" [disabled]="isWorking()" class="tactile-button-gray w-full py-2.5 rounded-xl text-sm font-bold disabled:opacity-60">
-                Từ chối
-              </button>
+                    <div class="grid sm:grid-cols-3 gap-4 text-sm">
+                      <div class="rounded-2xl bg-slate-50 p-4 border-2 border-slate-100">
+                        <p class="font-bold text-slate-500">Đề xuất lịch</p>
+                        <p class="mt-1 font-extrabold text-slate-900">{{ proposalSlotsText(p) }}</p>
+                      </div>
+                      <div class="rounded-2xl bg-slate-50 p-4 border-2 border-slate-100">
+                        <p class="font-bold text-slate-500">Ngày bắt đầu</p>
+                        <p class="mt-1 font-extrabold text-slate-900">
+                          {{ date(p.desiredStartDate) }}
+                        </p>
+                      </div>
+                      <div class="rounded-2xl bg-slate-50 p-4 border-2 border-slate-100">
+                        <p class="font-bold text-slate-500">Học phí mong muốn</p>
+                        <p class="mt-1 font-extrabold text-duo-green">
+                          {{ money(p.hourlyRate) }}/h
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                } @else {
+                  <div
+                    class="tactile-card p-6 border-duo-blue flex flex-col justify-between flex-1"
+                  >
+                    <div class="space-y-4">
+                      <h2 class="font-extrabold text-lg text-slate-900">
+                        Đề xuất lịch từ học viên
+                      </h2>
+                      <div class="grid sm:grid-cols-3 gap-4 text-sm">
+                        <div class="rounded-2xl bg-blue-50 p-4">
+                          <p class="font-bold text-slate-500">Lịch học viên đề xuất</p>
+                          <p class="mt-1 font-extrabold text-slate-900">
+                            {{ proposalSlotsText(p) }}
+                          </p>
+                        </div>
+                        <div class="rounded-2xl bg-blue-50 p-4">
+                          <p class="font-bold text-slate-500">Ngày bắt đầu</p>
+                          <p class="mt-1 font-extrabold text-slate-900">
+                            {{ date(p.desiredStartDate) }}
+                          </p>
+                        </div>
+                        <div class="rounded-2xl bg-blue-50 p-4">
+                          <p class="font-bold text-slate-500">Học phí / giờ</p>
+                          <p class="mt-1 font-extrabold text-duo-green">
+                            {{ money(p.hourlyRate) }}/h
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-6">
+                      <button
+                        (click)="acceptProposal(p)"
+                        [disabled]="isWorking()"
+                        class="tactile-button-green w-full py-2.5 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60"
+                      >
+                        Chấp nhận đề xuất
+                      </button>
+                      <button
+                        (click)="openProposalForm()"
+                        [disabled]="isWorking() || proposalFormVisible()"
+                        class="tactile-button-blue w-full py-2.5 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60"
+                      >
+                        Đề xuất lịch khác
+                      </button>
+                      <button
+                        (click)="rejectProposal(p)"
+                        [disabled]="isWorking()"
+                        class="tactile-button-gray w-full py-2.5 rounded-xl text-sm font-bold disabled:opacity-60"
+                      >
+                        Từ chối đề xuất
+                      </button>
+                    </div>
+                  </div>
+                }
+              }
+
+              @if (proposalFormVisible()) {
+                <div class="tactile-card p-6 flex flex-col justify-between flex-1">
+                  <div class="space-y-4">
+                    <h2 class="font-extrabold text-lg text-slate-900">Tạo đề xuất lịch mới</h2>
+                    <div class="grid sm:grid-cols-3 gap-4">
+                      <div>
+                        <label class="block text-sm font-extrabold text-slate-700 mb-1.5"
+                          >Ngày bắt đầu</label
+                        >
+                        <div
+                          class="relative cursor-pointer"
+                          (click)="desiredStartDateInput.showPicker()"
+                        >
+                          <input
+                            type="text"
+                            [value]="desiredStartDate ? date(desiredStartDate) : ''"
+                            placeholder="dd/mm/yyyy"
+                            class="tactile-input w-full text-sm font-semibold pl-3 pr-10 py-2.5 bg-white pointer-events-none"
+                            readonly
+                          />
+                          <div
+                            class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                          >
+                            <svg
+                              class="w-4 h-4"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              stroke-width="2.5"
+                            >
+                              <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                              />
+                            </svg>
+                          </div>
+                          <input
+                            #desiredStartDateInput
+                            type="date"
+                            [(ngModel)]="desiredStartDate"
+                            class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            (click)="$event.stopPropagation(); desiredStartDateInput.showPicker()"
+                          />
+                        </div>
+                        @if (fieldErrors()['DesiredStartDate']) {
+                          <p class="text-xs font-bold text-duo-red mt-1">
+                            {{ fieldErrors()['DesiredStartDate'] }}
+                          </p>
+                        }
+                      </div>
+                      <div>
+                        <label class="block text-sm font-extrabold text-slate-700 mb-1.5"
+                          >Số giờ / buổi</label
+                        >
+                        <select
+                          [(ngModel)]="hoursPerSession"
+                          (ngModelChange)="recalculateSlots()"
+                          class="tactile-input w-full text-sm font-semibold bg-white"
+                        >
+                          @for (hour of [0.5, 1, 1.5, 2, 2.5, 3]; track hour) {
+                            <option [ngValue]="hour">{{ hour }} giờ</option>
+                          }
+                        </select>
+                      </div>
+                      <div>
+                        <label class="block text-sm font-extrabold text-slate-700 mb-1.5"
+                          >Học phí / giờ</label
+                        >
+                        <input
+                          type="number"
+                          [(ngModel)]="hourlyRate"
+                          class="tactile-input w-full text-sm font-semibold"
+                        />
+                        @if (fieldErrors()['HourlyRate']) {
+                          <p class="text-xs font-bold text-duo-red mt-1">
+                            {{ fieldErrors()['HourlyRate'] }}
+                          </p>
+                        }
+                      </div>
+                    </div>
+
+                    @for (slot of proposalSlots(); track $index; let index = $index) {
+                      <div
+                        class="grid sm:grid-cols-[1fr_1fr_1fr_auto] gap-3 items-end rounded-2xl border-2 border-slate-100 p-3"
+                      >
+                        <div>
+                          <label class="block text-xs font-extrabold text-slate-500 mb-1"
+                            >Ngày</label
+                          >
+                          <select
+                            [ngModel]="slot.day"
+                            (ngModelChange)="updateSlot(index, 'day', $event)"
+                            class="tactile-input w-full text-sm font-semibold bg-white"
+                          >
+                            @for (day of dayOptions; track day.value) {
+                              <option [ngValue]="day.value">{{ day.label }}</option>
+                            }
+                          </select>
+                          @if (fieldErrors()['TimeSlots[' + index + '].Day']) {
+                            <p class="text-xs font-bold text-duo-red mt-1">
+                              {{ fieldErrors()['TimeSlots[' + index + '].Day'] }}
+                            </p>
+                          }
+                        </div>
+                        <div>
+                          <label class="block text-xs font-extrabold text-slate-500 mb-1"
+                            >Bắt đầu</label
+                          >
+                          <select
+                            [ngModel]="slot.startTime"
+                            (ngModelChange)="updateSlot(index, 'startTime', $event)"
+                            class="tactile-input w-full text-sm font-semibold bg-white"
+                          >
+                            @for (time of getStartTimeOptions(slot.day); track time) {
+                              <option [value]="time">{{ time }}</option>
+                            }
+                          </select>
+                          @if (fieldErrors()['TimeSlots[' + index + '].StartTime']) {
+                            <p class="text-xs font-bold text-duo-red mt-1">
+                              {{ fieldErrors()['TimeSlots[' + index + '].StartTime'] }}
+                            </p>
+                          }
+                        </div>
+                        <div>
+                          <label class="block text-xs font-extrabold text-slate-500 mb-1"
+                            >Kết thúc</label
+                          >
+                          <input
+                            type="text"
+                            [ngModel]="slot.endTime"
+                            readonly
+                            class="tactile-input w-full text-sm font-semibold bg-slate-50"
+                          />
+                          @if (fieldErrors()['TimeSlots[' + index + '].EndTime']) {
+                            <p class="text-xs font-bold text-duo-red mt-1">
+                              {{ fieldErrors()['TimeSlots[' + index + '].EndTime'] }}
+                            </p>
+                          }
+                        </div>
+                        <button
+                          type="button"
+                          (click)="removeSlot(index)"
+                          [disabled]="proposalSlots().length === 1"
+                          class="tactile-button-gray w-fit justify-self-end sm:w-auto px-4 py-2 rounded-xl text-xs font-bold disabled:opacity-40"
+                        >
+                          Xóa
+                        </button>
+                        @if (fieldErrors()['TimeSlots[' + index + ']']) {
+                          <p class="text-xs font-bold text-duo-red mt-2 col-span-full">
+                            {{ fieldErrors()['TimeSlots[' + index + ']'] }}
+                          </p>
+                        }
+                      </div>
+                    }
+
+                    <button
+                      type="button"
+                      (click)="addSlot()"
+                      class="tactile-button-gray px-4 py-2 rounded-xl text-xs font-bold"
+                    >
+                      Thêm lịch
+                    </button>
+                  </div>
+
+                  <div class="flex flex-col sm:flex-row gap-2 pt-2 mt-6">
+                    <button
+                      (click)="createProposal(lr)"
+                      [disabled]="isWorking()"
+                      class="tactile-button-blue w-full py-3 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60"
+                    >
+                      Gửi đề xuất lịch mới
+                    </button>
+                    <button
+                      (click)="proposalFormVisible.set(false)"
+                      [disabled]="isWorking()"
+                      class="tactile-button-gray w-full py-3 rounded-xl text-sm font-bold disabled:opacity-60"
+                    >
+                      Hủy
+                    </button>
+                  </div>
+                </div>
+              }
             </div>
           }
         </div>
-
-        @if (proposal(); as p) {
-
-          @if (isMyProposal(p)) {
-            <div class="tactile-card p-6 space-y-4 border-duo-blue bg-blue-50/10">
-              <h2 class="font-extrabold text-lg text-slate-900">Đề xuất lịch của bạn</h2>
-              <p class="text-sm text-slate-500">Đề xuất lịch mới đang được gửi tới học viên và chờ họ phản hồi.</p>
-              
-              <div class="grid sm:grid-cols-3 gap-4 text-sm">
-                <div class="rounded-2xl bg-slate-50 p-4 border-2 border-slate-100">
-                  <p class="font-bold text-slate-500">Đề xuất lịch</p>
-                  <p class="mt-1 font-extrabold text-slate-900">{{ proposalSlotsText(p) }}</p>
-                </div>
-                <div class="rounded-2xl bg-slate-50 p-4 border-2 border-slate-100">
-                  <p class="font-bold text-slate-500">Ngày bắt đầu</p>
-                  <p class="mt-1 font-extrabold text-slate-900">{{ date(p.desiredStartDate) }}</p>
-                </div>
-                <div class="rounded-2xl bg-slate-50 p-4 border-2 border-slate-100">
-                  <p class="font-bold text-slate-500">Học phí mong muốn</p>
-                  <p class="mt-1 font-extrabold text-duo-green">{{ money(p.hourlyRate) }}/h</p>
-                </div>
-              </div>
-            </div>
-          } @else {
-            <div class="tactile-card p-6 space-y-4 border-duo-blue">
-              <h2 class="font-extrabold text-lg text-slate-900">Đề xuất lịch từ học viên</h2>
-              <div class="grid sm:grid-cols-3 gap-4 text-sm">
-                <div class="rounded-2xl bg-blue-50 p-4">
-                  <p class="font-bold text-slate-500">Lịch học viên đề xuất</p>
-                  <p class="mt-1 font-extrabold text-slate-900">{{ proposalSlotsText(p) }}</p>
-                </div>
-                <div class="rounded-2xl bg-blue-50 p-4">
-                  <p class="font-bold text-slate-500">Ngày bắt đầu</p>
-                  <p class="mt-1 font-extrabold text-slate-900">{{ date(p.desiredStartDate) }}</p>
-                </div>
-                <div class="rounded-2xl bg-blue-50 p-4">
-                  <p class="font-bold text-slate-500">Học phí / giờ</p>
-                  <p class="mt-1 font-extrabold text-duo-green">{{ money(p.hourlyRate) }}/h</p>
-                </div>
-              </div>
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <button (click)="acceptProposal(p)" [disabled]="isWorking()"
-                        class="tactile-button-green w-full py-2.5 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60">
-                  Chấp nhận đề xuất
-                </button>
-                <button (click)="openProposalForm()" [disabled]="isWorking() || proposalFormVisible()"
-                        class="tactile-button-blue w-full py-2.5 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60">
-                  Đề xuất lịch khác
-                </button>
-                <button (click)="rejectProposal(p)" [disabled]="isWorking()"
-                        class="tactile-button-gray w-full py-2.5 rounded-xl text-sm font-bold disabled:opacity-60">
-                  Từ chối đề xuất
-                </button>
-              </div>
-            </div>
-          }
-        }
-
-        @if (proposalFormVisible()) {
-          <div class="tactile-card p-6 space-y-4">
-            <h2 class="font-extrabold text-lg text-slate-900">Tạo đề xuất lịch mới</h2>
-            <div class="grid sm:grid-cols-3 gap-4">
-              <div>
-                <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Ngày bắt đầu</label>
-                <div class="relative cursor-pointer" (click)="desiredStartDateInput.showPicker()">
-                  <input
-                    type="text"
-                    [value]="desiredStartDate ? date(desiredStartDate) : ''"
-                    placeholder="dd/mm/yyyy"
-                    class="tactile-input w-full text-sm font-semibold pl-3 pr-10 py-2.5 bg-white pointer-events-none"
-                    readonly
-                  />
-                  <div class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  <input
-                    #desiredStartDateInput
-                    type="date"
-                    [(ngModel)]="desiredStartDate"
-                    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    (click)="$event.stopPropagation(); desiredStartDateInput.showPicker()"
-                  />
-                </div>
-                @if (fieldErrors()['DesiredStartDate']) {
-                  <p class="text-xs font-bold text-duo-red mt-1">{{ fieldErrors()['DesiredStartDate'] }}</p>
-                }
-              </div>
-              <div>
-                <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Số giờ / buổi</label>
-                <select [(ngModel)]="hoursPerSession" (ngModelChange)="recalculateSlots()" class="tactile-input w-full text-sm font-semibold bg-white">
-                  @for (hour of [0.5,1,1.5,2,2.5,3]; track hour) {
-                    <option [ngValue]="hour">{{ hour }} giờ</option>
-                  }
-                </select>
-              </div>
-              <div>
-                <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Học phí / giờ</label>
-                <input type="number" [(ngModel)]="hourlyRate" class="tactile-input w-full text-sm font-semibold" />
-                @if (fieldErrors()['HourlyRate']) {
-                  <p class="text-xs font-bold text-duo-red mt-1">{{ fieldErrors()['HourlyRate'] }}</p>
-                }
-              </div>
-            </div>
-
-            @for (slot of proposalSlots(); track $index; let index = $index) {
-              <div class="grid sm:grid-cols-[1fr_1fr_1fr_auto] gap-3 items-end rounded-2xl border-2 border-slate-100 p-3">
-                <div>
-                  <label class="block text-xs font-extrabold text-slate-500 mb-1">Ngày</label>
-                  <select [ngModel]="slot.day" (ngModelChange)="updateSlot(index, 'day', $event)" class="tactile-input w-full text-sm font-semibold bg-white">
-                    @for (day of dayOptions; track day.value) {
-                      <option [ngValue]="day.value">{{ day.label }}</option>
-                    }
-                  </select>
-                  @if (fieldErrors()['TimeSlots[' + index + '].Day']) {
-                    <p class="text-xs font-bold text-duo-red mt-1">{{ fieldErrors()['TimeSlots[' + index + '].Day'] }}</p>
-                  }
-                </div>
-                <div>
-                  <label class="block text-xs font-extrabold text-slate-500 mb-1">Bắt đầu</label>
-                  <select [ngModel]="slot.startTime" (ngModelChange)="updateSlot(index, 'startTime', $event)"
-                          class="tactile-input w-full text-sm font-semibold bg-white">
-                    @for (time of getStartTimeOptions(slot.day); track time) {
-                      <option [value]="time">{{ time }}</option>
-                    }
-                  </select>
-                  @if (fieldErrors()['TimeSlots[' + index + '].StartTime']) {
-                    <p class="text-xs font-bold text-duo-red mt-1">{{ fieldErrors()['TimeSlots[' + index + '].StartTime'] }}</p>
-                  }
-                </div>
-                <div>
-                  <label class="block text-xs font-extrabold text-slate-500 mb-1">Kết thúc</label>
-                  <input type="text" [ngModel]="slot.endTime" readonly class="tactile-input w-full text-sm font-semibold bg-slate-50" />
-                  @if (fieldErrors()['TimeSlots[' + index + '].EndTime']) {
-                    <p class="text-xs font-bold text-duo-red mt-1">{{ fieldErrors()['TimeSlots[' + index + '].EndTime'] }}</p>
-                  }
-                </div>
-                <button type="button" (click)="removeSlot(index)" [disabled]="proposalSlots().length === 1" class="tactile-button-gray w-fit justify-self-end sm:w-auto px-4 py-2 rounded-xl text-xs font-bold disabled:opacity-40">Xóa</button>
-                @if (fieldErrors()['TimeSlots[' + index + ']']) {
-                  <p class="text-xs font-bold text-duo-red mt-2 col-span-full">{{ fieldErrors()['TimeSlots[' + index + ']'] }}</p>
-                }
-              </div>
-            }
-
-            <button type="button" (click)="addSlot()" class="tactile-button-gray px-4 py-2 rounded-xl text-xs font-bold">Thêm lịch</button>
-
-            <div class="flex flex-col sm:flex-row gap-2 pt-2">
-              <button (click)="createProposal(lr)" [disabled]="isWorking()" class="tactile-button-blue w-full py-3 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60">
-                Gửi đề xuất lịch mới
-              </button>
-              <button (click)="proposalFormVisible.set(false)" [disabled]="isWorking()" class="tactile-button-gray w-full py-3 rounded-xl text-sm font-bold disabled:opacity-60">
-                Hủy
-              </button>
-            </div>
-          </div>
-        }
-
-        @if (fieldErrors()['TimeSlots']) {
-          <p class="rounded-xl border-2 border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-duo-red mb-3">{{ fieldErrors()['TimeSlots'] }}</p>
-        }
-
-        @if (errorMessage()) {
-          <p class="rounded-xl border-2 border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-duo-red">{{ errorMessage() }}</p>
-        }
-
-        <!-- Student Detail Modal overlay -->
-        @if (selectedStudentId()) {
-          <app-student-detail-modal [studentId]="selectedStudentId()" (close)="selectedStudentId.set(null)" />
-        }
       </div>
+
+      @if (fieldErrors()['TimeSlots']) {
+        <p
+          class="rounded-xl border-2 border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-duo-red mb-3"
+        >
+          {{ fieldErrors()['TimeSlots'] }}
+        </p>
+      }
+
+      @if (errorMessage()) {
+        <p
+          class="rounded-xl border-2 border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-duo-red"
+        >
+          {{ errorMessage() }}
+        </p>
+      }
+
+      <!-- Student Detail Modal overlay -->
+      @if (selectedStudentId()) {
+        <app-student-detail-modal
+          [studentId]="selectedStudentId()"
+          (close)="selectedStudentId.set(null)"
+        />
+      }
     } @else if (isLoading()) {
       <div class="max-w-3xl mx-auto py-8">
-        <div class="tactile-card p-8 text-center font-bold text-slate-500">Đang tải yêu cầu học...</div>
+        <div class="tactile-card p-8 text-center font-bold text-slate-500">
+          Đang tải yêu cầu học...
+        </div>
       </div>
     } @else if (errorMessage()) {
       <div class="max-w-3xl mx-auto py-8 space-y-4">
-        <a routerLink="/tutor/dashboard" class="text-sm font-bold text-slate-500 hover:text-slate-800">← Quay lại Dashboard</a>
-        <p class="rounded-xl border-2 border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-duo-red">{{ errorMessage() }}</p>
+        <a
+          routerLink="/tutor/dashboard"
+          class="text-sm font-bold text-slate-500 hover:text-slate-800"
+          >← Quay lại Dashboard</a
+        >
+        <p
+          class="rounded-xl border-2 border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-duo-red"
+        >
+          {{ errorMessage() }}
+        </p>
       </div>
     }
   `,
@@ -258,7 +443,9 @@ import {
 export class TutorRequestDetailPage implements OnInit {
   request = signal<LearningRequestDto | null>(null);
   proposal = signal<ScheduleProposalDto | null>(null);
-  proposalSlots = signal<TimeSlotInputDto[]>([{ day: 'Monday', startTime: '17:00', endTime: '19:00' }]);
+  proposalSlots = signal<TimeSlotInputDto[]>([
+    { day: 'Monday', startTime: '17:00', endTime: '19:00' },
+  ]);
   desiredStartDate = '';
   hoursPerSession = 2;
   hourlyRate: number | null = null;
@@ -313,7 +500,7 @@ export class TutorRequestDetailPage implements OnInit {
         day: slot.day ?? 'Monday',
         startTime: slot.startTime ?? '17:00',
         endTime: buildEndTime(slot.startTime ?? '17:00', this.hoursPerSession),
-      })) ?? [{ day: 'Monday', startTime: '17:00', endTime: '19:00' }]
+      })) ?? [{ day: 'Monday', startTime: '17:00', endTime: '19:00' }],
     );
 
     this.proposalFormVisible.set(true);
@@ -343,7 +530,10 @@ export class TutorRequestDetailPage implements OnInit {
   }
 
   addSlot(): void {
-    this.proposalSlots.update((current) => [...current, { day: 'Monday', startTime: '17:00', endTime: buildEndTime('17:00', this.hoursPerSession) }]);
+    this.proposalSlots.update((current) => [
+      ...current,
+      { day: 'Monday', startTime: '17:00', endTime: buildEndTime('17:00', this.hoursPerSession) },
+    ]);
   }
 
   removeSlot(index: number): void {
@@ -369,7 +559,12 @@ export class TutorRequestDetailPage implements OnInit {
   }
 
   recalculateSlots(): void {
-    this.proposalSlots.update((current) => current.map((slot) => ({ ...slot, endTime: buildEndTime(slot.startTime, this.hoursPerSession) })));
+    this.proposalSlots.update((current) =>
+      current.map((slot) => ({
+        ...slot,
+        endTime: buildEndTime(slot.startTime, this.hoursPerSession),
+      })),
+    );
   }
 
   async acceptRequest(request: LearningRequestDto): Promise<void> {
@@ -418,9 +613,13 @@ export class TutorRequestDetailPage implements OnInit {
     } catch (error) {
       const errorDetails = getApiErrorDetails(error);
       this.errorMessage.set(errorDetails.message);
-      
+
       const fe: Record<string, string> = {};
-      if (errorDetails.errors && typeof errorDetails.errors === 'object' && !Array.isArray(errorDetails.errors)) {
+      if (
+        errorDetails.errors &&
+        typeof errorDetails.errors === 'object' &&
+        !Array.isArray(errorDetails.errors)
+      ) {
         Object.entries(errorDetails.errors).forEach(([key, val]) => {
           if (val) {
             fe[key] = Array.isArray(val) ? val[0] : String(val);
@@ -464,7 +663,7 @@ export class TutorRequestDetailPage implements OnInit {
       this.request.set(request);
       this.hourlyRate = request.budgetPerHour ?? null;
       this.hoursPerSession = request.hoursPerSession ?? 2;
-      
+
       this.desiredStartDate = request.desiredStartDate
         ? new Date(request.desiredStartDate).toISOString().slice(0, 10)
         : this.defaultStartDate();
@@ -474,13 +673,15 @@ export class TutorRequestDetailPage implements OnInit {
           day: slot.day ?? 'Monday',
           startTime: slot.startTime ?? '17:00',
           endTime: buildEndTime(slot.startTime ?? '17:00', this.hoursPerSession),
-        })) ?? [{ day: 'Monday', startTime: '17:00', endTime: '19:00' }]
+        })) ?? [{ day: 'Monday', startTime: '17:00', endTime: '19:00' }],
       );
 
       // Fetch proposal if in Negotiating state
       if (request.status === 'Negotiating') {
         try {
-          const propRes = await firstValueFrom(this.requestsApi.getScheduleProposalByLearningRequest(id));
+          const propRes = await firstValueFrom(
+            this.requestsApi.getScheduleProposalByLearningRequest(id),
+          );
           this.proposal.set(propRes.data ?? null);
         } catch {
           this.proposal.set(null);
