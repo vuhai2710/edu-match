@@ -3,6 +3,9 @@ import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { StudentDetailModalComponent } from '../../../shared/components/student-detail-modal';
+import { ScheduleCalendarComponent } from '../../../shared/components/schedule-calendar';
+import { SessionService } from '../../../core/auth/session';
+
 
 import {
   ClassDto,
@@ -28,155 +31,233 @@ import {
 
 @Component({
   selector: 'app-tutor-dashboard-page',
-  imports: [RouterLink, StudentDetailModalComponent],
+  imports: [RouterLink, StudentDetailModalComponent, ScheduleCalendarComponent],
   template: `
     <div class="space-y-6">
+      <!-- Premium Hero Banner -->
       <div
-        class="bg-gradient-to-r from-duo-blue to-cyan-500 rounded-3xl p-6 md:p-8 flex items-center gap-6 shadow-lg"
+        class="relative overflow-hidden bg-gradient-to-br from-blue-500 via-indigo-500 to-duo-blue rounded-3xl p-6 md:p-8 flex items-center gap-6 shadow-lg border-b-6 border-indigo-700"
       >
-        <div class="flex-1 text-white">
-          <h1 class="font-display text-2xl md:text-3xl font-black">Dashboard gia sư</h1>
-          <p class="mt-1 text-blue-100">Xử lý yêu cầu học mới và lớp học.</p>
+        <!-- Decorative grid overlay -->
+        <div class="absolute inset-0 bg-[linear-gradient(to_right,#ffffff10_1px,transparent_1px),linear-gradient(to_bottom,#ffffff10_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
+        <div class="flex-1 text-white relative z-10">
+          <span class="inline-block bg-white/20 text-white font-extrabold text-xs px-2.5 py-1 rounded-full uppercase tracking-wider mb-2">Gia sư</span>
+          <h1 class="font-display text-2xl md:text-4xl font-black tracking-tight leading-tight">{{ greetingString }} 👋</h1>
+          <p class="mt-2 text-indigo-50 max-w-xl text-sm md:text-base font-medium opacity-90">
+            {{ dateString }}
+          </p>
         </div>
       </div>
 
       @if (errorMessage()) {
         <p
-          class="rounded-xl border-2 border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-duo-red"
+          class="rounded-xl border-2 border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-duo-red shadow-sm"
         >
           {{ errorMessage() }}
         </p>
       }
 
-      <div class="grid grid-cols-2 gap-4">
-        <div class="tactile-card p-5 text-center">
-          <p class="font-display text-2xl font-black text-duo-blue">
-            {{ dashboard()?.activeClasses ?? 0 }}
-          </p>
-          <p class="text-xs text-slate-500 font-bold">Lớp đang dạy</p>
-        </div>
-        <div class="tactile-card p-5 text-center">
-          <p class="font-display text-2xl font-black text-duo-orange">
-            {{ dashboard()?.averageRating ?? 0 }}/5
-          </p>
-          <p class="text-xs text-slate-500 font-bold">Đánh giá trung bình</p>
-        </div>
-      </div>
-
-      <section>
-        <h2 class="font-extrabold text-lg text-slate-800 mb-3">Yêu cầu mới từ học viên</h2>
-        <div class="space-y-3">
-          @for (request of incomingRequests(); track request.id) {
-            <div class="tactile-card p-5">
-              <div class="flex items-start justify-between gap-4">
-                <div>
-                  <p class="font-extrabold text-slate-900">
-                    {{ request.studentName || 'Học viên' }}
-                  </p>
-                  <p class="text-sm text-slate-500">
-                    {{ request.subjectName }} · {{ request.hoursPerSession }} giờ/buổi ·
-                    {{ money(request.budgetPerHour) }}/h
-                  </p>
-                  <p class="text-xs text-slate-400 mt-1">{{ slots(request) }}</p>
-                </div>
-                <span [class]="requestClass(request)" class="text-xs font-black rounded-full px-2.5 py-1">{{
-                  requestLabel(request)
-                }}</span>
+      <div class="grid lg:grid-cols-3 gap-6">
+        <!-- Cột bên trái: Stats cards + Yêu cầu mới & Lớp học sắp tới -->
+        <div class="lg:col-span-2 space-y-6">
+          <!-- 3-Column Stats Grid -->
+          <div class="grid grid-cols-3 gap-4">
+            <a
+              routerLink="/tutor/classes"
+              class="tactile-card p-4 text-center block hover:border-duo-blue hover:shadow-md transition-all group border-b-6 border-slate-200 hover:border-b-duo-blue"
+            >
+              <div class="flex flex-col items-center justify-center">
+                <p class="font-display text-xl sm:text-2xl font-black text-duo-blue leading-none">
+                  {{ dashboard()?.activeClasses ?? 0 }}
+                </p>
+                <p class="text-[10px] sm:text-xs text-slate-500 font-bold mt-1">Lớp đang dạy</p>
               </div>
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-4">
-                @if (request.status === 'Pending') {
-                  <button
-                    (click)="acceptRequest(request)"
-                    [disabled]="isWorking()"
-                    class="tactile-button-green w-full py-2.5 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60"
-                  >
-                    Chấp nhận
-                  </button>
-                  <a
-                    [routerLink]="['/tutor/requests', request.id]"
-                    class="tactile-button-blue w-full py-2.5 rounded-xl text-sm font-extrabold uppercase text-center"
-                  >
-                    Đề xuất lịch
-                  </a>
-                  <button
-                    (click)="rejectRequest(request)"
-                    [disabled]="isWorking()"
-                    class="tactile-button-gray w-full py-2.5 rounded-xl text-sm font-bold disabled:opacity-60"
-                  >
-                    Từ chối
-                  </button>
-                } @else {
-                  <a
-                    [routerLink]="['/tutor/requests', request.id]"
-                    class="tactile-button-blue w-full py-2.5 rounded-xl text-sm font-extrabold uppercase text-center sm:col-span-3"
-                  >
-                    Xem chi tiết đàm phán
-                  </a>
+            </a>
+            <a
+              routerLink="/tutor/requests"
+              class="tactile-card p-4 text-center block hover:border-duo-green hover:shadow-md transition-all group border-b-6 border-slate-200 hover:border-b-duo-green"
+            >
+              <div class="flex flex-col items-center justify-center">
+                <p class="font-display text-xl sm:text-2xl font-black text-duo-green leading-none">
+                  {{ incomingRequests().length }}
+                </p>
+                <p class="text-[10px] sm:text-xs text-slate-500 font-bold mt-1">Yêu cầu mới</p>
+              </div>
+            </a>
+            <div
+              class="tactile-card p-4 text-center block border-b-6 border-slate-200"
+            >
+              <div class="flex flex-col items-center justify-center">
+                <p class="font-display text-xl sm:text-2xl font-black text-duo-orange leading-none">
+                  {{ dashboard()?.averageRating ?? 0 }}/5
+                </p>
+                <p class="text-[10px] sm:text-xs text-slate-500 font-bold mt-1">Đánh giá TB</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6 items-start">
+            <!-- Cột 1: Yêu cầu mới -->
+            <section class="tactile-card bg-white p-5 md:p-6 flex flex-col relative overflow-hidden">
+              <div class="absolute top-0 left-0 right-0 h-1.5 bg-duo-blue"></div>
+
+              <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-duo-blue">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                  </div>
+                  <h2 class="font-display font-black text-base text-slate-800">Yêu cầu mới</h2>
+                </div>
+                <a routerLink="/tutor/requests" class="text-xs font-bold text-duo-blue hover:text-duo-blue-dark transition-colors flex items-center gap-0.5">
+                  Xem tất cả →
+                </a>
+              </div>
+
+              <div class="space-y-3">
+                @for (request of incomingRequests(); track request.id) {
+                  <div class="tactile-card p-5 hover:-translate-y-0.5 hover:shadow-md transition-all duration-300">
+                    <div class="flex items-start justify-between gap-4">
+                      <div>
+                        <p class="font-extrabold text-slate-900">
+                          {{ request.studentName || 'Học viên' }}
+                        </p>
+                        <p class="text-xs text-slate-500 font-medium mt-1">
+                          {{ request.subjectName }} · <span class="font-bold text-slate-700">{{ request.hoursPerSession }}h/buổi</span>
+                        </p>
+                        <p class="text-xs text-slate-700 font-black mt-1">{{ money(request.budgetPerHour) }}/h</p>
+                        <p class="text-[10px] text-slate-400 mt-2 font-bold uppercase tracking-wider">{{ slots(request) }}</p>
+                      </div>
+                      <span [class]="requestClass(request)" class="text-[10px] font-black rounded-full px-2.5 py-1 uppercase tracking-wider shrink-0">{{
+                        requestLabel(request)
+                      }}</span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-4">
+                      @if (request.status === 'Pending') {
+                        <button
+                          (click)="acceptRequest(request)"
+                          [disabled]="isWorking()"
+                          class="tactile-button-green w-full py-2 rounded-xl text-xs font-black uppercase disabled:opacity-60 flex items-center justify-center"
+                        >
+                          Nhận
+                        </button>
+                        <a
+                          [routerLink]="['/tutor/requests', request.id]"
+                          class="tactile-button-blue w-full py-2 rounded-xl text-xs font-black uppercase text-center flex items-center justify-center"
+                        >
+                          Đề xuất
+                        </a>
+                        <button
+                          (click)="rejectRequest(request)"
+                          [disabled]="isWorking()"
+                          class="tactile-button-gray w-full py-2 rounded-xl text-xs font-black uppercase disabled:opacity-60 flex items-center justify-center"
+                        >
+                          Từ chối
+                        </button>
+                      } @else {
+                        <a
+                          [routerLink]="['/tutor/requests', request.id]"
+                          class="tactile-button-blue w-full py-2 rounded-xl text-xs font-black uppercase text-center sm:col-span-3 flex items-center justify-center"
+                        >
+                          Đàm phán
+                        </a>
+                      }
+                    </div>
+
+                    <!-- View Student Details Button -->
+                    @if (request.studentId) {
+                      <button
+                        (click)="openStudentDetail(request.studentId)"
+                        class="w-full mt-3 border-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-600 font-extrabold py-2 px-4 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors"
+                      >
+                        <svg
+                          class="w-4 h-4 text-slate-400"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          stroke-width="2"
+                        >
+                          <circle cx="12" cy="8" r="4" />
+                          <path d="M5 20a7 7 0 0 1 14 0" />
+                        </svg>
+                        Chi tiết học viên
+                      </button>
+                    }
+                  </div>
+                }
+                @if (!incomingRequests().length) {
+                  <div class="flex flex-col items-center justify-center py-10 text-center px-4">
+                    <div class="w-16 h-16 rounded-2xl bg-blue-50 border-2 border-blue-100 flex items-center justify-center mb-4 text-duo-blue hover:scale-110 transition-transform duration-300">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0a2 2 0 01-2 2H6a2 2 0 01-2-2m16 0V9a2 2 0 00-2-2H6a2 2 0 00-2 2v4" />
+                      </svg>
+                    </div>
+                    <p class="font-display font-extrabold text-slate-800 text-base">Hộp thư trống</p>
+                    <p class="text-xs text-slate-400 mt-1 max-w-[200px]">Không có yêu cầu học nào đang chờ xử lý.</p>
+                  </div>
                 }
               </div>
+            </section>
 
-              <!-- View Student Details Button -->
-              @if (request.studentId) {
-                <button
-                  (click)="openStudentDetail(request.studentId)"
-                  class="w-full mt-3 border-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-600 font-extrabold py-2 px-4 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors"
-                >
-                  <svg
-                    class="w-4 h-4 text-slate-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  >
-                    <circle cx="12" cy="8" r="4" />
-                    <path d="M5 20a7 7 0 0 1 14 0" />
-                  </svg>
-                  Chi tiết học viên
-                </button>
-              }
-            </div>
-          }
-          @if (!incomingRequests().length) {
-            <div class="tactile-card p-5 text-center font-bold text-slate-500">
-              Không có yêu cầu đang chờ.
-            </div>
-          }
-        </div>
-      </section>
+            <!-- Cột 2: Lớp dạy sắp tới -->
+            <section class="tactile-card bg-white p-5 md:p-6 flex flex-col relative overflow-hidden">
+              <div class="absolute top-0 left-0 right-0 h-1.5 bg-duo-green"></div>
 
-      <section>
-        <div class="flex items-center justify-between mb-3">
-          <h2 class="font-extrabold text-lg text-slate-800">Lớp học sắp tới</h2>
-          <a routerLink="/tutor/classes" class="text-sm font-bold text-duo-blue hover:underline"
-            >Xem tất cả</a
-          >
-        </div>
-        <div class="space-y-3">
-          @for (item of classes(); track item.id) {
-            <a
-              [routerLink]="['/tutor/classes', item.id]"
-              class="tactile-card p-4 flex items-center justify-between gap-3"
-            >
-              <div>
-                <p class="font-bold text-sm text-slate-900">{{ item.subjectName || item.code }}</p>
-                <p class="text-xs text-slate-500">
-                  {{ item.studentName }} · {{ date(item.startDate) }}
-                </p>
+              <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center text-duo-green">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                  </div>
+                  <h2 class="font-display font-black text-base text-slate-800">Lớp dạy sắp tới</h2>
+                </div>
+                <a routerLink="/tutor/classes" class="text-xs font-bold text-duo-blue hover:text-duo-blue-dark transition-colors flex items-center gap-0.5">
+                  Xem tất cả →
+                </a>
               </div>
-              <span
-                [class]="classClass(item)"
-                class="text-xs font-black px-3 py-1 rounded-full"
-                >{{ classLabel(item) }}</span
-              >
-            </a>
-          }
-          @if (!classes().length) {
-            <div class="tactile-card p-5 text-center font-bold text-slate-500">
-              Chưa có lớp học.
-            </div>
-          }
+
+              <div class="space-y-3">
+                @for (item of classes(); track item.id) {
+                  <a
+                    [routerLink]="['/tutor/classes', item.id]"
+                    class="tactile-card p-4 flex items-center justify-between gap-3 block hover:-translate-y-0.5 hover:shadow-md transition-all duration-300"
+                  >
+                    <div>
+                      <p class="font-extrabold text-sm text-slate-900">{{ item.subjectName || item.code }}</p>
+                      <p class="text-xs text-slate-500 font-medium mt-1">
+                        Học viên: <span class="font-bold text-slate-700">{{ item.studentName }}</span>
+                      </p>
+                    </div>
+                    <span
+                      [class]="classClass(item)"
+                      class="text-[10px] font-black px-3 py-1 rounded-full shrink-0 uppercase tracking-wider"
+                      >{{ classLabel(item) }}</span
+                    >
+                  </a>
+                }
+                @if (!classes().length) {
+                  <div class="flex flex-col items-center justify-center py-10 text-center px-4">
+                    <div class="w-16 h-16 rounded-2xl bg-green-50 border-2 border-green-100 flex items-center justify-center mb-4 text-duo-green hover:scale-110 transition-transform duration-300">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                      </svg>
+                    </div>
+                    <p class="font-display font-extrabold text-slate-800 text-base">Chưa có lớp dạy</p>
+                    <p class="text-xs text-slate-400 mt-1 max-w-[200px]">Chưa có lớp dạy học nào được thiết lập.</p>
+                  </div>
+                }
+              </div>
+            </section>
+          </div>
         </div>
-      </section>
+
+        <!-- Cột bên phải: Lịch dạy tuần này -->
+        <div class="lg:col-span-1">
+          <app-schedule-calendar [classes]="classes()" role="tutor" />
+        </div>
+      </div>
     </div>
 
     <!-- Student Detail Modal overlay -->
@@ -195,6 +276,31 @@ export class TutorDashboardPage implements OnInit {
   isWorking = signal(false);
   errorMessage = signal('');
   selectedStudentId = signal<number | null>(null);
+
+  private readonly session = inject(SessionService);
+
+  get greetingString(): string {
+    const hours = new Date().getHours();
+    let period = 'sáng';
+    if (hours >= 12 && hours < 18) {
+      period = 'chiều';
+    } else if (hours >= 18 || hours < 4) {
+      period = 'tối';
+    }
+    const name = this.session.user()?.fullName ?? '';
+    return `Chào buổi ${period}${name ? ' ' + name : ''}`;
+  }
+
+  get dateString(): string {
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const dayNames = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'];
+    const dayName = dayNames[dayOfWeek];
+    const date = now.getDate();
+    const month = now.getMonth() + 1;
+    const year = now.getFullYear();
+    return `${dayName}, ngày ${date} tháng ${month} năm ${year}`;
+  }
 
   openStudentDetail(studentId: number): void {
     this.selectedStudentId.set(studentId);

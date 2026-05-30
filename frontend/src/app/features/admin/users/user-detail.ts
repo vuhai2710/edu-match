@@ -53,10 +53,10 @@ import {
               <div class="flex flex-wrap items-center justify-center sm:justify-start gap-3">
                 <h1 class="font-display text-3xl font-black text-slate-800 tracking-wide">{{ u.fullName || 'Không rõ' }}</h1>
                 <span class="rounded-xl bg-slate-100 px-3 py-1 text-xs font-black text-slate-600 border border-slate-200">{{ roleLabel(u.role) }}</span>
-                @if (u.isActive) {
-                  <span class="rounded-xl bg-green-50 px-3 py-1 text-xs font-black text-duo-green border border-green-200">Đang hoạt động</span>
+                @if (u.isDeleted) {
+                  <span class="rounded-xl bg-red-50 px-3 py-1 text-xs font-black text-duo-red border border-red-200">Đã xóa</span>
                 } @else {
-                  <span class="rounded-xl bg-red-50 px-3 py-1 text-xs font-black text-duo-red border border-red-200">Đã khóa</span>
+                  <span class="rounded-xl bg-green-50 px-3 py-1 text-xs font-black text-duo-green border border-green-200">Đang hoạt động</span>
                 }
                 @if (u.role === userRole.Tutor && tutorProfile(); as t) {
                   @if (t.approvalStatus === 'Pending') {
@@ -137,7 +137,7 @@ import {
             </div>
             <div class="rounded-xl border-2 border-slate-100 bg-slate-50 px-4 py-3">
               <p class="text-xs font-black uppercase text-slate-400 tracking-wider">Trạng thái tài khoản</p>
-              <p class="mt-1 font-extrabold text-slate-700">{{ u.isActive ? 'Đang hoạt động' : 'Đã khóa' }}</p>
+              <p class="mt-1 font-extrabold text-slate-700">{{ u.isActive ? 'Đang hoạt động' : 'Đã xóa' }}</p>
             </div>
             <div class="rounded-xl border-2 border-slate-100 bg-slate-50 px-4 py-3">
               <p class="text-xs font-black uppercase text-slate-400 tracking-wider">Đăng nhập Google</p>

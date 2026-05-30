@@ -64,6 +64,16 @@ namespace EduMatch.Repositories
         .Include(u => u.Student)
         .AsQueryable();
 
+      // Default: only show non-deleted users; isDeleted=true shows deleted users only
+      if (parameters.IsDeleted.HasValue)
+      {
+        query = query.Where(u => u.IsDeleted == parameters.IsDeleted.Value);
+      }
+      else
+      {
+        query = query.Where(u => !u.IsDeleted);
+      }
+
       if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
       {
         var searchTerm = parameters.SearchTerm.ToLower().Trim();

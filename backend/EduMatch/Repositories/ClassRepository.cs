@@ -82,6 +82,28 @@ namespace EduMatch.Repositories
                 query = query.Where(c => c.Status == parameters.Status.Value);
             }
 
+            if (parameters.SubjectId.HasValue)
+            {
+                query = query.Where(c => c.SubjectId == parameters.SubjectId.Value);
+            }
+
+            if (parameters.DayOfWeek.HasValue)
+            {
+                // TimeSlotsJson contains serialized day names like "day":"Monday"
+                var dayName = parameters.DayOfWeek.Value.ToString();
+                query = query.Where(c => c.TimeSlotsJson != null && EF.Functions.Like(c.TimeSlotsJson, $"%\"day\":\"{dayName}\"%"));
+            }
+
+            if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
+            {
+                var term = parameters.SearchTerm.Trim().ToLower();
+                query = query.Where(c =>
+                    c.Code.ToLower().Contains(term) ||
+                    (c.Subject != null && c.Subject.Name.ToLower().Contains(term)) ||
+                    (c.Student != null && c.Student.FullName != null && c.Student.FullName.ToLower().Contains(term)) ||
+                    (c.Tutor != null && c.Tutor.User != null && c.Tutor.User.FullName != null && c.Tutor.User.FullName.ToLower().Contains(term)));
+            }
+
             var totalItems = await query.CountAsync();
 
             var items = await query

@@ -35,7 +35,7 @@ import { MascotComponent } from '../../../shared/components/mascot/mascot';
               type="text"
               [ngModel]="searchTerm()"
               (ngModelChange)="searchTerm.set($event)"
-              placeholder="Tìm kiếm môn học theo tên hoặc mô tả..."
+              placeholder="Tìm kiếm"
               class="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 pl-10 text-sm focus:border-duo-blue outline-none bg-white transition-all"
             />
             <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">

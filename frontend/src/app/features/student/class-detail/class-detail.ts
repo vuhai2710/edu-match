@@ -5,8 +5,8 @@ import { firstValueFrom } from 'rxjs';
 
 import { StudentDetailModalComponent } from '../../../shared/components/student-detail-modal';
 
-import { CancellationRequestDto, ClassDto, ClassStatus, CancellationRequestStatus, PaymentStatus } from '../../../api/generated/client/models';
-import { ClassesService, CancellationRequestsService } from '../../../api/generated/client/services';
+import { CancellationRequestDto, ClassDto, ClassStatus, CancellationRequestStatus, PaymentStatus, ReviewEligibilityDto, ReviewDto } from '../../../api/generated/client/models';
+import { ClassesService, CancellationRequestsService, ReviewsService } from '../../../api/generated/client/services';
 import { SessionService } from '../../../core/auth/session';
 import { getApiErrorMessage, unwrapApiData } from '../../../core/http/api-error';
 import {
@@ -91,6 +91,104 @@ import {
             </div>
           </div>
         </div>
+
+        <!-- Đánh giá lớp học (Reviews & Ratings) -->
+        @if (isLoadingReview()) {
+          <div class="tactile-card p-6 text-center text-slate-500 font-bold">
+            Đang tải thông tin đánh giá...
+          </div>
+        } @else {
+          <!-- 1. Hiển thị đánh giá đã có -->
+          @if (existingReview(); as rev) {
+            <div class="tactile-card p-6 space-y-4">
+              <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h2 class="font-extrabold text-lg text-slate-900 flex items-center gap-2">
+                  <span class="text-amber-500 text-xl">★</span> Đánh giá từ học viên
+                </h2>
+                <span class="text-xs font-semibold text-slate-400">
+                  {{ dateTime(rev.createdAt) }}
+                </span>
+              </div>
+              
+              <div class="flex items-start gap-4">
+                <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center font-black text-lg border-b-2 border-amber-300 shrink-0">
+                  {{ (rev.studentName || 'H')[0].toUpperCase() }}
+                </div>
+                <div class="space-y-1.5 flex-1 min-w-0">
+                  <div class="flex items-center gap-2">
+                    <p class="font-extrabold text-slate-800 text-sm">
+                      {{ rev.studentName || 'Học viên' }}
+                    </p>
+                    <div class="flex gap-0.5">
+                      @for (star of [1, 2, 3, 4, 5]; track star) {
+                        <span class="text-sm" 
+                              [class.text-amber-500]="star <= (rev.rating || 0)"
+                              [class.text-slate-200]="star > (rev.rating || 0)">
+                          ★
+                        </span>
+                      }
+                    </div>
+                  </div>
+                  <p class="text-slate-600 text-sm leading-relaxed whitespace-pre-line bg-slate-50 p-3 rounded-2xl border border-slate-100 font-medium">
+                    {{ rev.comment || 'Không có nhận xét chi tiết.' }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          } @else if (!isTutor() && reviewEligibility()?.canReview && !reviewEligibility()?.alreadyReviewed) {
+            <!-- 2. Form gửi đánh giá cho Học viên -->
+            <div class="tactile-card p-6 space-y-4">
+              <h2 class="font-extrabold text-lg text-slate-900 flex items-center gap-2">
+                <span class="text-duo-green text-xl">★</span> Đánh giá lớp học & Gia sư
+              </h2>
+              <p class="text-xs text-slate-500 leading-relaxed">
+                Chia sẻ ý kiến của bạn sẽ giúp gia sư cải thiện chất lượng giảng dạy và giúp các học viên khác tìm kiếm được gia sư phù hợp.
+              </p>
+
+              <!-- Star selector -->
+              <div class="flex flex-wrap items-center gap-3 py-2">
+                <span class="text-sm font-bold text-slate-600">Mức độ hài lòng:</span>
+                <div class="flex gap-1">
+                  @for (star of [1, 2, 3, 4, 5]; track star) {
+                    <button type="button" 
+                            (click)="reviewRating.set(star)"
+                            class="text-3xl focus:outline-none transition-all duration-150 transform hover:scale-110 cursor-pointer active:scale-95"
+                            [class.text-amber-500]="star <= reviewRating()"
+                            [class.text-slate-200]="star > reviewRating()">
+                      ★
+                    </button>
+                  }
+                </div>
+                <span class="text-sm font-black text-slate-700 bg-slate-100 px-3 py-1 rounded-xl">
+                  {{ reviewRating() === 1 ? 'Rất tệ 😟' : reviewRating() === 2 ? 'Không hài lòng 🙁' : reviewRating() === 3 ? 'Bình thường 😐' : reviewRating() === 4 ? 'Hài lòng 🙂' : 'Tuyệt vời! 😄' }}
+                </span>
+              </div>
+
+              <!-- Comment -->
+              <div>
+                <label class="block text-sm font-bold text-slate-700 mb-1">Nhận xét chi tiết (Không bắt buộc)</label>
+                <textarea [(ngModel)]="reviewComment" rows="3"
+                          placeholder="Nhập cảm nhận của bạn về buổi học, gia sư..."
+                          class="tactile-input w-full px-3 py-2 text-sm outline-none"></textarea>
+              </div>
+
+              @if (reviewErrorMessage()) {
+                <p class="text-xs font-bold text-red-500">{{ reviewErrorMessage() }}</p>
+              }
+              @if (reviewSuccessMessage()) {
+                <p class="text-xs font-bold text-duo-green">{{ reviewSuccessMessage() }}</p>
+              }
+
+              <div class="flex justify-end mt-2">
+                <button (click)="submitReview(item.id!)"
+                        [disabled]="isSubmittingReview()"
+                        class="w-full sm:w-auto tactile-button-green py-2.5 px-6 rounded-xl text-sm font-extrabold uppercase disabled:opacity-50">
+                  {{ isSubmittingReview() ? 'Đang gửi...' : 'Gửi đánh giá' }}
+                </button>
+              </div>
+            </div>
+          }
+        }
 
         <!-- Hủy lớp UI / UX -->
         @if (cancellationRequest(); as req) {
@@ -216,10 +314,23 @@ export class StudentClassDetailPage implements OnInit {
   cancelErrorMessage = signal('');
   isSubmittingCancel = signal(false);
 
+  // Review & Rating States
+  reviewEligibility = signal<ReviewEligibilityDto | null>(null);
+  existingReview = signal<ReviewDto | null>(null);
+  isLoadingReview = signal(false);
+
+  // Review Form Inputs
+  reviewRating = signal<number>(5);
+  reviewComment = signal('');
+  isSubmittingReview = signal(false);
+  reviewErrorMessage = signal('');
+  reviewSuccessMessage = signal('');
+
   private readonly route = inject(ActivatedRoute);
   private readonly classesApi = inject(ClassesService);
   private readonly cancellationApi = inject(CancellationRequestsService);
   private readonly sessionService = inject(SessionService);
+  private readonly reviewsApi = inject(ReviewsService);
 
   backLink = computed(() => this.sessionService.role() === 'Tutor' ? '/tutor/classes' : '/student/classes');
   isTutor = computed(() => this.sessionService.role() === 'Tutor');
@@ -286,11 +397,77 @@ export class StudentClassDetailPage implements OnInit {
       this.classItem.set(classData);
       if (classData?.id) {
         await this.loadCancellationRequest(classData.id);
+        await this.loadReviewLogic(classData);
       }
     } catch (error) {
       this.errorMessage.set(getApiErrorMessage(error, 'Không tải được lớp học.'));
     } finally {
       this.isLoading.set(false);
+    }
+  }
+
+  private async loadReviewLogic(classData: ClassDto): Promise<void> {
+    if (!classData.id) return;
+
+    const isStudent = this.sessionService.role() === 'Student';
+
+    // 1. Fetch review eligibility if the user is a student
+    if (isStudent) {
+      try {
+        const eligibilityRes = await firstValueFrom(this.classesApi.getClassReviewEligibility(classData.id));
+        this.reviewEligibility.set(eligibilityRes.data ?? null);
+      } catch (error) {
+        console.error('Failed to fetch review eligibility:', error);
+        this.reviewEligibility.set(null);
+      }
+    }
+
+    // 2. Fetch existing review if we have a tutorId
+    if (classData.tutorId) {
+      this.isLoadingReview.set(true);
+      try {
+        const reviewsResponse = await firstValueFrom(this.reviewsApi.getReviewsByTutorId(classData.tutorId));
+        const allReviews = reviewsResponse.data ?? [];
+        const match = allReviews.find((r) => r.classId === classData.id);
+        this.existingReview.set(match ?? null);
+      } catch (error) {
+        console.error('Failed to fetch reviews:', error);
+        this.existingReview.set(null);
+      } finally {
+        this.isLoadingReview.set(false);
+      }
+    }
+  }
+
+  async submitReview(classId?: number): Promise<void> {
+    if (!classId) return;
+    const rating = this.reviewRating();
+    const comment = this.reviewComment().trim();
+
+    if (rating < 1 || rating > 5) {
+      this.reviewErrorMessage.set('Đánh giá phải từ 1 đến 5 sao.');
+      return;
+    }
+
+    this.isSubmittingReview.set(true);
+    this.reviewErrorMessage.set('');
+    this.reviewSuccessMessage.set('');
+    try {
+      await firstValueFrom(
+        this.reviewsApi.createReview({
+          classId,
+          rating,
+          comment: comment || undefined,
+        })
+      );
+      this.reviewSuccessMessage.set('Cảm ơn bạn đã gửi đánh giá thành công!');
+      this.reviewComment.set('');
+      // Reload class and review details to transition states
+      await this.loadClass();
+    } catch (error) {
+      this.reviewErrorMessage.set(getApiErrorMessage(error, 'Không gửi được đánh giá.'));
+    } finally {
+      this.isSubmittingReview.set(false);
     }
   }
 

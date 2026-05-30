@@ -14,6 +14,7 @@ namespace EduMatch.DTOs.User
     public string? AvatarUrl { get; set; }
     public Gender Gender { get; set; }
     public bool IsActive { get; set; }
+    public bool IsDeleted { get; set; }
     public bool IsGoogleAccount { get; set; }
     public TutorApprovalStatus? TutorApprovalStatus { get; set; }
     public long? TutorId { get; set; }

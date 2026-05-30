@@ -63,7 +63,7 @@ import {
               <p class="mt-1 font-extrabold text-slate-900">{{ money(lr.budgetPerHour) }}</p>
             </div>
             <div class="rounded-2xl bg-slate-50 p-4">
-              <p class="font-bold text-slate-500">Cọc dự kiến</p>
+              <p class="font-bold text-slate-500">Tiền đặt cọc</p>
               <p class="mt-1 font-extrabold text-duo-green">{{ money(lr.calculatedDepositAmount) }}</p>
             </div>
           </div>

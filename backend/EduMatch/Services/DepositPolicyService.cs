@@ -135,6 +135,14 @@ public class DepositPolicyService : IDepositPolicyService
         StatusCodes.Status404NotFound);
     }
 
+    // Block editing expired time-based policies
+    if (policy.ActiveTo.HasValue && policy.ActiveTo.Value.Date < DateTime.UtcNow.Date)
+    {
+      return ApiResponse<DepositPolicyDto?>.Fail(
+        "Không thể chỉnh sửa chính sách đã hết hiệu lực.",
+        StatusCodes.Status400BadRequest);
+    }
+
     if (IsDefaultPolicy(dto))
     {
       var defaultPolicy = await _depositPolicyRepository.GetDefaultPolicyAsync(id);
@@ -181,6 +189,14 @@ public class DepositPolicyService : IDepositPolicyService
     {
       return ApiResponse.Fail(
         "Không thể xóa chính sách mặc định của hệ thống.",
+        StatusCodes.Status400BadRequest);
+    }
+
+    // Block deleting expired policies
+    if (policy.ActiveTo.HasValue && policy.ActiveTo.Value.Date < DateTime.UtcNow.Date)
+    {
+      return ApiResponse.Fail(
+        "Không thể xóa chính sách đã hết hiệu lực.",
         StatusCodes.Status400BadRequest);
     }
 

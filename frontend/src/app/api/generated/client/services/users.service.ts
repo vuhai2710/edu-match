@@ -25,10 +25,10 @@ export class UsersService {
         return context.set(this.clientContextToken, 'default');
     }
 
-    getUsers(role?: UserRole, isActive?: boolean, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, tutorApprovalStatus?: TutorApprovalStatus, observe?: 'body', options?: RequestOptions<'json'>): Observable<UserDtoPagedResultApiResponse>;
-    getUsers(role?: UserRole, isActive?: boolean, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, tutorApprovalStatus?: TutorApprovalStatus, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<UserDtoPagedResultApiResponse>>;
-    getUsers(role?: UserRole, isActive?: boolean, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, tutorApprovalStatus?: TutorApprovalStatus, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<UserDtoPagedResultApiResponse>>;
-    getUsers(role?: UserRole, isActive?: boolean, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, tutorApprovalStatus?: TutorApprovalStatus, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
+    getUsers(role?: UserRole, isActive?: boolean, isDeleted?: boolean, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, tutorApprovalStatus?: TutorApprovalStatus, observe?: 'body', options?: RequestOptions<'json'>): Observable<UserDtoPagedResultApiResponse>;
+    getUsers(role?: UserRole, isActive?: boolean, isDeleted?: boolean, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, tutorApprovalStatus?: TutorApprovalStatus, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<UserDtoPagedResultApiResponse>>;
+    getUsers(role?: UserRole, isActive?: boolean, isDeleted?: boolean, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, tutorApprovalStatus?: TutorApprovalStatus, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<UserDtoPagedResultApiResponse>>;
+    getUsers(role?: UserRole, isActive?: boolean, isDeleted?: boolean, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, tutorApprovalStatus?: TutorApprovalStatus, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
         const url = `${this.basePath}/api/Users`;
 
         let params = new HttpParams();
@@ -37,6 +37,9 @@ export class UsersService {
         }
         if (isActive != null) {
             params = HttpParamsBuilder.addToHttpParams(params, isActive, 'isActive');
+        }
+        if (isDeleted != null) {
+            params = HttpParamsBuilder.addToHttpParams(params, isDeleted, 'isDeleted');
         }
         if (page != null) {
             params = HttpParamsBuilder.addToHttpParams(params, page, 'page');

@@ -39,7 +39,7 @@ import { formatMoney } from '../../../shared/utils/api-ui';
               type="text"
               [ngModel]="searchQuery"
               (ngModelChange)="onSearchQueryChange($event)"
-              placeholder="Tìm theo tên, môn học, chuyên ngành..."
+              placeholder="Tìm theo tên, mã số, chuyên ngành"
               class="tactile-input w-full text-sm font-semibold pl-10 pr-10"
             />
             @if (searchQuery) {
@@ -57,13 +57,16 @@ import { formatMoney } from '../../../shared/utils/api-ui';
             <select
               [ngModel]="sortSelection()"
               (ngModelChange)="onSortChange($event)"
-              class="tactile-input w-full text-sm font-semibold bg-white pr-9 cursor-pointer"
+              class="tactile-input w-full text-sm font-semibold bg-white pl-4 pr-10 cursor-pointer appearance-none"
             >
               <option value="createdat_desc">Mặc định</option>
               <option value="rating_desc">Đánh giá cao nhất</option>
               <option value="hourlyrate_asc">Giá tăng dần</option>
               <option value="hourlyrate_desc">Giá giảm dần</option>
             </select>
+            <svg class="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
             @if (sortSelection() !== 'createdat_desc') {
               <button
                 (click)="onSortChange('createdat_desc')"
@@ -82,13 +85,16 @@ import { formatMoney } from '../../../shared/utils/api-ui';
             <select
               [ngModel]="activeSubjectId()"
               (ngModelChange)="setSubject($event)"
-              class="tactile-input w-full text-sm font-semibold bg-white pr-9 cursor-pointer"
+              class="tactile-input w-full text-sm font-semibold bg-white pl-4 pr-10 cursor-pointer appearance-none"
             >
               <option [ngValue]="null">Tất cả môn học</option>
               @for (subject of subjects(); track subject.id) {
                 <option [ngValue]="subject.id">{{ subject.name }}</option>
               }
             </select>
+            <svg class="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
             @if (activeSubjectId() !== null) {
               <button
                 (click)="setSubject(null)"
@@ -104,13 +110,16 @@ import { formatMoney } from '../../../shared/utils/api-ui';
             <select
               [ngModel]="provinceId()"
               (ngModelChange)="onProvinceChange($event)"
-              class="tactile-input w-full text-sm font-semibold bg-white pr-9 cursor-pointer"
+              class="tactile-input w-full text-sm font-semibold bg-white pl-4 pr-10 cursor-pointer appearance-none"
             >
               <option [ngValue]="null">Tất cả tỉnh / thành</option>
               @for (province of provinces(); track province.provinceId) {
                 <option [ngValue]="province.provinceId">{{ province.provinceName }}</option>
               }
             </select>
+            <svg class="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
             @if (provinceId() !== null) {
               <button
                 (click)="onProvinceChange(null)"
@@ -126,7 +135,7 @@ import { formatMoney } from '../../../shared/utils/api-ui';
             <select
               [ngModel]="wardCode()"
               (ngModelChange)="setWard($event)"
-              class="tactile-input w-full text-sm font-semibold bg-white pr-9 cursor-pointer"
+              class="tactile-input w-full text-sm font-semibold bg-white pl-4 pr-10 cursor-pointer appearance-none"
               [disabled]="!provinceId() || isLoadingWards()"
             >
               <option [ngValue]="null">Tất cả phường / xã</option>
@@ -134,6 +143,9 @@ import { formatMoney } from '../../../shared/utils/api-ui';
                 <option [ngValue]="ward.wardCode">{{ ward.wardName }}</option>
               }
             </select>
+            <svg class="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
             @if (wardCode() !== null) {
               <button
                 (click)="setWard(null)"
@@ -198,14 +210,13 @@ import { formatMoney } from '../../../shared/utils/api-ui';
           </div>
 
           <div class="flex items-center justify-end gap-3 shrink-0">
-            @if (hasActiveFilters()) {
-              <button
-                (click)="resetFilters()"
-                class="tactile-button-outline py-2 px-4 rounded-xl text-xs font-black text-slate-600 bg-white hover:bg-slate-100 border border-slate-200 cursor-pointer flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
-              >
-                🔄 Đặt lại bộ lọc
-              </button>
-            }
+            <button
+              (click)="resetFilters()"
+              [disabled]="!hasActiveFilters()"
+              class="tactile-button-gray py-2 px-4 rounded-xl text-xs font-extrabold uppercase disabled:opacity-50 disabled:pointer-events-none disabled:transform-none disabled:border-b-4 flex items-center shadow-sm transition-all"
+            >
+              Đặt lại
+            </button>
           </div>
         </div>
       </div>
@@ -302,6 +313,7 @@ import { formatMoney } from '../../../shared/utils/api-ui';
           <app-pagination
             [page]="page()"
             [pageSize]="pageSize()"
+            [pageSizeOptions]="[6, 12, 18, 24]"
             [totalCount]="totalCount()"
             itemsName="gia sư"
             (pageChange)="onPageChange($event)"
@@ -339,7 +351,7 @@ export class DiscoverTutorsPage implements OnInit, OnDestroy {
 
   // Pagination states
   page = signal(1);
-  pageSize = signal(5);
+  pageSize = signal(6);
   totalCount = signal(0);
 
   // Sorting & Range states

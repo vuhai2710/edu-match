@@ -41,10 +41,15 @@ public class DepositPolicyRepository : Repository<DepositPolicy>, IDepositPolicy
     return await _dbSet
       .Where(x => !x.IsDeleted)
       .Where(x =>
+        // Exclude policies that haven't started yet
         (x.ActiveFrom == null || x.ActiveFrom.Value.Date <= today) &&
+        // Exclude expired policies - strictly: ActiveTo must cover today (inclusive)
         (x.ActiveTo == null || x.ActiveTo.Value.Date >= today))
+      // Prioritize time-based policies over default (false=0 sorts before true=1)
       .OrderBy(x => x.ActiveFrom == null && x.ActiveTo == null)
-      .ThenByDescending(x => x.ActiveFrom ?? DateTime.MinValue)
+      // Among time-based policies, prefer the one with the latest start date
+      .ThenByDescending(x => x.ActiveFrom)
+      // Tiebreak by most recently updated
       .ThenByDescending(x => x.UpdatedAt ?? x.CreatedAt)
       .FirstOrDefaultAsync();
   }

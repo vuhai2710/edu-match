@@ -1199,6 +1199,7 @@ export interface UserDto {
     avatarUrl?: string | null;
     gender?: Gender;
     isActive?: boolean;
+    isDeleted?: boolean;
     isGoogleAccount?: boolean;
     tutorApprovalStatus?: TutorApprovalStatus;
     tutorId?: number;

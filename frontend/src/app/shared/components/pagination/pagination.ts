@@ -22,7 +22,7 @@ import { FormsModule } from '@angular/forms';
           <select [ngModel]="pageSize()" 
                   (ngModelChange)="changePageSize($event)" 
                   class="tactile-select-compact">
-            @for (size of pageSizeOptions; track size) {
+            @for (size of pageSizeOptions(); track size) {
               <option [value]="size">{{ size }}</option>
             }
           </select>
@@ -196,7 +196,7 @@ export class PaginationComponent {
   @Output() readonly pageSizeChange = new EventEmitter<number>();
 
   // Options
-  readonly pageSizeOptions = [5, 10, 15, 20];
+  readonly pageSizeOptions = input<number[]>([5, 10, 15, 20]);
 
   // Computeds for record status
   protected readonly startItem = computed(() => {
@@ -246,7 +246,7 @@ export class PaginationComponent {
   // Emits page size change
   changePageSize(newSize: string | number): void {
     const size = typeof newSize === 'string' ? parseInt(newSize, 10) : newSize;
-    if (size && this.pageSizeOptions.includes(size) && size !== this.pageSize()) {
+    if (size && this.pageSizeOptions().includes(size) && size !== this.pageSize()) {
       this.pageSizeChange.emit(size);
     }
   }

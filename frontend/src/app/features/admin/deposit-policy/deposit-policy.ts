@@ -23,8 +23,6 @@ import { formatDate, formatMoney } from '../../../shared/utils/api-ui';
 
 type PolicyLifecycleStatus = 'active' | 'expired' | 'upcoming';
 
-
-
 @Component({
   selector: 'app-admin-deposit-policy-page',
   imports: [ErrorBannerComponent, FormsModule, PaginationComponent],
@@ -49,7 +47,7 @@ type PolicyLifecycleStatus = 'active' | 'expired' | 'upcoming';
           @if (activePolicy()) {
             @if (isDefaultPolicy(activePolicy()!)) {
               <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600"
-                >Cọc mặc định (Fallback)</span
+                >Cọc mặc định</span
               >
             } @else {
               <span class="rounded-full bg-green-50 px-3 py-1 text-xs font-black text-duo-green"
@@ -226,7 +224,7 @@ type PolicyLifecycleStatus = 'active' | 'expired' | 'upcoming';
                     />
                   </svg>
                 </div>
-                <h2 class="font-extrabold text-lg text-slate-800">Cọc mặc định (Fallback)</h2>
+                <h2 class="font-extrabold text-lg text-slate-800">Cọc mặc định</h2>
               </div>
 
               <p class="text-xs text-slate-500 leading-relaxed">
@@ -392,9 +390,21 @@ type PolicyLifecycleStatus = 'active' | 'expired' | 'upcoming';
                       class="w-full rounded-xl border-2 border-slate-200 pl-3 pr-10 py-2 bg-white text-sm font-bold pointer-events-none"
                       readonly
                     />
-                    <div class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    <div
+                      class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                    >
+                      <svg
+                        class="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
                       </svg>
                     </div>
                     <input
@@ -420,9 +430,21 @@ type PolicyLifecycleStatus = 'active' | 'expired' | 'upcoming';
                       class="w-full rounded-xl border-2 border-slate-200 pl-3 pr-10 py-2 bg-white text-sm font-bold pointer-events-none"
                       readonly
                     />
-                    <div class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    <div
+                      class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                    >
+                      <svg
+                        class="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
                       </svg>
                     </div>
                     <input
@@ -516,20 +538,24 @@ type PolicyLifecycleStatus = 'active' | 'expired' | 'upcoming';
                     </td>
                     <td class="px-4 py-3 text-right">
                       @if (!isDefaultPolicy(item)) {
-                        <div class="flex justify-end gap-3">
-                          <button
-                            (click)="editItem(item)"
-                            class="text-duo-blue font-bold text-xs hover:underline cursor-pointer"
-                          >
-                            Sửa
-                          </button>
-                          <button
-                            (click)="confirmToDelete(item)"
-                            class="text-duo-red font-bold text-xs hover:underline cursor-pointer"
-                          >
-                            Xóa
-                          </button>
-                        </div>
+                        @if (lifecycleStatus(item) === 'expired') {
+                          <span class="text-xs text-slate-400 italic font-medium">Đã hết hiệu lực</span>
+                        } @else {
+                          <div class="flex justify-end gap-3">
+                            <button
+                              (click)="editItem(item)"
+                              class="text-duo-blue font-bold text-xs hover:underline cursor-pointer"
+                            >
+                              Sửa
+                            </button>
+                            <button
+                              (click)="confirmToDelete(item)"
+                              class="text-duo-red font-bold text-xs hover:underline cursor-pointer"
+                            >
+                              Xóa
+                            </button>
+                          </div>
+                        }
                       } @else {
                         <span class="text-xs text-slate-400 italic font-medium">Hệ thống</span>
                       }
@@ -560,22 +586,38 @@ type PolicyLifecycleStatus = 'active' | 'expired' | 'upcoming';
 
       <!-- ===== Custom Confirmation Modal ===== -->
       @if (isConfirmVisible()) {
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div class="bg-white rounded-2xl border-2 border-slate-200 max-w-sm w-full p-6 text-center animate-in zoom-in-95 duration-150">
+        <div
+          class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+        >
+          <div
+            class="bg-white rounded-2xl border-2 border-slate-200 max-w-sm w-full p-6 text-center animate-in zoom-in-95 duration-150"
+          >
             <!-- Icon -->
-            <div class="w-16 h-16 mx-auto mb-4 bg-red-50 text-duo-red rounded-2xl flex items-center justify-center animate-pulse-slow">
-              <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            <div
+              class="w-16 h-16 mx-auto mb-4 bg-red-50 text-duo-red rounded-2xl flex items-center justify-center animate-pulse-slow"
+            >
+              <svg
+                class="w-8 h-8"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2.5"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                />
               </svg>
             </div>
-            
+
             <h3 class="font-display text-xl font-black text-slate-800 mb-2">
               {{ confirmTitle() }}
             </h3>
             <p class="text-sm text-slate-500 font-bold leading-relaxed mb-6">
               {{ confirmMessage() }}
             </p>
-            
+
             <div class="flex gap-3">
               <button
                 (click)="onConfirmNo()"
@@ -596,8 +638,12 @@ type PolicyLifecycleStatus = 'active' | 'expired' | 'upcoming';
 
       <!-- ===== Custom Edit Policy Modal ===== -->
       @if (isEditModalVisible()) {
-        <div class="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div class="bg-white rounded-2xl border-2 border-slate-200 max-w-lg w-full p-6 space-y-6 animate-in zoom-in-95 duration-150">
+        <div
+          class="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+        >
+          <div
+            class="bg-white rounded-2xl border-2 border-slate-200 max-w-lg w-full p-6 space-y-6 animate-in zoom-in-95 duration-150"
+          >
             <div class="flex items-center justify-between border-b-2 border-slate-100 pb-3">
               <h3 class="font-display text-xl font-black text-slate-800">
                 Cập nhật chính sách đặt cọc
@@ -674,9 +720,21 @@ type PolicyLifecycleStatus = 'active' | 'expired' | 'upcoming';
                       class="w-full rounded-xl border-2 border-slate-200 pl-3 pr-10 py-2 bg-white text-sm font-bold pointer-events-none"
                       readonly
                     />
-                    <div class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    <div
+                      class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                    >
+                      <svg
+                        class="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
                       </svg>
                     </div>
                     <input
@@ -702,9 +760,21 @@ type PolicyLifecycleStatus = 'active' | 'expired' | 'upcoming';
                       class="w-full rounded-xl border-2 border-slate-200 pl-3 pr-10 py-2 bg-white text-sm font-bold pointer-events-none"
                       readonly
                     />
-                    <div class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    <div
+                      class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                    >
+                      <svg
+                        class="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
                       </svg>
                     </div>
                     <input
@@ -884,7 +954,7 @@ export class AdminDepositPolicyPage implements OnInit {
     if (!p.id) return;
     this.confirmTitle.set('Xác nhận xóa');
     this.confirmMessage.set(
-      `Bạn có chắc chắn muốn xóa chính sách (${this.activeRange(p)}, ${this.percentDisplay(p.discountPercent)}%)? Thao tác này không thể hoàn tác.`
+      `Bạn có chắc chắn muốn xóa chính sách (${this.activeRange(p)}, ${this.percentDisplay(p.discountPercent)}%)? Thao tác này không thể hoàn tác.`,
     );
     this.confirmCallback.set(() => {
       void this.executeDelete(p.id!);
@@ -1112,18 +1182,27 @@ export class AdminDepositPolicyPage implements OnInit {
 
   private async loadAll(): Promise<void> {
     this.loadError.set(null);
-    await Promise.all([
-      this.loadActive(),
-      this.loadHistory(),
-      this.loadPreview(),
-      this.loadDefaultPolicy(),
-    ]);
+    // loadDefaultPolicy must run BEFORE loadActive so the fallback in loadActive can use defaultPolicy()
+    await this.loadDefaultPolicy();
+    await Promise.all([this.loadActive(), this.loadHistory(), this.loadPreview()]);
   }
 
   private async loadActive(): Promise<void> {
     try {
       const response = await firstValueFrom(this.adminApi.getCurrent());
-      this.activePolicy.set(response.data ?? null);
+      const policy = response.data ?? null;
+      // Validate locally - if backend returned an expired time-based policy (timezone edge case),
+      // fall back to showing the default policy instead of null.
+      if (policy && !this.isDefaultPolicy(policy)) {
+        const status = this.lifecycleStatus(policy);
+        if (status === 'expired') {
+          // Try to get default policy as fallback
+          const defaultP = this.defaultPolicy();
+          this.activePolicy.set(defaultP);
+          return;
+        }
+      }
+      this.activePolicy.set(policy);
     } catch (error) {
       this.activePolicy.set(null);
       const status = (error as { status?: number }).status;

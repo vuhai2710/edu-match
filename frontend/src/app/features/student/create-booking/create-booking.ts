@@ -159,6 +159,10 @@ import {
               <span class="text-slate-500">Học phí đề xuất</span>
               <span class="font-bold text-slate-900">{{ formatPrice(budgetPerHour) }}/h</span>
             </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-500">Số giờ học/buổi</span>
+              <span class="font-bold text-slate-900">{{ hoursPerSession }} giờ</span>
+            </div>
             <div class="flex justify-between">
               <span class="font-bold text-slate-700">Cọc dự kiến</span>
               <span class="font-display text-xl font-black text-duo-green">

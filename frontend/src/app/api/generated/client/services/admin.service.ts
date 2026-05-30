@@ -184,10 +184,10 @@ export class AdminService {
         return this.httpClient.get(url, requestOptions);
     }
 
-    getAllClasses(status?: ClassStatus, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'body', options?: RequestOptions<'json'>): Observable<ClassDtoPagedResultApiResponse>;
-    getAllClasses(status?: ClassStatus, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<ClassDtoPagedResultApiResponse>>;
-    getAllClasses(status?: ClassStatus, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<ClassDtoPagedResultApiResponse>>;
-    getAllClasses(status?: ClassStatus, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
+    getAllClasses(status?: ClassStatus, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, subjectId?: number, dayOfWeek?: number, observe?: 'body', options?: RequestOptions<'json'>): Observable<ClassDtoPagedResultApiResponse>;
+    getAllClasses(status?: ClassStatus, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, subjectId?: number, dayOfWeek?: number, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<ClassDtoPagedResultApiResponse>>;
+    getAllClasses(status?: ClassStatus, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, subjectId?: number, dayOfWeek?: number, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<ClassDtoPagedResultApiResponse>>;
+    getAllClasses(status?: ClassStatus, page?: number, pageSize?: number, searchTerm?: string, sortColumn?: string, sortDirection?: string, subjectId?: number, dayOfWeek?: number, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
         const url = `${this.basePath}/api/Admin/classes`;
 
         let params = new HttpParams();
@@ -208,6 +208,12 @@ export class AdminService {
         }
         if (sortDirection != null) {
             params = HttpParamsBuilder.addToHttpParams(params, sortDirection, 'sortDirection');
+        }
+        if (subjectId != null) {
+            params = HttpParamsBuilder.addToHttpParams(params, subjectId, 'subjectId');
+        }
+        if (dayOfWeek != null) {
+            params = HttpParamsBuilder.addToHttpParams(params, dayOfWeek, 'dayOfWeek');
         }
 
         let headers: HttpHeaders;

@@ -86,10 +86,10 @@ type ActiveFilter = 'all' | 'active' | 'inactive' | 'pending_approval' | 'reject
                 <!-- Status & Role Badges -->
                 <div class="flex flex-col items-end gap-1 shrink-0">
                   <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-black text-slate-700">{{ roleLabel(user.role) }}</span>
-                  @if (user.isActive) {
-                    <span class="rounded-full bg-green-50 px-2.5 py-0.5 text-[10px] font-black text-duo-green border border-green-100">Active</span>
+                  @if (user.isDeleted) {
+                    <span class="rounded-full bg-red-50 px-2.5 py-0.5 text-[10px] font-black text-duo-red border border-red-100">Đã xóa</span>
                   } @else {
-                    <span class="rounded-full bg-red-50 px-2.5 py-0.5 text-[10px] font-black text-duo-red border border-red-100">Locked</span>
+                    <span class="rounded-full bg-green-50 px-2.5 py-0.5 text-[10px] font-black text-duo-green border border-green-100">Hoạt động</span>
                   }
                 </div>
               </div>
@@ -165,10 +165,10 @@ type ActiveFilter = 'all' | 'active' | 'inactive' | 'pending_approval' | 'reject
                   </td>
                   <td class="px-4 py-3">
                     <div class="flex flex-col gap-1 items-start">
-                      @if (user.isActive) {
-                        <span class="rounded-full bg-green-50 px-3.5 py-1 text-xs font-black text-duo-green border border-green-100">Đang hoạt động</span>
+                      @if (user.isDeleted) {
+                        <span class="rounded-full bg-red-50 px-3.5 py-1 text-xs font-black text-duo-red border border-red-100">Đã xóa</span>
                       } @else {
-                        <span class="rounded-full bg-red-50 px-3.5 py-1 text-xs font-black text-duo-red border border-red-100">Đã khóa</span>
+                        <span class="rounded-full bg-green-50 px-3.5 py-1 text-xs font-black text-duo-green border border-green-100">Đang hoạt động</span>
                       }
                       
                       @if (user.role === userRole.Tutor && user.tutorApprovalStatus) {
@@ -253,11 +253,7 @@ export class AdminUsersPage implements OnInit {
   ];
 
   activeTabs = computed(() => {
-    const tabs: Array<{ label: string; value: ActiveFilter }> = [
-      { label: 'Tất cả trạng thái', value: 'all' },
-      { label: 'Đang hoạt động', value: 'active' },
-      { label: 'Đã khóa', value: 'inactive' },
-    ];
+    const tabs: Array<{ label: string; value: ActiveFilter }> = [];
     if (this.activeRole() === UserRole.Tutor) {
       tabs.push(
         { label: 'Chờ phê duyệt', value: 'pending_approval' },
@@ -358,12 +354,14 @@ export class AdminUsersPage implements OnInit {
     this.errorDetails.set(null);
     try {
       let isActive: boolean | undefined = undefined;
+      let isDeleted: boolean | undefined = undefined;
       let approvalStatus: TutorApprovalStatus | undefined = undefined;
 
       if (this.activeFilter() === 'active') {
         isActive = true;
       } else if (this.activeFilter() === 'inactive') {
-        isActive = false;
+        // "Đã xóa" tab: filter by IsDeleted = true (soft-deleted users)
+        isDeleted = true;
       } else if (this.activeFilter() === 'pending_approval') {
         approvalStatus = TutorApprovalStatus.Pending;
       } else if (this.activeFilter() === 'rejected') {
@@ -375,6 +373,7 @@ export class AdminUsersPage implements OnInit {
         this.usersApi.getUsers(
           this.activeRole() ?? undefined,
           isActive,
+          isDeleted,
           this.page(),
           this.pageSize(),
           search,
