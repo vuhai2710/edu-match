@@ -47,5 +47,3 @@ Thumbs.db
 plugins/
 docs/
 
-#env
-/src/environments/environment.ts
