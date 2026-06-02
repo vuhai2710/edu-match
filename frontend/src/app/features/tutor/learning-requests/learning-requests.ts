@@ -215,6 +215,7 @@ import {
             <app-pagination
               [page]="page()"
               [pageSize]="pageSize()"
+              [pageSizeOptions]="[4, 8, 12, 16]"
               [totalCount]="totalCount()"
               itemsName="yêu cầu"
               (pageChange)="onPageChange($event)"
@@ -258,7 +259,7 @@ export class TutorLearningRequestsPage implements OnInit {
 
   // Pagination states
   page = signal(1);
-  pageSize = signal(5);
+  pageSize = signal(4);
 
   readonly dayOptions = DAY_OPTIONS;
 

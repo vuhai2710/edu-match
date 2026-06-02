@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
+import { TutorDetailModalComponent } from '../../../shared/components/tutor-detail-modal';
+
 import {
   LearningRequestDto,
   LearningRequestStatus,
@@ -32,7 +34,7 @@ import {
 
 @Component({
   selector: 'app-learning-request-detail-page',
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, TutorDetailModalComponent],
   template: `
     @if (request(); as lr) {
       <div class="mx-auto space-y-6" [class.max-w-6xl]="proposal()" [class.max-w-3xl]="!proposal()">
@@ -43,7 +45,15 @@ import {
             <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <h1 class="font-display text-2xl font-black text-slate-900">{{ lr.subjectName || 'Yêu cầu học' }}</h1>
-                <p class="text-sm text-slate-500 mt-1">Gia sư: {{ lr.tutorName || 'Đang cập nhật' }}</p>
+                <p class="text-sm text-slate-500 mt-1 flex items-center gap-1.5">
+                  <span>Gia sư: {{ lr.tutorName || 'Đang cập nhật' }}</span>
+                  @if (lr.tutorId) {
+                    <button (click)="openTutorDetail(lr.tutorId)" 
+                            class="text-xs font-extrabold text-duo-blue hover:text-duo-blue-dark hover:underline cursor-pointer">
+                      (Xem chi tiết)
+                    </button>
+                  }
+                </p>
               </div>
               <span [class]="statusClass(lr.status)" class="rounded-full px-3 py-1 text-xs font-black">
                 {{ label(lr.status) }}
@@ -156,6 +166,9 @@ import {
             {{ errorMessage() }}
           </p>
         }
+        @if (selectedTutorId()) {
+          <app-tutor-detail-modal [tutorId]="selectedTutorId()" (close)="selectedTutorId.set(null)" />
+        }
       </div>
     } @else if (isLoading()) {
       <div class="tactile-card p-8 text-center font-bold text-slate-500">Đang tải yêu cầu học...</div>
@@ -167,7 +180,12 @@ export class LearningRequestDetailPage implements OnInit {
   proposal = signal<ScheduleProposalDto | null>(null);
   isLoading = signal(false);
   isWorking = signal(false);
+  selectedTutorId = signal<number | null>(null);
   errorMessage = signal('');
+
+  openTutorDetail(tutorId: number): void {
+    this.selectedTutorId.set(tutorId);
+  }
 
   readonly dayOptions = DAY_OPTIONS;
   readonly softBookedStatus = LearningRequestStatus.SoftBooked;

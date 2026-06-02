@@ -17,9 +17,11 @@ import {
   validateTimeSlots,
 } from '../../../shared/utils/api-ui';
 
+import { VietnameseDatePickerComponent } from '../../../shared/components/vietnamese-datepicker/vietnamese-datepicker';
+
 @Component({
   selector: 'app-create-booking-page',
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, VietnameseDatePickerComponent],
   template: `
     @if (tutor(); as t) {
       <div class="max-w-3xl mx-auto space-y-6">
@@ -59,27 +61,7 @@ import {
             </div>
             <div>
               <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Ngày bắt đầu mong muốn</label>
-              <div class="relative cursor-pointer" (click)="desiredStartDateInput.showPicker()">
-                <input
-                  type="text"
-                  [value]="desiredStartDate ? formatDate(desiredStartDate) : ''"
-                  placeholder="dd/mm/yyyy"
-                  class="tactile-input w-full text-sm font-semibold pl-3 pr-10 py-2.5 bg-white pointer-events-none"
-                  readonly
-                />
-                <div class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <input
-                  #desiredStartDateInput
-                  type="date"
-                  [(ngModel)]="desiredStartDate"
-                  class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  (click)="$event.stopPropagation(); desiredStartDateInput.showPicker()"
-                />
-              </div>
+              <app-vietnamese-datepicker [(value)]="desiredStartDate" [min]="minDate" placeholder="Chọn ngày bắt đầu" />
               @if (fieldErrors()['DesiredStartDate']) {
                 <p class="text-xs font-bold text-duo-red mt-1">{{ fieldErrors()['DesiredStartDate'] }}</p>
               }
@@ -236,6 +218,15 @@ export class CreateBookingPage implements OnInit {
   subjectId: number | null = null;
   isSubjectFixed = false;
   desiredStartDate = this.defaultStartDate();
+  minDate = this.getMinDate();
+
+  getMinDate(): string {
+    const date = new Date();
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
   hoursPerSession = 2;
   budgetPerHour: number | null = null;
   note = '';
@@ -322,6 +313,12 @@ export class CreateBookingPage implements OnInit {
   async onSubmit(): Promise<void> {
     if (!this.tutor()?.id || !this.subjectId || !this.budgetPerHour || !this.desiredStartDate) {
       this.errorMessage.set('Vui lòng nhập đủ thông tin đặt lịch.');
+      return;
+    }
+
+    const todayStr = this.minDate;
+    if (this.desiredStartDate < todayStr) {
+      this.errorMessage.set('Ngày bắt đầu học không được ở trong quá khứ.');
       return;
     }
 

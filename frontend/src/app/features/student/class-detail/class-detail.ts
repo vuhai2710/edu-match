@@ -4,6 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { StudentDetailModalComponent } from '../../../shared/components/student-detail-modal';
+import { TutorDetailModalComponent } from '../../../shared/components/tutor-detail-modal';
 
 import { CancellationRequestDto, ClassDto, ClassStatus, CancellationRequestStatus, PaymentStatus, ReviewEligibilityDto, ReviewDto } from '../../../api/generated/client/models';
 import { ClassesService, CancellationRequestsService, ReviewsService } from '../../../api/generated/client/services';
@@ -25,7 +26,7 @@ import {
 
 @Component({
   selector: 'app-student-class-detail-page',
-  imports: [RouterLink, FormsModule, StudentDetailModalComponent],
+  imports: [RouterLink, FormsModule, StudentDetailModalComponent, TutorDetailModalComponent],
   template: `
     @if (classItem(); as item) {
       <div class="max-w-3xl mx-auto space-y-6">
@@ -51,7 +52,13 @@ import {
                 </p>
                 @if (isTutor() && item.studentId) {
                   <button (click)="openStudentDetail(item.studentId)" 
-                          class="text-xs font-extrabold text-duo-blue hover:text-duo-blue-dark hover:underline">
+                          class="text-xs font-extrabold text-duo-blue hover:text-duo-blue-dark hover:underline cursor-pointer">
+                    (Xem chi tiết)
+                  </button>
+                }
+                @if (!isTutor() && item.tutorId) {
+                  <button (click)="openTutorDetail(item.tutorId)" 
+                          class="text-xs font-extrabold text-duo-blue hover:text-duo-blue-dark hover:underline cursor-pointer">
                     (Xem chi tiết)
                   </button>
                 }
@@ -66,7 +73,7 @@ import {
               <p class="mt-1 font-extrabold text-slate-900">{{ slots(item) }}</p>
             </div>
             <div class="rounded-2xl bg-slate-50 p-4">
-              <p class="font-bold text-slate-500">Nguồn lịch</p>
+              <p class="font-bold text-slate-500">Lịch</p>
               <p class="mt-1 font-extrabold text-slate-900">{{ scheduleSourceLabel(item.acceptedScheduleSource) }}</p>
             </div>
           </div>
@@ -297,6 +304,11 @@ import {
         @if (selectedStudentId()) {
           <app-student-detail-modal [studentId]="selectedStudentId()" (close)="selectedStudentId.set(null)" />
         }
+
+        <!-- Tutor Detail Modal overlay -->
+        @if (selectedTutorId()) {
+          <app-tutor-detail-modal [tutorId]="selectedTutorId()" (close)="selectedTutorId.set(null)" />
+        }
       </div>
     } @else if (isLoading()) {
       <div class="tactile-card p-8 text-center font-bold text-slate-500">Đang tải lớp học...</div>
@@ -335,9 +347,14 @@ export class StudentClassDetailPage implements OnInit {
   backLink = computed(() => this.sessionService.role() === 'Tutor' ? '/tutor/classes' : '/student/classes');
   isTutor = computed(() => this.sessionService.role() === 'Tutor');
   selectedStudentId = signal<number | null>(null);
+  selectedTutorId = signal<number | null>(null);
 
   openStudentDetail(studentId: number): void {
     this.selectedStudentId.set(studentId);
+  }
+
+  openTutorDetail(tutorId: number): void {
+    this.selectedTutorId.set(tutorId);
   }
 
   scheduleSourceLabel(src?: string | null): string {

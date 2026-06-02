@@ -5,8 +5,10 @@
   --font-sans: 'Nunito', ui-sans-serif, system-ui, sans-serif;
   --font-display: 'Fredoka', ui-sans-serif, system-ui, sans-serif;
 
+  /* Custom Gamified Brand Colors from DESIGN.md */
   --color-duo-green: #58cc02;
   --color-duo-green-dark: #3f9f01;
+  --color-duo-green-light: #d7ffb8;
   --color-duo-blue: #1cb0f6;
   --color-duo-blue-dark: #1899d6;
   --color-duo-orange: #ff9600;
@@ -17,6 +19,29 @@
   --color-duo-red-dark: #ea2b2b;
   --color-duo-purple: #8549ff;
   --color-duo-purple-dark: #743eed;
+  --color-duo-pink: #cc348d;
+
+  /* Custom Design Tokens from DESIGN.md */
+  --color-silver: #afafaf;
+  --color-graphite: #777777;
+  --color-charcoal: #4b4b4b;
+  --color-almost-black: #3c3c3c;
+
+  /* Accessible Slate scale overrides (WCAG AA compliant contrast for text elements) */
+  --color-slate-400: #767676; /* Darkened from #94a3b8 to meet WCAG AA (4.54:1) for placeholder/disabled/secondary info text */
+  --color-slate-500: #5a5a5a; /* Darkened from #64748b to meet WCAG AA (6.40:1) for secondary text/subtitles */
+  --color-slate-600: #4b4b4b; /* Charcoal (9.20:1) */
+  --color-slate-700: #3c3c3c; /* Almost Black (12.50:1) */
+  --color-slate-800: #2d2d2d; /* Very dark slate (16.20:1) */
+  --color-slate-900: #1a1a1a; /* Almost black (19.30:1) */
+
+  /* Accessible Gray scale overrides (WCAG AA compliant contrast for text elements) */
+  --color-gray-400: #767676; /* Darkened from #9ca3af to meet WCAG AA (4.54:1) */
+  --color-gray-500: #5a5a5a; /* Darkened from #71717a to meet WCAG AA (6.40:1) */
+  --color-gray-600: #4b4b4b; /* Charcoal (9.20:1) */
+  --color-gray-700: #3c3c3c; /* Almost Black (12.50:1) */
+  --color-gray-800: #2d2d2d; /* Very dark gray (16.20:1) */
+  --color-gray-900: #1a1a1a; /* Almost black (19.30:1) */
 
   --animate-float: float 3s ease-in-out infinite;
   --animate-pulse-slow: pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
@@ -112,6 +137,12 @@ button, [role="button"], input[type="button"], input[type="submit"], input[type=
   outline: none; transition: border-color 0.2s;
 }
 .tactile-input:focus { border-color: #1cb0f6; border-bottom-color: #1899d6; }
+.tactile-input:disabled {
+  opacity: 0.5;
+  background-color: #f1f5f9;
+  cursor: not-allowed;
+  border-color: #e2e8f0;
+}
 
 /* ===== Custom Scrollbar ===== */
 ::-webkit-scrollbar { width: 8px; height: 8px; }

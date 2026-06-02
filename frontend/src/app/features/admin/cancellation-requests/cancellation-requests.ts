@@ -68,7 +68,7 @@ import {
                 </p>
                 <p class="text-sm text-slate-500">{{ dateTime(item.createdAt) }}</p>
               </div>
-              <span class="text-duo-blue font-bold text-sm">Xử lý →</span>
+              <span class="text-duo-blue font-bold text-sm">Xem chi tiết →</span>
             </div>
             @if (item.reason) {
               <p class="mt-3 text-sm text-slate-700 line-clamp-2">{{ item.reason }}</p>

@@ -214,6 +214,7 @@ import { StudentDetailModalComponent } from '../../../shared/components/student-
             <app-pagination
               [page]="page()"
               [pageSize]="pageSize()"
+              [pageSizeOptions]="[4, 8, 12, 16]"
               [totalCount]="totalCount()"
               itemsName="lớp học"
               (pageChange)="onPageChange($event)"
@@ -260,7 +261,7 @@ export class TutorClassesPage implements OnInit {
 
   // Pagination states
   page = signal(1);
-  pageSize = signal(5);
+  pageSize = signal(4);
 
   readonly dayOptions = DAY_OPTIONS;
 

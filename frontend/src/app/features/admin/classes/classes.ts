@@ -8,6 +8,7 @@ import { AdminService, SubjectsService } from '../../../api/generated/client/ser
 import { ApiErrorDetails, getApiErrorDetails } from '../../../core/http/api-error';
 import { ErrorBannerComponent } from '../../../shared/components/error-banner/error-banner';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination';
+import { TactileSelectComponent } from '../../../shared/components/tactile-select/tactile-select';
 import {
   classStatusLabel,
   classStatusClass,
@@ -29,7 +30,7 @@ const DAY_OPTIONS: Array<{ label: string; value: DayOfWeek }> = [
 
 @Component({
   selector: 'app-admin-classes-page',
-  imports: [ErrorBannerComponent, FormsModule, RouterLink, PaginationComponent],
+  imports: [ErrorBannerComponent, FormsModule, RouterLink, PaginationComponent, TactileSelectComponent],
   template: `
     <div class="space-y-6">
       <div>
@@ -54,40 +55,26 @@ const DAY_OPTIONS: Array<{ label: string; value: DayOfWeek }> = [
         <!-- Filters row -->
         <div class="flex flex-wrap items-center gap-2">
           <!-- Subject dropdown -->
-          <div class="relative">
-            <select
-              [(ngModel)]="selectedSubjectId"
-              (ngModelChange)="onFilterChange()"
-              class="appearance-none rounded-xl border-2 border-slate-200 bg-white pl-3 pr-8 py-2 text-sm font-bold text-slate-700 focus:border-duo-blue outline-none cursor-pointer min-w-[140px]">
-              <option [ngValue]="null">Tất cả môn học</option>
-              @for (s of subjects(); track s.id) {
-                <option [ngValue]="s.id">{{ s.name }}</option>
-              }
-            </select>
-            <div class="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
-          </div>
+          <app-tactile-select
+            [value]="selectedSubjectId"
+            (valueChange)="selectedSubjectId = $event; onFilterChange()"
+            [options]="subjects()"
+            valueKey="id"
+            labelKey="name"
+            placeholder="Tất cả môn học"
+            class="min-w-[160px]"
+          />
 
           <!-- Day of week dropdown -->
-          <div class="relative">
-            <select
-              [(ngModel)]="selectedDayOfWeek"
-              (ngModelChange)="onFilterChange()"
-              class="appearance-none rounded-xl border-2 border-slate-200 bg-white pl-3 pr-8 py-2 text-sm font-bold text-slate-700 focus:border-duo-blue outline-none cursor-pointer min-w-[130px]">
-              <option [ngValue]="null">Tất cả ngày học</option>
-              @for (d of dayOptions; track d.value) {
-                <option [ngValue]="d.value">{{ d.label }}</option>
-              }
-            </select>
-            <div class="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
-          </div>
+          <app-tactile-select
+            [value]="selectedDayOfWeek"
+            (valueChange)="selectedDayOfWeek = $event; onFilterChange()"
+            [options]="dayOptions"
+            valueKey="value"
+            labelKey="label"
+            placeholder="Tất cả ngày học"
+            class="min-w-[150px]"
+          />
 
           <!-- Search -->
           <div class="flex-1 min-w-[200px]">
@@ -145,6 +132,7 @@ const DAY_OPTIONS: Array<{ label: string; value: DayOfWeek }> = [
 
       <app-pagination [page]="page()"
                       [pageSize]="pageSize()"
+                      [pageSizeOptions]="[4, 8, 12, 16]"
                       [totalCount]="totalCount()"
                       itemsName="lớp học"
                       (pageChange)="onPageChange($event)"
@@ -160,7 +148,7 @@ export class AdminClassesPage implements OnInit {
   selectedDayOfWeek: DayOfWeek | null = null;
   searchTerm = '';
   page = signal(1);
-  pageSize = signal(5);
+  pageSize = signal(4);
   totalCount = signal(0);
   totalPages = computed(() => Math.max(1, Math.ceil(this.totalCount() / this.pageSize())));
   isLoading = signal(false);

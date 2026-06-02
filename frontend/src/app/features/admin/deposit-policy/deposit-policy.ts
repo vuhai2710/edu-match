@@ -23,9 +23,11 @@ import { formatDate, formatMoney } from '../../../shared/utils/api-ui';
 
 type PolicyLifecycleStatus = 'active' | 'expired' | 'upcoming';
 
+import { VietnameseDatePickerComponent } from '../../../shared/components/vietnamese-datepicker/vietnamese-datepicker';
+
 @Component({
   selector: 'app-admin-deposit-policy-page',
-  imports: [ErrorBannerComponent, FormsModule, PaginationComponent],
+  imports: [ErrorBannerComponent, FormsModule, PaginationComponent, VietnameseDatePickerComponent],
   template: `
     <div class="space-y-6">
       <div>
@@ -382,39 +384,7 @@ type PolicyLifecycleStatus = 'active' | 'expired' | 'upcoming';
                   <label class="block text-xs font-bold uppercase text-slate-500 tracking-wide"
                     >Hiệu lực từ ngày</label
                   >
-                  <div class="relative cursor-pointer" (click)="timeActiveFromInput.showPicker()">
-                    <input
-                      type="text"
-                      [value]="timeActiveFrom ? formatDate(timeActiveFrom) : ''"
-                      placeholder="dd/mm/yyyy"
-                      class="w-full rounded-xl border-2 border-slate-200 pl-3 pr-10 py-2 bg-white text-sm font-bold pointer-events-none"
-                      readonly
-                    />
-                    <div
-                      class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-                    >
-                      <svg
-                        class="w-4 h-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        stroke-width="2.5"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                        />
-                      </svg>
-                    </div>
-                    <input
-                      #timeActiveFromInput
-                      type="date"
-                      [(ngModel)]="timeActiveFrom"
-                      class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                      (click)="$event.stopPropagation(); timeActiveFromInput.showPicker()"
-                    />
-                  </div>
+                  <app-vietnamese-datepicker [(value)]="timeActiveFrom" [min]="minDate" placeholder="Chọn ngày bắt đầu" />
                 </div>
 
                 <!-- Hiệu lực đến -->
@@ -422,39 +392,7 @@ type PolicyLifecycleStatus = 'active' | 'expired' | 'upcoming';
                   <label class="block text-xs font-bold uppercase text-slate-500 tracking-wide"
                     >Hiệu lực đến ngày</label
                   >
-                  <div class="relative cursor-pointer" (click)="timeActiveToInput.showPicker()">
-                    <input
-                      type="text"
-                      [value]="timeActiveTo ? formatDate(timeActiveTo) : ''"
-                      placeholder="dd/mm/yyyy"
-                      class="w-full rounded-xl border-2 border-slate-200 pl-3 pr-10 py-2 bg-white text-sm font-bold pointer-events-none"
-                      readonly
-                    />
-                    <div
-                      class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-                    >
-                      <svg
-                        class="w-4 h-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        stroke-width="2.5"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                        />
-                      </svg>
-                    </div>
-                    <input
-                      #timeActiveToInput
-                      type="date"
-                      [(ngModel)]="timeActiveTo"
-                      class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                      (click)="$event.stopPropagation(); timeActiveToInput.showPicker()"
-                    />
-                  </div>
+                  <app-vietnamese-datepicker [(value)]="timeActiveTo" [min]="minDate" placeholder="Chọn ngày kết thúc" />
                 </div>
               </div>
             </div>
@@ -712,39 +650,7 @@ type PolicyLifecycleStatus = 'active' | 'expired' | 'upcoming';
                   <label class="block text-xs font-bold uppercase text-slate-500 tracking-wide"
                     >Hiệu lực từ ngày</label
                   >
-                  <div class="relative cursor-pointer" (click)="editActiveFromInput.showPicker()">
-                    <input
-                      type="text"
-                      [value]="editActiveFrom ? formatDate(editActiveFrom) : ''"
-                      placeholder="dd/mm/yyyy"
-                      class="w-full rounded-xl border-2 border-slate-200 pl-3 pr-10 py-2 bg-white text-sm font-bold pointer-events-none"
-                      readonly
-                    />
-                    <div
-                      class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-                    >
-                      <svg
-                        class="w-4 h-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        stroke-width="2.5"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                        />
-                      </svg>
-                    </div>
-                    <input
-                      #editActiveFromInput
-                      type="date"
-                      [(ngModel)]="editActiveFrom"
-                      class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                      (click)="$event.stopPropagation(); editActiveFromInput.showPicker()"
-                    />
-                  </div>
+                  <app-vietnamese-datepicker [(value)]="editActiveFrom" [min]="editMinActiveFrom()" placeholder="Chọn ngày bắt đầu" />
                 </div>
 
                 <!-- Hiệu lực đến -->
@@ -752,39 +658,7 @@ type PolicyLifecycleStatus = 'active' | 'expired' | 'upcoming';
                   <label class="block text-xs font-bold uppercase text-slate-500 tracking-wide"
                     >Hiệu lực đến ngày</label
                   >
-                  <div class="relative cursor-pointer" (click)="editActiveToInput.showPicker()">
-                    <input
-                      type="text"
-                      [value]="editActiveTo ? formatDate(editActiveTo) : ''"
-                      placeholder="dd/mm/yyyy"
-                      class="w-full rounded-xl border-2 border-slate-200 pl-3 pr-10 py-2 bg-white text-sm font-bold pointer-events-none"
-                      readonly
-                    />
-                    <div
-                      class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-                    >
-                      <svg
-                        class="w-4 h-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        stroke-width="2.5"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                        />
-                      </svg>
-                    </div>
-                    <input
-                      #editActiveToInput
-                      type="date"
-                      [(ngModel)]="editActiveTo"
-                      class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                      (click)="$event.stopPropagation(); editActiveToInput.showPicker()"
-                    />
-                  </div>
+                  <app-vietnamese-datepicker [(value)]="editActiveTo" [min]="editMinActiveTo()" placeholder="Chọn ngày kết thúc" />
                 </div>
               </div>
             </div>
@@ -817,6 +691,17 @@ export class AdminDepositPolicyPage implements OnInit {
   preview = signal<DepositPreviewResponseDto | null>(null);
   previewHourlyRate = 150000;
   previewHoursPerSession = 2;
+  minDate = this.getMinDate();
+  editMinActiveFrom = signal('');
+  editMinActiveTo = signal('');
+
+  getMinDate(): string {
+    const date = new Date();
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
 
   // Edit modal state
   isEditModalVisible = signal(false);
@@ -997,6 +882,8 @@ export class AdminDepositPolicyPage implements OnInit {
     this.editDiscountPercentRaw.set(p.discountPercent ?? 0);
     this.editActiveFrom = p.activeFrom ? new Date(p.activeFrom).toISOString().slice(0, 10) : '';
     this.editActiveTo = p.activeTo ? new Date(p.activeTo).toISOString().slice(0, 10) : '';
+    this.editMinActiveFrom.set(this.editActiveFrom && this.editActiveFrom < this.minDate ? this.editActiveFrom : this.minDate);
+    this.editMinActiveTo.set(this.editActiveTo && this.editActiveTo < this.minDate ? this.editActiveTo : this.minDate);
     this.editError.set('');
     this.isEditModalVisible.set(true);
   }
@@ -1045,6 +932,23 @@ export class AdminDepositPolicyPage implements OnInit {
       );
       return;
     }
+    const id = this.editPolicyId();
+    if (id === null) return;
+
+    const todayStr = this.minDate;
+    const originalPolicy = this.history().find((h) => h.id === id);
+    const origFromStr = originalPolicy?.activeFrom ? new Date(originalPolicy.activeFrom).toISOString().slice(0, 10) : '';
+    const origToStr = originalPolicy?.activeTo ? new Date(originalPolicy.activeTo).toISOString().slice(0, 10) : '';
+
+    if (this.editActiveFrom && this.editActiveFrom < todayStr && this.editActiveFrom !== origFromStr) {
+      this.editError.set('Ngày bắt đầu hiệu lực không được ở trong quá khứ.');
+      return;
+    }
+    if (this.editActiveTo && this.editActiveTo < todayStr && this.editActiveTo !== origToStr) {
+      this.editError.set('Ngày kết thúc hiệu lực không được ở trong quá khứ.');
+      return;
+    }
+
     if (fromDate && toDate && toDate < fromDate) {
       this.editError.set('Ngày kết thúc hiệu lực không được trước ngày bắt đầu.');
       return;
@@ -1056,9 +960,6 @@ export class AdminDepositPolicyPage implements OnInit {
       activeFrom: fromDate,
       activeTo: toDate,
     };
-
-    const id = this.editPolicyId();
-    if (id === null) return;
 
     this.isSavingEdit.set(true);
     try {
@@ -1134,6 +1035,16 @@ export class AdminDepositPolicyPage implements OnInit {
       );
       return;
     }
+    const todayStr = this.minDate;
+    if (this.timeActiveFrom && this.timeActiveFrom < todayStr) {
+      this.timeError.set('Ngày bắt đầu hiệu lực không được ở trong quá khứ.');
+      return;
+    }
+    if (this.timeActiveTo && this.timeActiveTo < todayStr) {
+      this.timeError.set('Ngày kết thúc hiệu lực không được ở trong quá khứ.');
+      return;
+    }
+
     if (fromDate && toDate && toDate < fromDate) {
       this.timeError.set('Ngày kết thúc hiệu lực không được trước ngày bắt đầu.');
       return;

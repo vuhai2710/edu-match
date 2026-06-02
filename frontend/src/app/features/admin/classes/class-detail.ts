@@ -10,6 +10,8 @@ import {
 import { AdminService } from '../../../api/generated/client/services';
 import { ApiErrorDetails, getApiErrorDetails } from '../../../core/http/api-error';
 import { ErrorBannerComponent } from '../../../shared/components/error-banner/error-banner';
+import { StudentDetailModalComponent } from '../../../shared/components/student-detail-modal';
+import { TutorDetailModalComponent } from '../../../shared/components/tutor-detail-modal';
 import {
   classStatusLabel,
   classStatusClass,
@@ -23,7 +25,12 @@ import {
 
 @Component({
   selector: 'app-admin-class-detail-page',
-  imports: [ErrorBannerComponent, RouterLink],
+  imports: [
+    ErrorBannerComponent,
+    RouterLink,
+    StudentDetailModalComponent,
+    TutorDetailModalComponent,
+  ],
   template: `
     <div class="space-y-6">
       <a routerLink="/admin/classes" class="text-sm font-bold text-duo-blue hover:underline">← Quay lại danh sách lớp</a>
@@ -48,15 +55,27 @@ import {
 
         <div class="grid lg:grid-cols-2 gap-5">
           <div class="tactile-card p-5 space-y-2">
-            <h2 class="font-extrabold text-slate-800">Học viên</h2>
+            <h2 class="font-extrabold text-slate-800 flex justify-between items-center">
+              <span>Học viên</span>
+              <button (click)="showStudentModal.set(true)"
+                      class="text-xs font-bold text-duo-blue hover:underline cursor-pointer">
+                Xem chi tiết
+              </button>
+            </h2>
             <p class="text-sm"><span class="font-bold text-slate-600">Họ tên:</span> {{ cls.studentName || '—' }}</p>
-            <p class="text-sm"><span class="font-bold text-slate-600">ID:</span> #{{ cls.studentId }}</p>
+            <p class="text-sm"><span class="font-bold text-slate-600">Mã học viên:</span> {{ getStudentCode(cls.studentId) }}</p>
           </div>
 
           <div class="tactile-card p-5 space-y-2">
-            <h2 class="font-extrabold text-slate-800">Gia sư</h2>
+            <h2 class="font-extrabold text-slate-800 flex justify-between items-center">
+              <span>Gia sư</span>
+              <button (click)="showTutorModal.set(true)"
+                      class="text-xs font-bold text-duo-blue hover:underline cursor-pointer">
+                Xem chi tiết
+              </button>
+            </h2>
             <p class="text-sm"><span class="font-bold text-slate-600">Họ tên:</span> {{ cls.tutorName || '—' }}</p>
-            <p class="text-sm"><span class="font-bold text-slate-600">ID:</span> #{{ cls.tutorId }}</p>
+            <p class="text-sm"><span class="font-bold text-slate-600">Mã gia sư:</span> {{ getTutorCode(cls.tutorId) }}</p>
           </div>
         </div>
 
@@ -68,7 +87,7 @@ import {
               <p class="mt-1 font-bold text-slate-800">{{ date(cls.startDate) }}</p>
             </div>
             <div class="rounded-xl bg-slate-50 px-4 py-3">
-              <p class="text-xs font-bold uppercase text-slate-500 tracking-wide">Nguồn lịch</p>
+              <p class="text-xs font-bold uppercase text-slate-500 tracking-wide">Lịch</p>
               <p class="mt-1 font-bold text-slate-800">{{ scheduleSourceLabel(cls.acceptedScheduleSource) }}</p>
             </div>
             <div class="rounded-xl bg-slate-50 px-4 py-3 sm:col-span-2">
@@ -76,7 +95,7 @@ import {
               <p class="mt-1 font-bold text-slate-800">{{ slots(cls) }}</p>
             </div>
             <div class="rounded-xl bg-slate-50 px-4 py-3">
-              <p class="text-xs font-bold uppercase text-slate-500 tracking-wide">Tiền cọc snapshot</p>
+              <p class="text-xs font-bold uppercase text-slate-500 tracking-wide">Tiền cọc</p>
               <p class="mt-1 font-bold text-duo-green">{{ money(cls.depositAmountSnapshot) }}</p>
             </div>
             <div class="rounded-xl bg-slate-50 px-4 py-3">
@@ -116,6 +135,18 @@ import {
             </div>
           </div>
         }
+
+        @if (showStudentModal() && cls.studentId) {
+          <app-student-detail-modal
+            [studentId]="cls.studentId"
+            (close)="showStudentModal.set(false)" />
+        }
+
+        @if (showTutorModal() && cls.tutorId) {
+          <app-tutor-detail-modal
+            [tutorId]="cls.tutorId"
+            (close)="showTutorModal.set(false)" />
+        }
       } @else if (!errorDetails()) {
         <div class="tactile-card p-8 text-center font-bold text-slate-500">Đang tải...</div>
       }
@@ -125,6 +156,8 @@ import {
 export class AdminClassDetailPage implements OnInit {
   classDetail = signal<ClassDto | null>(null);
   errorDetails = signal<ApiErrorDetails | null>(null);
+  showStudentModal = signal(false);
+  showTutorModal = signal(false);
 
   private readonly route = inject(ActivatedRoute);
   private readonly adminApi = inject(AdminService);
@@ -167,6 +200,16 @@ export class AdminClassDetailPage implements OnInit {
 
   slots(cls: ClassDto): string {
     return formatTimeSlots(cls.timeSlots);
+  }
+
+  getStudentCode(id?: number | null): string {
+    if (!id) return '—';
+    return `STU${String(id).padStart(5, '0')}`;
+  }
+
+  getTutorCode(id?: number | null): string {
+    if (!id) return '—';
+    return `TUT${String(id).padStart(5, '0')}`;
   }
 
   private async load(): Promise<void> {

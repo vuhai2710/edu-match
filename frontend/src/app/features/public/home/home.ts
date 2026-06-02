@@ -20,10 +20,11 @@ import { getApiErrorMessage } from '../../../core/http/api-error';
 import { MascotComponent } from '../../../shared/components/mascot/mascot';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination';
 import { formatMoney } from '../../../shared/utils/api-ui';
+import { TactileSelectComponent } from '../../../shared/components/tactile-select/tactile-select';
 
 @Component({
   selector: 'app-home-page',
-  imports: [RouterLink, MascotComponent, FormsModule, PaginationComponent],
+  imports: [RouterLink, MascotComponent, FormsModule, PaginationComponent, TactileSelectComponent],
   template: `
     <!-- Hero -->
     <section class="relative overflow-hidden bg-gradient-to-b from-green-50 via-white to-slate-50">
@@ -88,7 +89,7 @@ import { formatMoney } from '../../../shared/utils/api-ui';
                 type="text"
                 [ngModel]="searchQuery"
                 (ngModelChange)="onSearchQueryChange($event)"
-                placeholder="Tìm theo tên, mã số, chuyên ngành"
+                placeholder="Tìm theo tên, mã gia sư, chuyên ngành"
                 class="tactile-input w-full text-sm font-semibold pl-10 pr-10"
               />
               @if (searchQuery) {
@@ -103,27 +104,14 @@ import { formatMoney } from '../../../shared/utils/api-ui';
 
             <!-- Sort dropdown -->
             <div class="relative w-full">
-              <select
-                [ngModel]="sortSelection()"
-                (ngModelChange)="onSortChange($event)"
-                class="tactile-input w-full text-sm font-semibold bg-white pl-4 pr-10 cursor-pointer appearance-none"
-              >
-                <option value="createdat_desc">Mặc định</option>
-                <option value="rating_desc">Đánh giá cao nhất</option>
-                <option value="hourlyrate_asc">Giá tăng dần</option>
-                <option value="hourlyrate_desc">Giá giảm dần</option>
-              </select>
-              <svg class="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-              </svg>
-              @if (sortSelection() !== 'createdat_desc') {
-                <button
-                  (click)="onSortChange('createdat_desc')"
-                  class="absolute right-8 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full hover:bg-slate-100 transition-all cursor-pointer"
-                >
-                  ✕
-                </button>
-              }
+              <app-tactile-select
+                [value]="sortSelection()"
+                (valueChange)="onSortChange($event)"
+                [options]="sortOptions"
+                [clearable]="true"
+                defaultValue="createdat_desc"
+                [showPlaceholderOption]="false"
+              />
             </div>
           </div>
 
@@ -131,78 +119,45 @@ import { formatMoney } from '../../../shared/utils/api-ui';
           <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <!-- Subject select -->
             <div class="relative">
-              <select
-                [ngModel]="activeSubjectId()"
-                (ngModelChange)="setSubject($event)"
-                class="tactile-input w-full text-sm font-semibold bg-white pl-4 pr-10 cursor-pointer appearance-none"
-              >
-                <option [ngValue]="null">Tất cả môn học</option>
-                @for (subject of subjects(); track subject.id) {
-                  <option [ngValue]="subject.id">{{ subject.name }}</option>
-                }
-              </select>
-              <svg class="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-              </svg>
-              @if (activeSubjectId() !== null) {
-                <button
-                  (click)="setSubject(null)"
-                  class="absolute right-8 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full hover:bg-slate-100 transition-all cursor-pointer"
-                >
-                  ✕
-                </button>
-              }
+              <app-tactile-select
+                [value]="activeSubjectId()"
+                (valueChange)="setSubject($event)"
+                [options]="subjects()"
+                valueKey="id"
+                labelKey="name"
+                placeholder="Tất cả môn học"
+                [clearable]="true"
+                [defaultValue]="null"
+              />
             </div>
 
             <!-- Province select -->
             <div class="relative">
-              <select
-                [ngModel]="provinceId()"
-                (ngModelChange)="onProvinceChange($event)"
-                class="tactile-input w-full text-sm font-semibold bg-white pl-4 pr-10 cursor-pointer appearance-none"
-              >
-                <option [ngValue]="null">Tất cả tỉnh / thành</option>
-                @for (province of provinces(); track province.provinceId) {
-                  <option [ngValue]="province.provinceId">{{ province.provinceName }}</option>
-                }
-              </select>
-              <svg class="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-              </svg>
-              @if (provinceId() !== null) {
-                <button
-                  (click)="onProvinceChange(null)"
-                  class="absolute right-8 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full hover:bg-slate-100 transition-all cursor-pointer"
-                >
-                  ✕
-                </button>
-              }
+              <app-tactile-select
+                [value]="provinceId()"
+                (valueChange)="onProvinceChange($event)"
+                [options]="provinces()"
+                valueKey="provinceId"
+                labelKey="provinceName"
+                placeholder="Tất cả tỉnh / thành"
+                [clearable]="true"
+                [defaultValue]="null"
+              />
             </div>
 
             <!-- Ward select -->
             <div class="relative">
-              <select
-                [ngModel]="wardCode()"
-                (ngModelChange)="setWard($event)"
-                class="tactile-input w-full text-sm font-semibold bg-white pl-4 pr-10 cursor-pointer appearance-none"
+              <app-tactile-select
+                [value]="wardCode()"
+                (valueChange)="setWard($event)"
+                [options]="wards()"
+                valueKey="wardCode"
+                labelKey="wardName"
+                placeholder="Tất cả phường / xã"
                 [disabled]="!provinceId() || isLoadingWards()"
-              >
-                <option [ngValue]="null">Tất cả phường / xã</option>
-                @for (ward of wards(); track ward.wardCode) {
-                  <option [ngValue]="ward.wardCode">{{ ward.wardName }}</option>
-                }
-              </select>
-              <svg class="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-              </svg>
-              @if (wardCode() !== null) {
-                <button
-                  (click)="setWard(null)"
-                  class="absolute right-8 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full hover:bg-slate-100 transition-all cursor-pointer"
-                >
-                  ✕
-                </button>
-              }
+                [clearable]="true"
+                [defaultValue]="null"
+              />
             </div>
           </div>
 
@@ -428,6 +383,13 @@ import { formatMoney } from '../../../shared/utils/api-ui';
   `,
 })
 export class HomePage implements OnInit, OnDestroy {
+  readonly sortOptions = [
+    { value: 'createdat_desc', label: 'Mặc định' },
+    { value: 'rating_desc', label: 'Đánh giá cao nhất' },
+    { value: 'hourlyrate_asc', label: 'Giá tăng dần' },
+    { value: 'hourlyrate_desc', label: 'Giá giảm dần' },
+  ];
+
   // Discover tutor data and filters
   searchQuery = '';
   tutors = signal<TutorDto[]>([]);

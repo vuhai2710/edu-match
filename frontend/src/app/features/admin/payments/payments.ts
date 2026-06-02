@@ -10,9 +10,11 @@ import { ErrorBannerComponent } from '../../../shared/components/error-banner/er
 import { PaginationComponent } from '../../../shared/components/pagination/pagination';
 import { formatDate, formatDateTime, formatMoney, paymentStatusLabel, paymentStatusClass } from '../../../shared/utils/api-ui';
 
+import { VietnameseDatePickerComponent } from '../../../shared/components/vietnamese-datepicker/vietnamese-datepicker';
+
 @Component({
   selector: 'app-admin-payments-page',
-  imports: [ErrorBannerComponent, FormsModule, RouterLink, PaginationComponent],
+  imports: [ErrorBannerComponent, FormsModule, RouterLink, PaginationComponent, VietnameseDatePickerComponent],
   template: `
     <div class="space-y-6">
       <div>
@@ -40,51 +42,19 @@ import { formatDate, formatDateTime, formatMoney, paymentStatusLabel, paymentSta
                  placeholder="Tìm theo mã giao dịch"
                  class="w-full sm:max-w-xs rounded-xl border-2 border-slate-200 px-3 py-2 text-sm focus:border-duo-blue outline-none" />
 
-          <div class="relative cursor-pointer w-full sm:w-44" (click)="fromInput.showPicker()">
-            <input
-              type="text"
-              [value]="fromDate() ? formatDate(fromDate()) : ''"
-              placeholder="Từ ngày"
-              class="w-full rounded-xl border-2 border-slate-200 pl-3 pr-10 py-2 text-sm font-semibold bg-white pointer-events-none"
-              readonly
-            />
-            <div class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            </div>
-            <input
-              #fromInput
-              type="date"
-              [ngModel]="fromDate()"
-              (ngModelChange)="onFromDateChange($event)"
-              class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              (click)="$event.stopPropagation(); fromInput.showPicker()"
-            />
-          </div>
+          <app-vietnamese-datepicker
+            [value]="fromDate()"
+            (valueChange)="onFromDateChange($event)"
+            placeholder="Từ ngày"
+            class="w-full sm:w-44"
+          />
 
-          <div class="relative cursor-pointer w-full sm:w-44" (click)="toInput.showPicker()">
-            <input
-              type="text"
-              [value]="toDate() ? formatDate(toDate()) : ''"
-              placeholder="Đến ngày"
-              class="w-full rounded-xl border-2 border-slate-200 pl-3 pr-10 py-2 text-sm font-semibold bg-white pointer-events-none"
-              readonly
-            />
-            <div class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            </div>
-            <input
-              #toInput
-              type="date"
-              [ngModel]="toDate()"
-              (ngModelChange)="onToDateChange($event)"
-              class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              (click)="$event.stopPropagation(); toInput.showPicker()"
-            />
-          </div>
+          <app-vietnamese-datepicker
+            [value]="toDate()"
+            (valueChange)="onToDateChange($event)"
+            placeholder="Đến ngày"
+            class="w-full sm:w-44"
+          />
 
           @if (fromDate() || toDate()) {
             <button (click)="clearDateFilter()"

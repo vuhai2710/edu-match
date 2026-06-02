@@ -19,6 +19,7 @@ import { SessionService } from '../../../core/auth/session';
 import { UserRole } from '../../../core/auth/session.models';
 import { getApiErrorDetails, getApiErrorMessage, unwrapApiData } from '../../../core/http/api-error';
 import { MascotComponent } from '../../../shared/components/mascot/mascot';
+import { TactileSelectComponent } from '../../../shared/components/tactile-select/tactile-select';
 
 @Component({
   selector: 'app-register-tutor-page',
@@ -28,6 +29,7 @@ import { MascotComponent } from '../../../shared/components/mascot/mascot';
     MascotComponent,
     LucideEye,
     LucideEyeOff,
+    TactileSelectComponent,
   ],
   template: `
     <div class="min-h-[70vh] flex items-center justify-center py-12 px-4">
@@ -135,11 +137,14 @@ import { MascotComponent } from '../../../shared/components/mascot/mascot';
               </div>
               <div>
                 <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Giới tính</label>
-                <select [(ngModel)]="gender" name="gender" class="tactile-input w-full text-sm font-semibold bg-white">
-                  @for (item of genderOptions; track item.value) {
-                    <option [ngValue]="item.value">{{ item.label }}</option>
-                  }
-                </select>
+                <app-tactile-select
+                  [value]="gender"
+                  (valueChange)="gender = $event"
+                  [options]="genderOptions"
+                  valueKey="value"
+                  labelKey="label"
+                  [showPlaceholderOption]="false"
+                />
               </div>
             </div>
 
@@ -148,14 +153,14 @@ import { MascotComponent } from '../../../shared/components/mascot/mascot';
                 <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
                   Tỉnh / thành <span class="text-red-500">*</span>
                 </label>
-                <select [ngModel]="provinceId()" (ngModelChange)="onProvinceChange($event)"
-                        name="provinceId"
-                        class="tactile-input w-full text-sm font-semibold bg-white">
-                  <option [ngValue]="null">Chọn tỉnh / thành</option>
-                  @for (province of provinces(); track province.provinceId) {
-                    <option [ngValue]="province.provinceId">{{ province.provinceName }}</option>
-                  }
-                </select>
+                <app-tactile-select
+                  [value]="provinceId()"
+                  (valueChange)="onProvinceChange($event)"
+                  [options]="provinces()"
+                  valueKey="provinceId"
+                  labelKey="provinceName"
+                  placeholder="Chọn tỉnh / thành"
+                />
                 @if (provinceError()) {
                   <span class="text-xs font-bold text-duo-red mt-1 block">{{ provinceError() }}</span>
                 }
@@ -164,15 +169,15 @@ import { MascotComponent } from '../../../shared/components/mascot/mascot';
                 <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
                   Phường / xã <span class="text-red-500">*</span>
                 </label>
-                <select [ngModel]="wardCode()" (ngModelChange)="wardCode.set($event); wardError.set('')"
-                        name="wardCode"
-                        class="tactile-input w-full text-sm font-semibold bg-white"
-                        [disabled]="!provinceId() || isLoadingWards()">
-                  <option [ngValue]="null">{{ isLoadingWards() ? 'Đang tải...' : 'Chọn phường / xã' }}</option>
-                  @for (ward of wards(); track ward.wardCode) {
-                    <option [ngValue]="ward.wardCode">{{ ward.wardName }}</option>
-                  }
-                </select>
+                <app-tactile-select
+                  [value]="wardCode()"
+                  (valueChange)="wardCode.set($event); wardError.set('')"
+                  [options]="wards()"
+                  valueKey="wardCode"
+                  labelKey="wardName"
+                  [placeholder]="isLoadingWards() ? 'Đang tải...' : 'Chọn phường / xã'"
+                  [disabled]="!provinceId() || isLoadingWards()"
+                />
                 @if (wardError()) {
                   <span class="text-xs font-bold text-duo-red mt-1 block">{{ wardError() }}</span>
                 }
@@ -215,19 +220,25 @@ import { MascotComponent } from '../../../shared/components/mascot/mascot';
               </div>
               <div>
                 <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Trạng thái nghề nghiệp</label>
-                <select [(ngModel)]="careerStatus" name="careerStatus" class="tactile-input w-full text-sm font-semibold bg-white">
-                  @for (item of careerOptions; track item.value) {
-                    <option [ngValue]="item.value">{{ item.label }}</option>
-                  }
-                </select>
+                <app-tactile-select
+                  [value]="careerStatus"
+                  (valueChange)="careerStatus = $event"
+                  [options]="careerOptions"
+                  valueKey="value"
+                  labelKey="label"
+                  [showPlaceholderOption]="false"
+                />
               </div>
               <div>
                 <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Bằng cấp</label>
-                <select [(ngModel)]="academicDegree" name="academicDegree" class="tactile-input w-full text-sm font-semibold bg-white">
-                  @for (item of degreeOptions; track item.value) {
-                    <option [ngValue]="item.value">{{ item.label }}</option>
-                  }
-                </select>
+                <app-tactile-select
+                  [value]="academicDegree"
+                  (valueChange)="academicDegree = $event"
+                  [options]="degreeOptions"
+                  valueKey="value"
+                  labelKey="label"
+                  [showPlaceholderOption]="false"
+                />
               </div>
             </div>
 
