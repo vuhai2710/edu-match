@@ -4,8 +4,8 @@ export const environment: AppEnv = {
   production: false,
   appName: 'EduMatch',
   appBaseUrl: 'https://calm-mushroom-074f88300.7.azurestaticapps.net',
-  apiBaseUrl: 'https://edumatch-api-gdagajg2gue9atb0.southeastasia-01.azurewebsites.net',
-  hubBaseUrl: 'https://edumatch-api-gdagajg2gue9atb0.southeastasia-01.azurewebsites.net',
+  apiBaseUrl: 'https://edumatch-api.azurewebsites.net',
+  hubBaseUrl: 'https://edumatch-api.azurewebsites.net',
   googleClientId: '156523713376-8gk7ckvh0332kjgcpbb2qjvq2o4br68i.apps.googleusercontent.com',
   paymentReturnRoutes: {
     success: '/payment/success',
