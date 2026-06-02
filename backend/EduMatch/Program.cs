@@ -21,6 +21,8 @@ using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var frontendBaseUrl = builder.Configuration["Frontend:BaseUrl"];
+
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();
@@ -312,7 +314,8 @@ builder.Services.AddCors(options =>
     policy
       .WithOrigins(
         "https://localhost:4200",
-        "http://localhost:4200")
+        "http://localhost:4200",
+        frontendBaseUrl!)
       .AllowAnyHeader()
       .AllowAnyMethod()
       .AllowCredentials();
