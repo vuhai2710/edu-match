@@ -1,4 +1,6 @@
 using System;
+using EduMatch.Data;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -6,6 +8,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace EduMatch.Migrations
 {
+    [DbContext(typeof(AppDbContext))]
+    [Migration("20260604120000_AddClassCompletionRequests")]
     public partial class AddClassCompletionRequests : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)

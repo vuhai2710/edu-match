@@ -55,9 +55,26 @@ import {
               <h1 class="font-display text-2xl font-black text-slate-900">{{ item.subjectName || item.code }}</h1>
               <p class="text-sm text-slate-500 mt-1">Mã lớp: {{ item.code }}</p>
             </div>
-            <span [class]="statusBadgeClass(item.status)" class="rounded-full px-3 py-1 text-xs font-black">
-              {{ label(item.status) }}
-            </span>
+            <div class="flex flex-col sm:items-end gap-2">
+              <span [class]="statusBadgeClass(item.status)" class="rounded-full px-3 py-1 text-xs font-black w-fit">
+                {{ label(item.status) }}
+              </span>
+              @if (canCreateCompletionRequest(item)) {
+                <button
+                  (click)="submitCompletionRequest(item.id)"
+                  [disabled]="isSubmittingCompletion()"
+                  class="tactile-button-green py-2 px-4 rounded-xl text-xs font-extrabold uppercase disabled:opacity-50 w-full sm:w-auto mt-1"
+                >
+                  {{ isSubmittingCompletion() ? 'Đang gửi...' : 'Đánh dấu lớp đã hoàn thành' }}
+                </button>
+                @if (completionErrorMessage() && !completionRequest()) {
+                  <p class="text-xs font-bold text-red-500">{{ completionErrorMessage() }}</p>
+                }
+                @if (completionSuccessMessage() && !completionRequest()) {
+                  <p class="text-xs font-bold text-duo-green">{{ completionSuccessMessage() }}</p>
+                }
+              }
+            </div>
           </div>
 
           <div class="grid sm:grid-cols-2 gap-4 text-sm">
@@ -106,26 +123,20 @@ import {
           </div>
         </div>
 
-        <div class="tactile-card p-6 space-y-4">
-          <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <h2 class="font-extrabold text-lg text-slate-900">Hoàn thành lớp học</h2>
-              <p class="text-sm text-slate-500 mt-1">
-                Khi một bên đánh dấu hoàn thành, bên còn lại sẽ xác nhận để khóa lớp đúng theo thực tế học.
-              </p>
-            </div>
-            @if (completionRequest(); as req) {
+        @if (completionRequest(); as req) {
+          <div class="tactile-card p-6 space-y-4">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h2 class="font-extrabold text-lg text-slate-900">Hoàn thành lớp học</h2>
+                <p class="text-sm text-slate-500 mt-1">
+                  Khi một bên đánh dấu hoàn thành, bên còn lại sẽ xác nhận để khóa lớp đúng theo thực tế học.
+                </p>
+              </div>
               <span [class]="completionBadgeClass(req.status)" class="rounded-full px-3 py-1 text-xs font-black">
                 {{ completionStatusLabel(req.status) }}
               </span>
-            } @else if (item.status === statusEnum.Completed) {
-              <span class="rounded-full border border-emerald-200 bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-700">
-                Đã hoàn thành
-              </span>
-            }
-          </div>
+            </div>
 
-          @if (completionRequest(); as req) {
             <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3 text-sm">
               <div class="flex flex-wrap items-center gap-2">
                 <span class="font-extrabold text-slate-900">{{ req.requestedByUserName || 'Không rõ' }}</span>
@@ -202,13 +213,6 @@ import {
                 </div>
               }
             </div>
-          }
-
-          @if (!completionRequest()) {
-            <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600">
-              Chưa có yêu cầu hoàn thành nào cho lớp này.
-            </div>
-          }
 
             @if (completionErrorMessage()) {
               <p class="text-xs font-bold text-red-500">{{ completionErrorMessage() }}</p>
@@ -216,19 +220,8 @@ import {
             @if (completionSuccessMessage()) {
               <p class="text-xs font-bold text-duo-green">{{ completionSuccessMessage() }}</p>
             }
-
-            @if (canCreateCompletionRequest(item)) {
-              <div class="flex justify-end">
-                <button
-                  (click)="submitCompletionRequest(item.id)"
-                  [disabled]="isSubmittingCompletion()"
-                  class="w-full sm:w-auto tactile-button-green py-2.5 px-6 rounded-xl text-sm font-extrabold uppercase disabled:opacity-50"
-                >
-                  {{ isSubmittingCompletion() ? 'Đang gửi...' : 'Đánh dấu lớp đã hoàn thành' }}
-                </button>
-              </div>
-            }
           </div>
+        }
 
         <div class="tactile-card p-6 space-y-4">
           <h2 class="font-extrabold text-lg text-slate-900">Thanh toán</h2>
