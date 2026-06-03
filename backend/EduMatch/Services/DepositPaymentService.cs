@@ -1,6 +1,3 @@
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
 using EduMatch.Common.Enums;
 using EduMatch.Common.Exception;
 using EduMatch.Configurations;
@@ -11,6 +8,9 @@ using EduMatch.Models;
 using EduMatch.Repositories.Interfaces;
 using EduMatch.Services.Interfaces;
 using Microsoft.Extensions.Options;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
 
 namespace EduMatch.Services
 {
@@ -19,6 +19,7 @@ namespace EduMatch.Services
     private readonly IPaymentRepository _paymentRepo;
     private readonly IClassRepository _classRepo;
     private readonly ILearningRequestRepository _learningRequestRepo;
+    private readonly IUserRepository _userRepository;
     private readonly INotificationService _notificationService;
     private readonly ICodeGeneratorService _codeGeneratorService;
     private readonly IBookingScheduleService _bookingScheduleService;
@@ -30,6 +31,7 @@ namespace EduMatch.Services
       IPaymentRepository paymentRepo,
       IClassRepository classRepo,
       ILearningRequestRepository learningRequestRepo,
+      IUserRepository userRepository,
       INotificationService notificationService,
       ICodeGeneratorService codeGeneratorService,
       IBookingScheduleService bookingScheduleService,
@@ -40,6 +42,7 @@ namespace EduMatch.Services
       _paymentRepo = paymentRepo;
       _classRepo = classRepo;
       _learningRequestRepo = learningRequestRepo;
+      _userRepository = userRepository;
       _notificationService = notificationService;
       _codeGeneratorService = codeGeneratorService;
       _bookingScheduleService = bookingScheduleService;
@@ -410,6 +413,8 @@ namespace EduMatch.Services
       string? transactionId,
       string source)
     {
+      var wasSuccessful = payment.Status == PaymentStatus.Success;
+
       payment.Status = PaymentStatus.Success;
       payment.TransactionId = string.IsNullOrWhiteSpace(transactionId)
         ? payment.TransactionId
@@ -419,14 +424,31 @@ namespace EduMatch.Services
 
       _paymentRepo.Update(payment);
 
+      var classCreated = false;
       if (!payment.ClassId.HasValue && payment.LearningRequest != null)
       {
         var newClass = await FinalizeClassFromLearningRequest(payment, source);
         payment.ClassId = newClass.Id;
         _paymentRepo.Update(payment);
+        classCreated = true;
       }
 
       await _paymentRepo.SaveChangesAsync();
+
+      if (payment.LearningRequest == null)
+      {
+        return;
+      }
+
+      if (source != "webhook" && (classCreated || !wasSuccessful))
+      {
+        await NotifyParticipantsOfSuccessfulDepositAsync(payment);
+      }
+
+      if (classCreated)
+      {
+        await NotifyAdminsOfCreatedClassAsync(payment);
+      }
     }
 
     private async Task<Class> FinalizeClassFromLearningRequest(Payment payment, string source)
@@ -499,6 +521,64 @@ namespace EduMatch.Services
         newClass.Id, lr.Id, source);
 
       return newClass;
+    }
+
+    private async Task NotifyParticipantsOfSuccessfulDepositAsync(Payment payment)
+    {
+      var learningRequest = payment.LearningRequest;
+      var tutorUserId = learningRequest?.Tutor?.UserId;
+      if (learningRequest == null || !tutorUserId.HasValue)
+      {
+        _logger.LogWarning(
+          "Skipping participant payment notification for order {OrderCode} because LearningRequest/Tutor data is incomplete.",
+          payment.OrderCode);
+        return;
+      }
+
+      var actionUrl = payment.ClassId.HasValue
+        ? $"/classes/{payment.ClassId.Value}"
+        : "/classes";
+
+      await _notificationService.SendToMultipleAsync(
+        new[] { learningRequest.StudentId, tutorUserId.Value },
+        "Thanh toán đặt cọc thành công",
+        $"Đặt cọc cho yêu cầu học tập #{payment.LearningRequestId} đã thành công. Lớp học đã được tạo.",
+        NotificationType.DepositPaymentSuccess,
+        "Payment",
+        payment.Id,
+        actionUrl);
+    }
+
+    private async Task NotifyAdminsOfCreatedClassAsync(Payment payment)
+    {
+      if (!payment.ClassId.HasValue)
+      {
+        return;
+      }
+
+      var adminIds = await GetAdminUserIdsAsync();
+      if (adminIds.Count == 0)
+      {
+        return;
+      }
+
+      await _notificationService.SendToMultipleAsync(
+        adminIds,
+        "Lớp học mới được tạo",
+        $"Lớp học mới được tạo từ yêu cầu học tập #{payment.LearningRequestId} sau khi học viên thanh toán thành công.",
+        NotificationType.ClassCreated,
+        "Class",
+        payment.ClassId.Value,
+        $"/admin/classes/{payment.ClassId.Value}");
+    }
+
+    private async Task<List<long>> GetAdminUserIdsAsync()
+    {
+      var admins = await _userRepository.FindAsync(x => x.Role == UserRole.Admin);
+      return admins
+        .Select(x => x.Id)
+        .Distinct()
+        .ToList();
     }
 
     private static DepositPaymentDto MapDepositPayment(Payment payment)

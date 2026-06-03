@@ -51,9 +51,12 @@ namespace EduMatch.Configurations
     {
       using var scope = _scopeFactory.CreateScope();
       var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+      var depositPaymentService = scope.ServiceProvider.GetRequiredService<IDepositPaymentService>();
       var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
 
       var now = DateTime.UtcNow;
+
+      await SyncActivePendingPaymentsAsync(db, depositPaymentService, now, ct);
 
       var expiredRequests = await db.LearningRequests
         .Include(lr => lr.Tutor)
@@ -106,6 +109,47 @@ namespace EduMatch.Configurations
           "LearningRequest",
           lr.Id,
           $"/learning-requests/{lr.Id}");
+      }
+    }
+
+    private async Task SyncActivePendingPaymentsAsync(
+      AppDbContext db,
+      IDepositPaymentService depositPaymentService,
+      DateTime now,
+      CancellationToken ct)
+    {
+      var activePendingOrderCodes = await db.Payments
+        .Where(p => p.Status == PaymentStatus.Pending
+          && p.LearningRequestId.HasValue
+          && p.LearningRequest != null
+          && p.LearningRequest.Status == LearningRequestStatus.SoftBooked
+          && (!p.LearningRequest.PaymentExpiresAt.HasValue
+              || p.LearningRequest.PaymentExpiresAt.Value >= now))
+        .Select(p => p.OrderCode)
+        .ToListAsync(ct);
+
+      if (activePendingOrderCodes.Count == 0)
+      {
+        return;
+      }
+
+      _logger.LogInformation(
+        "PaymentExpiryBackgroundService reconciling {Count} active pending payments with PayOS",
+        activePendingOrderCodes.Count);
+
+      foreach (var orderCode in activePendingOrderCodes)
+      {
+        ct.ThrowIfCancellationRequested();
+
+        var result = await depositPaymentService.GetStatusAsync(orderCode);
+        if (!result.Success)
+        {
+          _logger.LogWarning(
+            "Pending payment reconciliation failed for order {OrderCode}. StatusCode={StatusCode}, Message={Message}",
+            orderCode,
+            result.StatusCode,
+            result.Message);
+        }
       }
     }
   }
