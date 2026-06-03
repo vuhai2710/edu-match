@@ -14,10 +14,10 @@ import { formatMoney, paymentStatusLabel } from '../../../shared/utils/api-ui';
   imports: [RouterLink],
   template: `
     <section class="tactile-card max-w-2xl mx-auto p-8 space-y-5">
-      <p class="text-sm font-black uppercase text-duo-green">PayOS callback</p>
+      <p class="text-sm font-black uppercase text-duo-green">Kết quả thanh toán</p>
       <h1 class="font-display text-3xl font-black text-slate-900">Thanh toán thành công</h1>
       <p class="text-sm leading-6 text-slate-600">
-        EduMatch đang kiểm tra trạng thái giao dịch và sẽ đưa bạn vào lớp học ngay khi webhook hoàn tất.
+        EduMatch đang kiểm tra trạng thái giao dịch và sẽ đưa bạn vào lớp học ngay khi xác nhận hoàn tất.
       </p>
 
       @if (payment(); as p) {

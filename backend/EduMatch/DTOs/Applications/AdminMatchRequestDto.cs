@@ -4,11 +4,11 @@ namespace EduMatch.DTOs.Applications
 {
   public class AdminMatchRequestDto
   {
-    [Required]
+    [Required(ErrorMessage = "Mã gia sư không được để trống.")]
     public long TutorId { get; set; }
 
-    [Required]
-    [Range(0, double.MaxValue)]
+    [Required(ErrorMessage = "Số tiền cọc không được để trống.")]
+    [Range(0, double.MaxValue, ErrorMessage = "Số tiền cọc phải lớn hơn hoặc bằng 0.")]
     public decimal DepositAmount { get; set; }
   }
 }

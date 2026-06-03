@@ -389,7 +389,7 @@ import {
                       </a>
                     </td>
                     <td class="py-3 text-slate-600">
-                      LR #{{ payment.learningRequestId }} · Class #{{ payment.classId || 'chưa có' }}
+                      YCHL #{{ payment.learningRequestId }} · Lớp #{{ payment.classId || 'chưa có' }}
                     </td>
                     <td class="py-3 text-slate-500 font-bold">
                       {{ dateTime(payment.createdAt) }}

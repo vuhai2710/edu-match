@@ -40,10 +40,10 @@ import { formatDateTime, formatMoney, paymentStatusLabel, paymentStatusClass } f
             <div class="grid grid-cols-1 gap-3 text-sm">
               <div class="rounded-xl bg-slate-50 px-4 py-3">
                 <p class="text-xs font-bold uppercase text-slate-500 tracking-wide">Người thanh toán</p>
-                <p class="mt-1 font-bold text-slate-800">{{ p.paidByUserCode ? p.paidByUserCode + ' - ' + p.paidByUserName : (p.paidByUserName || 'User #' + p.paidByUserId) }}</p>
+                <p class="mt-1 font-bold text-slate-800">{{ p.paidByUserCode ? p.paidByUserCode + ' - ' + p.paidByUserName : (p.paidByUserName || 'Người dùng #' + p.paidByUserId) }}</p>
               </div>
               <div class="rounded-xl bg-slate-50 px-4 py-3">
-                <p class="text-xs font-bold uppercase text-slate-500 tracking-wide">Transaction ID</p>
+                <p class="text-xs font-bold uppercase text-slate-500 tracking-wide">Mã giao dịch ngân hàng</p>
                 <p class="mt-1 font-bold text-slate-800 break-all">{{ p.transactionId || '—' }}</p>
               </div>
               <div class="rounded-xl bg-slate-50 px-4 py-3">
@@ -62,12 +62,12 @@ import { formatDateTime, formatMoney, paymentStatusLabel, paymentStatusClass } f
             <div class="space-y-2 text-sm">
               <div class="rounded-xl bg-slate-50 px-4 py-3">
                 <p class="text-xs font-bold uppercase text-slate-500 tracking-wide">Mã yêu cầu học</p>
-                <p class="mt-1 font-bold text-slate-800">LR #{{ p.learningRequestId ?? '—' }}</p>
+                <p class="mt-1 font-bold text-slate-800">YCHL #{{ p.learningRequestId ?? '—' }}</p>
               </div>
               @if (p.classId) {
                 <a [routerLink]="['/admin/classes', p.classId]" class="block rounded-xl bg-slate-50 px-4 py-3 hover:bg-slate-100">
                   <p class="text-xs font-bold uppercase text-slate-500 tracking-wide">Lớp học</p>
-                  <p class="mt-1 font-bold text-duo-blue">Class #{{ p.classId }} →</p>
+                  <p class="mt-1 font-bold text-duo-blue">Lớp #{{ p.classId }} →</p>
                 </a>
               } @else {
                 <div class="rounded-xl bg-slate-50 px-4 py-3">
@@ -77,7 +77,7 @@ import { formatDateTime, formatMoney, paymentStatusLabel, paymentStatusClass } f
               }
               <div class="rounded-xl bg-slate-50 px-4 py-3">
                 <p class="text-xs font-bold uppercase text-slate-500 tracking-wide">Gia sư</p>
-                <p class="mt-1 font-bold text-slate-800">{{ p.tutorCode ? p.tutorCode + ' - ' + p.tutorName : (p.tutorName || 'Tutor #' + p.tutorId) }}</p>
+                <p class="mt-1 font-bold text-slate-800">{{ p.tutorCode ? p.tutorCode + ' - ' + p.tutorName : (p.tutorName || 'Gia sư #' + p.tutorId) }}</p>
               </div>
             </div>
           </div>
@@ -86,13 +86,13 @@ import { formatDateTime, formatMoney, paymentStatusLabel, paymentStatusClass } f
         @if (p.checkoutUrl && p.status === paymentStatusEnum.Pending) {
           <div class="tactile-card p-5 bg-orange-50 border-2 border-orange-200">
             <h2 class="font-extrabold text-slate-800 mb-2">Link thanh toán</h2>
-            <p class="text-xs text-slate-600 mb-2">Đơn này chưa thanh toán, học viên có thể tiếp tục checkout:</p>
+            <p class="text-xs text-slate-600 mb-2">Đơn này chưa thanh toán, học viên có thể tiếp tục thanh toán:</p>
             <div class="flex flex-wrap items-center gap-2">
               <a [href]="p.checkoutUrl" target="_blank" rel="noopener noreferrer"
                  class="text-sm font-bold text-duo-blue hover:underline break-all">{{ p.checkoutUrl }}</a>
               <button (click)="copyUrl(p.checkoutUrl!)"
                       class="px-3 py-1.5 rounded-lg bg-white border-2 border-slate-200 text-xs font-bold text-slate-600 hover:border-slate-300">
-                {{ copied() ? 'Đã copy' : 'Copy' }}
+                {{ copied() ? 'Đã sao chép' : 'Sao chép' }}
               </button>
             </div>
           </div>

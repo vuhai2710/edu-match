@@ -976,7 +976,7 @@ export class WorkspaceShellComponent implements OnInit, OnDestroy {
       }
       return url.startsWith(l.href);
     });
-    return match ? match.label : 'Admin';
+    return match ? match.label : 'Quản trị';
   });
 
   private signalrSub?: Subscription;
@@ -1075,7 +1075,7 @@ export class WorkspaceShellComponent implements OnInit, OnDestroy {
     const role = this.session.role();
     if (role === UserRole.Student) return 'HỌC VIÊN';
     if (role === UserRole.Tutor) return 'GIA SƯ';
-    if (role === UserRole.Admin) return 'ADMIN';
+    if (role === UserRole.Admin) return 'QUẢN TRỊ';
     return '';
   });
 

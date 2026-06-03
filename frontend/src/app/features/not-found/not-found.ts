@@ -9,7 +9,7 @@ import { RouterLink } from '@angular/router';
       <p class="eyebrow justify-center">404</p>
       <h1 class="mt-3 text-4xl font-semibold text-slate-950">Không tìm thấy trang</h1>
       <p class="mt-4 text-sm leading-6 text-slate-600">
-        This route is outside the current EduMatch frontend contract.
+        Đường dẫn này không tồn tại trong hệ thống EduMatch.
       </p>
       <div class="mt-8 flex flex-wrap justify-center gap-3">
         <a class="btn-primary" routerLink="/">Về trang chủ</a>

@@ -21,10 +21,10 @@ import { ApiErrorDetails } from '../../../core/http/api-error';
         @if (expanded() && hasTechnicalDetails()) {
           <div class="rounded-lg bg-white border border-red-100 px-3 py-2 text-xs font-mono space-y-1 text-slate-700">
             @if (d.status != null) {
-              <p><span class="font-bold">Status:</span> {{ d.status }}</p>
+              <p><span class="font-bold">Mã trạng thái:</span> {{ d.status }}</p>
             }
             @if (d.errorCode) {
-              <p><span class="font-bold">Code:</span> {{ d.errorCode }}</p>
+              <p><span class="font-bold">Mã lỗi:</span> {{ d.errorCode }}</p>
             }
             @if (d.url) {
               <p class="break-all"><span class="font-bold">URL:</span> {{ d.url }}</p>

@@ -257,7 +257,7 @@ export class LearningRequestDetailPage implements OnInit {
     await this.withWork(async () => {
       const checkoutUrl = await this.resolveCheckoutUrl(request.id!);
       if (!checkoutUrl) {
-        throw new Error('API không trả về checkout URL.');
+        throw new Error('API không trả về đường dẫn thanh toán.');
       }
       window.location.href = checkoutUrl;
     }, 'Không tạo được thanh toán đặt cọc.');

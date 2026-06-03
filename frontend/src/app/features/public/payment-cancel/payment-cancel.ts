@@ -12,7 +12,7 @@ import { getApiErrorMessage } from '../../../core/http/api-error';
   imports: [RouterLink],
   template: `
     <section class="tactile-card max-w-2xl mx-auto p-8 space-y-5">
-      <p class="text-sm font-black uppercase text-duo-orange">PayOS callback</p>
+      <p class="text-sm font-black uppercase text-duo-orange">Kết quả thanh toán</p>
       <h1 class="font-display text-3xl font-black text-slate-900">Thanh toán đã bị hủy</h1>
 
       @if (isRedirecting()) {
@@ -21,7 +21,7 @@ import { getApiErrorMessage } from '../../../core/http/api-error';
         </p>
       } @else {
         <p class="text-sm leading-6 text-slate-600">
-          Bạn có thể quay lại yêu cầu học để tạo lại hoặc tiếp tục checkout nếu payment vẫn còn hiệu lực.
+          Bạn có thể quay lại yêu cầu học để tạo lại hoặc tiếp tục thanh toán nếu giao dịch vẫn còn hiệu lực.
         </p>
       }
 

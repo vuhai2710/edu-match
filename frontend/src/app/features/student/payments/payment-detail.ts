@@ -43,7 +43,7 @@ import { formatDateTime, formatMoney, paymentStatusLabel, paymentStatusClass } f
                 <p class="mt-1 font-bold text-slate-800">{{ p.paidByUserCode ? p.paidByUserCode + ' - ' + p.paidByUserName : (p.paidByUserName || 'Học viên #' + p.paidByUserId) }}</p>
               </div>
               <div class="rounded-xl bg-slate-50 px-4 py-3">
-                <p class="text-xs font-bold uppercase text-slate-500 tracking-wide">Mã giao dịch ngân hàng (Transaction ID)</p>
+                <p class="text-xs font-bold uppercase text-slate-500 tracking-wide">Mã giao dịch ngân hàng</p>
                 <p class="mt-1 font-bold text-slate-800 break-all">{{ p.transactionId || '—' }}</p>
               </div>
               <div class="rounded-xl bg-slate-50 px-4 py-3">
