@@ -75,15 +75,11 @@ export class ForgotPasswordPage {
     this.isSubmitting.set(true);
 
     try {
-      await firstValueFrom(this.authApi.forgotPassword({ email: this.email.trim() }));
-      this.message.set('Nếu email tồn tại, hệ thống sẽ gửi liên kết đặt lại mật khẩu.');
+      const res = await firstValueFrom(this.authApi.forgotPassword({ email: this.email.trim() }));
+      this.message.set(res.message || 'Link đặt lại mật khẩu đã được gửi.');
     } catch (error) {
       const errMsg = getApiErrorMessage(error, 'Không gửi được yêu cầu.');
-      if (errMsg.toLowerCase().includes('email') || errMsg.toLowerCase().includes('tài khoản')) {
-        this.emailError.set(errMsg);
-      } else {
-        this.errorMessage.set(errMsg);
-      }
+      this.errorMessage.set(errMsg);
     } finally {
       this.isSubmitting.set(false);
     }
