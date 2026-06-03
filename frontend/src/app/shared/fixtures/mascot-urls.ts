@@ -14,7 +14,7 @@ export const MASCOT_URLS = {
   checkingApproved:
     'https://lh3.googleusercontent.com/aida-public/AB6AXuDkberu5YUoyaf7EvvAXTTjtbT0FfAbts0Da2AERE0KEis1BeAgqR6QZgAxUakbUNFPz0R09DsRW96_5n5t0lN8glybyxdR3YT7VvLh8BngT_TPsI41G-VCRLCwgcH1AKf46kw6BPhzBB-C2WcnCu4irE_3iNrJJuYqVKsbBvzJol0EO_PQN3rWhzOSOaRMfowFd9sWIVZwvI4zOkbWRMzEhlcGoxBG7m2xz3u5wnw2Sfml9yWaOC5eY7sOJfKaJojZ5rssZrg5WYsq',
   sadMagnifier:
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuBPEg-Dph_5u5mKvca-dDRyyhKBG4jw13k7jxEsrLz7LzEJOCsPQHUvGyrjOUybpMWXqOEJW88zsfqpJAGBDVuhFblGGHKahEXDF25wcUEUIMlTxYHS0-65Nn029irWklJs0IkUrHRMblECkuRl9iJxSsne9p-PBLEYdLRH9NbQvt1ETxDDo-jFpcU43pZPyT6CwfOz4JZYj1mruTxjI--1PDoxK1xaF9AXvp_TA-hTcu5ZJP6ETbgI2noE76YubooN-30mBQjUU1Za',
+    '/assets/sad-magnifier.png',
   successGraduation:
     'https://lh3.googleusercontent.com/aida-public/AB6AXuAoCE30xHiIGyAzjwVF8Z66pmbIP3xYy0LcLLWZivPkR2-i6AcFtjJvylNcIZHZj-BH5uPkydmI4-YPASTZKWDLd_odl4dQ3FDppFWGK068CdhmsnW1L5LzioPiEIgUIvbjrYv5sb9pV1WOybdSV4tUU8Mve5D1xoS7NhMdviRfRV9zFkcAAtd6-y19uLEnQ-1k7b7w0gQBre_Tg6LvjItIhRHhiIMj0fEnkC1avclTUk4kKczb7I_Aew9bQvE6uo81gGh3EGihGVil',
   piggyBank:

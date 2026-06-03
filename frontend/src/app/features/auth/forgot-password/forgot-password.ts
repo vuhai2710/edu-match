@@ -21,7 +21,7 @@ import { getApiErrorMessage } from '../../../core/http/api-error';
           <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Email</label>
           <input type="email" [(ngModel)]="email" name="email" class="tactile-input w-full text-sm font-semibold" />
           @if (emailError()) {
-            <span class="text-xs font-bold text-duo-red mt-1 block">{{ emailError() }}</span>
+            <span class="text-xs font-bold text-duo-red mt-1 block text-center">{{ emailError() }}</span>
           }
         </div>
 
@@ -31,12 +31,12 @@ import { getApiErrorMessage } from '../../../core/http/api-error';
         </button>
 
         @if (message()) {
-          <p class="rounded-xl border-2 border-green-100 bg-green-50 px-4 py-3 text-sm font-bold text-green-700">
+          <p class="rounded-xl border-2 border-green-100 bg-green-50 px-4 py-3 text-sm font-bold text-green-700 text-center">
             {{ message() }}
           </p>
         }
         @if (errorMessage()) {
-          <p class="rounded-xl border-2 border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-duo-red">
+          <p class="rounded-xl border-2 border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-duo-red text-center">
             {{ errorMessage() }}
           </p>
         }

@@ -74,17 +74,7 @@ namespace EduMatch.Services
     {
       try
       {
-        var notification = new Notification
-        {
-          UserId = userId,
-          Title = title,
-          Content = content,
-          Type = type,
-          ReferenceType = referenceType,
-          ReferenceId = referenceId,
-          ActionUrl = actionUrl,
-          IsRead = false
-        };
+        var notification = CreateNotification(userId, title, content, type, referenceType, referenceId, actionUrl);
 
         await _notificationRepository.AddAsync(notification);
         await _notificationRepository.SaveChangesAsync();
@@ -105,10 +95,70 @@ namespace EduMatch.Services
 
     public async Task SendToMultipleAsync(IEnumerable<long> userIds, string title, string content, NotificationType type, string? referenceType = null, long? referenceId = null, string? actionUrl = null)
     {
-      foreach (var userId in userIds.Distinct())
+      var distinctUserIds = userIds
+        .Distinct()
+        .ToArray();
+
+      if (distinctUserIds.Length == 0)
       {
-        await SendAsync(userId, title, content, type, referenceType, referenceId, actionUrl);
+        return;
       }
+
+      try
+      {
+        var notifications = distinctUserIds
+          .Select(userId => CreateNotification(userId, title, content, type, referenceType, referenceId, actionUrl))
+          .ToArray();
+
+        foreach (var notification in notifications)
+        {
+          await _notificationRepository.AddAsync(notification);
+        }
+
+        await _notificationRepository.SaveChangesAsync();
+
+        await Task.WhenAll(notifications.Select(async notification =>
+        {
+          try
+          {
+            await _hubContext.Clients
+              .Group($"user:{notification.UserId}")
+              .SendAsync("ReceiveNotification", MapNotification(notification));
+          }
+          catch (System.Exception ex)
+          {
+            _logger.LogError(ex, "Failed to push realtime notification to user {UserId}", notification.UserId);
+          }
+        }));
+
+        _logger.LogInformation("Notifications sent to {Count} users", notifications.Length);
+      }
+      catch (System.Exception ex)
+      {
+        _logger.LogError(ex, "Failed to send notifications to multiple users");
+      }
+    }
+
+    private static Notification CreateNotification(
+      long userId,
+      string title,
+      string content,
+      NotificationType type,
+      string? referenceType,
+      long? referenceId,
+      string? actionUrl)
+    {
+      return new Notification
+      {
+        UserId = userId,
+        Title = title,
+        Content = content,
+        Type = type,
+        ReferenceType = referenceType,
+        ReferenceId = referenceId,
+        ActionUrl = actionUrl,
+        IsRead = false
+      };
     }
 
     private static NotificationDto MapNotification(Notification notification)

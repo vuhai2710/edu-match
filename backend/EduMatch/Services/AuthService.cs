@@ -415,13 +415,17 @@ public class AuthService
     var normalizedEmail = dto.Email.ToLower().Trim();
     var normalizedPhoneNumber = dto.PhoneNumber.Trim();
 
-    var existingUserByEmail = await _db.Users
+    var existingUsers = await _db.Users
+        .IgnoreQueryFilters()
         .Include(u => u.Tutor)
-        .FirstOrDefaultAsync(u => u.Email == normalizedEmail);
+        .Where(u => u.Email == normalizedEmail || u.PhoneNumber == normalizedPhoneNumber)
+        .ToListAsync();
 
-    var existingUserByPhone = await _db.Users
-        .Include(u => u.Tutor)
-        .FirstOrDefaultAsync(u => u.PhoneNumber == normalizedPhoneNumber);
+    var existingUserByEmail = existingUsers
+        .FirstOrDefault(u => string.Equals(u.Email, normalizedEmail, StringComparison.Ordinal));
+
+    var existingUserByPhone = existingUsers
+        .FirstOrDefault(u => string.Equals(u.PhoneNumber, normalizedPhoneNumber, StringComparison.Ordinal));
 
     if (existingUserByEmail != null || existingUserByPhone != null)
     {
@@ -501,14 +505,14 @@ public class AuthService
     await _userRepository.SaveChangesAsync();
 
     AssignProfileCode(user);
-    await _userRepository.SaveChangesAsync();
 
     if (tutorDto != null && user.Tutor != null)
     {
       await CreateTutorSubjectsAsync(user.Tutor, tutorDto.SubjectIds);
       await CreateTutorTeachingLevelsAsync(user.Tutor, tutorDto.TeachingLevels);
-      await _userRepository.SaveChangesAsync();
     }
+
+    await _userRepository.SaveChangesAsync();
 
     _logger.LogInformation("{Role} registered: {Email} | Id: {Id}", role, user.Email, user.Id);
 

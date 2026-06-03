@@ -302,7 +302,7 @@ export class TutorDashboardPage implements OnInit {
       period = 'tối';
     }
     const name = this.session.user()?.fullName ?? '';
-    return `Chào buổi ${period}${name ? ' ' + name : ''}`;
+    return `Chào buổi ${period} ${name ? ' ' + name : ''}`;
   }
 
   get dateString(): string {
