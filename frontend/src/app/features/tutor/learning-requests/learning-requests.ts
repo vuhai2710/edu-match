@@ -5,7 +5,7 @@ import { firstValueFrom } from 'rxjs';
 
 import { LearningRequestDto, LearningRequestStatus, SubjectListItemDto } from '../../../api/generated/client/models';
 import { LearningRequestsService, SubjectsService } from '../../../api/generated/client/services';
-import { getApiErrorMessage } from '../../../core/http/api-error';
+import { getApiErrorMessage, unwrapApiData } from '../../../core/http/api-error';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination';
 import { StudentDetailModalComponent } from '../../../shared/components/student-detail-modal';
 import {
@@ -395,7 +395,8 @@ export class TutorLearningRequestsPage implements OnInit {
     this.isWorking.set(true);
     this.errorMessage.set('');
     try {
-      await firstValueFrom(this.requestsApi.acceptLearningRequest(request.id!));
+      const response = await firstValueFrom(this.requestsApi.acceptLearningRequest(request.id!));
+      unwrapApiData(response);
       await this.loadRequests();
     } catch (error) {
       this.errorMessage.set(getApiErrorMessage(error, 'Không chấp nhận được yêu cầu.'));
@@ -409,7 +410,8 @@ export class TutorLearningRequestsPage implements OnInit {
     this.isWorking.set(true);
     this.errorMessage.set('');
     try {
-      await firstValueFrom(this.requestsApi.rejectLearningRequest(request.id!));
+      const response = await firstValueFrom(this.requestsApi.rejectLearningRequest(request.id!));
+      unwrapApiData(response);
       await this.loadRequests();
     } catch (error) {
       this.errorMessage.set(getApiErrorMessage(error, 'Không từ chối được yêu cầu.'));

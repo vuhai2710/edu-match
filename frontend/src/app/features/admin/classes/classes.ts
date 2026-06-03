@@ -157,7 +157,7 @@ export class AdminClassesPage implements OnInit {
   readonly tabs: Array<{ label: string; status: ClassStatus | null }> = [
     { label: 'Tất cả', status: null },
     { label: 'Chờ bắt đầu', status: ClassStatus.PendingStart },
-    { label: 'Đang học', status: ClassStatus.Active },
+    { label: 'Đang hoạt động', status: ClassStatus.Active },
     { label: 'Học viên hủy', status: ClassStatus.CancelledByStudent },
     { label: 'Gia sư hủy', status: ClassStatus.CancelledByTutor },
     { label: 'Admin hủy', status: ClassStatus.CancelledByAdmin },

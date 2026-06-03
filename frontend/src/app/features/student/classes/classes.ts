@@ -156,7 +156,7 @@ import {
           <div class="space-y-1">
             <h4 class="font-extrabold text-amber-900 text-sm">Yêu cầu điều kiện để có thể gửi đánh giá lớp học:</h4>
             <ul class="text-xs text-amber-800 space-y-1 list-disc pl-4 font-bold">
-              <li>Lớp học phải ở trạng thái <strong class="text-amber-950">Đang học</strong>.</li>
+              <li>Lớp học phải ở trạng thái <strong class="text-amber-950">Đang hoạt động</strong>.</li>
               <li>Chỉ được phép thực hiện đánh giá sau <strong class="text-amber-950">tối thiểu 7 ngày</strong> kể từ ngày lớp học bắt đầu.</li>
               <li>Mỗi lớp học chỉ được phép gửi đánh giá <strong class="text-amber-950">duy nhất 1 lần</strong>.</li>
             </ul>
@@ -279,7 +279,7 @@ export class StudentClassesPage implements OnInit {
   readonly tabs = [
     { label: 'Tất cả', status: null, isReviewTab: false },
     { label: 'Chờ bắt đầu', status: ClassStatus.PendingStart, isReviewTab: false },
-    { label: 'Đang học', status: ClassStatus.Active, isReviewTab: false },
+    { label: 'Đang hoạt động', status: ClassStatus.Active, isReviewTab: false },
     { label: 'Đánh giá', status: null, isReviewTab: true },
   ];
 

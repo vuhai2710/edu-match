@@ -284,7 +284,7 @@ import {
                 </svg>
               </div>
               <div>
-                <p class="text-xs font-black text-slate-700">Lớp đang học</p>
+                <p class="text-xs font-black text-slate-700">Lớp đang hoạt động</p>
                 <p class="text-[10px] text-slate-400 font-bold">Các lớp học đang trong quá trình giảng dạy và học tập tích cực</p>
               </div>
             </div>

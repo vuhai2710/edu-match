@@ -81,7 +81,7 @@ export function learningRequestStatusLabel(status?: LearningRequestStatus | null
 export function classStatusLabel(status?: ClassStatus | null): string {
   const labels: Record<ClassStatus, string> = {
     [ClassStatus.PendingStart]: 'Chờ ngày bắt đầu',
-    [ClassStatus.Active]: 'Đang học',
+    [ClassStatus.Active]: 'Đang hoạt động',
     [ClassStatus.CancelledByStudent]: 'Học viên đã hủy',
     [ClassStatus.CancelledByTutor]: 'Gia sư đã hủy',
     [ClassStatus.CancelledByAdmin]: 'Admin đã hủy',

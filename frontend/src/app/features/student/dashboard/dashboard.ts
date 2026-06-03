@@ -67,7 +67,7 @@ import {
                 <p class="font-display text-xl sm:text-2xl font-black text-duo-green leading-none">
                   {{ dashboard()?.activeClasses ?? activeClassCount() }}
                 </p>
-                <p class="text-[10px] sm:text-xs text-slate-500 font-bold mt-1">Lớp đang học</p>
+                <p class="text-[10px] sm:text-xs text-slate-500 font-bold mt-1">Lớp đang hoạt động</p>
               </div>
             </a>
             <a

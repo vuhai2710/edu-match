@@ -546,7 +546,8 @@ export class TutorRequestDetailPage implements OnInit {
   async acceptRequest(request: LearningRequestDto): Promise<void> {
     if (!request.id) return;
     await this.withWork(async () => {
-      await firstValueFrom(this.requestsApi.acceptLearningRequest(request.id!));
+      const response = await firstValueFrom(this.requestsApi.acceptLearningRequest(request.id!));
+      unwrapApiData(response);
       await this.router.navigateByUrl('/tutor/dashboard');
     }, 'Không chấp nhận được yêu cầu.');
   }
@@ -554,7 +555,8 @@ export class TutorRequestDetailPage implements OnInit {
   async rejectRequest(request: LearningRequestDto): Promise<void> {
     if (!request.id) return;
     await this.withWork(async () => {
-      await firstValueFrom(this.requestsApi.rejectLearningRequest(request.id!));
+      const response = await firstValueFrom(this.requestsApi.rejectLearningRequest(request.id!));
+      unwrapApiData(response);
       await this.router.navigateByUrl('/tutor/dashboard');
     }, 'Không từ chối được yêu cầu.');
   }
@@ -582,7 +584,7 @@ export class TutorRequestDetailPage implements OnInit {
     this.fieldErrors.set({});
 
     try {
-      await firstValueFrom(
+      const response = await firstValueFrom(
         this.proposalsApi.createScheduleProposal({
           learningRequestId: request.id!,
           timeSlots: this.proposalSlots(),
@@ -591,6 +593,7 @@ export class TutorRequestDetailPage implements OnInit {
           hourlyRate: this.hourlyRate!,
         }),
       );
+      unwrapApiData(response);
       await this.router.navigateByUrl('/tutor/dashboard');
     } catch (error) {
       const errorDetails = getApiErrorDetails(error);
@@ -617,7 +620,8 @@ export class TutorRequestDetailPage implements OnInit {
   async acceptProposal(proposal: ScheduleProposalDto): Promise<void> {
     if (!proposal.id) return;
     await this.withWork(async () => {
-      await firstValueFrom(this.proposalsApi.acceptScheduleProposal(proposal.id!));
+      const response = await firstValueFrom(this.proposalsApi.acceptScheduleProposal(proposal.id!));
+      unwrapApiData(response);
       await this.router.navigateByUrl('/tutor/dashboard');
     }, 'Không chấp nhận được đề xuất.');
   }
@@ -625,7 +629,8 @@ export class TutorRequestDetailPage implements OnInit {
   async rejectProposal(proposal: ScheduleProposalDto): Promise<void> {
     if (!proposal.id) return;
     await this.withWork(async () => {
-      await firstValueFrom(this.proposalsApi.rejectScheduleProposal(proposal.id!));
+      const response = await firstValueFrom(this.proposalsApi.rejectScheduleProposal(proposal.id!));
+      unwrapApiData(response);
       await this.loadRequest();
     }, 'Không từ chối được đề xuất.');
   }

@@ -19,7 +19,7 @@ import {
   DashboardService,
   LearningRequestsService,
 } from '../../../api/generated/client/services';
-import { getApiErrorMessage } from '../../../core/http/api-error';
+import { getApiErrorMessage, unwrapApiData } from '../../../core/http/api-error';
 import {
   classStatusLabel,
   classStatusClass,
@@ -331,7 +331,8 @@ export class TutorDashboardPage implements OnInit {
   async acceptRequest(request: LearningRequestDto): Promise<void> {
     if (!request.id) return;
     await this.withWork(async () => {
-      await firstValueFrom(this.requestsApi.acceptLearningRequest(request.id!));
+      const response = await firstValueFrom(this.requestsApi.acceptLearningRequest(request.id!));
+      unwrapApiData(response);
       await this.loadDashboard();
     }, 'Không chấp nhận được yêu cầu.');
   }
@@ -339,7 +340,8 @@ export class TutorDashboardPage implements OnInit {
   async rejectRequest(request: LearningRequestDto): Promise<void> {
     if (!request.id) return;
     await this.withWork(async () => {
-      await firstValueFrom(this.requestsApi.rejectLearningRequest(request.id!));
+      const response = await firstValueFrom(this.requestsApi.rejectLearningRequest(request.id!));
+      unwrapApiData(response);
       await this.loadDashboard();
     }, 'Không từ chối được yêu cầu.');
   }
