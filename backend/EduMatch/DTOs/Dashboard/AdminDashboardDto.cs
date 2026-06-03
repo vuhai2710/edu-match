@@ -13,6 +13,7 @@ namespace EduMatch.DTOs.Dashboard
 
     public int ActiveClasses { get; set; }
     public int PendingClasses { get; set; }
+    public int CompletedClasses { get; set; }
     public int CancelledClasses { get; set; }
 
     public decimal TotalRevenue { get; set; }

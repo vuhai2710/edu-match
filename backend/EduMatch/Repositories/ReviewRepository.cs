@@ -21,10 +21,22 @@ namespace EduMatch.Repositories
       return await _dbSet.AnyAsync(r => r.ClassId == classId && r.StudentId == studentId);
     }
 
+    public async Task<Review?> GetByClassIdAsync(long classId)
+    {
+      return await _dbSet
+        .Include(r => r.Student)
+        .Include(r => r.Tutor)
+          .ThenInclude(t => t.User)
+        .Include(r => r.Class)
+          .ThenInclude(c => c.Subject)
+        .FirstOrDefaultAsync(r => r.ClassId == classId);
+    }
+
     public async Task<List<Review>> GetByTutorIdAsync(long tutorId)
     {
       return await _dbSet
         .Include(r => r.Class)
+          .ThenInclude(c => c.Subject)
         .Include(r => r.Student)
         .Include(r => r.Tutor)
           .ThenInclude(t => t.User)

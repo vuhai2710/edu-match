@@ -29,12 +29,6 @@ export interface AddressDto {
     fullAddress?: string | null;
 }
 
-export interface MonthlyRevenueDto {
-    year?: number;
-    month?: number;
-    revenue?: number;
-}
-
 export interface AdminDashboardDto {
     totalUsers?: number;
     totalStudents?: number;
@@ -45,6 +39,7 @@ export interface AdminDashboardDto {
     pendingApplications?: number;
     activeClasses?: number;
     pendingClasses?: number;
+    completedClasses?: number;
     cancelledClasses?: number;
     totalRevenue?: number;
     revenueThisMonth?: number;
@@ -187,6 +182,42 @@ export interface ChangePasswordDto {
     newPassword: string;
 }
 
+export interface ClassCompletionRequestDto {
+    id?: number;
+    classId?: number;
+    classCode?: string | null;
+    classStatus?: ClassStatus;
+    studentId?: number;
+    studentName?: string | null;
+    tutorId?: number;
+    tutorUserId?: number;
+    tutorName?: string | null;
+    requestedByUserId?: number;
+    requestedByUserName?: string | null;
+    requestedByRole?: UserRole;
+    status?: ClassCompletionRequestStatus;
+    respondedAt?: Date | null;
+    respondedByUserId?: number | null;
+    respondedByUserName?: string | null;
+    respondedByRole?: UserRole;
+    createdAt?: Date;
+    updatedAt?: Date | null;
+}
+
+export interface ClassCompletionRequestDtoApiResponse {
+    success?: boolean;
+    message?: string | null;
+    statusCode?: number | null;
+    errorCode?: string | null;
+    data?: ClassCompletionRequestDto;
+}
+
+export enum ClassCompletionRequestStatus {
+    Pending = "Pending",
+    Confirmed = "Confirmed",
+    Rejected = "Rejected"
+}
+
 export interface ClassDto {
     id?: number;
     code?: string | null;
@@ -197,6 +228,7 @@ export interface ClassDto {
     subjectId?: number | null;
     subjectName?: string | null;
     startDate?: Date | null;
+    endDate?: Date | null;
     timeSlots?: Array<TimeSlotDto>;
     acceptedScheduleSource?: AcceptedScheduleSource;
     depositAmountSnapshot?: number | null;
@@ -243,6 +275,7 @@ export interface ClassPaymentSummaryDto {
 export enum ClassStatus {
     PendingStart = "PendingStart",
     Active = "Active",
+    Completed = "Completed",
     CancelledByStudent = "CancelledByStudent",
     CancelledByAdmin = "CancelledByAdmin",
     CancelledByTutor = "CancelledByTutor"
@@ -281,6 +314,10 @@ export interface CreateCancellationRequestDto {
     refundAmount?: number | null;
     refundNote?: string | null;
     isRefunded?: boolean | null;
+}
+
+export interface CreateClassCompletionRequestDto {
+    classId: number;
 }
 
 export interface CreateDepositPaymentRequest {
@@ -574,6 +611,12 @@ export interface MessageDtoListApiResponse {
     data?: Array<MessageDto>;
 }
 
+export interface MonthlyRevenueDto {
+    year?: number;
+    month?: number;
+    revenue?: number;
+}
+
 export interface MyApplicationItemDto {
     applicationId?: number;
     subjectName?: string | null;
@@ -641,7 +684,11 @@ export enum NotificationType {
     ClassActivated = "ClassActivated",
     CancellationRequestCreated = "CancellationRequestCreated",
     CancellationRequestResolved = "CancellationRequestResolved",
-    ClassCancelled = "ClassCancelled"
+    ClassCancelled = "ClassCancelled",
+    ClassCompletionRequested = "ClassCompletionRequested",
+    ClassCompletionConfirmed = "ClassCompletionConfirmed",
+    ClassCompletionRejected = "ClassCompletionRejected",
+    ClassCompleted = "ClassCompleted"
 }
 
 export interface PayOSWebhookDto {
@@ -799,6 +846,10 @@ export interface ResolveCancellationRequestDto {
     isRefunded?: boolean;
 }
 
+export interface RespondClassCompletionRequestDto {
+    isConfirmed?: boolean;
+}
+
 export interface ReviewDto {
     id?: number;
     classId?: number;
@@ -810,6 +861,7 @@ export interface ReviewDto {
     rating?: number;
     comment?: string | null;
     createdAt?: Date;
+    subjectName?: string | null;
 }
 
 export interface ReviewDtoApiResponse {
@@ -899,6 +951,7 @@ export interface StudentDashboardDto {
     pendingApplicationsReceived?: number;
     activeClasses?: number;
     pendingClasses?: number;
+    completedClasses?: number;
     cancelledClasses?: number;
     recentRequests?: Array<RecentRequestItemDto>;
 }
@@ -1065,6 +1118,7 @@ export interface TutorDashboardDto {
     rejectedApplications?: number;
     activeClasses?: number;
     pendingClasses?: number;
+    completedClasses?: number;
     cancelledClasses?: number;
     averageRating?: number;
     totalReviews?: number;

@@ -2,6 +2,7 @@ import {
   AcademicDegree,
   ApplicationStatus,
   CancellationRequestStatus,
+  ClassCompletionRequestStatus,
   ClassStatus,
   EducationLevel,
   Gender,
@@ -82,6 +83,7 @@ export function classStatusLabel(status?: ClassStatus | null): string {
   const labels: Record<ClassStatus, string> = {
     [ClassStatus.PendingStart]: 'Chờ ngày bắt đầu',
     [ClassStatus.Active]: 'Đang hoạt động',
+    [ClassStatus.Completed]: 'Đã hoàn thành',
     [ClassStatus.CancelledByStudent]: 'Học viên đã hủy',
     [ClassStatus.CancelledByTutor]: 'Gia sư đã hủy',
     [ClassStatus.CancelledByAdmin]: 'Admin đã hủy',
@@ -103,6 +105,15 @@ export function cancellationStatusLabel(status?: CancellationRequestStatus | nul
   const labels: Record<CancellationRequestStatus, string> = {
     [CancellationRequestStatus.Pending]: 'Chờ xử lý',
     [CancellationRequestStatus.Resolved]: 'Đã xử lý',
+  };
+  return status ? labels[status] : 'Chưa rõ trạng thái';
+}
+
+export function classCompletionStatusLabel(status?: ClassCompletionRequestStatus | null): string {
+  const labels: Record<ClassCompletionRequestStatus, string> = {
+    [ClassCompletionRequestStatus.Pending]: 'Chờ xác nhận',
+    [ClassCompletionRequestStatus.Confirmed]: 'Đã xác nhận',
+    [ClassCompletionRequestStatus.Rejected]: 'Chưa hoàn thành',
   };
   return status ? labels[status] : 'Chưa rõ trạng thái';
 }
@@ -342,6 +353,7 @@ export function classStatusClass(status?: ClassStatus | null): string {
   const classes: Record<ClassStatus, string> = {
     [ClassStatus.PendingStart]: 'bg-blue-50 text-duo-blue border-blue-100',
     [ClassStatus.Active]: 'bg-green-50 text-duo-green border-green-100',
+    [ClassStatus.Completed]: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     [ClassStatus.CancelledByStudent]: 'bg-red-50 text-duo-red border-red-100',
     [ClassStatus.CancelledByTutor]: 'bg-red-50 text-duo-red border-red-100',
     [ClassStatus.CancelledByAdmin]: 'bg-red-50 text-duo-red border-red-100',
@@ -365,6 +377,16 @@ export function cancellationStatusClass(status?: CancellationRequestStatus | nul
   const classes: Record<CancellationRequestStatus, string> = {
     [CancellationRequestStatus.Pending]: 'bg-orange-50 text-duo-orange border-orange-100',
     [CancellationRequestStatus.Resolved]: 'bg-green-50 text-duo-green border-green-100',
+  };
+  return `border ${classes[status] || 'bg-slate-50 text-slate-500 border-slate-200'}`;
+}
+
+export function classCompletionStatusClass(status?: ClassCompletionRequestStatus | null): string {
+  if (!status) return 'bg-slate-50 text-slate-500 border-slate-200';
+  const classes: Record<ClassCompletionRequestStatus, string> = {
+    [ClassCompletionRequestStatus.Pending]: 'bg-amber-50 text-amber-700 border-amber-200',
+    [ClassCompletionRequestStatus.Confirmed]: 'bg-green-50 text-duo-green border-green-100',
+    [ClassCompletionRequestStatus.Rejected]: 'bg-red-50 text-duo-red border-red-100',
   };
   return `border ${classes[status] || 'bg-slate-50 text-slate-500 border-slate-200'}`;
 }

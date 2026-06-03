@@ -1,8 +1,8 @@
 import { Component, OnInit, inject, input, output, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
-import { TutorDetailDto } from '../../api/generated/client/models';
-import { TutorsService } from '../../api/generated/client/services';
+import { ReviewDto, TutorDetailDto } from '../../api/generated/client/models';
+import { ReviewsService, TutorsService } from '../../api/generated/client/services';
 import { getApiErrorMessage, unwrapApiData } from '../../core/http/api-error';
 import {
   genderLabel,
@@ -10,6 +10,7 @@ import {
   tutorCareerStatusLabel,
   educationLevelLabel,
   formatMoney,
+  formatDateTime,
 } from '../utils/api-ui';
 
 @Component({
@@ -182,6 +183,30 @@ import {
                   </a>
                 </div>
               }
+
+              @if (reviews().length > 0) {
+                <div class="col-span-2 mt-2">
+                  <h4 class="font-bold text-slate-800 mb-3 border-b border-slate-100 pb-2">Đánh giá gần đây</h4>
+                  <div class="space-y-3">
+                    @for (r of reviews().slice(0, 5); track r.id) {
+                      <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                        <div class="flex items-center justify-between mb-1">
+                          <p class="font-bold text-slate-800 text-sm">{{ r.studentName }}</p>
+                          <div class="flex text-amber-500 text-xs">
+                            @for (s of [1,2,3,4,5]; track s) {
+                              <span [class]="s <= r.rating! ? 'text-amber-500' : 'text-amber-200'">★</span>
+                            }
+                          </div>
+                        </div>
+                        <p class="text-xs text-slate-500 mb-2">Lớp: {{ r.classCode }} • {{ dateTime(r.createdAt) }}</p>
+                        @if (r.comment) {
+                          <p class="text-sm text-slate-700 font-medium">"{{ r.comment }}"</p>
+                        }
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
             </div>
           }
         </div>
@@ -202,10 +227,12 @@ export class TutorDetailModalComponent implements OnInit {
   close = output<void>();
 
   tutor = signal<TutorDetailDto | null>(null);
+  reviews = signal<ReviewDto[]>([]);
   isLoading = signal(false);
   errorMessage = signal('');
 
   private readonly tutorsApi = inject(TutorsService);
+  private readonly reviewsApi = inject(ReviewsService);
 
   ngOnInit(): void {
     void this.loadTutorProfile();
@@ -235,6 +262,10 @@ export class TutorDetailModalComponent implements OnInit {
     if (!birthYear) return 0;
     return new Date().getFullYear() - birthYear;
   }
+  
+  dateTime(value?: Date | string | null): string {
+    return formatDateTime(value);
+  }
 
   private async loadTutorProfile(): Promise<void> {
     const id = this.tutorId();
@@ -248,6 +279,13 @@ export class TutorDetailModalComponent implements OnInit {
     try {
       const response = await firstValueFrom(this.tutorsApi.getTutorById(String(id)));
       this.tutor.set(unwrapApiData(response));
+      
+      try {
+        const reviewResponse = await firstValueFrom(this.reviewsApi.getReviewsByTutorId(id));
+        this.reviews.set(reviewResponse.data || []);
+      } catch (err) {
+        console.error('Cannot load tutor reviews', err);
+      }
     } catch (error) {
       this.errorMessage.set(getApiErrorMessage(error, 'Không tải được thông tin gia sư.'));
     } finally {

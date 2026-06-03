@@ -282,6 +282,8 @@ builder.Services.AddScoped<IClassRepository, ClassRepository>();
 builder.Services.AddScoped<IClassReadService, ClassReadService>();
 builder.Services.AddScoped<ICancellationRequestRepository, CancellationRequestRepository>();
 builder.Services.AddScoped<ICancellationRequestService, CancellationRequestService>();
+builder.Services.AddScoped<IClassCompletionRequestRepository, ClassCompletionRequestRepository>();
+builder.Services.AddScoped<IClassCompletionRequestService, ClassCompletionRequestService>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 builder.Services.AddScoped<IDepositPolicyRepository, DepositPolicyRepository>();
 builder.Services.Configure<PayOSSettings>(builder.Configuration.GetSection("PayOS"));

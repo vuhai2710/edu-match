@@ -1,24 +1,26 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
-namespace EduMatch.Common.Enums
+namespace EduMatch.Common.Enums;
+
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum ClassStatus
 {
-  [JsonConverter(typeof(JsonStringEnumConverter))]
-  public enum ClassStatus
-  {
-    [Display(Name = "Chờ bắt đầu")]
-    PendingStart,
+  [Display(Name = "Cho bat dau")]
+  PendingStart,
 
-    [Display(Name = "Đang hoạt động")]
-    Active,
+  [Display(Name = "Dang hoat dong")]
+  Active,
 
-    [Display(Name = "Học viên hủy")]
-    CancelledByStudent,
+  [Display(Name = "Da hoan thanh")]
+  Completed,
 
-    [Display(Name = "Admin hủy")]
-    CancelledByAdmin,
+  [Display(Name = "Hoc vien huy")]
+  CancelledByStudent,
 
-    [Display(Name = "Gia sư hủy")]
-    CancelledByTutor
-  }
+  [Display(Name = "Admin huy")]
+  CancelledByAdmin,
+
+  [Display(Name = "Gia su huy")]
+  CancelledByTutor
 }

@@ -76,4 +76,28 @@ export class ReviewsService {
 
         return this.httpClient.get(url, requestOptions);
     }
+
+    getReviewByClassId(classId: number, observe?: 'body', options?: RequestOptions<'json'>): Observable<ReviewDtoApiResponse>;
+    getReviewByClassId(classId: number, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<ReviewDtoApiResponse>>;
+    getReviewByClassId(classId: number, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<ReviewDtoApiResponse>>;
+    getReviewByClassId(classId: number, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
+        const url = `${this.basePath}/api/Reviews/class/${classId}`;
+
+        let headers: HttpHeaders;
+        if (options?.headers instanceof HttpHeaders) {
+            headers = options.headers;
+        } else {
+            headers = new HttpHeaders(options?.headers);
+        }
+
+        const requestOptions: any = {
+            observe: observe as any,
+            headers,
+            reportProgress: options?.reportProgress,
+            withCredentials: options?.withCredentials,
+            context: this.createContextWithClientId(options?.context)
+        };
+
+        return this.httpClient.get(url, requestOptions);
+    }
 }

@@ -4,15 +4,19 @@ import { firstValueFrom } from 'rxjs';
 
 import {
   AcceptedScheduleSource,
+  ClassCompletionRequestDto,
   ClassDto,
   ClassStatus,
+  ReviewDto,
 } from '../../../api/generated/client/models';
-import { AdminService } from '../../../api/generated/client/services';
+import { AdminService, ClassesService, ReviewsService } from '../../../api/generated/client/services';
 import { ApiErrorDetails, getApiErrorDetails } from '../../../core/http/api-error';
 import { ErrorBannerComponent } from '../../../shared/components/error-banner/error-banner';
 import { StudentDetailModalComponent } from '../../../shared/components/student-detail-modal';
 import { TutorDetailModalComponent } from '../../../shared/components/tutor-detail-modal';
 import {
+  classCompletionStatusClass,
+  classCompletionStatusLabel,
   classStatusLabel,
   classStatusClass,
   formatDate,
@@ -86,6 +90,12 @@ import {
               <p class="text-xs font-bold uppercase text-slate-500 tracking-wide">Ngày bắt đầu</p>
               <p class="mt-1 font-bold text-slate-800">{{ date(cls.startDate) }}</p>
             </div>
+            @if (cls.endDate) {
+              <div class="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3">
+                <p class="text-xs font-bold uppercase text-emerald-700 tracking-wide">Ngày hoàn thành</p>
+                <p class="mt-1 font-bold text-emerald-900">{{ dateTime(cls.endDate) }}</p>
+              </div>
+            }
             <div class="rounded-xl bg-slate-50 px-4 py-3">
               <p class="text-xs font-bold uppercase text-slate-500 tracking-wide">Lịch</p>
               <p class="mt-1 font-bold text-slate-800">{{ scheduleSourceLabel(cls.acceptedScheduleSource) }}</p>
@@ -104,6 +114,73 @@ import {
             </div>
           </div>
         </div>
+
+        @if (completionRequest(); as req) {
+          <div class="tactile-card p-5 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <h2 class="font-extrabold text-slate-800">Xác nhận hoàn thành lớp</h2>
+              <span [class]="completionBadgeClass(req.status)" class="rounded-full px-3 py-1 text-xs font-black">
+                {{ completionLabel(req.status) }}
+              </span>
+            </div>
+
+            <div class="grid sm:grid-cols-2 gap-3 text-sm">
+              <div class="rounded-xl bg-slate-50 px-4 py-3">
+                <p class="text-xs font-bold uppercase text-slate-500 tracking-wide">Người khởi tạo</p>
+                <p class="mt-1 font-bold text-slate-800">{{ req.requestedByUserName || '—' }}</p>
+              </div>
+              <div class="rounded-xl bg-slate-50 px-4 py-3">
+                <p class="text-xs font-bold uppercase text-slate-500 tracking-wide">Vai trò</p>
+                <p class="mt-1 font-bold text-slate-800">{{ requestedByRoleLabel(req.requestedByRole) }}</p>
+              </div>
+              <div class="rounded-xl bg-slate-50 px-4 py-3">
+                <p class="text-xs font-bold uppercase text-slate-500 tracking-wide">Gửi lúc</p>
+                <p class="mt-1 font-bold text-slate-800">{{ dateTime(req.createdAt) }}</p>
+              </div>
+              <div class="rounded-xl bg-slate-50 px-4 py-3">
+                <p class="text-xs font-bold uppercase text-slate-500 tracking-wide">
+                  {{ req.respondedAt ? 'Phản hồi lúc' : 'Trạng thái hiện tại' }}
+                </p>
+                <p class="mt-1 font-bold text-slate-800">
+                  {{ req.respondedAt ? dateTime(req.respondedAt) : completionLabel(req.status) }}
+                </p>
+              </div>
+            </div>
+
+            @if (req.status === 'Confirmed' && cls.endDate) {
+              <div class="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                <p class="font-bold">Lớp đã được hai bên xác nhận hoàn thành.</p>
+                <p class="mt-1 font-medium">Kết thúc lúc {{ dateTime(cls.endDate) }}.</p>
+              </div>
+            } @else if (req.status === 'Rejected') {
+              <div class="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                <p class="font-bold">Yêu cầu hoàn thành gần nhất đã bị từ chối.</p>
+              </div>
+            } @else if (req.status === 'Pending') {
+              <div class="rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm text-sky-800">
+                <p class="font-bold">Lớp đang chờ bên còn lại xác nhận hoàn thành.</p>
+              </div>
+            }
+          </div>
+        }
+
+        @if (classReview(); as rev) {
+          <div class="tactile-card p-5 space-y-3">
+            <h2 class="font-extrabold text-slate-800">Đánh giá của học viên</h2>
+            <div class="rounded-2xl border border-amber-100 bg-amber-50/50 p-4 space-y-2">
+              <div class="flex items-center gap-1 text-amber-500 font-black text-lg">
+                @for (s of [1,2,3,4,5]; track s) {
+                  <span [class]="s <= rev.rating! ? 'text-amber-500' : 'text-amber-200'">★</span>
+                }
+                <span class="ml-2 text-sm text-amber-800">{{ rev.rating }}/5.0</span>
+              </div>
+              @if (rev.comment) {
+                <p class="text-sm text-slate-700 font-medium italic">"{{ rev.comment }}"</p>
+              }
+              <p class="text-xs text-slate-500 font-bold mt-2">Đánh giá lúc: {{ dateTime(rev.createdAt) }}</p>
+            </div>
+          </div>
+        }
 
         @if (cls.paymentSummary; as pay) {
           <div class="tactile-card p-5 space-y-3">
@@ -155,12 +232,16 @@ import {
 })
 export class AdminClassDetailPage implements OnInit {
   classDetail = signal<ClassDto | null>(null);
+  classReview = signal<ReviewDto | null>(null);
+  completionRequest = signal<ClassCompletionRequestDto | null>(null);
   errorDetails = signal<ApiErrorDetails | null>(null);
   showStudentModal = signal(false);
   showTutorModal = signal(false);
 
   private readonly route = inject(ActivatedRoute);
   private readonly adminApi = inject(AdminService);
+  private readonly classesApi = inject(ClassesService);
+  private readonly reviewsApi = inject(ReviewsService);
 
   ngOnInit(): void {
     void this.load();
@@ -184,6 +265,21 @@ export class AdminClassDetailPage implements OnInit {
 
   paymentBadgeClass(status?: any | null): string {
     return paymentStatusClass(status);
+  }
+
+  completionLabel(status?: ClassCompletionRequestDto['status'] | null): string {
+    return classCompletionStatusLabel(status);
+  }
+
+  completionBadgeClass(status?: ClassCompletionRequestDto['status'] | null): string {
+    return classCompletionStatusClass(status);
+  }
+
+  requestedByRoleLabel(role?: ClassCompletionRequestDto['requestedByRole'] | null): string {
+    if (role === 'Student') return 'Học viên';
+    if (role === 'Tutor') return 'Gia sư';
+    if (role === 'Admin') return 'Quản trị viên';
+    return '—';
   }
 
   date(value?: Date | null): string {
@@ -220,7 +316,20 @@ export class AdminClassDetailPage implements OnInit {
     }
     try {
       const response = await firstValueFrom(this.adminApi.getClassByIdForAdmin(id));
-      this.classDetail.set(response.data ?? null);
+      const classData = response.data ?? null;
+      this.classDetail.set(classData);
+      if (classData?.id) {
+        const completionResponse = await firstValueFrom(this.classesApi.getClassCompletionRequest(classData.id));
+        this.completionRequest.set(completionResponse.data ?? null);
+        
+        try {
+          const reviewResponse = await firstValueFrom(this.reviewsApi.getReviewByClassId(classData.id));
+          this.classReview.set(reviewResponse.data ?? null);
+        } catch (reviewError) {
+          // It's normal if review is not found
+          console.log('[admin/class-detail] no review found', reviewError);
+        }
+      }
     } catch (error) {
       console.error('[admin/class-detail] load failed', error);
       this.errorDetails.set(getApiErrorDetails(error, 'Không tải được thông tin lớp.'));

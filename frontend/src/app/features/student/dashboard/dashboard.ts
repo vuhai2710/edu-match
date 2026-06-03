@@ -58,7 +58,7 @@ import {
         <!-- Cột bên trái: Stats cards + Lớp học & Yêu cầu gần đây -->
         <div class="lg:col-span-2 space-y-6">
           <!-- 3-Column Stats Grid -->
-          <div class="grid grid-cols-3 gap-4">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <a
               routerLink="/student/classes"
               class="tactile-card p-4 text-center block hover:border-duo-green hover:shadow-md transition-all group border-b-6 border-slate-200 hover:border-b-duo-green"
@@ -90,6 +90,18 @@ import {
                   {{ dashboard()?.openRequests ?? 0 }}
                 </p>
                 <p class="text-[10px] sm:text-xs text-slate-500 font-bold mt-1">Yêu cầu học</p>
+              </div>
+            </a>
+            <a
+              routerLink="/student/classes"
+              [queryParams]="{ status: 'Completed' }"
+              class="tactile-card p-4 text-center block hover:border-emerald-500 hover:shadow-md transition-all group border-b-6 border-slate-200 hover:border-b-emerald-500"
+            >
+              <div class="flex flex-col items-center justify-center">
+                <p class="font-display text-xl sm:text-2xl font-black text-emerald-600 leading-none">
+                  {{ dashboard()?.completedClasses ?? completedClassCount() }}
+                </p>
+                <p class="text-[10px] sm:text-xs text-slate-500 font-bold mt-1">Lớp hoàn thành</p>
               </div>
             </a>
           </div>
@@ -307,6 +319,10 @@ export class StudentDashboardPage implements OnInit {
 
   pendingClassCount(): number {
     return this.classes().filter((item) => item.status === 'PendingStart').length;
+  }
+
+  completedClassCount(): number {
+    return this.classes().filter((item) => item.status === 'Completed').length;
   }
 
   requestLabel(request: LearningRequestDto): string {

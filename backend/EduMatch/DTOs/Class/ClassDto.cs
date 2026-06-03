@@ -14,6 +14,7 @@ public class ClassDto
   public long? SubjectId { get; set; }
   public string SubjectName { get; set; } = string.Empty;
   public DateTime? StartDate { get; set; }
+  public DateTime? EndDate { get; set; }
   public List<TimeSlotDto> TimeSlots { get; set; } = [];
   public AcceptedScheduleSource? AcceptedScheduleSource { get; set; }
   public decimal? DepositAmountSnapshot { get; set; }

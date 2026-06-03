@@ -158,6 +158,7 @@ export class AdminClassesPage implements OnInit {
     { label: 'Tất cả', status: null },
     { label: 'Chờ bắt đầu', status: ClassStatus.PendingStart },
     { label: 'Đang hoạt động', status: ClassStatus.Active },
+    { label: 'Hoàn thành', status: ClassStatus.Completed },
     { label: 'Học viên hủy', status: ClassStatus.CancelledByStudent },
     { label: 'Gia sư hủy', status: ClassStatus.CancelledByTutor },
     { label: 'Admin hủy', status: ClassStatus.CancelledByAdmin },

@@ -2,6 +2,7 @@ using EduMatch.Common.Enums;
 using EduMatch.Common.Extensions;
 using EduMatch.DTOs;
 using EduMatch.DTOs.CancellationRequests;
+using EduMatch.DTOs.ClassCompletionRequests;
 using EduMatch.DTOs.Classes;
 using EduMatch.DTOs.Review;
 using EduMatch.Services.Interfaces;
@@ -18,15 +19,18 @@ public class ClassesController : ControllerBase
   private readonly IClassReadService _classReadService;
   private readonly IReviewService _reviewService;
   private readonly ICancellationRequestService _cancellationRequestService;
+  private readonly IClassCompletionRequestService _classCompletionRequestService;
 
   public ClassesController(
     IClassReadService classReadService,
     IReviewService reviewService,
-    ICancellationRequestService cancellationRequestService)
+    ICancellationRequestService cancellationRequestService,
+    IClassCompletionRequestService classCompletionRequestService)
   {
     _classReadService = classReadService;
     _reviewService = reviewService;
     _cancellationRequestService = cancellationRequestService;
+    _classCompletionRequestService = classCompletionRequestService;
   }
 
   [HttpGet("me")]
@@ -87,6 +91,21 @@ public class ClassesController : ControllerBase
   public async Task<ActionResult<ApiResponse<CancellationRequestDto>>> GetCancellationRequest(long id)
   {
     return this.OkResponse(await _cancellationRequestService.GetLatestByClassIdAsync(
+      id,
+      GetCurrentUserId(),
+      GetCurrentUserRole()));
+  }
+
+  [HttpGet("{id:long}/completion-request")]
+  [Authorize(Roles = "Student,Tutor,Admin")]
+  [SwaggerOperation(OperationId = "getClassCompletionRequest")]
+  [ProducesResponseType(typeof(ApiResponse<ClassCompletionRequestDto>), StatusCodes.Status200OK)]
+  [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+  [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+  [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+  public async Task<ActionResult<ApiResponse<ClassCompletionRequestDto>>> GetCompletionRequest(long id)
+  {
+    return this.OkResponse(await _classCompletionRequestService.GetLatestByClassIdAsync(
       id,
       GetCurrentUserId(),
       GetCurrentUserRole()));

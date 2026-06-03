@@ -29,6 +29,7 @@ public class AppDbContext : DbContext
   public DbSet<DepositPolicy> DepositPolicies => Set<DepositPolicy>();
   public DbSet<Review> Reviews => Set<Review>();
   public DbSet<CancellationRequest> CancellationRequests => Set<CancellationRequest>();
+  public DbSet<ClassCompletionRequest> ClassCompletionRequests => Set<ClassCompletionRequest>();
   #endregion
 
   protected override void OnModelCreating(ModelBuilder modelBuilder)

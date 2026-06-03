@@ -6,22 +6,39 @@ import { firstValueFrom } from 'rxjs';
 import { StudentDetailModalComponent } from '../../../shared/components/student-detail-modal';
 import { TutorDetailModalComponent } from '../../../shared/components/tutor-detail-modal';
 
-import { CancellationRequestDto, ClassDto, ClassStatus, CancellationRequestStatus, PaymentStatus, ReviewEligibilityDto, ReviewDto } from '../../../api/generated/client/models';
-import { ClassesService, CancellationRequestsService, ReviewsService } from '../../../api/generated/client/services';
+import {
+  CancellationRequestDto,
+  CancellationRequestStatus,
+  ClassCompletionRequestDto,
+  ClassCompletionRequestStatus,
+  ClassDto,
+  ClassStatus,
+  PaymentStatus,
+  ReviewEligibilityDto,
+  ReviewDto,
+} from '../../../api/generated/client/models';
+import {
+  CancellationRequestsService,
+  ClassCompletionRequestsService,
+  ClassesService,
+  ReviewsService,
+} from '../../../api/generated/client/services';
 import { SessionService } from '../../../core/auth/session';
 import { getApiErrorMessage, unwrapApiData } from '../../../core/http/api-error';
 import {
-  classStatusLabel,
-  classStatusClass,
-  cancellationStatusLabel,
   cancellationStatusClass,
-  userRoleLabel,
+  cancellationStatusLabel,
+  classCompletionStatusClass,
+  classCompletionStatusLabel,
+  classStatusClass,
+  classStatusLabel,
   formatDate,
   formatDateTime,
   formatMoney,
   formatTimeSlots,
-  paymentStatusLabel,
   paymentStatusClass,
+  paymentStatusLabel,
+  userRoleLabel,
 } from '../../../shared/utils/api-ui';
 
 @Component({
@@ -51,14 +68,18 @@ import {
                   {{ isTutor() ? (item.studentName || 'Đang cập nhật') : (item.tutorName || 'Đang cập nhật') }}
                 </p>
                 @if (isTutor() && item.studentId) {
-                  <button (click)="openStudentDetail(item.studentId)" 
-                          class="text-xs font-extrabold text-duo-blue hover:text-duo-blue-dark hover:underline cursor-pointer">
+                  <button
+                    (click)="openStudentDetail(item.studentId)"
+                    class="text-xs font-extrabold text-duo-blue hover:text-duo-blue-dark hover:underline cursor-pointer"
+                  >
                     (Xem chi tiết)
                   </button>
                 }
                 @if (!isTutor() && item.tutorId) {
-                  <button (click)="openTutorDetail(item.tutorId)" 
-                          class="text-xs font-extrabold text-duo-blue hover:text-duo-blue-dark hover:underline cursor-pointer">
+                  <button
+                    (click)="openTutorDetail(item.tutorId)"
+                    class="text-xs font-extrabold text-duo-blue hover:text-duo-blue-dark hover:underline cursor-pointer"
+                  >
                     (Xem chi tiết)
                   </button>
                 }
@@ -68,6 +89,12 @@ import {
               <p class="font-bold text-slate-500">Ngày bắt đầu</p>
               <p class="mt-1 font-extrabold text-slate-900">{{ date(item.startDate) }}</p>
             </div>
+            @if (item.endDate) {
+              <div class="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
+                <p class="font-bold text-emerald-700">Ngày hoàn thành</p>
+                <p class="mt-1 font-extrabold text-emerald-900">{{ dateTime(item.endDate) }}</p>
+              </div>
+            }
             <div class="rounded-2xl bg-slate-50 p-4">
               <p class="font-bold text-slate-500">Lịch học</p>
               <p class="mt-1 font-extrabold text-slate-900">{{ slots(item) }}</p>
@@ -78,6 +105,130 @@ import {
             </div>
           </div>
         </div>
+
+        <div class="tactile-card p-6 space-y-4">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 class="font-extrabold text-lg text-slate-900">Hoàn thành lớp học</h2>
+              <p class="text-sm text-slate-500 mt-1">
+                Khi một bên đánh dấu hoàn thành, bên còn lại sẽ xác nhận để khóa lớp đúng theo thực tế học.
+              </p>
+            </div>
+            @if (completionRequest(); as req) {
+              <span [class]="completionBadgeClass(req.status)" class="rounded-full px-3 py-1 text-xs font-black">
+                {{ completionStatusLabel(req.status) }}
+              </span>
+            } @else if (item.status === statusEnum.Completed) {
+              <span class="rounded-full border border-emerald-200 bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-700">
+                Đã hoàn thành
+              </span>
+            }
+          </div>
+
+          @if (completionRequest(); as req) {
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3 text-sm">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="font-extrabold text-slate-900">{{ req.requestedByUserName || 'Không rõ' }}</span>
+                <span class="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-black text-slate-600">
+                  {{ reqRoleLabel(req.requestedByRole) }}
+                </span>
+                <span class="text-slate-500">đã gửi yêu cầu hoàn thành</span>
+              </div>
+
+              <div class="grid sm:grid-cols-2 gap-3">
+                <div class="rounded-2xl border border-slate-200 bg-white p-3">
+                  <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Gửi lúc</p>
+                  <p class="mt-1 font-extrabold text-slate-900">{{ dateTime(req.createdAt) }}</p>
+                </div>
+                <div class="rounded-2xl border border-slate-200 bg-white p-3">
+                  <p class="text-xs font-bold uppercase tracking-wide text-slate-500">
+                    {{ req.status === completionStatusEnum.Pending ? 'Trạng thái' : 'Phản hồi lúc' }}
+                  </p>
+                  <p class="mt-1 font-extrabold text-slate-900">
+                    {{
+                      req.status === completionStatusEnum.Pending
+                        ? completionStatusLabel(req.status)
+                        : dateTime(req.respondedAt)
+                    }}
+                  </p>
+                </div>
+              </div>
+
+              @if (req.status === completionStatusEnum.Pending && isCompletionRequester(req)) {
+                <div class="rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm font-bold text-sky-700">
+                  Yêu cầu đã được gửi. Bạn đang chờ {{ counterpartLabel() }} xác nhận hoàn thành lớp.
+                </div>
+              }
+
+              @if (req.status === completionStatusEnum.Pending && canRespondCompletion(req)) {
+                <div class="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-4 space-y-3">
+                  <p class="text-sm font-bold text-emerald-800">
+                    {{ req.requestedByUserName || counterpartLabel() }} đã đánh dấu lớp này hoàn thành. Bạn xác nhận theo thực tế?
+                  </p>
+                  <div class="flex flex-col sm:flex-row gap-3">
+                    <button
+                      (click)="respondCompletionRequest(req.id, true)"
+                      [disabled]="isRespondingCompletion()"
+                      class="w-full sm:w-auto tactile-button-green px-5 py-2.5 rounded-xl text-sm font-extrabold uppercase disabled:opacity-50"
+                    >
+                      {{ isRespondingCompletion() ? 'Đang xử lý...' : 'Xác nhận hoàn thành' }}
+                    </button>
+                    <button
+                      (click)="respondCompletionRequest(req.id, false)"
+                      [disabled]="isRespondingCompletion()"
+                      class="w-full sm:w-auto rounded-xl border-2 border-slate-200 bg-white px-5 py-2.5 text-sm font-extrabold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      Chưa hoàn thành
+                    </button>
+                  </div>
+                </div>
+              }
+
+              @if (req.status === completionStatusEnum.Confirmed) {
+                <div class="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                  <p class="font-bold">Hai bên đã xác nhận lớp hoàn thành.</p>
+                  @if (item.endDate) {
+                    <p class="mt-1 font-medium">Lớp kết thúc lúc {{ dateTime(item.endDate) }}.</p>
+                  }
+                </div>
+              }
+
+              @if (req.status === completionStatusEnum.Rejected) {
+                <div class="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                  <p class="font-bold">Bên còn lại phản hồi rằng lớp chưa hoàn thành.</p>
+                  @if (req.respondedAt) {
+                    <p class="mt-1 font-medium">Phản hồi lúc {{ dateTime(req.respondedAt) }}.</p>
+                  }
+                </div>
+              }
+            </div>
+          }
+
+          @if (!completionRequest()) {
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600">
+              Chưa có yêu cầu hoàn thành nào cho lớp này.
+            </div>
+          }
+
+            @if (completionErrorMessage()) {
+              <p class="text-xs font-bold text-red-500">{{ completionErrorMessage() }}</p>
+            }
+            @if (completionSuccessMessage()) {
+              <p class="text-xs font-bold text-duo-green">{{ completionSuccessMessage() }}</p>
+            }
+
+            @if (canCreateCompletionRequest(item)) {
+              <div class="flex justify-end">
+                <button
+                  (click)="submitCompletionRequest(item.id)"
+                  [disabled]="isSubmittingCompletion()"
+                  class="w-full sm:w-auto tactile-button-green py-2.5 px-6 rounded-xl text-sm font-extrabold uppercase disabled:opacity-50"
+                >
+                  {{ isSubmittingCompletion() ? 'Đang gửi...' : 'Đánh dấu lớp đã hoàn thành' }}
+                </button>
+              </div>
+            }
+          </div>
 
         <div class="tactile-card p-6 space-y-4">
           <h2 class="font-extrabold text-lg text-slate-900">Thanh toán</h2>
@@ -99,13 +250,11 @@ import {
           </div>
         </div>
 
-        <!-- Đánh giá lớp học (Reviews & Ratings) -->
         @if (isLoadingReview()) {
           <div class="tactile-card p-6 text-center text-slate-500 font-bold">
             Đang tải thông tin đánh giá...
           </div>
         } @else {
-          <!-- 1. Hiển thị đánh giá đã có -->
           @if (existingReview(); as rev) {
             <div class="tactile-card p-6 space-y-4">
               <div class="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -116,7 +265,7 @@ import {
                   {{ dateTime(rev.createdAt) }}
                 </span>
               </div>
-              
+
               <div class="flex items-start gap-4">
                 <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center font-black text-lg border-b-2 border-amber-300 shrink-0">
                   {{ (rev.studentName || 'H')[0].toUpperCase() }}
@@ -128,9 +277,11 @@ import {
                     </p>
                     <div class="flex gap-0.5">
                       @for (star of [1, 2, 3, 4, 5]; track star) {
-                        <span class="text-sm" 
-                              [class.text-amber-500]="star <= (rev.rating || 0)"
-                              [class.text-slate-200]="star > (rev.rating || 0)">
+                        <span
+                          class="text-sm"
+                          [class.text-amber-500]="star <= (rev.rating || 0)"
+                          [class.text-slate-200]="star > (rev.rating || 0)"
+                        >
                           ★
                         </span>
                       }
@@ -143,7 +294,6 @@ import {
               </div>
             </div>
           } @else if (!isTutor() && reviewEligibility()?.canReview && !reviewEligibility()?.alreadyReviewed) {
-            <!-- 2. Form gửi đánh giá cho Học viên -->
             <div class="tactile-card p-6 space-y-4">
               <h2 class="font-extrabold text-lg text-slate-900 flex items-center gap-2">
                 <span class="text-duo-green text-xl">★</span> Đánh giá lớp học & Gia sư
@@ -152,31 +302,40 @@ import {
                 Chia sẻ ý kiến của bạn sẽ giúp gia sư cải thiện chất lượng giảng dạy và giúp các học viên khác tìm kiếm được gia sư phù hợp.
               </p>
 
-              <!-- Star selector -->
               <div class="flex flex-wrap items-center gap-3 py-2">
                 <span class="text-sm font-bold text-slate-600">Mức độ hài lòng:</span>
                 <div class="flex gap-1">
                   @for (star of [1, 2, 3, 4, 5]; track star) {
-                    <button type="button" 
-                            (click)="reviewRating.set(star)"
-                            class="text-3xl focus:outline-none transition-all duration-150 transform hover:scale-110 cursor-pointer active:scale-95"
-                            [class.text-amber-500]="star <= reviewRating()"
-                            [class.text-slate-200]="star > reviewRating()">
+                    <button
+                      type="button"
+                      (click)="reviewRating.set(star)"
+                      class="text-3xl focus:outline-none transition-all duration-150 transform hover:scale-110 cursor-pointer active:scale-95"
+                      [class.text-amber-500]="star <= reviewRating()"
+                      [class.text-slate-200]="star > reviewRating()"
+                    >
                       ★
                     </button>
                   }
                 </div>
                 <span class="text-sm font-black text-slate-700 bg-slate-100 px-3 py-1 rounded-xl">
-                  {{ reviewRating() === 1 ? 'Rất tệ 😟' : reviewRating() === 2 ? 'Không hài lòng 🙁' : reviewRating() === 3 ? 'Bình thường 😐' : reviewRating() === 4 ? 'Hài lòng 🙂' : 'Tuyệt vời! 😄' }}
+                  {{
+                    reviewRating() === 1 ? 'Rất tệ 😟'
+                    : reviewRating() === 2 ? 'Không hài lòng 🙁'
+                    : reviewRating() === 3 ? 'Bình thường 😐'
+                    : reviewRating() === 4 ? 'Hài lòng 🙂'
+                    : 'Tuyệt vời! 😄'
+                  }}
                 </span>
               </div>
 
-              <!-- Comment -->
               <div>
                 <label class="block text-sm font-bold text-slate-700 mb-1">Nhận xét chi tiết (Không bắt buộc)</label>
-                <textarea [(ngModel)]="reviewComment" rows="3"
-                          placeholder="Nhập cảm nhận của bạn về buổi học, gia sư..."
-                          class="tactile-input w-full px-3 py-2 text-sm outline-none"></textarea>
+                <textarea
+                  [(ngModel)]="reviewComment"
+                  rows="3"
+                  placeholder="Nhập cảm nhận của bạn về buổi học, gia sư..."
+                  class="tactile-input w-full px-3 py-2 text-sm outline-none"
+                ></textarea>
               </div>
 
               @if (reviewErrorMessage()) {
@@ -187,9 +346,11 @@ import {
               }
 
               <div class="flex justify-end mt-2">
-                <button (click)="submitReview(item.id!)"
-                        [disabled]="isSubmittingReview()"
-                        class="w-full sm:w-auto tactile-button-green py-2.5 px-6 rounded-xl text-sm font-extrabold uppercase disabled:opacity-50">
+                <button
+                  (click)="submitReview(item.id!)"
+                  [disabled]="isSubmittingReview()"
+                  class="w-full sm:w-auto tactile-button-green py-2.5 px-6 rounded-xl text-sm font-extrabold uppercase disabled:opacity-50"
+                >
                   {{ isSubmittingReview() ? 'Đang gửi...' : 'Gửi đánh giá' }}
                 </button>
               </div>
@@ -197,7 +358,6 @@ import {
           }
         }
 
-        <!-- Hủy lớp UI / UX -->
         @if (cancellationRequest(); as req) {
           <div class="tactile-card p-6 space-y-4 border-2 border-orange-100 bg-orange-50/5">
             <div class="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -210,7 +370,7 @@ import {
             <div class="space-y-3 text-sm">
               <p class="text-slate-600">
                 <span class="font-bold text-slate-700">Người yêu cầu:</span>
-                {{ req.requestedByUserName || 'Không rõ' }} 
+                {{ req.requestedByUserName || 'Không rõ' }}
                 <span class="ml-1 text-xs rounded bg-slate-100 px-2 py-0.5 text-slate-600">{{ reqRoleLabel(req.requestedByRole) }}</span>
               </p>
               <p class="text-slate-600">
@@ -254,8 +414,10 @@ import {
         } @else if (item.status === 'PendingStart') {
           @if (!showCancelForm()) {
             <div class="flex justify-end mt-4">
-              <button (click)="showCancelForm.set(true)"
-                      class="w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white font-extrabold px-6 py-3 rounded-xl border-b-4 border-red-700 hover:opacity-95 transition-all text-sm">
+              <button
+                (click)="showCancelForm.set(true)"
+                class="w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white font-extrabold px-6 py-3 rounded-xl border-b-4 border-red-700 hover:opacity-95 transition-all text-sm"
+              >
                 Yêu cầu hủy lớp học
               </button>
             </div>
@@ -264,31 +426,38 @@ import {
               <h3 class="font-extrabold text-lg text-slate-900 flex items-center gap-2">
                 <span class="text-red-500">⚠</span> Xác nhận yêu cầu hủy lớp
               </h3>
-              
+
               <p class="text-xs text-slate-500 leading-relaxed">
                 Lưu ý: Yêu cầu hủy lớp của bạn sẽ được gửi tới Admin để xác minh lý do và phê duyệt hoàn trả tiền đặt cọc theo chính sách của EduMatch.
               </p>
- 
+
               <div>
                 <label class="block text-sm font-bold text-slate-700 mb-1">Lý do hủy lớp <span class="text-red-500">*</span></label>
-                <textarea [(ngModel)]="cancelReason" rows="3"
-                          placeholder="Vui lòng nhập rõ lý do hủy lớp để Admin phê duyệt..."
-                          class="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm focus:border-red-500 outline-none"></textarea>
+                <textarea
+                  [(ngModel)]="cancelReason"
+                  rows="3"
+                  placeholder="Vui lòng nhập rõ lý do hủy lớp để Admin phê duyệt..."
+                  class="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm focus:border-red-500 outline-none"
+                ></textarea>
               </div>
- 
+
               @if (cancelErrorMessage()) {
                 <p class="text-xs font-bold text-red-500">{{ cancelErrorMessage() }}</p>
               }
- 
+
               <div class="flex flex-col sm:flex-row justify-end gap-3">
-                <button (click)="showCancelForm.set(false); cancelReason.set(''); cancelErrorMessage.set('')"
-                        [disabled]="isSubmittingCancel()"
-                        class="w-full sm:w-auto bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-4 py-2 rounded-xl text-sm transition-colors">
+                <button
+                  (click)="showCancelForm.set(false); cancelReason.set(''); cancelErrorMessage.set('')"
+                  [disabled]="isSubmittingCancel()"
+                  class="w-full sm:w-auto bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-4 py-2 rounded-xl text-sm transition-colors"
+                >
                   Hủy bỏ
                 </button>
-                <button (click)="submitCancellation(item.id!)"
-                        [disabled]="isSubmittingCancel() || !cancelReason().trim()"
-                        class="w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white font-extrabold px-5 py-2 rounded-xl border-b-4 border-red-700 hover:opacity-95 disabled:opacity-50 transition-all text-sm">
+                <button
+                  (click)="submitCancellation(item.id!)"
+                  [disabled]="isSubmittingCancel() || !cancelReason().trim()"
+                  class="w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white font-extrabold px-5 py-2 rounded-xl border-b-4 border-red-700 hover:opacity-95 disabled:opacity-50 transition-all text-sm"
+                >
                   {{ isSubmittingCancel() ? 'Đang gửi...' : 'Gửi yêu cầu' }}
                 </button>
               </div>
@@ -300,12 +469,10 @@ import {
           <p class="rounded-xl border-2 border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-duo-red">{{ errorMessage() }}</p>
         }
 
-        <!-- Student Detail Modal overlay -->
         @if (selectedStudentId()) {
           <app-student-detail-modal [studentId]="selectedStudentId()" (close)="selectedStudentId.set(null)" />
         }
 
-        <!-- Tutor Detail Modal overlay -->
         @if (selectedTutorId()) {
           <app-tutor-detail-modal [tutorId]="selectedTutorId()" (close)="selectedTutorId.set(null)" />
         }
@@ -318,6 +485,7 @@ import {
 export class StudentClassDetailPage implements OnInit {
   classItem = signal<ClassDto | null>(null);
   cancellationRequest = signal<CancellationRequestDto | null>(null);
+  completionRequest = signal<ClassCompletionRequestDto | null>(null);
   isLoading = signal(false);
   errorMessage = signal('');
 
@@ -326,28 +494,39 @@ export class StudentClassDetailPage implements OnInit {
   cancelErrorMessage = signal('');
   isSubmittingCancel = signal(false);
 
-  // Review & Rating States
   reviewEligibility = signal<ReviewEligibilityDto | null>(null);
   existingReview = signal<ReviewDto | null>(null);
   isLoadingReview = signal(false);
 
-  // Review Form Inputs
   reviewRating = signal<number>(5);
   reviewComment = signal('');
   isSubmittingReview = signal(false);
   reviewErrorMessage = signal('');
   reviewSuccessMessage = signal('');
 
+  isSubmittingCompletion = signal(false);
+  isRespondingCompletion = signal(false);
+  completionErrorMessage = signal('');
+  completionSuccessMessage = signal('');
+
   private readonly route = inject(ActivatedRoute);
   private readonly classesApi = inject(ClassesService);
   private readonly cancellationApi = inject(CancellationRequestsService);
+  private readonly classCompletionApi = inject(ClassCompletionRequestsService);
   private readonly sessionService = inject(SessionService);
   private readonly reviewsApi = inject(ReviewsService);
 
   backLink = computed(() => this.sessionService.role() === 'Tutor' ? '/tutor/classes' : '/student/classes');
   isTutor = computed(() => this.sessionService.role() === 'Tutor');
+  currentUserId = computed(() => this.sessionService.user()?.id ?? null);
   selectedStudentId = signal<number | null>(null);
   selectedTutorId = signal<number | null>(null);
+  statusEnum = ClassStatus;
+  completionStatusEnum = ClassCompletionRequestStatus;
+
+  ngOnInit(): void {
+    void this.loadClass();
+  }
 
   openStudentDetail(studentId: number): void {
     this.selectedStudentId.set(studentId);
@@ -357,26 +536,23 @@ export class StudentClassDetailPage implements OnInit {
     this.selectedTutorId.set(tutorId);
   }
 
+  label = classStatusLabel;
+  paymentLabel = paymentStatusLabel;
+  reqStatusLabel = cancellationStatusLabel;
+  reqRoleLabel = userRoleLabel;
+  completionStatusLabel = classCompletionStatusLabel;
+
   scheduleSourceLabel(src?: string | null): string {
     if (src === 'R1') return 'Học viên đề xuất';
     if (src === 'R2') return 'Gia sư đề xuất';
     return 'Chưa rõ';
   }
 
-  ngOnInit(): void {
-    void this.loadClass();
-  }
-
-  label = classStatusLabel;
-  paymentLabel = paymentStatusLabel;
-  reqStatusLabel = cancellationStatusLabel;
-  reqRoleLabel = userRoleLabel;
-
-  date(value?: Date | null): string {
+  date(value?: Date | string | null): string {
     return formatDate(value);
   }
 
-  dateTime(value?: Date | null): string {
+  dateTime(value?: Date | string | null): string {
     return formatDateTime(value);
   }
 
@@ -400,6 +576,31 @@ export class StudentClassDetailPage implements OnInit {
     return paymentStatusClass(status);
   }
 
+  completionBadgeClass(status?: ClassCompletionRequestStatus | null): string {
+    return classCompletionStatusClass(status);
+  }
+
+  counterpartLabel(): string {
+    return this.isTutor() ? 'học viên' : 'gia sư';
+  }
+
+  isCompletionRequester(request?: ClassCompletionRequestDto | null): boolean {
+    return Boolean(request?.requestedByUserId && request.requestedByUserId === this.currentUserId());
+  }
+
+  canRespondCompletion(request?: ClassCompletionRequestDto | null): boolean {
+    return request?.status === ClassCompletionRequestStatus.Pending && !this.isCompletionRequester(request);
+  }
+
+  canCreateCompletionRequest(item: ClassDto): boolean {
+    if (item.status !== ClassStatus.Active) {
+      return false;
+    }
+
+    const latestRequest = this.completionRequest();
+    return !latestRequest || latestRequest.status !== ClassCompletionRequestStatus.Pending;
+  }
+
   private async loadClass(): Promise<void> {
     const id = Number(this.route.snapshot.paramMap.get('id'));
     if (!id) {
@@ -408,12 +609,14 @@ export class StudentClassDetailPage implements OnInit {
     }
 
     this.isLoading.set(true);
+    this.errorMessage.set('');
     try {
       const response = await firstValueFrom(this.classesApi.getClassById(id));
       const classData = unwrapApiData(response);
       this.classItem.set(classData);
       if (classData?.id) {
         await this.loadCancellationRequest(classData.id);
+        await this.loadCompletionRequest(classData.id);
         await this.loadReviewLogic(classData);
       }
     } catch (error) {
@@ -428,7 +631,6 @@ export class StudentClassDetailPage implements OnInit {
 
     const isStudent = this.sessionService.role() === 'Student';
 
-    // 1. Fetch review eligibility if the user is a student
     if (isStudent) {
       try {
         const eligibilityRes = await firstValueFrom(this.classesApi.getClassReviewEligibility(classData.id));
@@ -439,7 +641,6 @@ export class StudentClassDetailPage implements OnInit {
       }
     }
 
-    // 2. Fetch existing review if we have a tutorId
     if (classData.tutorId) {
       this.isLoadingReview.set(true);
       try {
@@ -475,11 +676,10 @@ export class StudentClassDetailPage implements OnInit {
           classId,
           rating,
           comment: comment || undefined,
-        })
+        }),
       );
       this.reviewSuccessMessage.set('Cảm ơn bạn đã gửi đánh giá thành công!');
       this.reviewComment.set('');
-      // Reload class and review details to transition states
       await this.loadClass();
     } catch (error) {
       this.reviewErrorMessage.set(getApiErrorMessage(error, 'Không gửi được đánh giá.'));
@@ -494,6 +694,65 @@ export class StudentClassDetailPage implements OnInit {
       this.cancellationRequest.set(response.data ?? null);
     } catch (error) {
       this.cancellationRequest.set(null);
+    }
+  }
+
+  private async loadCompletionRequest(classId: number): Promise<void> {
+    try {
+      const response = await firstValueFrom(this.classesApi.getClassCompletionRequest(classId));
+      this.completionRequest.set(response.data ?? null);
+    } catch (error) {
+      this.completionRequest.set(null);
+    }
+  }
+
+  async submitCompletionRequest(classId?: number): Promise<void> {
+    if (!classId) {
+      return;
+    }
+
+    this.isSubmittingCompletion.set(true);
+    this.completionErrorMessage.set('');
+    this.completionSuccessMessage.set('');
+    try {
+      await firstValueFrom(
+        this.classCompletionApi.createClassCompletionRequest({
+          classId,
+        }),
+      );
+      this.completionSuccessMessage.set('Đã gửi yêu cầu xác nhận hoàn thành lớp.');
+      await this.loadClass();
+    } catch (error) {
+      this.completionErrorMessage.set(getApiErrorMessage(error, 'Không gửi được yêu cầu hoàn thành.'));
+    } finally {
+      this.isSubmittingCompletion.set(false);
+    }
+  }
+
+  async respondCompletionRequest(requestId?: number, isConfirmed = false): Promise<void> {
+    if (!requestId) {
+      return;
+    }
+
+    this.isRespondingCompletion.set(true);
+    this.completionErrorMessage.set('');
+    this.completionSuccessMessage.set('');
+    try {
+      await firstValueFrom(
+        this.classCompletionApi.respondClassCompletionRequest(requestId, {
+          isConfirmed,
+        }),
+      );
+      this.completionSuccessMessage.set(
+        isConfirmed
+          ? 'Bạn đã xác nhận lớp hoàn thành.'
+          : 'Bạn đã phản hồi rằng lớp chưa hoàn thành.',
+      );
+      await this.loadClass();
+    } catch (error) {
+      this.completionErrorMessage.set(getApiErrorMessage(error, 'Không xử lý được yêu cầu hoàn thành.'));
+    } finally {
+      this.isRespondingCompletion.set(false);
     }
   }
 
@@ -512,7 +771,7 @@ export class StudentClassDetailPage implements OnInit {
         this.cancellationApi.createCancellationRequest({
           classId,
           reason,
-        })
+        }),
       );
       this.showCancelForm.set(false);
       this.cancelReason.set('');

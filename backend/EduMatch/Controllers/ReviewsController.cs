@@ -50,6 +50,15 @@ namespace EduMatch.Controllers
       return this.OkResponse(await _reviewService.GetReviewsByTutorIdAsync(tutorId));
     }
 
+    [HttpGet("class/{classId}")]
+    [SwaggerOperation(OperationId = "getReviewByClassId")]
+    [ProducesResponseType(typeof(ApiResponse<ReviewDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<ReviewDto>>> GetReviewByClassId(long classId)
+    {
+      return this.OkResponse(await _reviewService.GetReviewByClassIdAsync(classId));
+    }
+
     private long GetCurrentUserId()
     {
       return User.GetRequiredUserId();

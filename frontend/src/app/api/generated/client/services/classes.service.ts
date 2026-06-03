@@ -12,7 +12,7 @@ import { inject, Injectable } from "@angular/core";
 import { Observable } from "rxjs";
 import { BASE_PATH_DEFAULT, CLIENT_CONTEXT_TOKEN_DEFAULT } from "../tokens";
 import { HttpParamsBuilder } from "../utils/http-params-builder";
-import { ClassStatus, DayOfWeek, RequestOptions, ClassDtoPagedResultApiResponse, ClassDtoApiResponse, ReviewEligibilityDtoApiResponse, CancellationRequestDtoApiResponse } from "../models";
+import { ClassStatus, DayOfWeek, RequestOptions, ClassDtoPagedResultApiResponse, ClassDtoApiResponse, ReviewEligibilityDtoApiResponse, CancellationRequestDtoApiResponse, ClassCompletionRequestDtoApiResponse } from "../models";
 
 @Injectable({ providedIn: "root" })
 export class ClassesService {
@@ -180,6 +180,30 @@ export class ClassesService {
     getClassCancellationRequest(id: number, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<CancellationRequestDtoApiResponse>>;
     getClassCancellationRequest(id: number, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
         const url = `${this.basePath}/api/classes/${id}/cancellation-request`;
+
+        let headers: HttpHeaders;
+        if (options?.headers instanceof HttpHeaders) {
+            headers = options.headers;
+        } else {
+            headers = new HttpHeaders(options?.headers);
+        }
+
+        const requestOptions: any = {
+            observe: observe as any,
+            headers,
+            reportProgress: options?.reportProgress,
+            withCredentials: options?.withCredentials,
+            context: this.createContextWithClientId(options?.context)
+        };
+
+        return this.httpClient.get(url, requestOptions);
+    }
+
+    getClassCompletionRequest(id: number, observe?: 'body', options?: RequestOptions<'json'>): Observable<ClassCompletionRequestDtoApiResponse>;
+    getClassCompletionRequest(id: number, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<ClassCompletionRequestDtoApiResponse>>;
+    getClassCompletionRequest(id: number, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<ClassCompletionRequestDtoApiResponse>>;
+    getClassCompletionRequest(id: number, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
+        const url = `${this.basePath}/api/classes/${id}/completion-request`;
 
         let headers: HttpHeaders;
         if (options?.headers instanceof HttpHeaders) {

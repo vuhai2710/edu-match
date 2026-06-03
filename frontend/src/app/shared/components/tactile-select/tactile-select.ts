@@ -80,7 +80,7 @@ import { Component, model, input, signal, computed, ElementRef, HostListener } f
 })
 export class TactileSelectComponent {
   value = model<any>(null);
-  options = input<any[]>([]);
+  options = input<readonly any[]>([]);
   valueKey = input<string>('');
   labelKey = input<string>('');
   placeholder = input<string>('');
