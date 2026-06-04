@@ -157,20 +157,20 @@ public class AuthService
       return await ValidateGoogleAccessTokenAsync(dto.AccessToken);
     }
 
-    throw new AppException("Google token is required", 400, "GOOGLE_TOKEN_REQUIRED");
+    throw new AppException("Cần cung cấp token từ Google", 400, "GOOGLE_TOKEN_REQUIRED");
   }
 
   private async Task<GoogleUserPayload> ValidateGoogleIdTokenAsync(string idToken)
   {
     if (string.IsNullOrWhiteSpace(idToken))
     {
-      throw new AppException("Google token is required", 400, "GOOGLE_TOKEN_REQUIRED");
+      throw new AppException("Cần cung cấp token từ Google", 400, "GOOGLE_TOKEN_REQUIRED");
     }
 
     var googleClientId = _config["GoogleAuth:ClientId"] ?? _config["GoogleAuth__ClientId"];
     if (string.IsNullOrWhiteSpace(googleClientId))
     {
-      throw new AppException("Google authentication is not configured", 500, "GOOGLE_AUTH_NOT_CONFIGURED");
+      throw new AppException("Chưa cấu hình xác thực bằng Google", 500, "GOOGLE_AUTH_NOT_CONFIGURED");
     }
 
     try
@@ -185,12 +185,12 @@ public class AuthService
     catch (InvalidJwtException ex)
     {
       _logger.LogError(ex, "Invalid Google token");
-      throw new AppException("Invalid Google token", 401);
+      throw new AppException("Google token không hợp lệ", 401);
     }
     catch (System.Exception ex)
     {
       _logger.LogError(ex, "Error validating Google token");
-      throw new AppException("Error during Google authentication", 401);
+      throw new AppException("Lỗi khi xác thực bằng Google", 401);
     }
   }
 
@@ -199,7 +199,7 @@ public class AuthService
     var googleClientId = _config["GoogleAuth:ClientId"] ?? _config["GoogleAuth__ClientId"];
     if (string.IsNullOrWhiteSpace(googleClientId))
     {
-      throw new AppException("Google authentication is not configured", 500, "GOOGLE_AUTH_NOT_CONFIGURED");
+      throw new AppException("Chưa cấu hình xác thực bằng Google", 500, "GOOGLE_AUTH_NOT_CONFIGURED");
     }
 
     try
@@ -210,14 +210,14 @@ public class AuthService
 
       if (!tokenInfoResponse.IsSuccessStatusCode)
       {
-        throw new AppException("Invalid Google access token", 401, "GOOGLE_ACCESS_TOKEN_INVALID");
+        throw new AppException("Google access token không hợp lệ", 401, "GOOGLE_ACCESS_TOKEN_INVALID");
       }
 
       var tokenInfo = await tokenInfoResponse.Content.ReadFromJsonAsync<GoogleTokenInfo>();
       var audience = tokenInfo?.Audience ?? tokenInfo?.Aud ?? tokenInfo?.IssuedTo;
       if (!string.Equals(audience, googleClientId, StringComparison.Ordinal))
       {
-        throw new AppException("Invalid Google token audience", 401, "GOOGLE_TOKEN_AUDIENCE_INVALID");
+        throw new AppException("Google token audience không hợp lệ", 401, "GOOGLE_TOKEN_AUDIENCE_INVALID");
       }
 
       using var request = new HttpRequestMessage(HttpMethod.Get, GoogleUserInfoUrl);
@@ -226,18 +226,18 @@ public class AuthService
       using var response = await http.SendAsync(request);
       if (!response.IsSuccessStatusCode)
       {
-        throw new AppException("Invalid Google access token", 401, "GOOGLE_ACCESS_TOKEN_INVALID");
+        throw new AppException("Google access token không hợp lệ", 401, "GOOGLE_ACCESS_TOKEN_INVALID");
       }
 
       var profile = await response.Content.ReadFromJsonAsync<GoogleUserInfo>();
       if (string.IsNullOrWhiteSpace(profile?.Email))
       {
-        throw new AppException("Google account email is required", 401, "GOOGLE_EMAIL_REQUIRED");
+        throw new AppException("Cần có email tài khoản Google", 401, "GOOGLE_EMAIL_REQUIRED");
       }
 
       if (profile.EmailVerified == false)
       {
-        throw new AppException("Google account email is not verified", 401, "GOOGLE_EMAIL_NOT_VERIFIED");
+        throw new AppException("Email tài khoản Google chưa được xác minh", 401, "GOOGLE_EMAIL_NOT_VERIFIED");
       }
 
       return new GoogleUserPayload(profile.Email, profile.Name ?? profile.Email, profile.Picture);
@@ -249,12 +249,12 @@ public class AuthService
     catch (HttpRequestException ex)
     {
       _logger.LogError(ex, "Cannot call Google token validation endpoints");
-      throw new AppException("Cannot verify Google access token", 503, "GOOGLE_TOKEN_VERIFY_FAILED");
+      throw new AppException("Không thể xác minh Google access token", 503, "GOOGLE_TOKEN_VERIFY_FAILED");
     }
     catch (JsonException ex)
     {
       _logger.LogError(ex, "Invalid Google token validation response");
-      throw new AppException("Invalid Google token response", 401, "GOOGLE_TOKEN_RESPONSE_INVALID");
+      throw new AppException("Phản hồi token từ Google không hợp lệ", 401, "GOOGLE_TOKEN_RESPONSE_INVALID");
     }
   }
 
@@ -268,7 +268,7 @@ public class AuthService
 
     if (role == UserRole.Admin)
     {
-      throw new AppException("Google registration does not support admin accounts", 400, "GOOGLE_ADMIN_NOT_ALLOWED");
+      throw new AppException("Không hỗ trợ đăng ký tài khoản admin qua Google", 400, "GOOGLE_ADMIN_NOT_ALLOWED");
     }
 
     if (role == UserRole.Tutor)
@@ -302,7 +302,7 @@ public class AuthService
         user.Tutor = CreateMinimalTutorProfile();
         break;
       default:
-        throw new AppException("Unsupported Google registration role", 400);
+        throw new AppException("Vai trò tạo tài khoản không được hỗ trợ", 400);
     }
 
     await _userRepository.AddAsync(user);
@@ -349,7 +349,7 @@ public class AuthService
 
     if (string.IsNullOrWhiteSpace(accessToken) || string.IsNullOrWhiteSpace(refreshToken))
     {
-      throw new AppException("Invalid access token or refresh token", 400);
+      throw new AppException("Access token hoặc refresh token không hợp lệ", 400);
     }
 
     ClaimsPrincipal principal;
@@ -360,25 +360,25 @@ public class AuthService
     }
     catch (System.Exception ex) when (ex is SecurityTokenException or ArgumentException)
     {
-      throw new AppException("Invalid access token or refresh token", 400);
+      throw new AppException("Access token hoặc refresh token không hợp lệ", 400);
     }
 
     var email = principal.FindFirst(ClaimTypes.Email)?.Value;
     if (string.IsNullOrEmpty(email))
     {
-      throw new AppException("Invalid token payload", 400);
+      throw new AppException("Dữ liệu token không hợp lệ", 400);
     }
 
     var user = await _userRepository.GetByRefreshTokenWithProfilesAsync(refreshToken);
 
     if (user == null || user.RefreshTokenExpiryTime == null || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
     {
-      throw new AppException("Invalid access token or refresh token", 400);
+      throw new AppException("Access token hoặc refresh token không hợp lệ", 400);
     }
 
     if (!string.Equals(user.Email, email, StringComparison.OrdinalIgnoreCase))
     {
-      throw new AppException("Invalid access token or refresh token", 400);
+      throw new AppException("Access token hoặc refresh token không hợp lệ", 400);
     }
 
     return await IssueTokenPairAsync(user, refreshToken, rotateRefreshToken: false);
@@ -498,7 +498,7 @@ public class AuthService
         user.Tutor = CreateTutorProfile(tutorDto!, cvFile);
         break;
       default:
-        throw new AppException("Unsupported registration role", 400);
+        throw new AppException("Vai trò đăng ký không được hỗ trợ", 400);
     }
 
     await _userRepository.AddAsync(user);
@@ -691,22 +691,22 @@ public class AuthService
   {
     if (dto.ProvinceId <= 0)
     {
-      errors[nameof(dto.ProvinceId)] = ["ProvinceId phai lon hon 0."];
+      errors[nameof(dto.ProvinceId)] = ["Tỉnh/Thành phố là bắt buộc."];
     }
 
     if (string.IsNullOrWhiteSpace(dto.ProvinceName))
     {
-      errors[nameof(dto.ProvinceName)] = ["ProvinceName la bat buoc."];
+      errors[nameof(dto.ProvinceName)] = ["Tên Tỉnh/Thành phố là bắt buộc."];
     }
 
     if (string.IsNullOrWhiteSpace(dto.WardCode))
     {
-      errors[nameof(dto.WardCode)] = ["WardCode la bat buoc."];
+      errors[nameof(dto.WardCode)] = ["Phường/Xã là bắt buộc."];
     }
 
     if (string.IsNullOrWhiteSpace(dto.WardName))
     {
-      errors[nameof(dto.WardName)] = ["WardName la bat buoc."];
+      errors[nameof(dto.WardName)] = ["Tên Phường/Xã là bắt buộc."];
     }
   }
 

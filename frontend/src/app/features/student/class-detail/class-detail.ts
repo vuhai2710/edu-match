@@ -47,16 +47,23 @@ import {
   template: `
     @if (classItem(); as item) {
       <div class="max-w-3xl mx-auto space-y-6">
-        <a [routerLink]="backLink()" class="text-sm font-bold text-slate-500 hover:text-slate-800">← Quay lại</a>
+        <a [routerLink]="backLink()" class="text-sm font-bold text-slate-500 hover:text-slate-800"
+          >← Quay lại</a
+        >
 
         <div class="tactile-card p-6 space-y-5">
           <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h1 class="font-display text-2xl font-black text-slate-900">{{ item.subjectName || item.code }}</h1>
+              <h1 class="font-display text-2xl font-black text-slate-900">
+                {{ item.subjectName || item.code }}
+              </h1>
               <p class="text-sm text-slate-500 mt-1">Mã lớp: {{ item.code }}</p>
             </div>
             <div class="flex flex-col sm:items-end gap-2">
-              <span [class]="statusBadgeClass(item.status)" class="rounded-full px-3 py-1 text-xs font-black w-fit">
+              <span
+                [class]="statusBadgeClass(item.status)"
+                class="rounded-full px-3 py-1 text-xs font-black w-fit"
+              >
                 {{ label(item.status) }}
               </span>
               @if (canCreateCompletionRequest(item)) {
@@ -82,7 +89,11 @@ import {
               <p class="font-bold text-slate-500">{{ isTutor() ? 'Học viên' : 'Gia sư' }}</p>
               <div class="flex items-center gap-2 mt-1">
                 <p class="font-extrabold text-slate-900">
-                  {{ isTutor() ? (item.studentName || 'Đang cập nhật') : (item.tutorName || 'Đang cập nhật') }}
+                  {{
+                    isTutor()
+                      ? item.studentName || 'Đang cập nhật'
+                      : item.tutorName || 'Đang cập nhật'
+                  }}
                 </p>
                 @if (isTutor() && item.studentId) {
                   <button
@@ -118,7 +129,9 @@ import {
             </div>
             <div class="rounded-2xl bg-slate-50 p-4">
               <p class="font-bold text-slate-500">Lịch</p>
-              <p class="mt-1 font-extrabold text-slate-900">{{ scheduleSourceLabel(item.acceptedScheduleSource) }}</p>
+              <p class="mt-1 font-extrabold text-slate-900">
+                {{ scheduleSourceLabel(item.acceptedScheduleSource) }}
+              </p>
             </div>
           </div>
         </div>
@@ -128,19 +141,23 @@ import {
             <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <h2 class="font-extrabold text-lg text-slate-900">Hoàn thành lớp học</h2>
-                <p class="text-sm text-slate-500 mt-1">
-                  Khi một bên đánh dấu hoàn thành, bên còn lại sẽ xác nhận để khóa lớp đúng theo thực tế học.
-                </p>
               </div>
-              <span [class]="completionBadgeClass(req.status)" class="rounded-full px-3 py-1 text-xs font-black">
+              <span
+                [class]="completionBadgeClass(req.status)"
+                class="rounded-full px-3 py-1 text-xs font-black"
+              >
                 {{ completionStatusLabel(req.status) }}
               </span>
             </div>
 
             <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3 text-sm">
               <div class="flex flex-wrap items-center gap-2">
-                <span class="font-extrabold text-slate-900">{{ req.requestedByUserName || 'Không rõ' }}</span>
-                <span class="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-black text-slate-600">
+                <span class="font-extrabold text-slate-900">{{
+                  req.requestedByUserName || 'Không rõ'
+                }}</span>
+                <span
+                  class="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-black text-slate-600"
+                >
                   {{ reqRoleLabel(req.requestedByRole) }}
                 </span>
                 <span class="text-slate-500">đã gửi yêu cầu hoàn thành</span>
@@ -153,7 +170,9 @@ import {
                 </div>
                 <div class="rounded-2xl border border-slate-200 bg-white p-3">
                   <p class="text-xs font-bold uppercase tracking-wide text-slate-500">
-                    {{ req.status === completionStatusEnum.Pending ? 'Trạng thái' : 'Phản hồi lúc' }}
+                    {{
+                      req.status === completionStatusEnum.Pending ? 'Trạng thái' : 'Phản hồi lúc'
+                    }}
                   </p>
                   <p class="mt-1 font-extrabold text-slate-900">
                     {{
@@ -166,15 +185,21 @@ import {
               </div>
 
               @if (req.status === completionStatusEnum.Pending && isCompletionRequester(req)) {
-                <div class="rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm font-bold text-sky-700">
-                  Yêu cầu đã được gửi. Bạn đang chờ {{ counterpartLabel() }} xác nhận hoàn thành lớp.
+                <div
+                  class="rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm font-bold text-sky-700"
+                >
+                  Yêu cầu đã được gửi. Bạn đang chờ {{ counterpartLabel() }} xác nhận hoàn thành
+                  lớp.
                 </div>
               }
 
               @if (req.status === completionStatusEnum.Pending && canRespondCompletion(req)) {
-                <div class="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-4 space-y-3">
+                <div
+                  class="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-4 space-y-3"
+                >
                   <p class="text-sm font-bold text-emerald-800">
-                    {{ req.requestedByUserName || counterpartLabel() }} đã đánh dấu lớp này hoàn thành. Bạn xác nhận theo thực tế?
+                    {{ req.requestedByUserName || counterpartLabel() }} đã đánh dấu lớp này hoàn
+                    thành. Bạn xác nhận theo thực tế?
                   </p>
                   <div class="flex flex-col sm:flex-row gap-3">
                     <button
@@ -196,7 +221,9 @@ import {
               }
 
               @if (req.status === completionStatusEnum.Confirmed) {
-                <div class="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                <div
+                  class="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
+                >
                   <p class="font-bold">Hai bên đã xác nhận lớp hoàn thành.</p>
                   @if (item.endDate) {
                     <p class="mt-1 font-medium">Lớp kết thúc lúc {{ dateTime(item.endDate) }}.</p>
@@ -205,7 +232,9 @@ import {
               }
 
               @if (req.status === completionStatusEnum.Rejected) {
-                <div class="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                <div
+                  class="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+                >
                   <p class="font-bold">Bên còn lại phản hồi rằng lớp chưa hoàn thành.</p>
                   @if (req.respondedAt) {
                     <p class="mt-1 font-medium">Phản hồi lúc {{ dateTime(req.respondedAt) }}.</p>
@@ -228,17 +257,24 @@ import {
           <div class="grid sm:grid-cols-3 gap-4 text-sm">
             <div>
               <p class="text-slate-500 font-bold">Số tiền</p>
-              <p class="font-extrabold text-duo-green">{{ money(item.paymentSummary?.amount ?? item.depositAmountSnapshot) }}</p>
+              <p class="font-extrabold text-duo-green">
+                {{ money(item.paymentSummary?.amount ?? item.depositAmountSnapshot) }}
+              </p>
             </div>
             <div>
               <p class="text-slate-500 font-bold mb-1">Trạng thái</p>
-              <span [class]="paymentBadgeClass(item.paymentSummary?.status)" class="rounded-full px-2.5 py-0.5 text-xs font-black">
+              <span
+                [class]="paymentBadgeClass(item.paymentSummary?.status)"
+                class="rounded-full px-2.5 py-0.5 text-xs font-black"
+              >
                 {{ paymentLabel(item.paymentSummary?.status) }}
               </span>
             </div>
             <div>
               <p class="text-slate-500 font-bold">Đã thanh toán lúc</p>
-              <p class="font-extrabold text-slate-900">{{ dateTime(item.paymentSummary?.paidAt) }}</p>
+              <p class="font-extrabold text-slate-900">
+                {{ dateTime(item.paymentSummary?.paidAt) }}
+              </p>
             </div>
           </div>
         </div>
@@ -260,7 +296,9 @@ import {
               </div>
 
               <div class="flex items-start gap-4">
-                <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center font-black text-lg border-b-2 border-amber-300 shrink-0">
+                <div
+                  class="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center font-black text-lg border-b-2 border-amber-300 shrink-0"
+                >
                   {{ (rev.studentName || 'H')[0].toUpperCase() }}
                 </div>
                 <div class="space-y-1.5 flex-1 min-w-0">
@@ -280,19 +318,24 @@ import {
                       }
                     </div>
                   </div>
-                  <p class="text-slate-600 text-sm leading-relaxed whitespace-pre-line bg-slate-50 p-3 rounded-2xl border border-slate-100 font-medium">
+                  <p
+                    class="text-slate-600 text-sm leading-relaxed whitespace-pre-line bg-slate-50 p-3 rounded-2xl border border-slate-100 font-medium"
+                  >
                     {{ rev.comment || 'Không có nhận xét chi tiết.' }}
                   </p>
                 </div>
               </div>
             </div>
-          } @else if (!isTutor() && reviewEligibility()?.canReview && !reviewEligibility()?.alreadyReviewed) {
+          } @else if (
+            !isTutor() && reviewEligibility()?.canReview && !reviewEligibility()?.alreadyReviewed
+          ) {
             <div class="tactile-card p-6 space-y-4">
               <h2 class="font-extrabold text-lg text-slate-900 flex items-center gap-2">
                 <span class="text-duo-green text-xl">★</span> Đánh giá lớp học & Gia sư
               </h2>
               <p class="text-xs text-slate-500 leading-relaxed">
-                Chia sẻ ý kiến của bạn sẽ giúp gia sư cải thiện chất lượng giảng dạy và giúp các học viên khác tìm kiếm được gia sư phù hợp.
+                Chia sẻ ý kiến của bạn sẽ giúp gia sư cải thiện chất lượng giảng dạy và giúp các học
+                viên khác tìm kiếm được gia sư phù hợp.
               </p>
 
               <div class="flex flex-wrap items-center gap-3 py-2">
@@ -312,17 +355,23 @@ import {
                 </div>
                 <span class="text-sm font-black text-slate-700 bg-slate-100 px-3 py-1 rounded-xl">
                   {{
-                    reviewRating() === 1 ? 'Rất tệ 😟'
-                    : reviewRating() === 2 ? 'Không hài lòng 🙁'
-                    : reviewRating() === 3 ? 'Bình thường 😐'
-                    : reviewRating() === 4 ? 'Hài lòng 🙂'
-                    : 'Tuyệt vời! 😄'
+                    reviewRating() === 1
+                      ? 'Rất tệ 😟'
+                      : reviewRating() === 2
+                        ? 'Không hài lòng 🙁'
+                        : reviewRating() === 3
+                          ? 'Bình thường 😐'
+                          : reviewRating() === 4
+                            ? 'Hài lòng 🙂'
+                            : 'Tuyệt vời! 😄'
                   }}
                 </span>
               </div>
 
               <div>
-                <label class="block text-sm font-bold text-slate-700 mb-1">Nhận xét chi tiết (Không bắt buộc)</label>
+                <label class="block text-sm font-bold text-slate-700 mb-1"
+                  >Nhận xét chi tiết (Không bắt buộc)</label
+                >
                 <textarea
                   [(ngModel)]="reviewComment"
                   rows="3"
@@ -355,7 +404,10 @@ import {
           <div class="tactile-card p-6 space-y-4 border-2 border-orange-100 bg-orange-50/5">
             <div class="flex items-center justify-between border-b border-slate-100 pb-3">
               <h2 class="font-extrabold text-lg text-slate-900">Yêu cầu hủy lớp</h2>
-              <span [class]="reqBadgeClass(req.status)" class="rounded-full px-3 py-1 text-xs font-black">
+              <span
+                [class]="reqBadgeClass(req.status)"
+                class="rounded-full px-3 py-1 text-xs font-black"
+              >
                 {{ reqStatusLabel(req.status) }}
               </span>
             </div>
@@ -364,7 +416,9 @@ import {
               <p class="text-slate-600">
                 <span class="font-bold text-slate-700">Người yêu cầu:</span>
                 {{ req.requestedByUserName || 'Không rõ' }}
-                <span class="ml-1 text-xs rounded bg-slate-100 px-2 py-0.5 text-slate-600">{{ reqRoleLabel(req.requestedByRole) }}</span>
+                <span class="ml-1 text-xs rounded bg-slate-100 px-2 py-0.5 text-slate-600">{{
+                  reqRoleLabel(req.requestedByRole)
+                }}</span>
               </p>
               <p class="text-slate-600">
                 <span class="font-bold text-slate-700">Lý do:</span>
@@ -421,11 +475,14 @@ import {
               </h3>
 
               <p class="text-xs text-slate-500 leading-relaxed">
-                Lưu ý: Yêu cầu hủy lớp của bạn sẽ được gửi tới Admin để xác minh lý do và phê duyệt hoàn trả tiền đặt cọc theo chính sách của EduMatch.
+                Lưu ý: Yêu cầu hủy lớp của bạn sẽ được gửi tới Admin để xác minh lý do và phê duyệt
+                hoàn trả tiền đặt cọc theo chính sách của EduMatch.
               </p>
 
               <div>
-                <label class="block text-sm font-bold text-slate-700 mb-1">Lý do hủy lớp <span class="text-red-500">*</span></label>
+                <label class="block text-sm font-bold text-slate-700 mb-1"
+                  >Lý do hủy lớp <span class="text-red-500">*</span></label
+                >
                 <textarea
                   [(ngModel)]="cancelReason"
                   rows="3"
@@ -440,7 +497,9 @@ import {
 
               <div class="flex flex-col sm:flex-row justify-end gap-3">
                 <button
-                  (click)="showCancelForm.set(false); cancelReason.set(''); cancelErrorMessage.set('')"
+                  (click)="
+                    showCancelForm.set(false); cancelReason.set(''); cancelErrorMessage.set('')
+                  "
                   [disabled]="isSubmittingCancel()"
                   class="w-full sm:w-auto bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-4 py-2 rounded-xl text-sm transition-colors"
                 >
@@ -459,15 +518,25 @@ import {
         }
 
         @if (errorMessage()) {
-          <p class="rounded-xl border-2 border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-duo-red">{{ errorMessage() }}</p>
+          <p
+            class="rounded-xl border-2 border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-duo-red"
+          >
+            {{ errorMessage() }}
+          </p>
         }
 
         @if (selectedStudentId()) {
-          <app-student-detail-modal [studentId]="selectedStudentId()" (close)="selectedStudentId.set(null)" />
+          <app-student-detail-modal
+            [studentId]="selectedStudentId()"
+            (close)="selectedStudentId.set(null)"
+          />
         }
 
         @if (selectedTutorId()) {
-          <app-tutor-detail-modal [tutorId]="selectedTutorId()" (close)="selectedTutorId.set(null)" />
+          <app-tutor-detail-modal
+            [tutorId]="selectedTutorId()"
+            (close)="selectedTutorId.set(null)"
+          />
         }
       </div>
     } @else if (isLoading()) {
@@ -509,7 +578,9 @@ export class StudentClassDetailPage implements OnInit {
   private readonly sessionService = inject(SessionService);
   private readonly reviewsApi = inject(ReviewsService);
 
-  backLink = computed(() => this.sessionService.role() === 'Tutor' ? '/tutor/classes' : '/student/classes');
+  backLink = computed(() =>
+    this.sessionService.role() === 'Tutor' ? '/tutor/classes' : '/student/classes',
+  );
   isTutor = computed(() => this.sessionService.role() === 'Tutor');
   currentUserId = computed(() => this.sessionService.user()?.id ?? null);
   selectedStudentId = signal<number | null>(null);
@@ -578,11 +649,16 @@ export class StudentClassDetailPage implements OnInit {
   }
 
   isCompletionRequester(request?: ClassCompletionRequestDto | null): boolean {
-    return Boolean(request?.requestedByUserId && request.requestedByUserId === this.currentUserId());
+    return Boolean(
+      request?.requestedByUserId && request.requestedByUserId === this.currentUserId(),
+    );
   }
 
   canRespondCompletion(request?: ClassCompletionRequestDto | null): boolean {
-    return request?.status === ClassCompletionRequestStatus.Pending && !this.isCompletionRequester(request);
+    return (
+      request?.status === ClassCompletionRequestStatus.Pending &&
+      !this.isCompletionRequester(request)
+    );
   }
 
   canCreateCompletionRequest(item: ClassDto): boolean {
@@ -626,7 +702,9 @@ export class StudentClassDetailPage implements OnInit {
 
     if (isStudent) {
       try {
-        const eligibilityRes = await firstValueFrom(this.classesApi.getClassReviewEligibility(classData.id));
+        const eligibilityRes = await firstValueFrom(
+          this.classesApi.getClassReviewEligibility(classData.id),
+        );
         this.reviewEligibility.set(eligibilityRes.data ?? null);
       } catch (error) {
         console.error('Failed to fetch review eligibility:', error);
@@ -637,7 +715,9 @@ export class StudentClassDetailPage implements OnInit {
     if (classData.tutorId) {
       this.isLoadingReview.set(true);
       try {
-        const reviewsResponse = await firstValueFrom(this.reviewsApi.getReviewsByTutorId(classData.tutorId));
+        const reviewsResponse = await firstValueFrom(
+          this.reviewsApi.getReviewsByTutorId(classData.tutorId),
+        );
         const allReviews = reviewsResponse.data ?? [];
         const match = allReviews.find((r) => r.classId === classData.id);
         this.existingReview.set(match ?? null);
@@ -716,7 +796,9 @@ export class StudentClassDetailPage implements OnInit {
       this.completionSuccessMessage.set('Đã gửi yêu cầu xác nhận hoàn thành lớp.');
       await this.loadClass();
     } catch (error) {
-      this.completionErrorMessage.set(getApiErrorMessage(error, 'Không gửi được yêu cầu hoàn thành.'));
+      this.completionErrorMessage.set(
+        getApiErrorMessage(error, 'Không gửi được yêu cầu hoàn thành.'),
+      );
     } finally {
       this.isSubmittingCompletion.set(false);
     }
@@ -743,7 +825,9 @@ export class StudentClassDetailPage implements OnInit {
       );
       await this.loadClass();
     } catch (error) {
-      this.completionErrorMessage.set(getApiErrorMessage(error, 'Không xử lý được yêu cầu hoàn thành.'));
+      this.completionErrorMessage.set(
+        getApiErrorMessage(error, 'Không xử lý được yêu cầu hoàn thành.'),
+      );
     } finally {
       this.isRespondingCompletion.set(false);
     }

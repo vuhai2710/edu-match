@@ -81,6 +81,10 @@ namespace EduMatch.Repositories
             {
                 query = query.Where(c => c.Status == parameters.Status.Value);
             }
+            else if (parameters.Statuses != null && parameters.Statuses.Any())
+            {
+                query = query.Where(c => parameters.Statuses.Contains(c.Status));
+            }
 
             if (parameters.SubjectId.HasValue)
             {

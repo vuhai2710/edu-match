@@ -65,6 +65,19 @@ const DAY_OPTIONS: Array<{ label: string; value: DayOfWeek }> = [
             class="min-w-[160px]"
           />
 
+          @if (activeStatus() === 'CANCELLED') {
+            <!-- Cancel reason dropdown -->
+            <app-tactile-select
+              [value]="selectedCancelReason()"
+              (valueChange)="selectedCancelReason.set($event); onFilterChange()"
+              [options]="cancelReasonOptions"
+              valueKey="value"
+              labelKey="label"
+              placeholder="Tất cả lý do hủy"
+              class="min-w-[160px]"
+            />
+          }
+
           <!-- Day of week dropdown -->
           <app-tactile-select
             [value]="selectedDayOfWeek"
@@ -143,7 +156,8 @@ const DAY_OPTIONS: Array<{ label: string; value: DayOfWeek }> = [
 export class AdminClassesPage implements OnInit {
   classes = signal<ClassDto[]>([]);
   subjects = signal<SubjectListItemDto[]>([]);
-  activeStatus = signal<ClassStatus | null>(null);
+  activeStatus = signal<ClassStatus | null | 'CANCELLED'>(null);
+  selectedCancelReason = signal<ClassStatus | null>(null);
   selectedSubjectId: number | null = null;
   selectedDayOfWeek: DayOfWeek | null = null;
   searchTerm = '';
@@ -154,14 +168,18 @@ export class AdminClassesPage implements OnInit {
   isLoading = signal(false);
   errorDetails = signal<ApiErrorDetails | null>(null);
 
-  readonly tabs: Array<{ label: string; status: ClassStatus | null }> = [
+  readonly tabs: Array<{ label: string; status: ClassStatus | null | 'CANCELLED' }> = [
     { label: 'Tất cả', status: null },
     { label: 'Chờ bắt đầu', status: ClassStatus.PendingStart },
     { label: 'Đang hoạt động', status: ClassStatus.Active },
     { label: 'Hoàn thành', status: ClassStatus.Completed },
-    { label: 'Học viên hủy', status: ClassStatus.CancelledByStudent },
-    { label: 'Gia sư hủy', status: ClassStatus.CancelledByTutor },
-    { label: 'Admin hủy', status: ClassStatus.CancelledByAdmin },
+    { label: 'Đã hủy', status: 'CANCELLED' },
+  ];
+
+  readonly cancelReasonOptions = [
+    { label: 'Học viên hủy', value: ClassStatus.CancelledByStudent },
+    { label: 'Gia sư hủy', value: ClassStatus.CancelledByTutor },
+    { label: 'Admin hủy', value: ClassStatus.CancelledByAdmin },
   ];
 
   readonly dayOptions = DAY_OPTIONS;
@@ -174,17 +192,22 @@ export class AdminClassesPage implements OnInit {
   ngOnInit(): void {
     const statusParam = this.route.snapshot.queryParams['status'];
     if (statusParam) {
-      const match = Object.values(ClassStatus).find(val => val === statusParam);
-      if (match) {
-        this.activeStatus.set(match);
+      if (statusParam === 'CANCELLED') {
+        this.activeStatus.set('CANCELLED');
+      } else {
+        const match = Object.values(ClassStatus).find(val => val === statusParam);
+        if (match) {
+          this.activeStatus.set(match);
+        }
       }
     }
     void this.loadSubjects();
     void this.loadClasses();
   }
 
-  setStatus(status: ClassStatus | null): void {
+  setStatus(status: ClassStatus | null | 'CANCELLED'): void {
     this.activeStatus.set(status);
+    this.selectedCancelReason.set(null);
     this.page.set(1);
     void this.loadClasses();
   }
@@ -205,6 +228,7 @@ export class AdminClassesPage implements OnInit {
   clearFilters(): void {
     this.selectedSubjectId = null;
     this.selectedDayOfWeek = null;
+    this.selectedCancelReason.set(null);
     this.searchTerm = '';
     this.activeStatus.set(null);
     this.page.set(1);
@@ -215,6 +239,7 @@ export class AdminClassesPage implements OnInit {
     return (
       this.selectedSubjectId !== null ||
       this.selectedDayOfWeek !== null ||
+      this.selectedCancelReason() !== null ||
       this.searchTerm.trim().length > 0 ||
       this.activeStatus() !== null
     );
@@ -265,9 +290,24 @@ export class AdminClassesPage implements OnInit {
     this.errorDetails.set(null);
     try {
       const search = this.searchTerm.trim() || undefined;
+
+      let statusParam: ClassStatus | undefined = undefined;
+      let statusesParam: ClassStatus[] | undefined = undefined;
+
+      if (this.activeStatus() === 'CANCELLED') {
+        if (this.selectedCancelReason()) {
+          statusParam = this.selectedCancelReason()!;
+        } else {
+          statusesParam = [ClassStatus.CancelledByStudent, ClassStatus.CancelledByTutor, ClassStatus.CancelledByAdmin];
+        }
+      } else {
+        statusParam = (this.activeStatus() as ClassStatus) || undefined;
+      }
+
       const response = await firstValueFrom(
         this.adminApi.getAllClasses(
-          this.activeStatus() ?? undefined,
+          statusParam,
+          statusesParam,
           this.selectedSubjectId ?? undefined,
           this.selectedDayOfWeek ?? undefined,
           this.page(),
