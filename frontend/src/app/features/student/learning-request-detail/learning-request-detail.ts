@@ -2,6 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Location } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
 
 import { TutorDetailModalComponent } from '../../../shared/components/tutor-detail-modal';
@@ -38,7 +39,7 @@ import {
   template: `
     @if (request(); as lr) {
       <div class="mx-auto space-y-6" [class.max-w-6xl]="proposal()" [class.max-w-3xl]="!proposal()">
-        <a routerLink="/student/learning-requests" class="text-sm font-bold text-slate-500 hover:text-slate-800">← Quay lại</a>
+        <a href="javascript:void(0)" (click)="goBack($event)" class="text-sm font-bold text-slate-500 hover:text-slate-800">← Quay lại</a>
 
         <div [class]="proposal() ? 'grid grid-cols-1 lg:grid-cols-2 gap-6' : 'space-y-6'">
           <div class="tactile-card p-6 space-y-5 h-full">
@@ -196,6 +197,12 @@ export class LearningRequestDetailPage implements OnInit {
   private readonly proposalsApi = inject(ScheduleProposalsService);
   private readonly paymentsApi = inject(PaymentsService);
   private readonly sessionService = inject(SessionService);
+  private readonly location = inject(Location);
+
+  goBack(event: Event): void {
+    event.preventDefault();
+    this.location.back();
+  }
 
   ngOnInit(): void {
     void this.loadRequest();

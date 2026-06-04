@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { Location } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
 
 import {
@@ -37,7 +38,7 @@ import {
   ],
   template: `
     <div class="space-y-6">
-      <a routerLink="/admin/classes" class="text-sm font-bold text-duo-blue hover:underline">← Quay lại danh sách lớp</a>
+      <a href="javascript:void(0)" (click)="goBack($event)" class="text-sm font-bold text-duo-blue hover:underline">← Quay lại</a>
 
       @if (errorDetails()) {
         <app-error-banner [details]="errorDetails()" />
@@ -242,6 +243,12 @@ export class AdminClassDetailPage implements OnInit {
   private readonly adminApi = inject(AdminService);
   private readonly classesApi = inject(ClassesService);
   private readonly reviewsApi = inject(ReviewsService);
+  private readonly location = inject(Location);
+
+  goBack(event: Event): void {
+    event.preventDefault();
+    this.location.back();
+  }
 
   ngOnInit(): void {
     void this.load();

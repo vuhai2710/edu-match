@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { Location } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
 
 import { PaymentAdminDto, PaymentStatus } from '../../../api/generated/client/models';
@@ -13,7 +14,7 @@ import { formatDateTime, formatMoney, paymentStatusLabel, paymentStatusClass } f
   imports: [ErrorBannerComponent, RouterLink],
   template: `
     <div class="space-y-6">
-      <a routerLink="/student/payments" class="text-sm font-bold text-duo-blue hover:underline">← Quay lại lịch sử thanh toán</a>
+      <a href="javascript:void(0)" (click)="goBack($event)" class="text-sm font-bold text-duo-blue hover:underline">← Quay lại</a>
 
       @if (errorDetails()) {
         <app-error-banner [details]="errorDetails()" />
@@ -114,6 +115,12 @@ export class StudentPaymentDetailPage implements OnInit {
 
   private readonly route = inject(ActivatedRoute);
   private readonly paymentsApi = inject(PaymentsService);
+  private readonly location = inject(Location);
+
+  goBack(event: Event): void {
+    event.preventDefault();
+    this.location.back();
+  }
 
   ngOnInit(): void {
     void this.load();

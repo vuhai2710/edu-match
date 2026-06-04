@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Location } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
 
 import { StudentDetailModalComponent } from '../../../shared/components/student-detail-modal';
@@ -45,7 +46,8 @@ import { VietnameseDatePickerComponent } from '../../../shared/components/vietna
         [class.max-w-3xl]="!proposal() && !proposalFormVisible()"
       >
         <a
-          routerLink="/tutor/dashboard"
+          href="javascript:void(0)"
+          (click)="goBack($event)"
           class="text-sm font-bold text-slate-500 hover:text-slate-800"
           >← Quay lại</a
         >
@@ -394,9 +396,10 @@ import { VietnameseDatePickerComponent } from '../../../shared/components/vietna
     } @else if (errorMessage()) {
       <div class="max-w-3xl mx-auto py-8 space-y-4">
         <a
-          routerLink="/tutor/dashboard"
+          href="javascript:void(0)"
+          (click)="goBack($event)"
           class="text-sm font-bold text-slate-500 hover:text-slate-800"
-          >← Quay lại Dashboard</a
+          >← Quay lại</a
         >
         <p
           class="rounded-xl border-2 border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-duo-red"
@@ -443,6 +446,12 @@ export class TutorRequestDetailPage implements OnInit {
   private readonly requestsApi = inject(LearningRequestsService);
   private readonly proposalsApi = inject(ScheduleProposalsService);
   private readonly sessionService = inject(SessionService);
+  private readonly location = inject(Location);
+
+  goBack(event: Event): void {
+    event.preventDefault();
+    this.location.back();
+  }
 
   ngOnInit(): void {
     void this.loadRequest();

@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { Location } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
 
 import {
@@ -28,7 +29,8 @@ import {
     @if (tutor(); as t) {
       <div class="space-y-6">
         <a
-          routerLink="/student/discover"
+          href="javascript:void(0)"
+          (click)="goBack($event)"
           class="inline-flex items-center gap-1 text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors"
         >
           ← Quay lại
@@ -272,6 +274,12 @@ export class TutorProfilePage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly tutorsApi = inject(TutorsService);
   private readonly reviewsApi = inject(ReviewsService);
+  private readonly location = inject(Location);
+
+  goBack(event: Event): void {
+    event.preventDefault();
+    this.location.back();
+  }
 
   ngOnInit(): void {
     void this.loadTutor();

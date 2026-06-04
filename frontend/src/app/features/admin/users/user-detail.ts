@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Location } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
 
 import { UserDto, UserRole, TutorDetailDto, StudentDetailDto, ReviewDto } from '../../../api/generated/client/models';
@@ -24,8 +25,8 @@ import {
   template: `
     <div class="space-y-6 max-w-4xl mx-auto px-4 py-6">
       <div class="flex items-center justify-between gap-3">
-        <a routerLink="/admin/users" class="inline-flex items-center gap-2 text-sm font-extrabold text-duo-blue hover:underline">
-          <span>←</span> Quay lại danh sách
+        <a href="javascript:void(0)" (click)="goBack($event)" class="inline-flex items-center gap-2 text-sm font-extrabold text-duo-blue hover:underline">
+          <span>←</span> Quay lại
         </a>
       </div>
 
@@ -350,6 +351,12 @@ export class AdminUserDetailPage implements OnInit {
   private readonly adminApi = inject(AdminService);
   private readonly reviewsApi = inject(ReviewsService);
   protected readonly session = inject(SessionService);
+  private readonly location = inject(Location);
+
+  goBack(event: Event): void {
+    event.preventDefault();
+    this.location.back();
+  }
 
   ngOnInit(): void {
     void this.loadUser();

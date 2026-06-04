@@ -1,6 +1,7 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { Location } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
 
 import { StudentDetailModalComponent } from '../../../shared/components/student-detail-modal';
@@ -47,7 +48,7 @@ import {
   template: `
     @if (classItem(); as item) {
       <div class="max-w-3xl mx-auto space-y-6">
-        <a [routerLink]="backLink()" class="text-sm font-bold text-slate-500 hover:text-slate-800"
+        <a href="javascript:void(0)" (click)="goBack($event)" class="text-sm font-bold text-slate-500 hover:text-slate-800"
           >← Quay lại</a
         >
 
@@ -577,6 +578,12 @@ export class StudentClassDetailPage implements OnInit {
   private readonly classCompletionApi = inject(ClassCompletionRequestsService);
   private readonly sessionService = inject(SessionService);
   private readonly reviewsApi = inject(ReviewsService);
+  private readonly location = inject(Location);
+
+  goBack(event: Event): void {
+    event.preventDefault();
+    this.location.back();
+  }
 
   backLink = computed(() =>
     this.sessionService.role() === 'Tutor' ? '/tutor/classes' : '/student/classes',
