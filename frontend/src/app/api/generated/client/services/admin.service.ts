@@ -201,9 +201,7 @@ export class AdminService {
             params = HttpParamsBuilder.addToHttpParams(params, status, 'status');
         }
         if (statuses != null) {
-            statuses.forEach(s => {
-                params = params.append('statuses', s as string);
-            });
+            params = HttpParamsBuilder.addToHttpParams(params, statuses, 'statuses');
         }
         if (subjectId != null) {
             params = HttpParamsBuilder.addToHttpParams(params, subjectId, 'subjectId');

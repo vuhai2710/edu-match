@@ -128,7 +128,7 @@ import { genderLabel, gradeLabel } from '../utils/api-ui';
   `,
 })
 export class StudentDetailModalComponent implements OnInit {
-  studentId = input<number | null | undefined>(null);
+  userId = input<number | null | undefined>(null);
   close = output<void>();
 
   student = signal<StudentDetailDto | null>(null);
@@ -155,16 +155,16 @@ export class StudentDetailModalComponent implements OnInit {
   }
 
   private async loadStudentProfile(): Promise<void> {
-    const id = this.studentId();
+    const id = this.userId();
     if (!id) {
-      this.errorMessage.set('Mã học viên không hợp lệ.');
+      this.errorMessage.set('ID người dùng không hợp lệ.');
       return;
     }
 
     this.isLoading.set(true);
     this.errorMessage.set('');
     try {
-      const response = await firstValueFrom(this.studentsApi.getStudentById(id));
+      const response = await firstValueFrom(this.studentsApi.getStudentByUserId(id));
       this.student.set(unwrapApiData(response));
     } catch (error) {
       this.errorMessage.set(getApiErrorMessage(error, 'Không tải được thông tin học viên.'));

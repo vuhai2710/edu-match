@@ -57,7 +57,7 @@ namespace EduMatch.Services
         public async Task<PaymentStatusDto> GetStatusAsync(long orderCode)
         {
             var payment = await _paymentRepo.GetByOrderCodeAsync(orderCode);
-            if (payment == null) throw new System.Exception("Payment not found");
+            if (payment == null) throw new System.Exception("Không tìm thấy thanh toán");
 
             return new PaymentStatusDto
             {

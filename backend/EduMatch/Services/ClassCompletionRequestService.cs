@@ -290,8 +290,8 @@ public class ClassCompletionRequestService : IClassCompletionRequestService
 
     await _notificationService.SendAsync(
       recipientId,
-      "Yeu cau xac nhan hoan thanh lop",
-      $"{requesterName} da danh dau lop {classEntity.Code} la da hoan thanh. Vui long xac nhan.",
+      "Yêu cầu xác nhận hoàn thành lớp",
+      $"{requesterName} đã đánh dấu lớp {classEntity.Code} đã hoàn thành. Vui lòng xác nhận.",
       NotificationType.ClassCompletionRequested,
       "Class",
       classEntity.Id,
@@ -309,8 +309,8 @@ public class ClassCompletionRequestService : IClassCompletionRequestService
 
     await _notificationService.SendToMultipleAsync(
       recipientIds,
-      "Yeu cau hoan thanh lop da duoc xac nhan",
-      $"{responderName} da xac nhan hoan thanh lop {classEntity.Code}.",
+      "Yêu cầu hoàn thành lớp đã được xác nhận",
+      $"{responderName} đã xác nhận hoàn thành lớp {classEntity.Code}.",
       NotificationType.ClassCompletionConfirmed,
       "Class",
       classEntity.Id,
@@ -328,8 +328,8 @@ public class ClassCompletionRequestService : IClassCompletionRequestService
 
     await _notificationService.SendToMultipleAsync(
       recipientIds,
-      "Yeu cau hoan thanh lop bi tu choi",
-      $"{responderName} cho biet lop {classEntity.Code} chua hoan thanh.",
+      "Yêu cầu hoàn thành lớp bị từ chối",
+      $"{responderName} cho biết lớp {classEntity.Code} chưa hoàn thành.",
       NotificationType.ClassCompletionRejected,
       "Class",
       classEntity.Id,
@@ -345,8 +345,8 @@ public class ClassCompletionRequestService : IClassCompletionRequestService
 
     await _notificationService.SendToMultipleAsync(
       recipientIds,
-      "Lop hoc da hoan thanh",
-      $"Lop hoc {classEntity.Code} da duoc xac nhan hoan thanh.",
+      "Lớp đã hoàn thành",
+      $"Lớp học {classEntity.Code} đã được xác nhận hoàn thành.",
       NotificationType.ClassCompleted,
       "Class",
       classEntity.Id,

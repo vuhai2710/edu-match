@@ -625,6 +625,16 @@
             }
           },
           {
+            "name": "statuses",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ClassStatus"
+              }
+            }
+          },
+          {
             "name": "subjectId",
             "in": "query",
             "schema": {
@@ -3537,6 +3547,16 @@
             }
           },
           {
+            "name": "statuses",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ClassStatus"
+              }
+            }
+          },
+          {
             "name": "subjectId",
             "in": "query",
             "schema": {
@@ -3689,6 +3709,16 @@
             "in": "query",
             "schema": {
               "$ref": "#/components/schemas/ClassStatus"
+            }
+          },
+          {
+            "name": "statuses",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ClassStatus"
+              }
             }
           },
           {
@@ -7468,6 +7498,69 @@
         "parameters": [
           {
             "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentDetailDtoApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentDetailDtoApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentDetailDtoApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Students/user/{userId}": {
+      "get": {
+        "tags": [
+          "Students"
+        ],
+        "summary": "Get student profile by user ID",
+        "description": "The route parameter {userId} is the User ID.",
+        "operationId": "getStudentByUserId",
+        "parameters": [
+          {
+            "name": "userId",
             "in": "path",
             "required": true,
             "schema": {

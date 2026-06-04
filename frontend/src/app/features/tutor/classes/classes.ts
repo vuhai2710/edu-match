@@ -195,7 +195,7 @@ import { TactileSelectComponent } from '../../../shared/components/tactile-selec
       }
 
       @if (selectedStudentId()) {
-        <app-student-detail-modal [studentId]="selectedStudentId()" (close)="selectedStudentId.set(null)" />
+        <app-student-detail-modal [userId]="selectedStudentId()" (close)="selectedStudentId.set(null)" />
       }
     </div>
   `,

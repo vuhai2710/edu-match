@@ -527,7 +527,7 @@ import {
 
         @if (selectedStudentId()) {
           <app-student-detail-modal
-            [studentId]="selectedStudentId()"
+            [userId]="selectedStudentId()"
             (close)="selectedStudentId.set(null)"
           />
         }

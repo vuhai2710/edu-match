@@ -103,7 +103,7 @@ public class AuthService
     return ServiceResponse.ExecuteAsync(async () =>
     {
       var loginResponse = await GoogleLoginAsync(dto);
-      return ApiResponse<LoginResponseDto>.SuccessResult(loginResponse, "Google login successful", StatusCodes.Status200OK);
+      return ApiResponse<LoginResponseDto>.SuccessResult(loginResponse, "Đăng nhập Google thành công", StatusCodes.Status200OK);
     });
   }
 
@@ -356,7 +356,7 @@ public class AuthService
     try
     {
       principal = GetPrincipalFromExpiredToken(accessToken)
-        ?? throw new SecurityTokenException("Invalid token");
+        ?? throw new SecurityTokenException("Token không hợp lệ");
     }
     catch (System.Exception ex) when (ex is SecurityTokenException or ArgumentException)
     {
@@ -828,7 +828,7 @@ public class AuthService
     if (!string.IsNullOrWhiteSpace(currentRefreshToken) &&
         !string.Equals(user.RefreshToken, currentRefreshToken, StringComparison.Ordinal))
     {
-      throw new AppException("Invalid access token or refresh token", 400);
+      throw new AppException("Access token hoặc refresh token không hợp lệ", 400);
     }
 
     var accessToken = GenerateJwtToken(user);
@@ -921,7 +921,7 @@ public class AuthService
     if (securityToken is not JwtSecurityToken jwtSecurityToken ||
         !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
     {
-      throw new SecurityTokenException("Invalid token");
+      throw new SecurityTokenException("Token không hợp lệ");
     }
 
     return principal;

@@ -41,6 +41,18 @@ namespace EduMatch.Controllers
       return this.OkResponse(await _studentService.GetStudentByIdAsync(studentId));
     }
 
+    [HttpGet("user/{userId}")]
+    [SwaggerOperation(
+      OperationId = "getStudentByUserId",
+      Summary = "Get student profile by user ID",
+      Description = "The route parameter {userId} is the User ID.")]
+    [ProducesResponseType(typeof(ApiResponse<StudentDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<StudentDetailDto>>> GetStudentByUserId([FromRoute(Name = "userId")] long userId)
+    {
+      return this.OkResponse(await _studentService.GetStudentByUserIdAsync(userId));
+    }
+
     [HttpGet("me")]
     [Authorize(Roles = "Student")]
     [SwaggerOperation(OperationId = "getMyStudentProfile")]

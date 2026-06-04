@@ -6,105 +6,105 @@ namespace EduMatch.Common.Enums;
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum NotificationType
 {
-  [Display(Name = "Don ung tuyen moi")]
+  [Display(Name = "Đơn ứng tuyển mới")]
   ApplicationCreated,
 
-  [Display(Name = "Don ung tuyen duoc duyet")]
+  [Display(Name = "Đơn ứng tuyển được duyệt")]
   ApplicationApproved,
 
-  [Display(Name = "Don ung tuyen bi tu choi")]
+  [Display(Name = "Đơn ứng tuyển bị từ chối")]
   ApplicationRejected,
 
-  [Display(Name = "Hoc vien da xac nhan")]
+  [Display(Name = "Học viên đã xác nhận")]
   StudentConfirmed,
 
-  [Display(Name = "Hoc vien da tu choi")]
+  [Display(Name = "Học viên đã từ chối")]
   StudentRejected,
 
-  [Display(Name = "Admin da ghep lop")]
+  [Display(Name = "Admin đã ghép lớp")]
   AdminMatched,
 
-  [Display(Name = "Ghep lop duoc chap nhan")]
+  [Display(Name = "Ghép lớp được chấp nhận")]
   MatchAccepted,
 
-  [Display(Name = "Yeu cau tim gia su moi")]
+  [Display(Name = "Yêu cầu tìm gia sư mới")]
   TutorRequestCreated,
 
-  [Display(Name = "Tin nhan moi")]
+  [Display(Name = "Tin nhắn mới")]
   NewMessage,
 
-  [Display(Name = "Thanh toan moi")]
+  [Display(Name = "Thanh toán mới")]
   PaymentCreated,
 
-  [Display(Name = "Thanh toan thanh cong")]
+  [Display(Name = "Thanh toán thành công")]
   PaymentSuccess,
 
-  [Display(Name = "Danh gia moi")]
+  [Display(Name = "Đánh giá mới")]
   ReviewCreated,
 
-  [Display(Name = "Yeu cau tro thanh gia su")]
+  [Display(Name = "Yêu cầu trở thành gia sư")]
   BecomeTutorRequest,
 
-  [Display(Name = "Gia su duoc duyet")]
+  [Display(Name = "Gia sư được duyệt")]
   TutorApproved,
 
-  [Display(Name = "Gia su bi tu choi")]
+  [Display(Name = "Gia sư bị từ chối")]
   TutorRejected,
 
-  [Display(Name = "Yeu cau hoc tap da duoc tao")]
+  [Display(Name = "Yêu cầu học tập đã được tạo")]
   LearningRequestCreated,
 
-  [Display(Name = "Gia su chap nhan yeu cau")]
+  [Display(Name = "Gia sư chấp nhận yêu cầu")]
   LearningRequestAccepted,
 
-  [Display(Name = "Gia su tu choi yeu cau")]
+  [Display(Name = "Gia sư từ chối yêu cầu")]
   LearningRequestRejected,
 
-  [Display(Name = "Gia su da de xuat lich hoc moi")]
+  [Display(Name = "Gia sư đã đề xuất lịch học mới")]
   ScheduleProposalCreated,
 
-  [Display(Name = "Hoc vien da chap nhan de xuat lich hoc")]
+  [Display(Name = "Học viên đã chấp nhận đề xuất lịch học")]
   ScheduleProposalAccepted,
 
-  [Display(Name = "Hoc vien da tu choi de xuat lich hoc")]
+  [Display(Name = "Học viên đã từ chối đề xuất lịch học")]
   ScheduleProposalRejected,
 
-  [Display(Name = "Yeu cau thanh toan dat coc")]
+  [Display(Name = "Yêu cầu thanh toán đặt cọc")]
   DepositPaymentCreated,
 
-  [Display(Name = "Thanh toan dat coc thanh cong")]
+  [Display(Name = "Thanh toán đặt cọc thành công")]
   DepositPaymentSuccess,
 
-  [Display(Name = "Lop hoc da duoc tao")]
+  [Display(Name = "Lớp học đã được tạo")]
   ClassCreated,
 
-  [Display(Name = "Yeu cau het han lich")]
+  [Display(Name = "Yêu cầu hết hạn lịch")]
   LearningRequestScheduleExpired,
 
-  [Display(Name = "Yeu cau het han thanh toan")]
+  [Display(Name = "Yêu cầu hết hạn thanh toán")]
   LearningRequestPaymentExpired,
 
-  [Display(Name = "Lop hoc da bat dau")]
+  [Display(Name = "Lớp học đã bắt đầu")]
   ClassActivated,
 
-  [Display(Name = "Yeu cau huy lop da duoc tao")]
+  [Display(Name = "Yêu cầu hủy lớp đã được tạo")]
   CancellationRequestCreated,
 
-  [Display(Name = "Yeu cau huy lop da duoc xu ly")]
+  [Display(Name = "Yêu cầu hủy lớp đã được xử lý")]
   CancellationRequestResolved,
 
-  [Display(Name = "Lop hoc da bi huy")]
+  [Display(Name = "Lớp học đã bị hủy")]
   ClassCancelled,
 
-  [Display(Name = "Yeu cau hoan thanh lop da duoc tao")]
+  [Display(Name = "Yêu cầu hoàn thành lớp đã được tạo")]
   ClassCompletionRequested,
 
-  [Display(Name = "Yeu cau hoan thanh lop da duoc xac nhan")]
+  [Display(Name = "Yêu cầu hoàn thành lớp đã được xác nhận")]
   ClassCompletionConfirmed,
 
-  [Display(Name = "Yeu cau hoan thanh lop bi tu choi")]
+  [Display(Name = "Yêu cầu hoàn thành lớp bị từ chối")]
   ClassCompletionRejected,
 
-  [Display(Name = "Lop hoc da hoan thanh")]
+  [Display(Name = "Lớp học đã hoàn thành")]
   ClassCompleted
 }

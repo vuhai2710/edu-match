@@ -80,15 +80,6 @@ namespace EduMatch.Repositories
           .Include(s => s.Address)
           .FirstOrDefaultAsync(s => s.Id == studentId && s.User.IsActive);
 
-      if (student == null)
-      {
-        student = await _dbSet
-            .Include(s => s.User)
-              .ThenInclude(u => u.AvatarFile)
-            .Include(s => s.Address)
-            .FirstOrDefaultAsync(s => s.UserId == studentId && s.User.IsActive);
-      }
-
       return student;
     }
 

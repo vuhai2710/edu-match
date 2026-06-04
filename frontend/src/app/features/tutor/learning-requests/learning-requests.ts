@@ -213,7 +213,7 @@ import { TactileSelectComponent } from '../../../shared/components/tactile-selec
 
     <!-- Student Detail Modal overlay -->
     @if (selectedStudentId()) {
-      <app-student-detail-modal [studentId]="selectedStudentId()" (close)="selectedStudentId.set(null)" />
+      <app-student-detail-modal [userId]="selectedStudentId()" (close)="selectedStudentId.set(null)" />
     }
   `,
 })

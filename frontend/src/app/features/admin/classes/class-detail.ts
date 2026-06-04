@@ -215,7 +215,7 @@ import {
 
         @if (showStudentModal() && cls.studentId) {
           <app-student-detail-modal
-            [studentId]="cls.studentId"
+            [userId]="cls.studentId"
             (close)="showStudentModal.set(false)" />
         }
 
