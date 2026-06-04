@@ -364,7 +364,7 @@ export class StudentDashboardPage implements OnInit {
           ),
         ),
         firstValueFrom(
-          this.classesApi.getMyClasses(undefined, undefined, undefined, 1, 20, undefined, 'createdAt', 'desc', 'body'),
+          this.classesApi.getMyClasses(undefined, undefined, undefined, undefined, 1, 20, undefined, 'createdAt', 'desc', 'body'),
         ),
       ]);
       this.dashboard.set(dashboardResponse.data ?? null);

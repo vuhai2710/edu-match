@@ -420,7 +420,7 @@ export class TutorDashboardPage implements OnInit {
             ),
           ),
           firstValueFrom(
-            this.classesApi.getTutorClasses(undefined, undefined, undefined, 1, 20, undefined, 'createdAt', 'desc', 'body'),
+            this.classesApi.getTutorClasses(undefined, undefined, undefined, undefined, 1, 20, undefined, 'createdAt', 'desc', 'body'),
           ),
         ]);
       this.dashboard.set(dashboardResponse.data ?? null);

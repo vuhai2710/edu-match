@@ -4943,13 +4943,6 @@
         "operationId": "viewCloudinaryFile",
         "parameters": [
           {
-            "name": "url",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "fileUrl",
             "in": "query",
             "schema": {
