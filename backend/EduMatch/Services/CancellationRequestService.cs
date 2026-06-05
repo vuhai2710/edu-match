@@ -13,6 +13,7 @@ namespace EduMatch.Services
   {
     private readonly ICancellationRequestRepository _cancellationRequestRepository;
     private readonly IClassRepository _classRepository;
+    private readonly IClassCompletionRequestRepository _classCompletionRequestRepository;
     private readonly IUserRepository _userRepository;
     private readonly INotificationService _notificationService;
     private readonly ILogger<CancellationRequestService> _logger;
@@ -20,12 +21,14 @@ namespace EduMatch.Services
     public CancellationRequestService(
       ICancellationRequestRepository cancellationRequestRepository,
       IClassRepository classRepository,
+      IClassCompletionRequestRepository classCompletionRequestRepository,
       IUserRepository userRepository,
       INotificationService notificationService,
       ILogger<CancellationRequestService> logger)
     {
       _cancellationRequestRepository = cancellationRequestRepository;
       _classRepository = classRepository;
+      _classCompletionRequestRepository = classCompletionRequestRepository;
       _userRepository = userRepository;
       _notificationService = notificationService;
       _logger = logger;
@@ -83,6 +86,11 @@ namespace EduMatch.Services
             dto.RefundAmount,
             dto.RefundNote,
             dto.IsRefunded ?? false);
+        }
+
+        if (role == UserRole.Admin)
+        {
+          await RejectPendingCompletionRequestsAsync(classEntity.Id);
         }
 
         await _cancellationRequestRepository.SaveChangesAsync();
@@ -278,7 +286,21 @@ namespace EduMatch.Services
         throw new ConflictException("Class is already cancelled.", "CLASS_ALREADY_CANCELLED");
       }
 
-      if (role != UserRole.Admin && classEntity.Status != ClassStatus.PendingStart)
+      if (classEntity.Status == ClassStatus.Completed)
+      {
+        throw new ConflictException("Class is already completed.", "CLASS_ALREADY_COMPLETED");
+      }
+
+      if (role == UserRole.Admin)
+      {
+        if (classEntity.Status is not (ClassStatus.PendingStart or ClassStatus.Active))
+        {
+          throw new ValidationException(
+            "Admin can only cancel classes in PendingStart or Active status.",
+            "CLASS_CANCELLATION_NOT_ALLOWED");
+        }
+      }
+      else if (classEntity.Status != ClassStatus.PendingStart)
       {
         throw new ValidationException(
           "Only classes in PendingStart status can be cancelled by students or tutors.",
@@ -426,6 +448,19 @@ namespace EduMatch.Services
 
       return new[] { classEntity.StudentId, tutorUserId.Value }
         .Distinct();
+    }
+
+    private async Task RejectPendingCompletionRequestsAsync(long classId)
+    {
+      var pendingRequests = await _classCompletionRequestRepository
+        .FindAsync(r => r.ClassId == classId && r.Status == ClassCompletionRequestStatus.Pending);
+
+      foreach (var request in pendingRequests)
+      {
+        request.Status = ClassCompletionRequestStatus.Rejected;
+        request.RespondedAt = DateTime.UtcNow;
+        request.UpdatedAt = DateTime.UtcNow;
+      }
     }
   }
 }

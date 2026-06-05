@@ -114,6 +114,7 @@ export function classCompletionStatusLabel(status?: ClassCompletionRequestStatus
     [ClassCompletionRequestStatus.Pending]: 'Chờ xác nhận',
     [ClassCompletionRequestStatus.Confirmed]: 'Đã xác nhận',
     [ClassCompletionRequestStatus.Rejected]: 'Chưa hoàn thành',
+    [ClassCompletionRequestStatus.AutoConfirmed]: 'Tự động xác nhận',
   };
   return status ? labels[status] : 'Chưa rõ trạng thái';
 }
@@ -387,6 +388,7 @@ export function classCompletionStatusClass(status?: ClassCompletionRequestStatus
     [ClassCompletionRequestStatus.Pending]: 'bg-amber-50 text-amber-700 border-amber-200',
     [ClassCompletionRequestStatus.Confirmed]: 'bg-green-50 text-duo-green border-green-100',
     [ClassCompletionRequestStatus.Rejected]: 'bg-red-50 text-duo-red border-red-100',
+    [ClassCompletionRequestStatus.AutoConfirmed]: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   };
   return `border ${classes[status] || 'bg-slate-50 text-slate-500 border-slate-200'}`;
 }

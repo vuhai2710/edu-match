@@ -6,12 +6,15 @@ namespace EduMatch.Common.Enums;
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum ClassCompletionRequestStatus
 {
-  [Display(Name = "Cho xac nhan")]
+  [Display(Name = "Chờ xác nhận")]
   Pending,
 
-  [Display(Name = "Da xac nhan")]
+  [Display(Name = "Đã xác nhận")]
   Confirmed,
 
-  [Display(Name = "Tu choi")]
-  Rejected
+  [Display(Name = "Từ chối")]
+  Rejected,
+
+  [Display(Name = "Tự động xác nhận")]
+  AutoConfirmed
 }

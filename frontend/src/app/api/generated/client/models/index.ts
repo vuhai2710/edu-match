@@ -215,7 +215,8 @@ export interface ClassCompletionRequestDtoApiResponse {
 export enum ClassCompletionRequestStatus {
     Pending = "Pending",
     Confirmed = "Confirmed",
-    Rejected = "Rejected"
+    Rejected = "Rejected",
+    AutoConfirmed = "AutoConfirmed"
 }
 
 export interface ClassDto {
@@ -688,7 +689,8 @@ export enum NotificationType {
     ClassCompletionRequested = "ClassCompletionRequested",
     ClassCompletionConfirmed = "ClassCompletionConfirmed",
     ClassCompletionRejected = "ClassCompletionRejected",
-    ClassCompleted = "ClassCompleted"
+    ClassCompleted = "ClassCompleted",
+    ClassCompletionAutoConfirmed = "ClassCompletionAutoConfirmed"
 }
 
 export interface PayOSWebhookDto {

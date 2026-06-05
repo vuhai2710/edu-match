@@ -187,10 +187,15 @@ import {
 
               @if (req.status === completionStatusEnum.Pending && isCompletionRequester(req)) {
                 <div
-                  class="rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm font-bold text-sky-700"
+                  class="rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 space-y-2 text-sm text-sky-700"
                 >
-                  Yêu cầu đã được gửi. Bạn đang chờ {{ counterpartLabel() }} xác nhận hoàn thành
-                  lớp.
+                  <p class="font-bold">
+                    Yêu cầu đã được gửi. Bạn đang chờ {{ counterpartLabel() }} xác nhận hoàn thành lớp.
+                  </p>
+                  <p class="text-xs font-medium bg-sky-100/50 p-2 rounded-xl">
+                    ⏱ Nếu {{ counterpartLabel() }} không phản hồi, lớp sẽ tự động hoàn thành vào
+                    <span class="font-bold">{{ autoCompleteDeadline(req.createdAt) }}</span>.
+                  </p>
                 </div>
               }
 
@@ -226,6 +231,17 @@ import {
                   class="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
                 >
                   <p class="font-bold">Hai bên đã xác nhận lớp hoàn thành.</p>
+                  @if (item.endDate) {
+                    <p class="mt-1 font-medium">Lớp kết thúc lúc {{ dateTime(item.endDate) }}.</p>
+                  }
+                </div>
+              }
+
+              @if (req.status === completionStatusEnum.AutoConfirmed) {
+                <div
+                  class="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
+                >
+                  <p class="font-bold">Hệ thống đã tự động xác nhận hoàn thành do không có phản hồi trong 3 ngày.</p>
                   @if (item.endDate) {
                     <p class="mt-1 font-medium">Lớp kết thúc lúc {{ dateTime(item.endDate) }}.</p>
                   }
@@ -625,6 +641,13 @@ export class StudentClassDetailPage implements OnInit {
 
   dateTime(value?: Date | string | null): string {
     return formatDateTime(value);
+  }
+
+  autoCompleteDeadline(createdAt?: Date | string | null): string {
+    if (!createdAt) return '';
+    const date = new Date(createdAt);
+    date.setDate(date.getDate() + 3);
+    return formatDateTime(date);
   }
 
   slots(item: ClassDto): string {

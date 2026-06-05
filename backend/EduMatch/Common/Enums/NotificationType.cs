@@ -106,5 +106,8 @@ public enum NotificationType
   ClassCompletionRejected,
 
   [Display(Name = "Lớp học đã hoàn thành")]
-  ClassCompleted
+  ClassCompleted,
+
+  [Display(Name = "Lớp học tự động hoàn thành")]
+  ClassCompletionAutoConfirmed
 }
