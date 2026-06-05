@@ -222,7 +222,7 @@ export class StudentClassesPage implements OnInit {
   searchQuery = signal('');
   selectedSubjectId = signal<number | null>(null);
   selectedDay = signal<string | null>(null);
-  activeStatus = signal<ClassStatus | null>(null);
+  activeStatus = signal<ClassStatus | ClassStatus[] | null>(null);
   activeTabIsReview = signal(false);
   selectedReviewFilter = signal<'all' | 'reviewed' | 'not_reviewed'>('all');
 
@@ -241,11 +241,12 @@ export class StudentClassesPage implements OnInit {
   readonly dayOptions = DAY_OPTIONS;
 
   readonly tabs = [
-    { label: 'Tất cả', status: null, isReviewTab: false },
+    { label: 'Tất cả', status: null as ClassStatus | ClassStatus[] | null, isReviewTab: false },
     { label: 'Chờ bắt đầu', status: ClassStatus.PendingStart, isReviewTab: false },
     { label: 'Đang hoạt động', status: ClassStatus.Active, isReviewTab: false },
     { label: 'Hoàn thành', status: ClassStatus.Completed, isReviewTab: false },
-    { label: 'Đánh giá', status: null, isReviewTab: true },
+    { label: 'Đã hủy', status: [ClassStatus.CancelledByStudent, ClassStatus.CancelledByTutor, ClassStatus.CancelledByAdmin], isReviewTab: false },
+    { label: 'Đánh giá', status: null as ClassStatus | ClassStatus[] | null, isReviewTab: true },
   ];
 
   private readonly classesApi = inject(ClassesService);
@@ -335,14 +336,14 @@ export class StudentClassesPage implements OnInit {
     void this.loadClasses();
   }
 
-  isTabActive(tab: { label: string; status: ClassStatus | null; isReviewTab: boolean }): boolean {
+  isTabActive(tab: { label: string; status: ClassStatus | ClassStatus[] | null; isReviewTab: boolean }): boolean {
     if (tab.isReviewTab) {
       return this.activeTabIsReview();
     }
     return !this.activeTabIsReview() && this.activeStatus() === tab.status;
   }
 
-  setStatus(tab: { label: string; status: ClassStatus | null; isReviewTab: boolean }): void {
+  setStatus(tab: { label: string; status: ClassStatus | ClassStatus[] | null; isReviewTab: boolean }): void {
     this.activeStatus.set(tab.status);
     this.activeTabIsReview.set(tab.isReviewTab);
     this.page.set(1);
@@ -396,10 +397,15 @@ export class StudentClassesPage implements OnInit {
     this.isLoading.set(true);
     this.errorMessage.set('');
     try {
+      const currentStatus = this.activeStatus();
+      const isArray = Array.isArray(currentStatus);
+      const statusParam = isArray ? undefined : (currentStatus ?? undefined);
+      const statusesParam = isArray ? currentStatus : undefined;
+
       const response = await firstValueFrom(
         this.classesApi.getMyClasses(
-          this.activeStatus() ?? undefined,
-          undefined,
+          statusParam,
+          statusesParam,
           undefined,
           undefined,
           1,

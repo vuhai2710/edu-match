@@ -116,8 +116,8 @@ namespace EduMatch.Services
         return ApiResponse<CancellationRequestDto>.SuccessResult(
           CancellationRequestMapper.ToDto(request),
           role == UserRole.Admin
-            ? "Cancellation request created and resolved successfully."
-            : "Cancellation request created successfully.");
+            ? "Yêu cầu hủy lớp đã được tạo và xử lý thành công."
+            : "Đã tạo yêu cầu hủy lớp thành công.");
       }
       catch (ConflictException ex)
       {
@@ -176,7 +176,7 @@ namespace EduMatch.Services
 
         return ApiResponse<CancellationRequestDto>.SuccessResult(
           CancellationRequestMapper.ToDto(request),
-          "Cancellation request resolved successfully.");
+          "Đã xử lý yêu cầu hủy lớp thành công.");
       }
       catch (ConflictException ex)
       {
@@ -381,8 +381,8 @@ namespace EduMatch.Services
 
       await _notificationService.SendToMultipleAsync(
         adminIds,
-        "Cancellation request created",
-        $"{requesterName} requested class cancellation for {classEntity.Code}.",
+        "Yêu cầu hủy lớp mới",
+        $"{requesterName} đã gửi yêu cầu hủy lớp {classEntity.Code}.",
         NotificationType.CancellationRequestCreated,
         "CancellationRequest",
         request.Id,
@@ -393,8 +393,8 @@ namespace EduMatch.Services
     {
       await _notificationService.SendToMultipleAsync(
         GetClassParticipantUserIds(classEntity),
-        "Cancellation request created",
-        $"Admin created a cancellation request for class {classEntity.Code}.",
+        "Yêu cầu hủy lớp đã được tạo",
+        $"Quản trị viên đã tạo một yêu cầu hủy lớp cho lớp học {classEntity.Code}.",
         NotificationType.CancellationRequestCreated,
         "CancellationRequest",
         request.Id,
@@ -404,13 +404,13 @@ namespace EduMatch.Services
     private async Task NotifyCancellationResolvedAsync(CancellationRequest request, Class classEntity)
     {
       var refundText = request.RefundAmount.HasValue
-        ? $" Refund amount: {request.RefundAmount.Value:0.##}."
+        ? $" Số tiền hoàn lại: {request.RefundAmount.Value:0.##}đ."
         : string.Empty;
 
       await _notificationService.SendToMultipleAsync(
         GetClassParticipantUserIds(classEntity),
-        "Cancellation request resolved",
-        $"Cancellation request for class {classEntity.Code} has been resolved.{refundText}",
+        "Yêu cầu hủy lớp đã được xử lý",
+        $"Yêu cầu hủy lớp {classEntity.Code} đã được xử lý.{refundText}",
         NotificationType.CancellationRequestResolved,
         "CancellationRequest",
         request.Id,
@@ -419,10 +419,18 @@ namespace EduMatch.Services
 
     private async Task NotifyClassCancelledAsync(CancellationRequest request, Class classEntity)
     {
+      var roleText = request.RequestedByRole switch
+      {
+        UserRole.Student => "Học viên",
+        UserRole.Tutor => "Gia sư",
+        UserRole.Admin => "Quản trị viên",
+        _ => "Người dùng"
+      };
+
       await _notificationService.SendToMultipleAsync(
         GetClassParticipantUserIds(classEntity),
-        "Class cancelled",
-        $"Class {classEntity.Code} was cancelled by {request.RequestedByRole}.",
+        "Lớp học đã bị hủy",
+        $"Lớp học {classEntity.Code} đã bị hủy bởi {roleText}.",
         NotificationType.ClassCancelled,
         "Class",
         classEntity.Id,

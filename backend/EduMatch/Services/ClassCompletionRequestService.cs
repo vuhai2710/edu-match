@@ -83,7 +83,7 @@ public class ClassCompletionRequestService : IClassCompletionRequestService
 
       return ApiResponse<ClassCompletionRequestDto>.SuccessResult(
         ClassCompletionRequestMapper.ToDto(request),
-        "Class completion request created successfully.");
+        "Đã gửi yêu cầu xác nhận hoàn thành lớp thành công.");
     }
     catch (ConflictException ex)
     {
@@ -162,8 +162,8 @@ public class ClassCompletionRequestService : IClassCompletionRequestService
       return ApiResponse<ClassCompletionRequestDto>.SuccessResult(
         ClassCompletionRequestMapper.ToDto(request),
         dto.IsConfirmed
-          ? "Class completion request confirmed successfully."
-          : "Class completion request rejected successfully.");
+          ? "Đã xác nhận hoàn thành lớp thành công."
+          : "Đã từ chối hoàn thành lớp thành công.");
     }
     catch (ConflictException ex)
     {
