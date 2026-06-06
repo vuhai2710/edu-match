@@ -7,11 +7,12 @@ import { SubjectsService } from '../../../api/generated/client/services';
 import { ApiErrorDetails, getApiErrorDetails, getApiErrorMessage } from '../../../core/http/api-error';
 import { ErrorBannerComponent } from '../../../shared/components/error-banner/error-banner';
 import { MascotComponent } from '../../../shared/components/mascot/mascot';
+import { SubjectTutorsModalComponent } from './components/subject-tutors-modal';
 
 @Component({
   selector: 'app-admin-subjects-page',
   standalone: true,
-  imports: [ErrorBannerComponent, MascotComponent, FormsModule],
+  imports: [ErrorBannerComponent, MascotComponent, FormsModule, SubjectTutorsModalComponent],
   template: `
     <div class="space-y-6">
       <!-- Title Section -->
@@ -93,6 +94,12 @@ import { MascotComponent } from '../../../shared/components/mascot/mascot';
                         </td>
                         <td class="px-4 py-3 text-right">
                           <div class="flex justify-end gap-3">
+                            <button
+                              (click)="viewSubjectTutors(sub)"
+                              class="text-duo-blue font-extrabold text-xs hover:underline"
+                            >
+                              Chi tiết
+                            </button>
                             <button
                               (click)="selectSubjectForEdit(sub)"
                               class="text-duo-blue font-extrabold text-xs hover:underline"
@@ -200,6 +207,14 @@ import { MascotComponent } from '../../../shared/components/mascot/mascot';
         </div>
       </div>
     </div>
+
+    @if (showTutorsModal() && selectedSubjectForTutors()) {
+      <app-subject-tutors-modal
+        [subjectId]="selectedSubjectForTutors()!.id!"
+        [subjectName]="selectedSubjectForTutors()!.name || ''"
+        (close)="showTutorsModal.set(false)"
+      />
+    }
   `,
   styles: []
 })
@@ -224,6 +239,10 @@ export class AdminSubjectsPage implements OnInit {
   formError = signal<string | null>(null);
   formSuccess = signal<string | null>(null);
 
+  // Modal states
+  selectedSubjectForTutors = signal<SubjectListItemDto | null>(null);
+  showTutorsModal = signal(false);
+
   // Form states
   subjectName = signal('');
   subjectDescription = signal('');
@@ -247,6 +266,11 @@ export class AdminSubjectsPage implements OnInit {
     } finally {
       this.isLoading.set(false);
     }
+  }
+
+  viewSubjectTutors(subject: SubjectListItemDto): void {
+    this.selectedSubjectForTutors.set(subject);
+    this.showTutorsModal.set(true);
   }
 
   selectSubjectForEdit(subject: SubjectListItemDto): void {
