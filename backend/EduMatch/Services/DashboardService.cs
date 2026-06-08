@@ -173,6 +173,41 @@ namespace EduMatch.Services
           })
           .ToListAsync();
 
+        var lrQuery = _db.LearningRequests
+          .Include(lr => lr.Student)
+          .Include(lr => lr.Tutor).ThenInclude(t => t.User)
+          .Include(lr => lr.Subject)
+          .Where(lr => lr.TutorId == tutorProfileId && !lr.IsDeleted);
+
+        var pendingLrCount = await lrQuery.CountAsync(lr => lr.Status == LearningRequestStatus.Pending || lr.Status == LearningRequestStatus.Negotiating);
+
+        var rawLrs = await lrQuery
+          .Where(lr => lr.Status == LearningRequestStatus.Pending || lr.Status == LearningRequestStatus.Negotiating)
+          .OrderByDescending(lr => lr.CreatedAt)
+          .Take(5)
+          .ToListAsync();
+
+        var recentLrs = rawLrs.Select(lr => new EduMatch.DTOs.LearningRequests.LearningRequestDto
+        {
+          Id = lr.Id,
+          StudentId = lr.StudentId,
+          StudentName = lr.Student.FullName,
+          TutorId = lr.TutorId,
+          TutorName = lr.Tutor.User.FullName,
+          SubjectId = lr.SubjectId,
+          SubjectName = lr.Subject.Name,
+          Note = lr.Note,
+          TimeSlots = System.Text.Json.JsonSerializer.Deserialize<List<EduMatch.DTOs.LearningRequests.TimeSlotDto>>(lr.TimeSlots) ?? new(),
+          DesiredStartDate = lr.DesiredStartDate,
+          HoursPerSession = lr.HoursPerSession,
+          BudgetPerHour = lr.BudgetPerHour,
+          CalculatedDepositAmount = lr.CalculatedDepositAmount,
+          ScheduleExpiresAt = lr.ScheduleExpiresAt,
+          PaymentExpiresAt = lr.PaymentExpiresAt,
+          Status = lr.Status,
+          CreatedAt = lr.CreatedAt
+        }).ToList();
+
         _logger.LogInformation("TutorDashboard fetched for TutorId={Id}", tutorProfileId);
 
         return ApiResponse<TutorDashboardDto>.SuccessResult(new TutorDashboardDto
@@ -188,7 +223,9 @@ namespace EduMatch.Services
           TotalDeposits = deposits ?? 0m,
           AverageRating = profile.Rating,
           TotalReviews = profile.TotalReviews,
-          RecentApplications = recentApps
+          RecentApplications = recentApps,
+          PendingLearningRequests = pendingLrCount,
+          RecentLearningRequests = recentLrs
         });
       });
     }

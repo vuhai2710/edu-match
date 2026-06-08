@@ -124,3 +124,5 @@ def recommend_tutors(payload: RecommendationRequest) -> RecommendationResponse:
         generatedAtUtc=datetime.now(timezone.utc),
         recommendations=recommendations,
     )
+
+# uvicorn app.main:app --reload --log-level info

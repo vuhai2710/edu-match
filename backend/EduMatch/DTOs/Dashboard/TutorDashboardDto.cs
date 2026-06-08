@@ -18,6 +18,9 @@ namespace EduMatch.DTOs.Dashboard
     public decimal TotalDeposits { get; set; }
 
     public List<MyApplicationItemDto> RecentApplications { get; set; } = [];
+
+    public int PendingLearningRequests { get; set; }
+    public List<EduMatch.DTOs.LearningRequests.LearningRequestDto> RecentLearningRequests { get; set; } = [];
   }
 
   public class MyApplicationItemDto
