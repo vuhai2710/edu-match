@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Subject, Subscription, firstValueFrom } from 'rxjs';
@@ -206,7 +206,7 @@ import { TactileSelectComponent } from '../../../shared/components/tactile-selec
             </div>
           }
         </div>
-      } @else if (recommendedTutors().length > 0) {
+      } @else if (showRecommendations()) {
         <section class="space-y-3">
           <div class="flex items-center justify-between gap-3">
             <div>
@@ -251,7 +251,7 @@ import { TactileSelectComponent } from '../../../shared/components/tactile-selec
                           {{ tutor.fullName }}
                         </h3>
                         <span class="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-black text-duo-green shrink-0">
-                          Top match
+                          Phù hợp nhất
                         </span>
                       </div>
                       <p class="text-sm text-slate-500 truncate">{{ subjectNames(tutor) }}</p>
@@ -259,27 +259,26 @@ import { TactileSelectComponent } from '../../../shared/components/tactile-selec
                   </div>
 
                   <div class="flex items-center justify-between text-sm">
-                    @if (!isRecommendationFallback() && item.similarity !== null && item.similarity !== undefined) {
-                      <span class="font-extrabold text-duo-green">
-                        {{ similarityPercent(item.similarity) }}% phù hợp
-                      </span>
-                    } @else if (tutor.rating && tutor.rating > 0) {
+                    @if (tutor.rating && tutor.rating > 0) {
                       <span class="flex items-center gap-1 text-slate-600 font-bold">
                         {{ tutor.rating }} <span class="text-amber-500">★</span>
                       </span>
                     } @else {
-                      <span class="text-xs text-slate-400 font-bold italic">Gợi ý phổ biến</span>
+                      <span class="text-xs text-slate-400 font-bold italic">
+                        Chưa có đánh giá từ học viên
+                      </span>
                     }
                     <span class="font-extrabold text-duo-green">{{ formatPrice(tutor.hourlyRate) }}/h</span>
                   </div>
-
-                  <div class="mt-3 flex flex-wrap gap-1.5">
-                    @for (reason of item.reasons ?? []; track reason) {
-                      <span class="rounded-full bg-slate-50 px-2 py-1 text-[11px] font-bold text-slate-600 border border-slate-100">
-                        {{ reason }}
-                      </span>
+                  <p class="text-xs text-slate-400 mt-2 line-clamp-2">
+                    @if (tutor.major) {
+                      Chuyên ngành: {{ tutor.major }}
+                    } @else {
+                      {{ tutor.school || tutor.address?.fullAddress || 'Gia sư EduMatch' }}
                     }
-                  </div>
+                  </p>
+
+
                 </a>
               }
             }
@@ -304,7 +303,7 @@ import { TactileSelectComponent } from '../../../shared/components/tactile-selec
           [class.pointer-events-none]="isLoading()"
         >
           <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            @for (tutor of tutors(); track tutor.id) {
+            @for (tutor of displayedTutors(); track tutor.id) {
               <a
                 [routerLink]="['/student/tutor', tutor.id]"
                 [queryParams]="activeSubjectId() ? { subjectId: activeSubjectId() } : {}"
@@ -399,6 +398,22 @@ export class DiscoverTutorsPage implements OnInit, OnDestroy {
   tutors = signal<TutorDto[]>([]);
   recommendedTutors = signal<TutorRecommendationDto[]>([]);
   avatarErrors = signal<Record<number | string, boolean>>({});
+
+  showRecommendations = computed(() => {
+    return this.page() === 1 && this.recommendedTutors().length > 0;
+  });
+
+  displayedTutors = computed(() => {
+    const recommendedIds = new Set(this.recommendedTutors().map((r) => r.tutor?.id));
+    const filtered = this.tutors().filter((t) => t.id != null && !recommendedIds.has(t.id));
+    
+    if (this.showRecommendations()) {
+      const remainingSlots = Math.max(0, this.pageSize() - this.recommendedTutors().length);
+      return filtered.slice(0, remainingSlots);
+    }
+    
+    return filtered;
+  });
 
   handleAvatarError(tutorId: string | number): void {
     this.avatarErrors.update((prev) => ({ ...prev, [tutorId]: true }));
