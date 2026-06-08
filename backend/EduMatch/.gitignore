@@ -60,3 +60,5 @@ EduMatch.Tests/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+.codex-tmp

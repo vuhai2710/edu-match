@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { Location } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
 
 import {
@@ -29,10 +30,11 @@ import {
       @if (tutor(); as t) {
         <div class="space-y-6">
           <a
-            routerLink="/"
+            href="javascript:void(0)"
+            (click)="goBack($event)"
             class="inline-flex items-center gap-1 text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors"
           >
-            ← Quay lại Trang chủ
+            ← Quay lại
           </a>
 
           <div class="grid lg:grid-cols-3 gap-6">
@@ -87,7 +89,7 @@ import {
                       }
                     </div>
 
-                    <!-- Gender, Birth year, Email on the same line -->
+                    <!-- Gender, Birth year, Email, Phone on the same line -->
                     <div
                       class="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs sm:text-sm text-slate-600 pt-2 border-t border-slate-100 mt-2"
                     >
@@ -112,6 +114,15 @@ import {
                             [title]="t.email"
                           >
                             {{ t.email }}
+                          </a>
+                        </div>
+                      }
+                      @if (t.phoneNumber) {
+                        <div class="h-3 w-px bg-slate-200 hidden sm:block"></div>
+                        <div>
+                          <span class="text-slate-400 font-bold mr-1">Điện thoại:</span>
+                          <a [href]="'tel:' + t.phoneNumber" class="font-extrabold text-slate-800 hover:text-sky-blue hover:underline transition-colors">
+                            {{ t.phoneNumber }}
                           </a>
                         </div>
                       }
@@ -150,17 +161,7 @@ import {
               <div class="tactile-card p-6">
                 <h2 class="font-extrabold text-lg text-slate-900 mb-4">Thông tin bổ sung</h2>
                 <div class="space-y-4 text-sm">
-                  <!-- Phone Number -->
-                  @if (t.phoneNumber) {
-                    <div
-                      class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-100"
-                    >
-                      <span class="text-slate-500 font-bold">Số điện thoại liên hệ</span>
-                      <span class="font-extrabold text-slate-800 mt-1 sm:mt-0">{{
-                        t.phoneNumber
-                      }}</span>
-                    </div>
-                  }
+
 
                   <!-- Môn giảng dạy -->
                   @if (t.subjects?.length) {
@@ -302,6 +303,12 @@ export class PublicTutorDetailPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly tutorsApi = inject(TutorsService);
   private readonly reviewsApi = inject(ReviewsService);
+  private readonly location = inject(Location);
+
+  goBack(event: Event): void {
+    event.preventDefault();
+    this.location.back();
+  }
 
   ngOnInit(): void {
     void this.loadTutor();

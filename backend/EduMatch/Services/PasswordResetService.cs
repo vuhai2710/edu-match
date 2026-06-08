@@ -47,7 +47,10 @@ namespace EduMatch.Services
         if (user.IsGoogleAccount)
         {
           _logger.LogInformation("Forgot password requested for Google account: {Email}", email);
-          return ApiResponse.Ok("Link đặt lại mật khẩu đã được gửi");
+          return ApiResponse.Fail(
+            "Tài khoản này đăng nhập bằng Google, không hỗ trợ đặt lại mật khẩu.",
+            StatusCodes.Status400BadRequest,
+            "GOOGLE_ACCOUNT_NO_PASSWORD_RESET");
         }
 
         var rawToken = GenerateSecureToken();

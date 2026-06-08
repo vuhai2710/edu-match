@@ -1,4 +1,5 @@
 import { Component, ElementRef, HostListener, OnInit, inject, signal, viewChild } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideEye, LucideEyeOff } from '@lucide/angular';
 import { firstValueFrom } from 'rxjs';
@@ -9,6 +10,7 @@ import {
   EducationLevel,
   Gender,
   ProvinceDto,
+  ReviewDto,
   SubjectListItemDto,
   TutorCareerStatus,
   TutorDetailDto,
@@ -20,6 +22,7 @@ import {
   SubjectsService,
   TutorsService,
   UsersService,
+  ReviewsService,
 } from '../../../api/generated/client/services';
 import { SessionService } from '../../../core/auth/session';
 import { getApiErrorMessage, unwrapApiData } from '../../../core/http/api-error';
@@ -28,7 +31,7 @@ import { TactileSelectComponent } from '../../../shared/components/tactile-selec
 
 @Component({
   selector: 'app-tutor-profile-settings-page',
-  imports: [FormsModule, MascotComponent, LucideEye, LucideEyeOff, TactileSelectComponent],
+  imports: [FormsModule, MascotComponent, LucideEye, LucideEyeOff, TactileSelectComponent, DatePipe],
   template: `
     <div class="space-y-6">
       <h1 class="font-display text-2xl font-black text-slate-900">Hồ sơ gia sư</h1>
@@ -89,7 +92,48 @@ import { TactileSelectComponent } from '../../../shared/components/tactile-selec
               <p>Địa chỉ: {{ provinceId() && wardCode() ? 'Đã có' : 'Cần bổ sung' }}</p>
               <p>Môn dạy: {{ selectedSubjectIds().length > 0 ? selectedSubjectIds().length + ' môn' : 'Cần bổ sung' }}</p>
               <p>Cấp dạy: {{ selectedLevels().length > 0 ? selectedLevels().length + ' cấp' : 'Cần bổ sung' }}</p>
+          </div>
+          </div>
+
+          <!-- Recent Reviews Card -->
+          <div class="tactile-card p-5">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-extrabold text-sm text-slate-800">Đánh giá gần đây</h3>
+              @if (totalReviews() > 0) {
+                <button type="button" (click)="showAllReviews.set(true)"
+                        class="text-xs font-bold text-[#58cc02] hover:underline">
+                  Xem tất cả
+                </button>
+              }
             </div>
+
+            @if (isLoadingReviews()) {
+              <p class="text-xs text-slate-400 font-semibold text-center py-3">Đang tải...</p>
+            } @else if (recentReviews().length === 0) {
+              <p class="text-xs text-slate-400 font-semibold text-center py-3">Chưa có đánh giá nào.</p>
+            } @else {
+              <div class="space-y-3">
+                @for (review of recentReviews(); track review.id) {
+                  <div class="rounded-xl bg-slate-50 border border-slate-100 p-3 space-y-1">
+                    <div class="flex items-center justify-between">
+                      <span class="font-extrabold text-xs text-slate-800 truncate">{{ review.studentName || 'Học viên' }}</span>
+                      <span class="text-amber-500 font-bold text-xs shrink-0 ml-1">
+                        @for (star of getStars(review.rating ?? 0); track $index) {
+                          <span>★</span>
+                        }
+                      </span>
+                    </div>
+                    <div class="text-xs text-slate-500 font-semibold">
+                      {{ review.classCode || '—' }}
+                      @if (review.subjectName) { · {{ review.subjectName }} }
+                    </div>
+                    <div class="text-xs text-slate-400">
+                      {{ review.createdAt | date:'dd/MM/yyyy' }}
+                    </div>
+                  </div>
+                }
+              </div>
+            }
           </div>
         </div>
 
@@ -385,6 +429,64 @@ import { TactileSelectComponent } from '../../../shared/components/tactile-selec
           {{ errorMessage() }}
         </div>
       }
+
+      <!-- All Reviews Modal -->
+      @if (showAllReviews()) {
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+             (click)="showAllReviews.set(false)">
+          <div class="bg-white rounded-3xl border-2 border-slate-100 shadow-2xl w-full max-w-lg overflow-hidden"
+               (click)="$event.stopPropagation()">
+            <!-- Modal Header -->
+            <div class="relative px-6 py-5 border-b-2 border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <h3 class="font-display font-black text-xl text-slate-800">
+                Tất cả đánh giá · {{ totalReviews() }}
+              </h3>
+              <button type="button" (click)="showAllReviews.set(false)"
+                      class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <!-- Modal Body -->
+            <div class="px-6 py-5 space-y-3 max-h-[65vh] overflow-y-auto">
+              @if (allReviews().length === 0) {
+                <p class="text-center text-slate-400 font-bold py-8">Chưa có đánh giá nào.</p>
+              } @else {
+                @for (review of allReviews(); track review.id) {
+                  <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4 space-y-2">
+                    <div class="flex items-start justify-between gap-2">
+                      <div class="flex-1 min-w-0">
+                        <p class="font-extrabold text-sm text-slate-800 truncate">{{ review.studentName || 'Học viên' }}</p>
+                        <p class="text-xs text-slate-500 font-semibold mt-0.5">
+                          {{ review.classCode || '—' }}
+                          @if (review.subjectName) { · {{ review.subjectName }} }
+                        </p>
+                      </div>
+                      <div class="shrink-0 flex flex-col items-end gap-0.5">
+                        <span class="text-amber-500 font-bold text-sm">
+                          @for (star of getStars(review.rating ?? 0); track $index) { ★ }
+                        </span>
+                        <span class="text-xs text-slate-400">{{ review.createdAt | date:'dd/MM/yyyy' }}</span>
+                      </div>
+                    </div>
+                    @if (review.comment) {
+                      <p class="text-sm text-slate-600 leading-relaxed border-t border-slate-200 pt-2">{{ review.comment }}</p>
+                    }
+                  </div>
+                }
+              }
+            </div>
+            <!-- Modal Footer -->
+            <div class="px-6 py-4 bg-slate-50 border-t-2 border-slate-100 flex justify-end">
+              <button type="button" (click)="showAllReviews.set(false)"
+                      class="tactile-button-gray px-5 py-2.5 rounded-xl text-sm font-bold">
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      }
     </div>
   `,
 })
@@ -464,6 +566,10 @@ export class TutorProfileSettingsPage implements OnInit {
   isUploadingCv = signal(false);
   successMessage = signal('');
   errorMessage = signal('');
+  allReviews = signal<ReviewDto[]>([]);
+  recentReviews = signal<ReviewDto[]>([]);
+  isLoadingReviews = signal(false);
+  showAllReviews = signal(false);
 
   protected readonly avatarInput = viewChild<ElementRef<HTMLInputElement>>('avatarInput');
   protected readonly cvInput = viewChild<ElementRef<HTMLInputElement>>('cvInput');
@@ -495,9 +601,14 @@ export class TutorProfileSettingsPage implements OnInit {
   private readonly usersApi = inject(UsersService);
   private readonly addressApi = inject(AddressService);
   private readonly subjectsApi = inject(SubjectsService);
+  private readonly reviewsApi = inject(ReviewsService);
 
   ngOnInit(): void {
     void this.loadProfile();
+  }
+
+  getStars(rating: number): number[] {
+    return Array.from({ length: Math.max(0, Math.min(5, Math.round(rating))) });
   }
 
   @HostListener('document:click')
@@ -734,8 +845,26 @@ export class TutorProfileSettingsPage implements OnInit {
         this.provinceId.set(tutor.address.provinceId);
         await this.loadWards(tutor.address.provinceId, tutor.address.wardCode ?? null);
       }
+
+      if (tutor.id) {
+        void this.loadReviews(tutor.id);
+      }
     } catch (error) {
       this.showError(getApiErrorMessage(error, 'Không tải được hồ sơ.'));
+    }
+  }
+
+  private async loadReviews(tutorId: number): Promise<void> {
+    this.isLoadingReviews.set(true);
+    try {
+      const response = await firstValueFrom(this.reviewsApi.getReviewsByTutorId(tutorId));
+      const reviews = response.data ?? [];
+      this.allReviews.set(reviews);
+      this.recentReviews.set(reviews.slice(0, 3));
+    } catch {
+      // silently fail — reviews are supplementary info
+    } finally {
+      this.isLoadingReviews.set(false);
     }
   }
 

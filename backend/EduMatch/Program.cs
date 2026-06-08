@@ -282,6 +282,8 @@ builder.Services.AddScoped<IClassRepository, ClassRepository>();
 builder.Services.AddScoped<IClassReadService, ClassReadService>();
 builder.Services.AddScoped<ICancellationRequestRepository, CancellationRequestRepository>();
 builder.Services.AddScoped<ICancellationRequestService, CancellationRequestService>();
+builder.Services.AddScoped<IClassCompletionRequestRepository, ClassCompletionRequestRepository>();
+builder.Services.AddScoped<IClassCompletionRequestService, ClassCompletionRequestService>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 builder.Services.AddScoped<IDepositPolicyRepository, DepositPolicyRepository>();
 builder.Services.Configure<PayOSSettings>(builder.Configuration.GetSection("PayOS"));
@@ -291,9 +293,11 @@ builder.Services.AddScoped<IDepositPolicyService, DepositPolicyService>();
 builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.Configure<BackgroundJobSettings>(builder.Configuration.GetSection(BackgroundJobSettings.SectionName));
+builder.Services.Configure<RecommendationOptions>(builder.Configuration.GetSection(RecommendationOptions.SectionName));
 builder.Services.AddHostedService<ScheduleExpiryBackgroundService>();
 builder.Services.AddHostedService<PaymentExpiryBackgroundService>();
 builder.Services.AddHostedService<ClassActivationBackgroundService>();
+builder.Services.AddHostedService<CompletionAutoConfirmBackgroundService>();
 
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Email"));
 builder.Services.AddScoped<IEmailService, EmailService>();
@@ -302,6 +306,16 @@ builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
 
 builder.Services.AddSingleton<ICodeGeneratorService, CodeGeneratorService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddHttpClient<IRecommendationService, RecommendationService>((sp, client) =>
+{
+  var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<RecommendationOptions>>().Value;
+  if (Uri.TryCreate(options.BaseUrl, UriKind.Absolute, out var baseUri))
+  {
+    client.BaseAddress = baseUri;
+  }
+
+  client.Timeout = TimeSpan.FromSeconds(Math.Max(1, options.TimeoutSeconds));
+});
 
 builder.Services.AddScoped<ISubjectRepository, SubjectRepository>();
 builder.Services.AddScoped<ISubjectService, SubjectService>();
@@ -327,6 +341,8 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
   var services = scope.ServiceProvider;
+  var dbContext = services.GetRequiredService<AppDbContext>();
+  await dbContext.Database.MigrateAsync();
   await SeedData.Initialize(services);
 }
 

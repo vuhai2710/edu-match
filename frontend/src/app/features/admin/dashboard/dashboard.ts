@@ -284,7 +284,7 @@ import {
                 </svg>
               </div>
               <div>
-                <p class="text-xs font-black text-slate-700">Lớp đang học</p>
+                <p class="text-xs font-black text-slate-700">Lớp đang hoạt động</p>
                 <p class="text-[10px] text-slate-400 font-bold">Các lớp học đang trong quá trình giảng dạy và học tập tích cực</p>
               </div>
             </div>
@@ -302,7 +302,38 @@ import {
             </div>
           </a>
 
-          <!-- Row 3: Lớp đã hủy -->
+          <!-- Row 3: Lớp đã hoàn thành -->
+          <a
+            routerLink="/admin/classes"
+            [queryParams]="{ status: 'Completed' }"
+            class="flex items-center justify-between py-3.5 hover:bg-slate-50/50 px-3 -mx-3 rounded-xl transition-all group"
+          >
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 6 9 17l-5-5"></path>
+                </svg>
+              </div>
+              <div>
+                <p class="text-xs font-black text-slate-700">Lớp đã hoàn thành</p>
+                <p class="text-[10px] text-slate-400 font-bold">Các lớp học đã được cả hai bên xác nhận kết thúc</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              @if (isLoading()) {
+                <div class="h-6 w-8 bg-slate-200/50 animate-pulse rounded-lg"></div>
+              } @else {
+                <span class="font-display text-xs font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-100">
+                  {{ dashboard()?.completedClasses ?? 0 }}
+                </span>
+              }
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-300 group-hover:text-slate-505 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </div>
+          </a>
+
+          <!-- Row 4: Lớp đã hủy -->
           <a
             routerLink="/admin/classes"
             [queryParams]="{ status: 'CancelledByStudent' }"
@@ -597,7 +628,7 @@ export class AdminDashboardPage implements OnInit {
       period = 'tối';
     }
     const name = this.session.user()?.fullName ?? '';
-    return `Chào buổi ${period}${name ? ' ' + name : ''}`;
+    return `Chào buổi ${period} ${name ? ' ' + name : ''}`;
   }
 
   get dateString(): string {

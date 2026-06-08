@@ -16,12 +16,15 @@ namespace EduMatch.Services
 
     private static readonly HashSet<string> AvatarExtensions = [".jpg", ".jpeg", ".png", ".webp"];
     private static readonly HashSet<string> AvatarContentTypes = ["image/jpeg", "image/png", "image/webp"];
-    private static readonly HashSet<string> CvExtensions = [".pdf", ".doc", ".docx"];
+    private static readonly HashSet<string> CvExtensions = [".pdf", ".doc", ".docx", ".jpg", ".jpeg", ".png", ".webp"];
     private static readonly HashSet<string> CvContentTypes =
     [
       "application/pdf",
       "application/msword",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "image/jpeg",
+      "image/png",
+      "image/webp"
     ];
 
     private readonly Cloudinary _cloudinary;
@@ -201,7 +204,7 @@ namespace EduMatch.Services
         CvMaxSizeInBytes,
         CvExtensions,
         CvContentTypes,
-        "CV chỉ hỗ trợ định dạng PDF, DOC hoặc DOCX.",
+        "CV chỉ hỗ trợ định dạng PDF, DOC, DOCX hoặc ảnh (JPG, JPEG, PNG, WEBP).",
         "CV không được vượt quá 10MB.");
     }
 

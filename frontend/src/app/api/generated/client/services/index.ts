@@ -12,6 +12,7 @@ export { AdminService } from "./admin.service";
 export { ApplicationsService } from "./applications.service";
 export { CancellationRequestsService } from "./cancellationRequests.service";
 export { ChatService } from "./chat.service";
+export { ClassCompletionRequestsService } from "./classCompletionRequests.service";
 export { ClassesService } from "./classes.service";
 export { DashboardService } from "./dashboard.service";
 export { DepositPolicyService } from "./depositPolicy.service";

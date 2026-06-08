@@ -1,5 +1,6 @@
 using EduMatch.Data;
 using EduMatch.DTOs;
+using EduMatch.DTOs.Recommendations;
 using EduMatch.DTOs.Tutor;
 using EduMatch.Models;
 using Microsoft.EntityFrameworkCore;
@@ -97,6 +98,67 @@ namespace EduMatch.Repositories
         PageSize = parameters.PageSize,
         TotalPages = totalCount == 0 ? 0 : (int)Math.Ceiling(totalCount / (double)parameters.PageSize)
       };
+    }
+
+    public async Task<List<Tutor>> GetRecommendationCandidatesAsync(TutorRecommendationQueryParameters parameters, int rankingLimit)
+    {
+      var query = _dbSet
+        .Include(t => t.User)
+          .ThenInclude(u => u.AvatarFile)
+        .Include(t => t.Address)
+        .Include(t => t.TeachingLevels)
+        .Include(t => t.TutorSubjects)
+          .ThenInclude(ts => ts.Subject)
+        .Where(t =>
+          !t.IsDeleted &&
+          t.ApprovalStatus == EduMatch.Common.Enums.TutorApprovalStatus.Approved &&
+          t.User != null &&
+          !t.User.IsDeleted)
+        .AsQueryable();
+
+      if (parameters.SubjectId.HasValue)
+      {
+        query = query.Where(t => t.TutorSubjects.Any(ts => ts.SubjectId == parameters.SubjectId.Value));
+      }
+
+      if (parameters.ProvinceId.HasValue)
+      {
+        query = query.Where(t => t.Address != null && t.Address.ProvinceId == parameters.ProvinceId.Value);
+      }
+
+      if (!string.IsNullOrWhiteSpace(parameters.WardCode))
+      {
+        query = query.Where(t => t.Address != null && t.Address.WardCode == parameters.WardCode);
+      }
+
+      if (parameters.MinPrice.HasValue)
+      {
+        query = query.Where(t => t.HourlyRate >= parameters.MinPrice.Value);
+      }
+
+      if (parameters.MaxPrice.HasValue)
+      {
+        query = query.Where(t => t.HourlyRate <= parameters.MaxPrice.Value);
+      }
+
+      if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
+      {
+        var searchTerm = parameters.SearchTerm.ToLower().Trim();
+        var exactTerm = parameters.SearchTerm.Trim();
+        query = query.Where(t =>
+          t.Code == exactTerm ||
+          (t.User.FullName != null && t.User.FullName.ToLower().Contains(searchTerm)) ||
+          (t.Profile != null && t.Profile.ToLower().Contains(searchTerm)) ||
+          (t.Major != null && t.Major.ToLower().Contains(searchTerm)));
+      }
+
+      return await query
+        .OrderByDescending(t => t.Rating)
+        .ThenByDescending(t => t.TotalReviews)
+        .ThenByDescending(t => t.CreatedAt)
+        .ThenBy(t => t.Id)
+        .Take(rankingLimit)
+        .ToListAsync();
     }
 
     public async Task<Tutor?> GetTutorProfileDetailAsync(long id)

@@ -625,6 +625,16 @@
             }
           },
           {
+            "name": "statuses",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ClassStatus"
+              }
+            }
+          },
+          {
             "name": "subjectId",
             "in": "query",
             "schema": {
@@ -3193,6 +3203,335 @@
         }
       }
     },
+    "/api/class-completion-requests": {
+      "post": {
+        "tags": [
+          "ClassCompletionRequests"
+        ],
+        "operationId": "createClassCompletionRequest",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateClassCompletionRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateClassCompletionRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateClassCompletionRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassCompletionRequestDtoApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassCompletionRequestDtoApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassCompletionRequestDtoApiResponse"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassCompletionRequestDtoApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassCompletionRequestDtoApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassCompletionRequestDtoApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/class-completion-requests/{id}/respond": {
+      "put": {
+        "tags": [
+          "ClassCompletionRequests"
+        ],
+        "operationId": "respondClassCompletionRequest",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RespondClassCompletionRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RespondClassCompletionRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/RespondClassCompletionRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassCompletionRequestDtoApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassCompletionRequestDtoApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassCompletionRequestDtoApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/classes/me": {
       "get": {
         "tags": [
@@ -3205,6 +3544,16 @@
             "in": "query",
             "schema": {
               "$ref": "#/components/schemas/ClassStatus"
+            }
+          },
+          {
+            "name": "statuses",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ClassStatus"
+              }
             }
           },
           {
@@ -3360,6 +3709,16 @@
             "in": "query",
             "schema": {
               "$ref": "#/components/schemas/ClassStatus"
+            }
+          },
+          {
+            "name": "statuses",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ClassStatus"
+              }
             }
           },
           {
@@ -3739,6 +4098,107 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CancellationRequestDtoApiResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/classes/{id}/completion-request": {
+      "get": {
+        "tags": [
+          "Classes"
+        ],
+        "operationId": "getClassCompletionRequest",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassCompletionRequestDtoApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassCompletionRequestDtoApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassCompletionRequestDtoApiResponse"
                 }
               }
             }
@@ -4482,13 +4942,6 @@
         ],
         "operationId": "viewCloudinaryFile",
         "parameters": [
-          {
-            "name": "url",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "fileUrl",
             "in": "query",
@@ -6386,6 +6839,67 @@
         }
       }
     },
+    "/api/Reviews/class/{classId}": {
+      "get": {
+        "tags": [
+          "Reviews"
+        ],
+        "operationId": "getReviewByClassId",
+        "parameters": [
+          {
+            "name": "classId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewDtoApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewDtoApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewDtoApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/schedule-proposals": {
       "post": {
         "tags": [
@@ -6977,6 +7491,69 @@
         "parameters": [
           {
             "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentDetailDtoApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentDetailDtoApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentDetailDtoApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Students/user/{userId}": {
+      "get": {
+        "tags": [
+          "Students"
+        ],
+        "summary": "Get student profile by user ID",
+        "description": "The route parameter {userId} is the User ID.",
+        "operationId": "getStudentByUserId",
+        "parameters": [
+          {
+            "name": "userId",
             "in": "path",
             "required": true,
             "schema": {
@@ -9529,6 +10106,10 @@
             "type": "integer",
             "format": "int32"
           },
+          "completedClasses": {
+            "type": "integer",
+            "format": "int32"
+          },
           "cancelledClasses": {
             "type": "integer",
             "format": "int32"
@@ -9540,6 +10121,13 @@
           "revenueThisMonth": {
             "type": "number",
             "format": "double"
+          },
+          "monthlyRevenues": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MonthlyRevenueDto"
+            },
+            "nullable": true
           },
           "recentApplications": {
             "type": "array",
@@ -9979,6 +10567,120 @@
         },
         "additionalProperties": false
       },
+      "ClassCompletionRequestDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "classId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "classCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "classStatus": {
+            "$ref": "#/components/schemas/ClassStatus"
+          },
+          "studentId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "studentName": {
+            "type": "string",
+            "nullable": true
+          },
+          "tutorId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "tutorUserId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "tutorName": {
+            "type": "string",
+            "nullable": true
+          },
+          "requestedByUserId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "requestedByUserName": {
+            "type": "string",
+            "nullable": true
+          },
+          "requestedByRole": {
+            "$ref": "#/components/schemas/UserRole"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ClassCompletionRequestStatus"
+          },
+          "respondedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "respondedByUserId": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "respondedByUserName": {
+            "type": "string",
+            "nullable": true
+          },
+          "respondedByRole": {
+            "$ref": "#/components/schemas/UserRole"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ClassCompletionRequestDtoApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "statusCode": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/ClassCompletionRequestDto"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ClassCompletionRequestStatus": {
+        "enum": [
+          "Pending",
+          "Confirmed",
+          "Rejected"
+        ],
+        "type": "string"
+      },
       "ClassDto": {
         "type": "object",
         "properties": {
@@ -10016,6 +10718,11 @@
             "nullable": true
           },
           "startDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "endDate": {
             "type": "string",
             "format": "date-time",
             "nullable": true
@@ -10170,6 +10877,7 @@
         "enum": [
           "PendingStart",
           "Active",
+          "Completed",
           "CancelledByStudent",
           "CancelledByAdmin",
           "CancelledByTutor"
@@ -10306,6 +11014,19 @@
           "isRefunded": {
             "type": "boolean",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateClassCompletionRequestDto": {
+        "required": [
+          "classId"
+        ],
+        "type": "object",
+        "properties": {
+          "classId": {
+            "type": "integer",
+            "format": "int64"
           }
         },
         "additionalProperties": false
@@ -11221,6 +11942,24 @@
         },
         "additionalProperties": false
       },
+      "MonthlyRevenueDto": {
+        "type": "object",
+        "properties": {
+          "year": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "month": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "revenue": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
       "MyApplicationItemDto": {
         "type": "object",
         "properties": {
@@ -11377,7 +12116,11 @@
           "ClassActivated",
           "CancellationRequestCreated",
           "CancellationRequestResolved",
-          "ClassCancelled"
+          "ClassCancelled",
+          "ClassCompletionRequested",
+          "ClassCompletionConfirmed",
+          "ClassCompletionRejected",
+          "ClassCompleted"
         ],
         "type": "string"
       },
@@ -11888,6 +12631,15 @@
         },
         "additionalProperties": false
       },
+      "RespondClassCompletionRequestDto": {
+        "type": "object",
+        "properties": {
+          "isConfirmed": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
       "ReviewDto": {
         "type": "object",
         "properties": {
@@ -11930,6 +12682,10 @@
           "createdAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "subjectName": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -12222,6 +12978,10 @@
             "format": "int32"
           },
           "pendingClasses": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "completedClasses": {
             "type": "integer",
             "format": "int32"
           },
@@ -12770,6 +13530,10 @@
             "format": "int32"
           },
           "pendingClasses": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "completedClasses": {
             "type": "integer",
             "format": "int32"
           },
@@ -13753,6 +14517,9 @@
     },
     {
       "name": "Chat"
+    },
+    {
+      "name": "ClassCompletionRequests"
     },
     {
       "name": "Classes"

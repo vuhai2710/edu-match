@@ -1,8 +1,8 @@
 import { Component, OnInit, inject, input, output, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
-import { TutorDetailDto } from '../../api/generated/client/models';
-import { TutorsService } from '../../api/generated/client/services';
+import { ReviewDto, TutorDetailDto } from '../../api/generated/client/models';
+import { ReviewsService, TutorsService } from '../../api/generated/client/services';
 import { getApiErrorMessage, unwrapApiData } from '../../core/http/api-error';
 import {
   genderLabel,
@@ -10,6 +10,7 @@ import {
   tutorCareerStatusLabel,
   educationLevelLabel,
   formatMoney,
+  formatDateTime,
 } from '../utils/api-ui';
 
 @Component({
@@ -182,6 +183,37 @@ import {
                   </a>
                 </div>
               }
+
+              @if (reviews().length > 0) {
+                <div class="col-span-2 mt-2">
+                  <div class="flex items-center justify-between border-b border-slate-100 pb-2 mb-3">
+                    <h4 class="font-bold text-slate-800">Đánh giá gần đây</h4>
+                    @if (reviews().length > 5) {
+                      <button (click)="showAllReviewsModal.set(true)" class="text-xs font-bold text-duo-blue hover:underline">
+                        Xem tất cả
+                      </button>
+                    }
+                  </div>
+                  <div class="space-y-3">
+                    @for (r of reviews().slice(0, 5); track r.id) {
+                      <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                        <div class="flex items-center justify-between mb-1">
+                          <p class="font-bold text-slate-800 text-sm">{{ r.studentName }}</p>
+                          <div class="flex text-amber-500 text-xs">
+                            @for (s of [1,2,3,4,5]; track s) {
+                              <span [class]="s <= (r.rating || 0) ? 'text-amber-500' : 'text-amber-200'">★</span>
+                            }
+                          </div>
+                        </div>
+                        <p class="text-xs text-slate-500 mb-2">Lớp: {{ r.classCode }} • {{ dateTime(r.createdAt) }}</p>
+                        @if (r.comment) {
+                          <p class="text-sm text-slate-700 font-medium">"{{ r.comment }}"</p>
+                        }
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
             </div>
           }
         </div>
@@ -195,6 +227,42 @@ import {
         </div>
       </div>
     </div>
+
+    @if (showAllReviewsModal()) {
+      <div class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+           (click)="showAllReviewsModal.set(false)">
+        <div class="bg-white rounded-3xl border-2 border-slate-100 shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]"
+             (click)="$event.stopPropagation()">
+          <div class="px-6 py-5 border-b-2 border-slate-100 flex items-center justify-between bg-slate-50/50 shrink-0">
+            <h3 class="font-display font-black text-xl text-slate-800">Tất cả đánh giá</h3>
+            <button (click)="showAllReviewsModal.set(false)" 
+                    class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div class="px-6 py-4 space-y-3 overflow-y-auto flex-1">
+            @for (r of reviews(); track r.id) {
+              <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                <div class="flex items-center justify-between mb-1">
+                  <p class="font-bold text-slate-800 text-sm">{{ r.studentName }}</p>
+                  <div class="flex text-amber-500 text-xs">
+                    @for (s of [1,2,3,4,5]; track s) {
+                      <span [class]="s <= (r.rating || 0) ? 'text-amber-500' : 'text-amber-200'">★</span>
+                    }
+                  </div>
+                </div>
+                <p class="text-xs text-slate-500 mb-2">Lớp: {{ r.classCode }} • {{ dateTime(r.createdAt) }}</p>
+                @if (r.comment) {
+                  <p class="text-sm text-slate-700 font-medium">"{{ r.comment }}"</p>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    }
   `,
 })
 export class TutorDetailModalComponent implements OnInit {
@@ -202,10 +270,13 @@ export class TutorDetailModalComponent implements OnInit {
   close = output<void>();
 
   tutor = signal<TutorDetailDto | null>(null);
+  reviews = signal<ReviewDto[]>([]);
   isLoading = signal(false);
   errorMessage = signal('');
+  showAllReviewsModal = signal(false);
 
   private readonly tutorsApi = inject(TutorsService);
+  private readonly reviewsApi = inject(ReviewsService);
 
   ngOnInit(): void {
     void this.loadTutorProfile();
@@ -235,6 +306,10 @@ export class TutorDetailModalComponent implements OnInit {
     if (!birthYear) return 0;
     return new Date().getFullYear() - birthYear;
   }
+  
+  dateTime(value?: Date | string | null): string {
+    return formatDateTime(value);
+  }
 
   private async loadTutorProfile(): Promise<void> {
     const id = this.tutorId();
@@ -248,6 +323,13 @@ export class TutorDetailModalComponent implements OnInit {
     try {
       const response = await firstValueFrom(this.tutorsApi.getTutorById(String(id)));
       this.tutor.set(unwrapApiData(response));
+      
+      try {
+        const reviewResponse = await firstValueFrom(this.reviewsApi.getReviewsByTutorId(id));
+        this.reviews.set(reviewResponse.data || []);
+      } catch (err) {
+        console.error('Cannot load tutor reviews', err);
+      }
     } catch (error) {
       this.errorMessage.set(getApiErrorMessage(error, 'Không tải được thông tin gia sư.'));
     } finally {

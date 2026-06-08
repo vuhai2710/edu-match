@@ -1,9 +1,10 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Location } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
 
-import { UserDto, UserRole, TutorDetailDto, StudentDetailDto } from '../../../api/generated/client/models';
-import { UsersService, TutorsService, StudentsService, AdminService } from '../../../api/generated/client/services';
+import { UserDto, UserRole, TutorDetailDto, StudentDetailDto, ReviewDto } from '../../../api/generated/client/models';
+import { UsersService, TutorsService, StudentsService, AdminService, ReviewsService } from '../../../api/generated/client/services';
 import { ApiErrorDetails, getApiErrorDetails, getApiErrorMessage } from '../../../core/http/api-error';
 import { SessionService } from '../../../core/auth/session';
 import { ErrorBannerComponent } from '../../../shared/components/error-banner/error-banner';
@@ -15,6 +16,7 @@ import {
   gradeLabel,
   tutorCareerStatusLabel,
   formatMoney,
+  formatDateTime,
 } from '../../../shared/utils/api-ui';
 
 @Component({
@@ -23,8 +25,8 @@ import {
   template: `
     <div class="space-y-6 max-w-4xl mx-auto px-4 py-6">
       <div class="flex items-center justify-between gap-3">
-        <a routerLink="/admin/users" class="inline-flex items-center gap-2 text-sm font-extrabold text-duo-blue hover:underline">
-          <span>←</span> Quay lại danh sách
+        <a href="javascript:void(0)" (click)="goBack($event)" class="inline-flex items-center gap-2 text-sm font-extrabold text-duo-blue hover:underline">
+          <span>←</span> Quay lại
         </a>
       </div>
 
@@ -181,15 +183,22 @@ import {
                 <p class="text-xs font-black uppercase text-slate-400 tracking-wider">Học phí yêu cầu</p>
                 <p class="mt-1 font-extrabold text-duo-green text-base">{{ formatPrice(t.hourlyRate) }} / giờ</p>
               </div>
-              <div class="rounded-xl border-2 border-slate-100 bg-slate-50 px-4 py-3">
-                <p class="text-xs font-black uppercase text-slate-400 tracking-wider">Đánh giá gia sư</p>
-                <p class="mt-1 font-extrabold text-slate-700">
-                  @if (t.rating && t.rating > 0) {
-                    <span class="text-duo-yellow font-extrabold">{{ t.rating }}/5.0 ★</span> ({{ t.totalReviews ?? 0 }} đánh giá)
-                  } @else {
-                    <span class="text-slate-400">Chưa có đánh giá từ học viên</span>
-                  }
-                </p>
+              <div class="rounded-xl border-2 border-slate-100 bg-slate-50 px-4 py-3 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                <div>
+                  <p class="text-xs font-black uppercase text-slate-400 tracking-wider">Đánh giá gia sư</p>
+                  <p class="mt-1 font-extrabold text-slate-700">
+                    @if (t.rating && t.rating > 0) {
+                      <span class="text-duo-yellow font-extrabold">{{ t.rating }}/5.0 ★</span> ({{ t.totalReviews ?? 0 }} đánh giá)
+                    } @else {
+                      <span class="text-slate-400">Chưa có đánh giá từ học viên</span>
+                    }
+                  </p>
+                </div>
+                @if (t.totalReviews && t.totalReviews > 0) {
+                  <button (click)="loadReviewsAndShowModal(t.id!)" class="mt-2 sm:mt-0 px-3 py-1.5 bg-white text-duo-blue font-bold text-xs uppercase rounded-lg border border-slate-200 hover:bg-blue-50 transition-colors shadow-sm">
+                    Xem tất cả
+                  </button>
+                }
               </div>
               <div class="rounded-xl border-2 border-slate-100 bg-slate-50 px-4 py-3 sm:col-span-2">
                 <p class="text-xs font-black uppercase text-slate-400 tracking-wider">Địa chỉ đầy đủ</p>
@@ -270,6 +279,49 @@ import {
           <p class="mt-2 font-extrabold text-slate-500">Đang tải thông tin người dùng...</p>
         </div>
       }
+
+      @if (showAllReviewsModal()) {
+        <div class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+             (click)="showAllReviewsModal.set(false)">
+          <div class="bg-white rounded-3xl border-2 border-slate-100 shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]"
+               (click)="$event.stopPropagation()">
+            <div class="px-6 py-5 border-b-2 border-slate-100 flex items-center justify-between bg-slate-50/50 shrink-0">
+              <h3 class="font-display font-black text-xl text-slate-800">Tất cả đánh giá</h3>
+              <button (click)="showAllReviewsModal.set(false)" 
+                      class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div class="px-6 py-4 space-y-3 overflow-y-auto flex-1">
+              @if (isLoadingReviews()) {
+                <div class="py-10 text-center">
+                  <div class="inline-block w-6 h-6 border-4 border-duo-blue border-t-transparent rounded-full animate-spin"></div>
+                  <p class="mt-2 text-sm font-bold text-slate-500">Đang tải đánh giá...</p>
+                </div>
+              } @else {
+                @for (r of reviews(); track r.id) {
+                  <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                    <div class="flex items-center justify-between mb-1">
+                      <p class="font-bold text-slate-800 text-sm">{{ r.studentName }}</p>
+                      <div class="flex text-amber-500 text-xs">
+                        @for (s of [1,2,3,4,5]; track s) {
+                          <span [class]="s <= (r.rating || 0) ? 'text-amber-500' : 'text-amber-200'">★</span>
+                        }
+                      </div>
+                    </div>
+                    <p class="text-xs text-slate-500 mb-2">Lớp: {{ r.classCode }} • {{ dateTime(r.createdAt) }}</p>
+                    @if (r.comment) {
+                      <p class="text-sm text-slate-700 font-medium">"{{ r.comment }}"</p>
+                    }
+                  </div>
+                }
+              }
+            </div>
+          </div>
+        </div>
+      }
     </div>
   `,
 })
@@ -285,6 +337,10 @@ export class AdminUserDetailPage implements OnInit {
   isDeleting = signal(false);
   isActionRunning = signal(false);
 
+  showAllReviewsModal = signal(false);
+  reviews = signal<ReviewDto[]>([]);
+  isLoadingReviews = signal(false);
+
   protected readonly userRole = UserRole;
 
   private readonly route = inject(ActivatedRoute);
@@ -293,7 +349,14 @@ export class AdminUserDetailPage implements OnInit {
   private readonly tutorsApi = inject(TutorsService);
   private readonly studentsApi = inject(StudentsService);
   private readonly adminApi = inject(AdminService);
+  private readonly reviewsApi = inject(ReviewsService);
   protected readonly session = inject(SessionService);
+  private readonly location = inject(Location);
+
+  goBack(event: Event): void {
+    event.preventDefault();
+    this.location.back();
+  }
 
   ngOnInit(): void {
     void this.loadUser();
@@ -330,6 +393,10 @@ export class AdminUserDetailPage implements OnInit {
 
   formatPrice(value?: number | null): string {
     return formatMoney(value);
+  }
+
+  dateTime(value?: Date | string | null): string {
+    return formatDateTime(value);
   }
 
   subtitle(user: UserDto): string {
@@ -430,38 +497,14 @@ export class AdminUserDetailPage implements OnInit {
   }
 
   private async loadStudentProfile(u: UserDto): Promise<void> {
+    if (!u.id) return;
     this.isLoadingProfile.set(true);
     try {
-      let studentItem: any = null;
-      
-      // 1. Search student list by code
-      if (u.code) {
-        console.log('[loadStudentProfile] Searching student by code:', u.code);
-        const res = await firstValueFrom(this.studentsApi.getStudents(undefined, undefined, 1, 10, u.code));
-        studentItem = res.data?.items?.find(s => s.userId === u.id || s.code === u.code);
-      }
-      
-      // 2. Fallback: search student list by full name
-      if (!studentItem && u.fullName) {
-        console.log('[loadStudentProfile] Searching student by name:', u.fullName);
-        const res = await firstValueFrom(this.studentsApi.getStudents(undefined, undefined, 1, 50, u.fullName));
-        studentItem = res.data?.items?.find(s => s.userId === u.id);
-      }
-      
-      // 3. Fallback: list all students (up to 100) and scan
-      if (!studentItem) {
-        console.log('[loadStudentProfile] Scanning all students...');
-        const res = await firstValueFrom(this.studentsApi.getStudents(undefined, undefined, 1, 100));
-        studentItem = res.data?.items?.find(s => s.userId === u.id);
-      }
-      
-      if (studentItem?.id) {
-        console.log('[loadStudentProfile] Found student item in list, fetching details for ID:', studentItem.id);
-        const detailRes = await firstValueFrom(this.studentsApi.getStudentById(studentItem.id));
-        this.studentProfile.set(detailRes.data ?? null);
-      }
+      const detailRes = await firstValueFrom(this.studentsApi.getStudentByUserId(u.id));
+      this.studentProfile.set(detailRes.data ?? null);
     } catch (e) {
       console.error('[admin/user-detail] Failed to load student profile details', e);
+      this.studentProfile.set(null);
     } finally {
       this.isLoadingProfile.set(false);
     }
@@ -496,6 +539,21 @@ export class AdminUserDetailPage implements OnInit {
       this.actionError.set(getApiErrorMessage(error, 'Không thể từ chối gia sư.'));
     } finally {
       this.isActionRunning.set(false);
+    }
+  }
+
+  async loadReviewsAndShowModal(tutorId: number) {
+    this.showAllReviewsModal.set(true);
+    if (this.reviews().length === 0) {
+       this.isLoadingReviews.set(true);
+       try {
+         const res = await firstValueFrom(this.reviewsApi.getReviewsByTutorId(tutorId));
+         this.reviews.set(res.data || []);
+       } catch (err) {
+         console.error(err);
+       } finally {
+         this.isLoadingReviews.set(false);
+       }
     }
   }
 }

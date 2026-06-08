@@ -16,9 +16,11 @@ import {
 } from '../../../shared/utils/api-ui';
 import { StudentDetailModalComponent } from '../../../shared/components/student-detail-modal';
 
+import { TactileSelectComponent } from '../../../shared/components/tactile-select/tactile-select';
+
 @Component({
   selector: 'app-tutor-classes-page',
-  imports: [RouterLink, StudentDetailModalComponent, PaginationComponent, FormsModule],
+  imports: [RouterLink, StudentDetailModalComponent, PaginationComponent, FormsModule, TactileSelectComponent],
   template: `
     <div class="space-y-6">
       <h1 class="font-display text-2xl font-black text-slate-900">Lớp dạy của tôi</h1>
@@ -59,79 +61,37 @@ import { StudentDetailModalComponent } from '../../../shared/components/student-
           </div>
 
           <!-- Dropdown môn học -->
-          <div class="relative">
-            <select
-              [ngModel]="selectedSubjectId()"
-              (ngModelChange)="selectedSubjectId.set($event); page.set(1)"
-              class="tactile-input w-full text-sm font-semibold bg-white pl-4 pr-10 py-2.5 cursor-pointer appearance-none"
-            >
-              <option [ngValue]="null">Tất cả môn học</option>
-              @for (sub of tutorSubjects(); track sub.id) {
-                <option [ngValue]="sub.id">{{ sub.name }}</option>
-              }
-            </select>
-            <svg class="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
-            @if (selectedSubjectId() !== null) {
-              <button
-                (click)="selectedSubjectId.set(null); page.set(1)"
-                class="absolute right-8 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full hover:bg-slate-100 transition-all cursor-pointer"
-              >
-                ✕
-              </button>
-            }
-          </div>
+          <app-tactile-select
+            [value]="selectedSubjectId()"
+            (valueChange)="selectedSubjectId.set($event); page.set(1)"
+            [options]="tutorSubjects()"
+            valueKey="id"
+            labelKey="name"
+            placeholder="Tất cả môn học"
+            [clearable]="true"
+          />
 
           <!-- Dropdown thứ học hoặc bộ lọc Đánh giá -->
           <div class="relative">
             @if (activeTabIsReview()) {
-              <select
-                [ngModel]="selectedReviewFilter()"
-                (ngModelChange)="selectedReviewFilter.set($event); page.set(1)"
-                class="tactile-input w-full text-sm font-semibold bg-white pl-4 pr-10 py-2.5 cursor-pointer appearance-none"
-              >
-                <option value="all">Lọc theo đánh giá</option>
-                <option value="not_reviewed">Chưa đánh giá</option>
-                <option value="5">5 sao</option>
-                <option value="4">4 sao</option>
-                <option value="3">3 sao</option>
-                <option value="2">2 sao</option>
-                <option value="1">1 sao</option>
-              </select>
-              <svg class="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-              </svg>
-              @if (selectedReviewFilter() !== 'all') {
-                <button
-                  (click)="selectedReviewFilter.set('all'); page.set(1)"
-                  class="absolute right-8 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full hover:bg-slate-100 transition-all cursor-pointer"
-                >
-                  ✕
-                </button>
-              }
+              <app-tactile-select
+                [value]="selectedReviewFilter()"
+                (valueChange)="selectedReviewFilter.set($event); page.set(1)"
+                [options]="[{value: 'all', label: 'Lọc theo đánh giá'}, {value: 'not_reviewed', label: 'Chưa đánh giá'}, {value: '5', label: '5 sao'}, {value: '4', label: '4 sao'}, {value: '3', label: '3 sao'}, {value: '2', label: '2 sao'}, {value: '1', label: '1 sao'}]"
+                valueKey="value"
+                labelKey="label"
+                [showPlaceholderOption]="false"
+              />
             } @else {
-              <select
-                [ngModel]="selectedDay()"
-                (ngModelChange)="selectedDay.set($event); page.set(1)"
-                class="tactile-input w-full text-sm font-semibold bg-white pl-4 pr-10 py-2.5 cursor-pointer appearance-none"
-              >
-                <option [ngValue]="null">Tất cả ngày học</option>
-                @for (day of dayOptions; track day.value) {
-                  <option [ngValue]="day.value">{{ day.label }}</option>
-                }
-              </select>
-              <svg class="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-              </svg>
-              @if (selectedDay() !== null) {
-                <button
-                  (click)="selectedDay.set(null); page.set(1)"
-                  class="absolute right-8 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full hover:bg-slate-100 transition-all cursor-pointer"
-                >
-                  ✕
-                </button>
-              }
+              <app-tactile-select
+                [value]="selectedDay()"
+                (valueChange)="selectedDay.set($event); page.set(1)"
+                [options]="dayOptions"
+                valueKey="value"
+                labelKey="label"
+                placeholder="Tất cả ngày học"
+                [clearable]="true"
+              />
             }
           </div>
 
@@ -235,7 +195,7 @@ import { StudentDetailModalComponent } from '../../../shared/components/student-
       }
 
       @if (selectedStudentId()) {
-        <app-student-detail-modal [studentId]="selectedStudentId()" (close)="selectedStudentId.set(null)" />
+        <app-student-detail-modal [userId]="selectedStudentId()" (close)="selectedStudentId.set(null)" />
       }
     </div>
   `,
@@ -251,7 +211,7 @@ export class TutorClassesPage implements OnInit {
   searchQuery = signal('');
   selectedSubjectId = signal<number | null>(null);
   selectedDay = signal<string | null>(null);
-  activeStatus = signal<ClassStatus | null>(null);
+  activeStatus = signal<ClassStatus | ClassStatus[] | null>(null);
   activeTabIsReview = signal(false);
   selectedReviewFilter = signal<string>('all');
 
@@ -266,10 +226,12 @@ export class TutorClassesPage implements OnInit {
   readonly dayOptions = DAY_OPTIONS;
 
   readonly tabs = [
-    { label: 'Tất cả', status: null, isReviewTab: false },
+    { label: 'Tất cả', status: null as ClassStatus | ClassStatus[] | null, isReviewTab: false },
     { label: 'Chờ bắt đầu', status: ClassStatus.PendingStart, isReviewTab: false },
     { label: 'Đang dạy', status: ClassStatus.Active, isReviewTab: false },
-    { label: 'Đánh giá', status: null, isReviewTab: true },
+    { label: 'Hoàn thành', status: ClassStatus.Completed, isReviewTab: false },
+    { label: 'Đã hủy', status: [ClassStatus.CancelledByStudent, ClassStatus.CancelledByTutor, ClassStatus.CancelledByAdmin], isReviewTab: false },
+    { label: 'Đánh giá', status: null as ClassStatus | ClassStatus[] | null, isReviewTab: true },
   ];
 
   private readonly classesApi = inject(ClassesService);
@@ -380,14 +342,14 @@ export class TutorClassesPage implements OnInit {
     void this.loadClasses();
   }
 
-  isTabActive(tab: { label: string; status: ClassStatus | null; isReviewTab: boolean }): boolean {
+  isTabActive(tab: { label: string; status: ClassStatus | ClassStatus[] | null; isReviewTab: boolean }): boolean {
     if (tab.isReviewTab) {
       return this.activeTabIsReview();
     }
     return !this.activeTabIsReview() && this.activeStatus() === tab.status;
   }
 
-  setStatus(tab: { label: string; status: ClassStatus | null; isReviewTab: boolean }): void {
+  setStatus(tab: { label: string; status: ClassStatus | ClassStatus[] | null; isReviewTab: boolean }): void {
     this.activeStatus.set(tab.status);
     this.activeTabIsReview.set(tab.isReviewTab);
     this.page.set(1);
@@ -437,9 +399,15 @@ export class TutorClassesPage implements OnInit {
     this.isLoading.set(true);
     this.errorMessage.set('');
     try {
+      const currentStatus = this.activeStatus();
+      const isArray = Array.isArray(currentStatus);
+      const statusParam = isArray ? undefined : (currentStatus ?? undefined);
+      const statusesParam = isArray ? currentStatus : undefined;
+
       const response = await firstValueFrom(
         this.classesApi.getTutorClasses(
-          this.activeStatus() ?? undefined,
+          statusParam,
+          statusesParam,
           undefined,
           undefined,
           1,

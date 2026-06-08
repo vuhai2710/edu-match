@@ -7,6 +7,7 @@ namespace EduMatch.Services.Interfaces
   {
     Task<ApiResponse<PagedResult<StudentDto>>> GetStudentsAsync(StudentQueryParameters parameters);
     Task<ApiResponse<StudentDetailDto>> GetStudentByIdAsync(long studentId);
+    Task<ApiResponse<StudentDetailDto>> GetStudentByUserIdAsync(long userId);
     Task<ApiResponse<StudentDetailDto>> GetMyProfileAsync(long currentUserId);
     Task<ApiResponse<StudentDetailDto>> UpdateMyProfileAsync(long currentUserId, UpdateStudentDto dto);
   }

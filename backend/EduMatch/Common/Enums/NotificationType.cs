@@ -1,99 +1,113 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
-namespace EduMatch.Common.Enums
+namespace EduMatch.Common.Enums;
+
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum NotificationType
 {
-  [JsonConverter(typeof(JsonStringEnumConverter))]
-  public enum NotificationType
-  {
-    [Display(Name = "Đơn ứng tuyển mới")]
-    ApplicationCreated,
+  [Display(Name = "Đơn ứng tuyển mới")]
+  ApplicationCreated,
 
-    [Display(Name = "Đơn ứng tuyển được duyệt")]
-    ApplicationApproved,
+  [Display(Name = "Đơn ứng tuyển được duyệt")]
+  ApplicationApproved,
 
-    [Display(Name = "Đơn ứng tuyển bị từ chối")]
-    ApplicationRejected,
+  [Display(Name = "Đơn ứng tuyển bị từ chối")]
+  ApplicationRejected,
 
-    [Display(Name = "Học viên đã xác nhận")]
-    StudentConfirmed,
+  [Display(Name = "Học viên đã xác nhận")]
+  StudentConfirmed,
 
-    [Display(Name = "Học viên đã từ chối")]
-    StudentRejected,
+  [Display(Name = "Học viên đã từ chối")]
+  StudentRejected,
 
-    [Display(Name = "Admin đã ghép lớp")]
-    AdminMatched,
+  [Display(Name = "Admin đã ghép lớp")]
+  AdminMatched,
 
-    [Display(Name = "Ghép lớp được chấp nhận")]
-    MatchAccepted,
+  [Display(Name = "Ghép lớp được chấp nhận")]
+  MatchAccepted,
 
-    [Display(Name = "Yêu cầu tìm gia sư mới")]
-    TutorRequestCreated,
+  [Display(Name = "Yêu cầu tìm gia sư mới")]
+  TutorRequestCreated,
 
-    [Display(Name = "Tin nhắn mới")]
-    NewMessage,
+  [Display(Name = "Tin nhắn mới")]
+  NewMessage,
 
-    [Display(Name = "Thanh toán mới")]
-    PaymentCreated,
+  [Display(Name = "Thanh toán mới")]
+  PaymentCreated,
 
-    [Display(Name = "Thanh toán thành công")]
-    PaymentSuccess,
+  [Display(Name = "Thanh toán thành công")]
+  PaymentSuccess,
 
-    [Display(Name = "Đánh giá mới")]
-    ReviewCreated,
+  [Display(Name = "Đánh giá mới")]
+  ReviewCreated,
 
-    [Display(Name = "Yêu cầu trở thành gia sư")]
-    BecomeTutorRequest,
+  [Display(Name = "Yêu cầu trở thành gia sư")]
+  BecomeTutorRequest,
 
-    [Display(Name = "Gia sư được duyệt")]
-    TutorApproved,
+  [Display(Name = "Gia sư được duyệt")]
+  TutorApproved,
 
-    [Display(Name = "Gia sư bị từ chối")]
-    TutorRejected,
+  [Display(Name = "Gia sư bị từ chối")]
+  TutorRejected,
 
-    [Display(Name = "Yêu cầu học tập đã được tạo")]
-    LearningRequestCreated,
+  [Display(Name = "Yêu cầu học tập đã được tạo")]
+  LearningRequestCreated,
 
-    [Display(Name = "Gia sư chấp nhận yêu cầu")]
-    LearningRequestAccepted,
+  [Display(Name = "Gia sư chấp nhận yêu cầu")]
+  LearningRequestAccepted,
 
-    [Display(Name = "Gia sư từ chối yêu cầu")]
-    LearningRequestRejected,
+  [Display(Name = "Gia sư từ chối yêu cầu")]
+  LearningRequestRejected,
 
-    [Display(Name = "Gia sư đã đề xuất lịch học mới")]
-    ScheduleProposalCreated,
+  [Display(Name = "Gia sư đã đề xuất lịch học mới")]
+  ScheduleProposalCreated,
 
-    [Display(Name = "Học viên đã chấp nhận đề xuất lịch học")]
-    ScheduleProposalAccepted,
+  [Display(Name = "Học viên đã chấp nhận đề xuất lịch học")]
+  ScheduleProposalAccepted,
 
-    [Display(Name = "Học viên đã từ chối đề xuất lịch học")]
-    ScheduleProposalRejected,
+  [Display(Name = "Học viên đã từ chối đề xuất lịch học")]
+  ScheduleProposalRejected,
 
-    [Display(Name = "Yêu cầu thanh toán đặt cọc")]
-    DepositPaymentCreated,
+  [Display(Name = "Yêu cầu thanh toán đặt cọc")]
+  DepositPaymentCreated,
 
-    [Display(Name = "Thanh toán đặt cọc thành công")]
-    DepositPaymentSuccess,
+  [Display(Name = "Thanh toán đặt cọc thành công")]
+  DepositPaymentSuccess,
 
-    [Display(Name = "Lớp học đã được tạo")]
-    ClassCreated,
+  [Display(Name = "Lớp học đã được tạo")]
+  ClassCreated,
 
-    [Display(Name = "Yêu cầu hết hạn lịch")]
-    LearningRequestScheduleExpired,
+  [Display(Name = "Yêu cầu hết hạn lịch")]
+  LearningRequestScheduleExpired,
 
-    [Display(Name = "Yêu cầu hết hạn thanh toán")]
-    LearningRequestPaymentExpired,
+  [Display(Name = "Yêu cầu hết hạn thanh toán")]
+  LearningRequestPaymentExpired,
 
-    [Display(Name = "Lớp học đã bắt đầu")]
-    ClassActivated,
+  [Display(Name = "Lớp học đã bắt đầu")]
+  ClassActivated,
 
-    [Display(Name = "Yêu cầu hủy lớp đã được tạo")]
-    CancellationRequestCreated,
+  [Display(Name = "Yêu cầu hủy lớp đã được tạo")]
+  CancellationRequestCreated,
 
-    [Display(Name = "Yêu cầu hủy lớp đã được xử lý")]
-    CancellationRequestResolved,
+  [Display(Name = "Yêu cầu hủy lớp đã được xử lý")]
+  CancellationRequestResolved,
 
-    [Display(Name = "Lớp học đã bị hủy")]
-    ClassCancelled
-  }
+  [Display(Name = "Lớp học đã bị hủy")]
+  ClassCancelled,
+
+  [Display(Name = "Yêu cầu hoàn thành lớp đã được tạo")]
+  ClassCompletionRequested,
+
+  [Display(Name = "Yêu cầu hoàn thành lớp đã được xác nhận")]
+  ClassCompletionConfirmed,
+
+  [Display(Name = "Yêu cầu hoàn thành lớp bị từ chối")]
+  ClassCompletionRejected,
+
+  [Display(Name = "Lớp học đã hoàn thành")]
+  ClassCompleted,
+
+  [Display(Name = "Lớp học tự động hoàn thành")]
+  ClassCompletionAutoConfirmed
 }

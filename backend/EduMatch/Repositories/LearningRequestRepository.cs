@@ -86,5 +86,15 @@ namespace EduMatch.Repositories
         TotalPages = totalCount == 0 ? 0 : (int)Math.Ceiling(totalCount / (double)parameters.PageSize)
       };
     }
+
+    public async Task<List<LearningRequest>> GetRecentByStudentIdForRecommendationAsync(long studentId, int limit)
+    {
+      return await _dbSet
+        .Include(x => x.Subject)
+        .Where(x => x.StudentId == studentId && !x.IsDeleted)
+        .OrderByDescending(x => x.CreatedAt)
+        .Take(limit)
+        .ToListAsync();
+    }
   }
 }

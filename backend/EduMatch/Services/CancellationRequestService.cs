@@ -13,6 +13,7 @@ namespace EduMatch.Services
   {
     private readonly ICancellationRequestRepository _cancellationRequestRepository;
     private readonly IClassRepository _classRepository;
+    private readonly IClassCompletionRequestRepository _classCompletionRequestRepository;
     private readonly IUserRepository _userRepository;
     private readonly INotificationService _notificationService;
     private readonly ILogger<CancellationRequestService> _logger;
@@ -20,12 +21,14 @@ namespace EduMatch.Services
     public CancellationRequestService(
       ICancellationRequestRepository cancellationRequestRepository,
       IClassRepository classRepository,
+      IClassCompletionRequestRepository classCompletionRequestRepository,
       IUserRepository userRepository,
       INotificationService notificationService,
       ILogger<CancellationRequestService> logger)
     {
       _cancellationRequestRepository = cancellationRequestRepository;
       _classRepository = classRepository;
+      _classCompletionRequestRepository = classCompletionRequestRepository;
       _userRepository = userRepository;
       _notificationService = notificationService;
       _logger = logger;
@@ -85,6 +88,11 @@ namespace EduMatch.Services
             dto.IsRefunded ?? false);
         }
 
+        if (role == UserRole.Admin)
+        {
+          await RejectPendingCompletionRequestsAsync(classEntity.Id);
+        }
+
         await _cancellationRequestRepository.SaveChangesAsync();
 
         if (role == UserRole.Admin)
@@ -108,8 +116,8 @@ namespace EduMatch.Services
         return ApiResponse<CancellationRequestDto>.SuccessResult(
           CancellationRequestMapper.ToDto(request),
           role == UserRole.Admin
-            ? "Cancellation request created and resolved successfully."
-            : "Cancellation request created successfully.");
+            ? "Yêu cầu hủy lớp đã được tạo và xử lý thành công."
+            : "Đã tạo yêu cầu hủy lớp thành công.");
       }
       catch (ConflictException ex)
       {
@@ -168,7 +176,7 @@ namespace EduMatch.Services
 
         return ApiResponse<CancellationRequestDto>.SuccessResult(
           CancellationRequestMapper.ToDto(request),
-          "Cancellation request resolved successfully.");
+          "Đã xử lý yêu cầu hủy lớp thành công.");
       }
       catch (ConflictException ex)
       {
@@ -278,7 +286,21 @@ namespace EduMatch.Services
         throw new ConflictException("Class is already cancelled.", "CLASS_ALREADY_CANCELLED");
       }
 
-      if (role != UserRole.Admin && classEntity.Status != ClassStatus.PendingStart)
+      if (classEntity.Status == ClassStatus.Completed)
+      {
+        throw new ConflictException("Class is already completed.", "CLASS_ALREADY_COMPLETED");
+      }
+
+      if (role == UserRole.Admin)
+      {
+        if (classEntity.Status is not (ClassStatus.PendingStart or ClassStatus.Active))
+        {
+          throw new ValidationException(
+            "Admin can only cancel classes in PendingStart or Active status.",
+            "CLASS_CANCELLATION_NOT_ALLOWED");
+        }
+      }
+      else if (classEntity.Status != ClassStatus.PendingStart)
       {
         throw new ValidationException(
           "Only classes in PendingStart status can be cancelled by students or tutors.",
@@ -359,8 +381,8 @@ namespace EduMatch.Services
 
       await _notificationService.SendToMultipleAsync(
         adminIds,
-        "Cancellation request created",
-        $"{requesterName} requested class cancellation for {classEntity.Code}.",
+        "Yêu cầu hủy lớp mới",
+        $"{requesterName} đã gửi yêu cầu hủy lớp {classEntity.Code}.",
         NotificationType.CancellationRequestCreated,
         "CancellationRequest",
         request.Id,
@@ -371,8 +393,8 @@ namespace EduMatch.Services
     {
       await _notificationService.SendToMultipleAsync(
         GetClassParticipantUserIds(classEntity),
-        "Cancellation request created",
-        $"Admin created a cancellation request for class {classEntity.Code}.",
+        "Yêu cầu hủy lớp đã được tạo",
+        $"Quản trị viên đã tạo một yêu cầu hủy lớp cho lớp học {classEntity.Code}.",
         NotificationType.CancellationRequestCreated,
         "CancellationRequest",
         request.Id,
@@ -382,13 +404,13 @@ namespace EduMatch.Services
     private async Task NotifyCancellationResolvedAsync(CancellationRequest request, Class classEntity)
     {
       var refundText = request.RefundAmount.HasValue
-        ? $" Refund amount: {request.RefundAmount.Value:0.##}."
+        ? $" Số tiền hoàn lại: {request.RefundAmount.Value:0.##}đ."
         : string.Empty;
 
       await _notificationService.SendToMultipleAsync(
         GetClassParticipantUserIds(classEntity),
-        "Cancellation request resolved",
-        $"Cancellation request for class {classEntity.Code} has been resolved.{refundText}",
+        "Yêu cầu hủy lớp đã được xử lý",
+        $"Yêu cầu hủy lớp {classEntity.Code} đã được xử lý.{refundText}",
         NotificationType.CancellationRequestResolved,
         "CancellationRequest",
         request.Id,
@@ -397,10 +419,18 @@ namespace EduMatch.Services
 
     private async Task NotifyClassCancelledAsync(CancellationRequest request, Class classEntity)
     {
+      var roleText = request.RequestedByRole switch
+      {
+        UserRole.Student => "Học viên",
+        UserRole.Tutor => "Gia sư",
+        UserRole.Admin => "Quản trị viên",
+        _ => "Người dùng"
+      };
+
       await _notificationService.SendToMultipleAsync(
         GetClassParticipantUserIds(classEntity),
-        "Class cancelled",
-        $"Class {classEntity.Code} was cancelled by {request.RequestedByRole}.",
+        "Lớp học đã bị hủy",
+        $"Lớp học {classEntity.Code} đã bị hủy bởi {roleText}.",
         NotificationType.ClassCancelled,
         "Class",
         classEntity.Id,
@@ -426,6 +456,19 @@ namespace EduMatch.Services
 
       return new[] { classEntity.StudentId, tutorUserId.Value }
         .Distinct();
+    }
+
+    private async Task RejectPendingCompletionRequestsAsync(long classId)
+    {
+      var pendingRequests = await _classCompletionRequestRepository
+        .FindAsync(r => r.ClassId == classId && r.Status == ClassCompletionRequestStatus.Pending);
+
+      foreach (var request in pendingRequests)
+      {
+        request.Status = ClassCompletionRequestStatus.Rejected;
+        request.RespondedAt = DateTime.UtcNow;
+        request.UpdatedAt = DateTime.UtcNow;
+      }
     }
   }
 }

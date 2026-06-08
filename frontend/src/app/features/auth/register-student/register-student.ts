@@ -173,8 +173,25 @@ import { TactileSelectComponent } from '../../../shared/components/tactile-selec
 
           <div>
             <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Ảnh đại diện</label>
-            <input type="file" accept="image/png,image/jpeg,image/webp" (change)="onAvatarChange($event)"
-                   class="tactile-input w-full text-sm font-semibold bg-white" />
+            @if (!avatar) {
+              <input type="file" accept="image/png,image/jpeg,image/webp" (change)="onAvatarChange($event)"
+                     class="tactile-input w-full text-sm font-semibold bg-white" />
+            } @else {
+              <div class="tactile-input w-full bg-slate-50 flex items-center justify-between px-3 py-2 text-sm font-semibold text-slate-700">
+                <div class="flex items-center gap-2 truncate">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4 text-slate-400 shrink-0">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                  </svg>
+                  <span class="truncate">{{ avatar.name }}</span>
+                  <span class="text-xs text-slate-400 font-normal shrink-0">({{ formatBytes(avatar.size) }})</span>
+                </div>
+                <button type="button" (click)="avatar = null; avatarError.set('')" class="text-slate-400 hover:text-duo-red transition-colors p-1" title="Xóa ảnh">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            }
             @if (avatarError()) {
               <span class="text-xs font-bold text-duo-red mt-1 block">{{ avatarError() }}</span>
             }
@@ -471,5 +488,13 @@ export class RegisterStudentPage implements OnInit {
   private readFile(event: Event): File | null {
     const input = event.target as HTMLInputElement;
     return input.files?.item(0) ?? null;
+  }
+
+  formatBytes(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
   }
 }

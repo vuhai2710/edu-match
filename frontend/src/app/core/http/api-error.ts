@@ -35,6 +35,63 @@ export class ApiBusinessError extends Error {
   }
 }
 
+const ERROR_MESSAGE_TRANSLATIONS: Record<string, string> = {
+  // English messages
+  'success': 'Thành công',
+  'success.': 'Thành công.',
+  'failed': 'Thất bại',
+  'error': 'Đã xảy ra lỗi',
+  'invalid input': 'Dữ liệu đầu vào không hợp lệ',
+  'not found': 'Không tìm thấy',
+  'created successfully': 'Tạo thành công',
+  'updated successfully': 'Cập nhật thành công',
+  'deleted successfully': 'Xóa thành công',
+  'saved successfully': 'Lưu thành công',
+  'please try again later': 'Vui lòng thử lại sau',
+  'internal server error': 'Lỗi máy chủ nội bộ',
+  'unauthorized': 'Không có quyền truy cập',
+  'forbidden': 'Bị từ chối truy cập',
+  'bad request': 'Yêu cầu không hợp lệ',
+  // Unaccented Vietnamese
+  'thanh cong': 'Thành công',
+  'that bai': 'Thất bại',
+  'loi': 'Đã xảy ra lỗi',
+  'dang nhap': 'Đăng nhập',
+  'dang ky': 'Đăng ký',
+  'dang nhap thanh cong': 'Đăng nhập thành công',
+  'dang ky thanh cong': 'Đăng ký thành công',
+  'xoa thanh cong': 'Xóa thành công',
+  'cap nhat thanh cong': 'Cập nhật thành công',
+  'tao thanh cong': 'Tạo thành công',
+  'khong tim thay': 'Không tìm thấy',
+  'du lieu khong hop le': 'Dữ liệu không hợp lệ',
+  'vui long thu lai': 'Vui lòng thử lại',
+  'mat khau': 'Mật khẩu',
+  'tai khoan': 'Tài khoản',
+  'khong the xu ly yeu cau. vui long thu lai.': 'Không thể xử lý yêu cầu. Vui lòng thử lại.',
+};
+
+function translateMessage(msg: string | null | undefined): string | null {
+  if (!msg) return msg ?? null;
+  const trimmed = msg.trim();
+  const lowerMsg = trimmed.toLowerCase();
+
+  // Exact match
+  if (ERROR_MESSAGE_TRANSLATIONS[lowerMsg]) {
+    return ERROR_MESSAGE_TRANSLATIONS[lowerMsg];
+  }
+
+  // Partial replacement fallback
+  let translatedMsg = trimmed;
+  for (const [key, value] of Object.entries(ERROR_MESSAGE_TRANSLATIONS)) {
+    if (translatedMsg.toLowerCase() === key) {
+      return value;
+    }
+  }
+
+  return trimmed;
+}
+
 export function getApiErrorMessage(
   error: unknown,
   fallback = 'Không thể xử lý yêu cầu. Vui lòng thử lại.',
@@ -102,7 +159,7 @@ export function getApiErrorDetails(
 export function unwrapApiData<T>(response: { success?: boolean; data?: T; message?: string | null; errorCode?: string | null; statusCode?: number | null }): T {
   if (!response.success || response.data == null) {
     throw new ApiBusinessError(
-      response.message ?? 'API không trả về dữ liệu.',
+      translateMessage(response.message) ?? 'API không trả về dữ liệu.',
       response.errorCode,
       response.statusCode,
     );
@@ -113,7 +170,7 @@ export function unwrapApiData<T>(response: { success?: boolean; data?: T; messag
 
 function getBodyMessage(body: ApiErrorBody | string | null | undefined): string | null {
   if (typeof body === 'string') {
-    return body.trim() || null;
+    return translateMessage(body) || null;
   }
 
   if (!body || typeof body !== 'object') {
@@ -122,10 +179,10 @@ function getBodyMessage(body: ApiErrorBody | string | null | undefined): string 
 
   const validationMessage = formatValidationErrors(body.errors);
   if (validationMessage) {
-    return validationMessage;
+    return translateMessage(validationMessage);
   }
 
-  return firstNonEmpty(body.message, body.detail, body.title);
+  return translateMessage(firstNonEmpty(body.message, body.detail, body.title));
 }
 
 function formatValidationErrors(errors: ApiErrorBody['errors']): string | null {

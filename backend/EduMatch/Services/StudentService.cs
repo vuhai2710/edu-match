@@ -52,6 +52,20 @@ namespace EduMatch.Services
       });
     }
 
+    public async Task<ApiResponse<StudentDetailDto>> GetStudentByUserIdAsync(long userId)
+    {
+      return await ServiceResponse.ExecuteAsync(async () =>
+      {
+        var profile = await _studentRepository.GetStudentDetailByUserIdAsync(userId);
+        if (profile == null)
+        {
+          throw new NotFoundException("Không tìm thấy thông tin học sinh.");
+        }
+
+        return ApiResponse<StudentDetailDto>.SuccessResult(_mapper.Map<StudentDetailDto>(profile));
+      });
+    }
+
     public async Task<ApiResponse<StudentDetailDto>> GetMyProfileAsync(long currentUserId)
     {
       return await ServiceResponse.ExecuteAsync(async () =>
@@ -108,7 +122,7 @@ namespace EduMatch.Services
 
         return ApiResponse<StudentDetailDto>.SuccessResult(
           _mapper.Map<StudentDetailDto>(profile),
-          "Cáº­p nháº­t há»“ sÆ¡ thÃ nh cÃ´ng");
+          "Cập nhật hồ sơ thành công");
       });
     }
   }

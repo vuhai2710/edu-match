@@ -25,16 +25,13 @@ export class FilesService {
         return context.set(this.clientContextToken, 'default');
     }
 
-    viewCloudinaryFile(url?: string, fileUrl?: string, observe?: 'body', options?: RequestOptions<'json'>): Observable<any>;
-    viewCloudinaryFile(url?: string, fileUrl?: string, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<any>>;
-    viewCloudinaryFile(url?: string, fileUrl?: string, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<any>>;
-    viewCloudinaryFile(url?: string, fileUrl?: string, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
-        const requestUrl = `${this.basePath}/api/Files/cloudinary/view`;
+    viewCloudinaryFile(fileUrl?: string, observe?: 'body', options?: RequestOptions<'json'>): Observable<any>;
+    viewCloudinaryFile(fileUrl?: string, observe?: 'response', options?: RequestOptions<'json'>): Observable<HttpResponse<any>>;
+    viewCloudinaryFile(fileUrl?: string, observe?: 'events', options?: RequestOptions<'json'>): Observable<HttpEvent<any>>;
+    viewCloudinaryFile(fileUrl?: string, observe?: 'body' | 'events' | 'response', options?: RequestOptions<'arraybuffer' | 'blob' | 'json' | 'text'>): Observable<any> {
+        const url = `${this.basePath}/api/Files/cloudinary/view`;
 
         let params = new HttpParams();
-        if (url != null) {
-            params = HttpParamsBuilder.addToHttpParams(params, url, 'url');
-        }
         if (fileUrl != null) {
             params = HttpParamsBuilder.addToHttpParams(params, fileUrl, 'fileUrl');
         }
@@ -55,6 +52,6 @@ export class FilesService {
             context: this.createContextWithClientId(options?.context)
         };
 
-        return this.httpClient.get(requestUrl, requestOptions);
+        return this.httpClient.get(url, requestOptions);
     }
 }

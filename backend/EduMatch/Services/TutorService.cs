@@ -315,6 +315,6 @@ public class TutorService : ITutorService
     }
 
     var baseUrl = $"{request.Scheme}://{request.Host}{request.PathBase}";
-    return $"{baseUrl}/api/Files/cloudinary/view?url={Uri.EscapeDataString(filePath)}";
+    return $"{baseUrl}/api/Files/cloudinary/view?fileUrl={Uri.EscapeDataString(filePath)}";
   }
 }

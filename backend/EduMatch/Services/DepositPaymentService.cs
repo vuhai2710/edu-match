@@ -150,7 +150,7 @@ namespace EduMatch.Services
         {
           var errorText = await response.Content.ReadAsStringAsync();
           _logger.LogError("PayOS API Error: {Error}", errorText);
-          throw new AppException("KhÃ´ng thá»ƒ táº¡o thanh toÃ¡n vá»›i PayOS.", StatusCodes.Status502BadGateway, "PAYOS_API_ERROR");
+          throw new AppException("Không thể tạo thanh toán với PayOS.", StatusCodes.Status502BadGateway, "PAYOS_API_ERROR");
         }
 
         var rsString = await response.Content.ReadAsStringAsync();
@@ -371,7 +371,7 @@ namespace EduMatch.Services
           payment.OrderCode,
           payOsOrderCode);
         throw new AppException(
-          "Ma thanh toan PayOS khong khop.",
+          "Mã thanh toán PayOS không khớp.",
           StatusCodes.Status400BadRequest,
           "PAYOS_ORDER_MISMATCH");
       }
@@ -385,7 +385,7 @@ namespace EduMatch.Services
           payment.Amount,
           payOsAmount);
         throw new AppException(
-          "So tien PayOS khong khop.",
+          "Số tiền PayOS không khớp.",
           StatusCodes.Status400BadRequest,
           "PAYOS_AMOUNT_MISMATCH");
       }

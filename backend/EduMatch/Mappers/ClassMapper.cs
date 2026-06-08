@@ -20,6 +20,7 @@ public static class ClassMapper
       SubjectId = entity.SubjectId,
       SubjectName = entity.Subject?.Name ?? string.Empty,
       StartDate = entity.StartDate,
+      EndDate = entity.EndDate,
       TimeSlots = timeSlots
         .Select(slot => new TimeSlotDto
         {

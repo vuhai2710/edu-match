@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Location } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
 
 import { StudentDetailModalComponent } from '../../../shared/components/student-detail-modal';
@@ -36,7 +37,7 @@ import { VietnameseDatePickerComponent } from '../../../shared/components/vietna
 
 @Component({
   selector: 'app-tutor-request-detail-page',
-  imports: [FormsModule, RouterLink, StudentDetailModalComponent, VietnameseDatePickerComponent],
+  imports: [FormsModule, StudentDetailModalComponent, VietnameseDatePickerComponent],
   template: `
     @if (request(); as lr) {
       <div
@@ -45,7 +46,8 @@ import { VietnameseDatePickerComponent } from '../../../shared/components/vietna
         [class.max-w-3xl]="!proposal() && !proposalFormVisible()"
       >
         <a
-          routerLink="/tutor/dashboard"
+          href="javascript:void(0)"
+          (click)="goBack($event)"
           class="text-sm font-bold text-slate-500 hover:text-slate-800"
           >← Quay lại</a
         >
@@ -381,7 +383,7 @@ import { VietnameseDatePickerComponent } from '../../../shared/components/vietna
       <!-- Student Detail Modal overlay -->
       @if (selectedStudentId()) {
         <app-student-detail-modal
-          [studentId]="selectedStudentId()"
+          [userId]="selectedStudentId()"
           (close)="selectedStudentId.set(null)"
         />
       }
@@ -394,9 +396,10 @@ import { VietnameseDatePickerComponent } from '../../../shared/components/vietna
     } @else if (errorMessage()) {
       <div class="max-w-3xl mx-auto py-8 space-y-4">
         <a
-          routerLink="/tutor/dashboard"
+          href="javascript:void(0)"
+          (click)="goBack($event)"
           class="text-sm font-bold text-slate-500 hover:text-slate-800"
-          >← Quay lại Dashboard</a
+          >← Quay lại</a
         >
         <p
           class="rounded-xl border-2 border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-duo-red"
@@ -443,6 +446,12 @@ export class TutorRequestDetailPage implements OnInit {
   private readonly requestsApi = inject(LearningRequestsService);
   private readonly proposalsApi = inject(ScheduleProposalsService);
   private readonly sessionService = inject(SessionService);
+  private readonly location = inject(Location);
+
+  goBack(event: Event): void {
+    event.preventDefault();
+    this.location.back();
+  }
 
   ngOnInit(): void {
     void this.loadRequest();
@@ -546,7 +555,8 @@ export class TutorRequestDetailPage implements OnInit {
   async acceptRequest(request: LearningRequestDto): Promise<void> {
     if (!request.id) return;
     await this.withWork(async () => {
-      await firstValueFrom(this.requestsApi.acceptLearningRequest(request.id!));
+      const response = await firstValueFrom(this.requestsApi.acceptLearningRequest(request.id!));
+      unwrapApiData(response);
       await this.router.navigateByUrl('/tutor/dashboard');
     }, 'Không chấp nhận được yêu cầu.');
   }
@@ -554,7 +564,8 @@ export class TutorRequestDetailPage implements OnInit {
   async rejectRequest(request: LearningRequestDto): Promise<void> {
     if (!request.id) return;
     await this.withWork(async () => {
-      await firstValueFrom(this.requestsApi.rejectLearningRequest(request.id!));
+      const response = await firstValueFrom(this.requestsApi.rejectLearningRequest(request.id!));
+      unwrapApiData(response);
       await this.router.navigateByUrl('/tutor/dashboard');
     }, 'Không từ chối được yêu cầu.');
   }
@@ -582,7 +593,7 @@ export class TutorRequestDetailPage implements OnInit {
     this.fieldErrors.set({});
 
     try {
-      await firstValueFrom(
+      const response = await firstValueFrom(
         this.proposalsApi.createScheduleProposal({
           learningRequestId: request.id!,
           timeSlots: this.proposalSlots(),
@@ -591,6 +602,7 @@ export class TutorRequestDetailPage implements OnInit {
           hourlyRate: this.hourlyRate!,
         }),
       );
+      unwrapApiData(response);
       await this.router.navigateByUrl('/tutor/dashboard');
     } catch (error) {
       const errorDetails = getApiErrorDetails(error);
@@ -617,7 +629,8 @@ export class TutorRequestDetailPage implements OnInit {
   async acceptProposal(proposal: ScheduleProposalDto): Promise<void> {
     if (!proposal.id) return;
     await this.withWork(async () => {
-      await firstValueFrom(this.proposalsApi.acceptScheduleProposal(proposal.id!));
+      const response = await firstValueFrom(this.proposalsApi.acceptScheduleProposal(proposal.id!));
+      unwrapApiData(response);
       await this.router.navigateByUrl('/tutor/dashboard');
     }, 'Không chấp nhận được đề xuất.');
   }
@@ -625,7 +638,8 @@ export class TutorRequestDetailPage implements OnInit {
   async rejectProposal(proposal: ScheduleProposalDto): Promise<void> {
     if (!proposal.id) return;
     await this.withWork(async () => {
-      await firstValueFrom(this.proposalsApi.rejectScheduleProposal(proposal.id!));
+      const response = await firstValueFrom(this.proposalsApi.rejectScheduleProposal(proposal.id!));
+      unwrapApiData(response);
       await this.loadRequest();
     }, 'Không từ chối được đề xuất.');
   }

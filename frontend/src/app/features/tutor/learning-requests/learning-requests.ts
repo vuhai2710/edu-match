@@ -5,7 +5,7 @@ import { firstValueFrom } from 'rxjs';
 
 import { LearningRequestDto, LearningRequestStatus, SubjectListItemDto } from '../../../api/generated/client/models';
 import { LearningRequestsService, SubjectsService } from '../../../api/generated/client/services';
-import { getApiErrorMessage } from '../../../core/http/api-error';
+import { getApiErrorMessage, unwrapApiData } from '../../../core/http/api-error';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination';
 import { StudentDetailModalComponent } from '../../../shared/components/student-detail-modal';
 import {
@@ -17,9 +17,11 @@ import {
   DAY_OPTIONS,
 } from '../../../shared/utils/api-ui';
 
+import { TactileSelectComponent } from '../../../shared/components/tactile-select/tactile-select';
+
 @Component({
   selector: 'app-tutor-learning-requests-page',
-  imports: [RouterLink, StudentDetailModalComponent, PaginationComponent, FormsModule],
+  imports: [RouterLink, StudentDetailModalComponent, PaginationComponent, FormsModule, TactileSelectComponent],
   template: `
     <div class="space-y-6">
       <div class="bg-gradient-to-r from-duo-blue to-cyan-500 rounded-3xl p-6 md:p-8 flex items-center gap-6 shadow-lg">
@@ -65,54 +67,26 @@ import {
           </div>
 
           <!-- Dropdown môn học -->
-          <div class="relative">
-            <select
-              [ngModel]="selectedSubjectId()"
-              (ngModelChange)="selectedSubjectId.set($event); page.set(1)"
-              class="tactile-input w-full text-sm font-semibold bg-white pl-4 pr-10 py-2.5 cursor-pointer appearance-none"
-            >
-              <option [ngValue]="null">Tất cả môn học</option>
-              @for (sub of subjects(); track sub.id) {
-                <option [ngValue]="sub.id">{{ sub.name }}</option>
-              }
-            </select>
-            <svg class="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
-            @if (selectedSubjectId() !== null) {
-              <button
-                (click)="selectedSubjectId.set(null); page.set(1)"
-                class="absolute right-8 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full hover:bg-slate-100 transition-all cursor-pointer"
-              >
-                ✕
-              </button>
-            }
-          </div>
+          <app-tactile-select
+            [value]="selectedSubjectId()"
+            (valueChange)="selectedSubjectId.set($event); page.set(1)"
+            [options]="subjects()"
+            valueKey="id"
+            labelKey="name"
+            placeholder="Tất cả môn học"
+            [clearable]="true"
+          />
 
           <!-- Dropdown thứ học -->
-          <div class="relative">
-            <select
-              [ngModel]="selectedDay()"
-              (ngModelChange)="selectedDay.set($event); page.set(1)"
-              class="tactile-input w-full text-sm font-semibold bg-white pl-4 pr-10 py-2.5 cursor-pointer appearance-none"
-            >
-              <option [ngValue]="null">Tất cả ngày học</option>
-              @for (day of dayOptions; track day.value) {
-                <option [ngValue]="day.value">{{ day.label }}</option>
-              }
-            </select>
-            <svg class="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
-            @if (selectedDay() !== null) {
-              <button
-                (click)="selectedDay.set(null); page.set(1)"
-                class="absolute right-8 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full hover:bg-slate-100 transition-all cursor-pointer"
-              >
-                ✕
-              </button>
-            }
-          </div>
+          <app-tactile-select
+            [value]="selectedDay()"
+            (valueChange)="selectedDay.set($event); page.set(1)"
+            [options]="dayOptions"
+            valueKey="value"
+            labelKey="label"
+            placeholder="Tất cả ngày học"
+            [clearable]="true"
+          />
 
           <!-- Nút Đặt lại -->
           <button
@@ -239,7 +213,7 @@ import {
 
     <!-- Student Detail Modal overlay -->
     @if (selectedStudentId()) {
-      <app-student-detail-modal [studentId]="selectedStudentId()" (close)="selectedStudentId.set(null)" />
+      <app-student-detail-modal [userId]="selectedStudentId()" (close)="selectedStudentId.set(null)" />
     }
   `,
 })
@@ -395,7 +369,8 @@ export class TutorLearningRequestsPage implements OnInit {
     this.isWorking.set(true);
     this.errorMessage.set('');
     try {
-      await firstValueFrom(this.requestsApi.acceptLearningRequest(request.id!));
+      const response = await firstValueFrom(this.requestsApi.acceptLearningRequest(request.id!));
+      unwrapApiData(response);
       await this.loadRequests();
     } catch (error) {
       this.errorMessage.set(getApiErrorMessage(error, 'Không chấp nhận được yêu cầu.'));
@@ -409,7 +384,8 @@ export class TutorLearningRequestsPage implements OnInit {
     this.isWorking.set(true);
     this.errorMessage.set('');
     try {
-      await firstValueFrom(this.requestsApi.rejectLearningRequest(request.id!));
+      const response = await firstValueFrom(this.requestsApi.rejectLearningRequest(request.id!));
+      unwrapApiData(response);
       await this.loadRequests();
     } catch (error) {
       this.errorMessage.set(getApiErrorMessage(error, 'Không từ chối được yêu cầu.'));

@@ -19,7 +19,7 @@ import {
   DashboardService,
   LearningRequestsService,
 } from '../../../api/generated/client/services';
-import { getApiErrorMessage } from '../../../core/http/api-error';
+import { getApiErrorMessage, unwrapApiData } from '../../../core/http/api-error';
 import {
   classStatusLabel,
   classStatusClass,
@@ -62,7 +62,7 @@ import {
         <!-- Cột bên trái: Stats cards + Yêu cầu mới & Lớp học sắp tới -->
         <div class="lg:col-span-2 space-y-6">
           <!-- 3-Column Stats Grid -->
-          <div class="grid grid-cols-3 gap-4">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <a
               routerLink="/tutor/classes"
               class="tactile-card p-4 text-center block hover:border-duo-blue hover:shadow-md transition-all group border-b-6 border-slate-200 hover:border-b-duo-blue"
@@ -101,6 +101,18 @@ import {
                 <p class="text-[10px] sm:text-xs text-slate-500 font-bold mt-1">Đánh giá TB</p>
               </div>
             </div>
+            <a
+              routerLink="/tutor/classes"
+              [queryParams]="{ status: 'Completed' }"
+              class="tactile-card p-4 text-center block hover:border-emerald-500 hover:shadow-md transition-all group border-b-6 border-slate-200 hover:border-b-emerald-500"
+            >
+              <div class="flex flex-col items-center justify-center">
+                <p class="font-display text-xl sm:text-2xl font-black text-emerald-600 leading-none">
+                  {{ dashboard()?.completedClasses ?? completedClassCount() }}
+                </p>
+                <p class="text-[10px] sm:text-xs text-slate-500 font-bold mt-1">Lớp hoàn thành</p>
+              </div>
+            </a>
           </div>
 
           <div class="grid md:grid-cols-2 gap-6 items-start">
@@ -276,7 +288,7 @@ import {
     <!-- Student Detail Modal overlay -->
     @if (selectedStudentId()) {
       <app-student-detail-modal
-        [studentId]="selectedStudentId()"
+        [userId]="selectedStudentId()"
         (close)="selectedStudentId.set(null)"
       />
     }
@@ -302,7 +314,7 @@ export class TutorDashboardPage implements OnInit {
       period = 'tối';
     }
     const name = this.session.user()?.fullName ?? '';
-    return `Chào buổi ${period}${name ? ' ' + name : ''}`;
+    return `Chào buổi ${period} ${name ? ' ' + name : ''}`;
   }
 
   get dateString(): string {
@@ -331,7 +343,8 @@ export class TutorDashboardPage implements OnInit {
   async acceptRequest(request: LearningRequestDto): Promise<void> {
     if (!request.id) return;
     await this.withWork(async () => {
-      await firstValueFrom(this.requestsApi.acceptLearningRequest(request.id!));
+      const response = await firstValueFrom(this.requestsApi.acceptLearningRequest(request.id!));
+      unwrapApiData(response);
       await this.loadDashboard();
     }, 'Không chấp nhận được yêu cầu.');
   }
@@ -339,7 +352,8 @@ export class TutorDashboardPage implements OnInit {
   async rejectRequest(request: LearningRequestDto): Promise<void> {
     if (!request.id) return;
     await this.withWork(async () => {
-      await firstValueFrom(this.requestsApi.rejectLearningRequest(request.id!));
+      const response = await firstValueFrom(this.requestsApi.rejectLearningRequest(request.id!));
+      unwrapApiData(response);
       await this.loadDashboard();
     }, 'Không từ chối được yêu cầu.');
   }
@@ -369,6 +383,10 @@ export class TutorDashboardPage implements OnInit {
 
   date(value?: Date | null): string {
     return formatDate(value);
+  }
+
+  completedClassCount(): number {
+    return this.classes().filter((item) => item.status === 'Completed').length;
   }
 
   slots(request: LearningRequestDto): string {
@@ -402,7 +420,7 @@ export class TutorDashboardPage implements OnInit {
             ),
           ),
           firstValueFrom(
-            this.classesApi.getTutorClasses(undefined, undefined, undefined, 1, 20, undefined, 'createdAt', 'desc', 'body'),
+            this.classesApi.getTutorClasses(undefined, undefined, undefined, undefined, 1, 20, undefined, 'createdAt', 'desc', 'body'),
           ),
         ]);
       this.dashboard.set(dashboardResponse.data ?? null);
