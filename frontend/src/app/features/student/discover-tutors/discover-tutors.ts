@@ -15,6 +15,10 @@ import {
   SubjectsService,
   TutorsService,
 } from '../../../api/generated/client/services';
+import {
+  RecommendationsApiService,
+  TutorRecommendationDto,
+} from '../../../api/facades/recommendations-api';
 import { getApiErrorMessage } from '../../../core/http/api-error';
 import { MascotComponent } from '../../../shared/components/mascot/mascot';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination';
@@ -192,6 +196,97 @@ import { TactileSelectComponent } from '../../../shared/components/tactile-selec
         </p>
       }
 
+      @if (isLoadingRecommendations()) {
+        <div class="grid sm:grid-cols-3 gap-4">
+          @for (item of [1, 2, 3]; track item) {
+            <div class="tactile-card p-5 animate-pulse">
+              <div class="h-14 bg-slate-100 rounded-xl"></div>
+              <div class="h-4 bg-slate-100 rounded mt-4"></div>
+              <div class="h-4 bg-slate-100 rounded mt-2 w-2/3"></div>
+            </div>
+          }
+        </div>
+      } @else if (recommendedTutors().length > 0) {
+        <section class="space-y-3">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <h2 class="font-display text-xl font-black text-slate-900">
+                {{ recommendationTitle() }}
+              </h2>
+              @if (recommendationError()) {
+                <p class="text-xs font-bold text-amber-600 mt-1">{{ recommendationError() }}</p>
+              }
+            </div>
+          </div>
+
+          <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            @for (item of recommendedTutors(); track item.tutor?.id) {
+              @if (item.tutor; as tutor) {
+                <a
+                  [routerLink]="['/student/tutor', tutor.id]"
+                  [queryParams]="activeSubjectId() ? { subjectId: activeSubjectId() } : {}"
+                  class="tactile-card p-5 hover:shadow-lg transition-all group border-duo-green"
+                >
+                  <div class="flex items-center gap-3 mb-3">
+                    @if (tutor.avatarUrl && !avatarErrors()[tutor.id!]) {
+                      <img
+                        [src]="tutor.avatarUrl"
+                        [alt]="tutor.fullName"
+                        referrerpolicy="no-referrer"
+                        (error)="handleAvatarError(tutor.id!)"
+                        class="w-14 h-14 rounded-full object-cover border-2 border-slate-100"
+                      />
+                    } @else {
+                      <div
+                        class="w-14 h-14 rounded-full bg-duo-green text-white flex items-center justify-center font-black text-lg border-b-4 border-duo-green-dark"
+                      >
+                        {{ initials(tutor.fullName) }}
+                      </div>
+                    }
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center gap-2">
+                        <h3
+                          class="font-extrabold text-slate-900 truncate group-hover:text-duo-green transition-colors"
+                        >
+                          {{ tutor.fullName }}
+                        </h3>
+                        <span class="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-black text-duo-green shrink-0">
+                          Top match
+                        </span>
+                      </div>
+                      <p class="text-sm text-slate-500 truncate">{{ subjectNames(tutor) }}</p>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center justify-between text-sm">
+                    @if (!isRecommendationFallback() && item.similarity !== null && item.similarity !== undefined) {
+                      <span class="font-extrabold text-duo-green">
+                        {{ similarityPercent(item.similarity) }}% phù hợp
+                      </span>
+                    } @else if (tutor.rating && tutor.rating > 0) {
+                      <span class="flex items-center gap-1 text-slate-600 font-bold">
+                        {{ tutor.rating }} <span class="text-amber-500">★</span>
+                      </span>
+                    } @else {
+                      <span class="text-xs text-slate-400 font-bold italic">Gợi ý phổ biến</span>
+                    }
+                    <span class="font-extrabold text-duo-green">{{ formatPrice(tutor.hourlyRate) }}/h</span>
+                  </div>
+
+                  <div class="mt-3 flex flex-wrap gap-1.5">
+                    @for (reason of item.reasons ?? []; track reason) {
+                      <span class="rounded-full bg-slate-50 px-2 py-1 text-[11px] font-bold text-slate-600 border border-slate-100">
+                        {{ reason }}
+                      </span>
+                    }
+                  </div>
+                </a>
+              }
+            }
+          </div>
+        </section>
+      }
+
       @if (isLoading() && tutors().length === 0) {
         <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           @for (item of [1, 2, 3, 4, 5, 6]; track item) {
@@ -232,11 +327,18 @@ import { TactileSelectComponent } from '../../../shared/components/tactile-selec
                     </div>
                   }
                   <div class="flex-1 min-w-0">
-                    <h3
-                      class="font-extrabold text-slate-900 truncate group-hover:text-duo-blue transition-colors"
-                    >
-                      {{ tutor.fullName }}
-                    </h3>
+                    <div class="flex items-center gap-2">
+                      <h3
+                        class="font-extrabold text-slate-900 truncate group-hover:text-duo-blue transition-colors"
+                      >
+                        {{ tutor.fullName }}
+                      </h3>
+                      @if (isRecommended(tutor.id)) {
+                        <span class="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-black text-duo-green shrink-0">
+                          Được gợi ý
+                        </span>
+                      }
+                    </div>
                     <p class="text-sm text-slate-500 truncate">{{ subjectNames(tutor) }}</p>
                   </div>
                 </div>
@@ -295,6 +397,7 @@ export class DiscoverTutorsPage implements OnInit, OnDestroy {
 
   searchQuery = '';
   tutors = signal<TutorDto[]>([]);
+  recommendedTutors = signal<TutorRecommendationDto[]>([]);
   avatarErrors = signal<Record<number | string, boolean>>({});
 
   handleAvatarError(tutorId: string | number): void {
@@ -308,8 +411,11 @@ export class DiscoverTutorsPage implements OnInit, OnDestroy {
   provinceId = signal<number | null>(null);
   wardCode = signal<string | null>(null);
   isLoading = signal(false);
+  isLoadingRecommendations = signal(false);
   isLoadingWards = signal(false);
   errorMessage = signal('');
+  recommendationError = signal('');
+  isRecommendationFallback = signal(false);
 
   // Pagination states
   page = signal(1);
@@ -330,6 +436,7 @@ export class DiscoverTutorsPage implements OnInit, OnDestroy {
   private readonly tutorsApi = inject(TutorsService);
   private readonly subjectsApi = inject(SubjectsService);
   private readonly addressApi = inject(AddressService);
+  private readonly recommendationsApi = inject(RecommendationsApiService);
 
   ngOnInit(): void {
     void this.loadInitialData();
@@ -338,6 +445,7 @@ export class DiscoverTutorsPage implements OnInit, OnDestroy {
       if (this.validatePrices()) {
         this.page.set(1);
         void this.loadTutors();
+        void this.loadRecommendations();
       }
     });
   }
@@ -371,6 +479,34 @@ export class DiscoverTutorsPage implements OnInit, OnDestroy {
       this.errorMessage.set(getApiErrorMessage(error, 'Không tải được danh sách gia sư.'));
     } finally {
       this.isLoading.set(false);
+    }
+  }
+
+  async loadRecommendations(): Promise<void> {
+    if (!this.validatePrices()) return;
+
+    this.isLoadingRecommendations.set(true);
+    this.recommendationError.set('');
+    try {
+      const response = await firstValueFrom(
+        this.recommendationsApi.getTutorRecommendations({
+          subjectId: this.activeSubjectId(),
+          provinceId: this.provinceId(),
+          wardCode: this.wardCode(),
+          minPrice: this.minPrice(),
+          maxPrice: this.maxPrice(),
+          searchTerm: this.searchQuery.trim() || null,
+        }),
+      );
+      const payload = response.data;
+      this.recommendedTutors.set(payload?.items ?? []);
+      this.isRecommendationFallback.set(!!payload?.isFallback);
+    } catch (error) {
+      this.recommendedTutors.set([]);
+      this.isRecommendationFallback.set(false);
+      this.recommendationError.set(getApiErrorMessage(error, 'Không tải được gợi ý gia sư.'));
+    } finally {
+      this.isLoadingRecommendations.set(false);
     }
   }
 
@@ -433,17 +569,20 @@ export class DiscoverTutorsPage implements OnInit, OnDestroy {
     this.priceValidationError.set('');
     this.page.set(1);
     void this.loadTutors();
+    void this.loadRecommendations();
   }
 
   triggerSearch(): void {
     this.page.set(1);
     void this.loadTutors();
+    void this.loadRecommendations();
   }
 
   setSubject(subjectId: number | null): void {
     this.activeSubjectId.set(subjectId);
     this.page.set(1);
     void this.loadTutors();
+    void this.loadRecommendations();
   }
 
   async onProvinceChange(provinceId: number | null): Promise<void> {
@@ -463,12 +602,14 @@ export class DiscoverTutorsPage implements OnInit, OnDestroy {
       }
     }
     void this.loadTutors();
+    void this.loadRecommendations();
   }
 
   setWard(wardCode: string | null): void {
     this.wardCode.set(wardCode);
     this.page.set(1);
     void this.loadTutors();
+    void this.loadRecommendations();
   }
 
   onSortChange(selection: string): void {
@@ -514,6 +655,20 @@ export class DiscoverTutorsPage implements OnInit, OnDestroy {
     return formatMoney(value);
   }
 
+  recommendationTitle(): string {
+    if (this.isRecommendationFallback()) return 'Gợi ý phổ biến';
+    return this.hasActiveFilters() ? 'Gợi ý theo lựa chọn của bạn' : 'Gợi ý dành cho bạn';
+  }
+
+  similarityPercent(value?: number | null): number {
+    return Math.round((value ?? 0) * 100);
+  }
+
+  isRecommended(tutorId?: number | null): boolean {
+    if (!tutorId) return false;
+    return this.recommendedTutors().some((item) => item.tutor?.id === tutorId);
+  }
+
   private async loadInitialData(): Promise<void> {
     try {
       const [subjectResponse, provinceResponse] = await Promise.all([
@@ -527,5 +682,6 @@ export class DiscoverTutorsPage implements OnInit, OnDestroy {
     }
 
     await this.loadTutors();
+    await this.loadRecommendations();
   }
 }

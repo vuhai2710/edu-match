@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Location } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
 
@@ -35,7 +35,7 @@ import {
 
 @Component({
   selector: 'app-learning-request-detail-page',
-  imports: [FormsModule, RouterLink, TutorDetailModalComponent],
+  imports: [FormsModule, TutorDetailModalComponent],
   template: `
     @if (request(); as lr) {
       <div class="mx-auto space-y-6" [class.max-w-6xl]="proposal()" [class.max-w-3xl]="!proposal()">

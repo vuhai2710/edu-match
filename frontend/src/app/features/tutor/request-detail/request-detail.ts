@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Location } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
 
@@ -37,7 +37,7 @@ import { VietnameseDatePickerComponent } from '../../../shared/components/vietna
 
 @Component({
   selector: 'app-tutor-request-detail-page',
-  imports: [FormsModule, RouterLink, StudentDetailModalComponent, VietnameseDatePickerComponent],
+  imports: [FormsModule, StudentDetailModalComponent, VietnameseDatePickerComponent],
   template: `
     @if (request(); as lr) {
       <div

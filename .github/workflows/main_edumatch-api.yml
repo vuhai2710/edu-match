@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - "backend/**"
+      - "backend/EduMatch/**"
       - ".github/workflows/main_edumatch-api.yml"
   workflow_dispatch:
 

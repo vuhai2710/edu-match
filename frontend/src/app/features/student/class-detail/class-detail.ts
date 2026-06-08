@@ -1,6 +1,6 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { Location } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
 
@@ -44,7 +44,7 @@ import {
 
 @Component({
   selector: 'app-student-class-detail-page',
-  imports: [RouterLink, FormsModule, StudentDetailModalComponent, TutorDetailModalComponent],
+  imports: [FormsModule, StudentDetailModalComponent, TutorDetailModalComponent],
   template: `
     @if (classItem(); as item) {
       <div class="max-w-3xl mx-auto space-y-6">

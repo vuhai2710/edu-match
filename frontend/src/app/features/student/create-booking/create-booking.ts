@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, signal, DestroyRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Location } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -22,7 +22,7 @@ import { VietnameseDatePickerComponent } from '../../../shared/components/vietna
 
 @Component({
   selector: 'app-create-booking-page',
-  imports: [FormsModule, RouterLink, VietnameseDatePickerComponent],
+  imports: [FormsModule, VietnameseDatePickerComponent],
   template: `
     @if (tutor(); as t) {
       <div class="max-w-3xl mx-auto space-y-6">

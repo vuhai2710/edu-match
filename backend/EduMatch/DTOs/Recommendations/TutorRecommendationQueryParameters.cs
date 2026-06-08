@@ -1,0 +1,26 @@
+using Microsoft.AspNetCore.Mvc;
+
+namespace EduMatch.DTOs.Recommendations
+{
+  public class TutorRecommendationQueryParameters
+  {
+    [FromQuery(Name = "subjectId")]
+    public long? SubjectId { get; set; }
+
+    [FromQuery(Name = "provinceId")]
+    public int? ProvinceId { get; set; }
+
+    [FromQuery(Name = "wardCode")]
+    public string? WardCode { get; set; }
+
+    [FromQuery(Name = "minPrice")]
+    public decimal? MinPrice { get; set; }
+
+    [FromQuery(Name = "maxPrice")]
+    public decimal? MaxPrice { get; set; }
+
+    [FromQuery(Name = "searchTerm")]
+    public string? SearchTerm { get; set; }
+  }
+}
+

@@ -293,6 +293,7 @@ builder.Services.AddScoped<IDepositPolicyService, DepositPolicyService>();
 builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.Configure<BackgroundJobSettings>(builder.Configuration.GetSection(BackgroundJobSettings.SectionName));
+builder.Services.Configure<RecommendationOptions>(builder.Configuration.GetSection(RecommendationOptions.SectionName));
 builder.Services.AddHostedService<ScheduleExpiryBackgroundService>();
 builder.Services.AddHostedService<PaymentExpiryBackgroundService>();
 builder.Services.AddHostedService<ClassActivationBackgroundService>();
@@ -305,6 +306,16 @@ builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
 
 builder.Services.AddSingleton<ICodeGeneratorService, CodeGeneratorService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddHttpClient<IRecommendationService, RecommendationService>((sp, client) =>
+{
+  var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<RecommendationOptions>>().Value;
+  if (Uri.TryCreate(options.BaseUrl, UriKind.Absolute, out var baseUri))
+  {
+    client.BaseAddress = baseUri;
+  }
+
+  client.Timeout = TimeSpan.FromSeconds(Math.Max(1, options.TimeoutSeconds));
+});
 
 builder.Services.AddScoped<ISubjectRepository, SubjectRepository>();
 builder.Services.AddScoped<ISubjectService, SubjectService>();
