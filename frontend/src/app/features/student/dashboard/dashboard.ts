@@ -61,6 +61,7 @@ import {
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <a
               routerLink="/student/classes"
+              [queryParams]="{ status: 'Active' }"
               class="tactile-card p-4 text-center block hover:border-duo-green hover:shadow-md transition-all group border-b-6 border-slate-200 hover:border-b-duo-green"
             >
               <div class="flex flex-col items-center justify-center">
@@ -72,6 +73,7 @@ import {
             </a>
             <a
               routerLink="/student/classes"
+              [queryParams]="{ status: 'PendingStart' }"
               class="tactile-card p-4 text-center block hover:border-duo-orange hover:shadow-md transition-all group border-b-6 border-slate-200 hover:border-b-duo-orange"
             >
               <div class="flex flex-col items-center justify-center">
@@ -83,6 +85,7 @@ import {
             </a>
             <a
               routerLink="/student/learning-requests"
+              [queryParams]="{ status: 'Pending' }"
               class="tactile-card p-4 text-center block hover:border-duo-blue hover:shadow-md transition-all group border-b-6 border-slate-200 hover:border-b-duo-blue"
             >
               <div class="flex flex-col items-center justify-center">

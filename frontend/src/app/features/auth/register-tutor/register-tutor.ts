@@ -340,7 +340,7 @@ import { TactileSelectComponent } from '../../../shared/components/tactile-selec
 
 
             @if (errorMessage()) {
-              <p class="rounded-xl border-2 border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-duo-red">
+              <p class="rounded-xl border-2 border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-duo-red text-center">
                 {{ errorMessage() }}
               </p>
             }

@@ -65,10 +65,11 @@ import {
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <a
               routerLink="/tutor/classes"
-              class="tactile-card p-4 text-center block hover:border-duo-blue hover:shadow-md transition-all group border-b-6 border-slate-200 hover:border-b-duo-blue"
+              [queryParams]="{ status: 'Active' }"
+              class="tactile-card p-4 text-center block hover:border-duo-green hover:shadow-md transition-all group border-b-6 border-slate-200 hover:border-b-duo-green"
             >
               <div class="flex flex-col items-center justify-center">
-                <p class="font-display text-xl sm:text-2xl font-black text-duo-blue leading-none">
+                <p class="font-display text-xl sm:text-2xl font-black text-duo-green leading-none">
                   {{ dashboard()?.activeClasses ?? 0 }}
                 </p>
                 <p class="text-[10px] sm:text-xs text-slate-500 font-bold mt-1">Lớp đang dạy</p>
@@ -76,11 +77,12 @@ import {
             </a>
             <a
               routerLink="/tutor/requests"
-              class="tactile-card p-4 text-center block hover:border-duo-green hover:shadow-md transition-all group border-b-6 border-slate-200 hover:border-b-duo-green"
+              [queryParams]="{ status: 'Pending' }"
+              class="tactile-card p-4 text-center block hover:border-duo-blue hover:shadow-md transition-all group border-b-6 border-slate-200 hover:border-b-duo-blue"
             >
               <div class="flex flex-col items-center justify-center">
-                <p class="font-display text-xl sm:text-2xl font-black text-duo-green leading-none">
-                  {{ incomingRequests().length }}
+                <p class="font-display text-xl sm:text-2xl font-black text-duo-blue leading-none">
+                  {{ dashboard()?.pendingLearningRequests ?? 0 }}
                 </p>
                 <p class="text-[10px] sm:text-xs text-slate-500 font-bold mt-1">Yêu cầu mới</p>
               </div>
@@ -396,46 +398,16 @@ export class TutorDashboardPage implements OnInit {
   private async loadDashboard(): Promise<void> {
     this.errorMessage.set('');
     try {
-      const [dashboardResponse, pendingResponse, negotiatingResponse, classesResponse] =
+      const [dashboardResponse, classesResponse] =
         await Promise.all([
           firstValueFrom(this.dashboardApi.getTutorDashboard()),
-          firstValueFrom(
-            this.requestsApi.getIncomingLearningRequests(
-              LearningRequestStatus.Pending,
-              1,
-              10,
-              undefined,
-              'createdAt',
-              'desc',
-            ),
-          ),
-          firstValueFrom(
-            this.requestsApi.getIncomingLearningRequests(
-              LearningRequestStatus.Negotiating,
-              1,
-              10,
-              undefined,
-              'createdAt',
-              'desc',
-            ),
-          ),
           firstValueFrom(
             this.classesApi.getTutorClasses(undefined, undefined, undefined, undefined, 1, 20, undefined, 'createdAt', 'desc', 'body'),
           ),
         ]);
       this.dashboard.set(dashboardResponse.data ?? null);
 
-      const merged = [
-        ...(pendingResponse.data?.items ?? []),
-        ...(negotiatingResponse.data?.items ?? []),
-      ];
-      merged.sort((a, b) => {
-        const da = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-        const db = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-        return db - da;
-      });
-
-      this.incomingRequests.set(merged);
+      this.incomingRequests.set(dashboardResponse.data?.recentLearningRequests ?? []);
       this.classes.set(classesResponse.data?.items ?? []);
     } catch (error) {
       this.errorMessage.set(getApiErrorMessage(error, 'Không tải được dashboard gia sư.'));

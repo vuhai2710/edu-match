@@ -13,6 +13,7 @@ using EduMatch.Data;
 using Google.Apis.Auth;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
 using System.Security.Claims;
@@ -116,15 +117,20 @@ public class AuthService
   {
     var payload = await GetGooglePayloadAsync(dto);
     var normalizedEmail = payload.Email.ToLower().Trim();
+    var isRegistrationRequest = IsGoogleRegistrationRequest(dto);
 
     var user = await _userRepository.GetByEmailWithProfilesAsync(normalizedEmail);
 
-    if (dto.RegistrationIntent && user != null)
+    if (user != null)
     {
-      throw new AppException("Email đã được sử dụng. Vui lòng đăng nhập bằng Google hoặc dùng email khác.", 400, "GOOGLE_ACCOUNT_EXISTS");
-    }
+      if (isRegistrationRequest)
+      {
+        throw new AppException("Tài khoản đã tồn tại", 400, "GOOGLE_ACCOUNT_EXISTS");
+      }
 
-    if (user == null)
+      user = await LinkGoogleAccountAsync(user);
+    }
+    else
     {
       user = await CreateGoogleUserAsync(payload, dto);
     }
@@ -262,9 +268,8 @@ public class AuthService
     GoogleUserPayload payload,
     GoogleLoginRequestDto dto)
   {
-    var role = dto.RegistrationIntent
-      ? dto.RequestedRole ?? UserRole.Student
-      : UserRole.Student;
+    var isRegistrationRequest = IsGoogleRegistrationRequest(dto);
+    var role = isRegistrationRequest ? dto.RequestedRole!.Value : UserRole.Student;
 
     if (role == UserRole.Admin)
     {
@@ -276,10 +281,28 @@ public class AuthService
       throw new AppException("Không hỗ trợ đăng ký tài khoản gia sư bằng Google.", 400, "GOOGLE_TUTOR_REGISTRATION_NOT_SUPPORTED");
     }
 
+    var normalizedEmail = payload.Email.ToLower().Trim();
+    var existingUser = await GetUserByEmailWithProfilesAsync(normalizedEmail, ignoreQueryFilters: true);
+    if (existingUser != null)
+    {
+      if (existingUser.IsDeleted)
+      {
+        await ReleaseRegistrationIdentityAsync(existingUser);
+      }
+      else if (isRegistrationRequest)
+      {
+        throw new AppException("Tài khoản đã tồn tại", 400, "GOOGLE_ACCOUNT_EXISTS");
+      }
+      else
+      {
+        return await LinkGoogleAccountAsync(existingUser);
+      }
+    }
+
     var user = new User
     {
       FullName = string.IsNullOrWhiteSpace(payload.Name) ? payload.Email : payload.Name.Trim(),
-      Email = payload.Email.ToLower().Trim(),
+      Email = normalizedEmail,
       Password = BCrypt.Net.BCrypt.HashPassword(GenerateRefreshToken(), workFactor: 12),
       Role = role,
       IsGoogleAccount = true,
@@ -305,13 +328,89 @@ public class AuthService
         throw new AppException("Vai trò tạo tài khoản không được hỗ trợ", 400);
     }
 
-    await _userRepository.AddAsync(user);
-    await _userRepository.SaveChangesAsync();
+    try
+    {
+      await _userRepository.AddAsync(user);
+      await _userRepository.SaveChangesAsync();
+    }
+    catch (DbUpdateException ex) when (IsUniqueEmailViolation(ex))
+    {
+      DetachGoogleUserGraph(user);
+      var duplicateUser = await GetUserByEmailWithProfilesAsync(normalizedEmail, ignoreQueryFilters: true);
+      if (duplicateUser?.IsDeleted == true)
+      {
+        await ReleaseRegistrationIdentityAsync(duplicateUser);
+        await _userRepository.AddAsync(user);
+        await _userRepository.SaveChangesAsync();
+      }
+      else if (isRegistrationRequest || duplicateUser == null)
+      {
+        throw new AppException("Tài khoản đã tồn tại", 400, "GOOGLE_ACCOUNT_EXISTS");
+      }
+      else
+      {
+        return await LinkGoogleAccountAsync(duplicateUser);
+      }
+    }
 
     AssignProfileCode(user);
     await _userRepository.SaveChangesAsync();
 
     _logger.LogInformation("New {Role} user created via Google: {Email} | Id: {Id}", role, user.Email, user.Id);
+    return user;
+  }
+
+  private static bool IsGoogleRegistrationRequest(GoogleLoginRequestDto dto)
+  {
+    return dto.RegistrationIntent && dto.RequestedRole.HasValue;
+  }
+
+  private static bool IsUniqueEmailViolation(DbUpdateException ex)
+  {
+    return ex.InnerException is PostgresException postgresException &&
+      postgresException.SqlState == PostgresErrorCodes.UniqueViolation &&
+      string.Equals(postgresException.ConstraintName, "IX_Users_Email", StringComparison.Ordinal);
+  }
+
+  private void DetachGoogleUserGraph(User user)
+  {
+    _db.Entry(user).State = EntityState.Detached;
+
+    if (user.Student != null)
+    {
+      _db.Entry(user.Student).State = EntityState.Detached;
+    }
+
+    if (user.Tutor != null)
+    {
+      _db.Entry(user.Tutor).State = EntityState.Detached;
+    }
+  }
+
+  private async Task<User?> GetUserByEmailWithProfilesAsync(string normalizedEmail, bool ignoreQueryFilters = false)
+  {
+    var query = _db.Users.AsQueryable();
+    if (ignoreQueryFilters)
+    {
+      query = query.IgnoreQueryFilters();
+    }
+
+    return await query
+      .Include(u => u.AvatarFile)
+      .Include(u => u.Tutor)
+      .Include(u => u.Student)
+      .FirstOrDefaultAsync(u => u.Email == normalizedEmail);
+  }
+
+  private async Task<User> LinkGoogleAccountAsync(User user)
+  {
+    if (!user.IsGoogleAccount)
+    {
+      user.IsGoogleAccount = true;
+      _userRepository.Update(user);
+      await _userRepository.SaveChangesAsync();
+    }
+
     return user;
   }
 
@@ -429,34 +528,24 @@ public class AuthService
 
     if (existingUserByEmail != null || existingUserByPhone != null)
     {
-      var existingUser = existingUserByEmail ?? existingUserByPhone;
-      bool canOverwrite = false;
-      if (existingUser.Role == UserRole.Tutor && existingUser.Tutor != null)
+      if (existingUserByEmail != null && !CanReuseRegistrationIdentity(existingUserByEmail))
       {
-        if (existingUser.Tutor.ApprovalStatus == TutorApprovalStatus.Rejected || existingUser.Tutor.IsDeleted || existingUser.IsDeleted)
-        {
-          canOverwrite = true;
-        }
-      }
-      else if (existingUser.IsDeleted)
-      {
-        canOverwrite = true;
+        throw new AppException("Email đã được sử dụng");
       }
 
-      if (canOverwrite)
+      if (existingUserByPhone != null && !CanReuseRegistrationIdentity(existingUserByPhone))
       {
-        await HardDeleteUserAsync(existingUser);
+        throw new AppException("Số điện thoại đã được sử dụng");
       }
-      else
+
+      var reusableUsers = existingUsers
+        .Where(CanReuseRegistrationIdentity)
+        .DistinctBy(u => u.Id)
+        .ToList();
+
+      foreach (var reusableUser in reusableUsers)
       {
-        if (existingUserByEmail != null)
-        {
-          throw new AppException("Email đã được sử dụng");
-        }
-        if (existingUserByPhone != null)
-        {
-          throw new AppException("Số điện thoại đã được sử dụng");
-        }
+        await ReleaseRegistrationIdentityAsync(reusableUser);
       }
     }
 
@@ -539,15 +628,63 @@ public class AuthService
     return await IssueTokenPairAsync(user);
   }
 
+  private static bool CanReuseRegistrationIdentity(User user)
+  {
+    return user.IsDeleted ||
+      user.Tutor?.IsDeleted == true ||
+      user.Tutor?.ApprovalStatus == TutorApprovalStatus.Rejected;
+  }
+
+  private async Task ReleaseRegistrationIdentityAsync(User user)
+  {
+    var userToRelease = await _db.Users
+      .IgnoreQueryFilters()
+      .Include(u => u.Tutor)
+      .Include(u => u.Student)
+      .FirstOrDefaultAsync(u => u.Id == user.Id) ?? user;
+
+    userToRelease.Email = BuildArchivedEmail(userToRelease);
+    userToRelease.PhoneNumber = null;
+    userToRelease.RefreshToken = null;
+    userToRelease.RefreshTokenExpiryTime = null;
+    userToRelease.IsActive = false;
+    userToRelease.IsDeleted = true;
+
+    if (userToRelease.Tutor != null)
+    {
+      userToRelease.Tutor.IsDeleted = true;
+    }
+
+    if (userToRelease.Student != null)
+    {
+      userToRelease.Student.IsDeleted = true;
+    }
+
+    _db.Users.Update(userToRelease);
+    await _db.SaveChangesAsync();
+  }
+
+  private static string BuildArchivedEmail(User user)
+  {
+    return $"deleted-{user.Id}-{Guid.NewGuid():N}@deleted.local";
+  }
+
   private async Task HardDeleteUserAsync(User user)
   {
-    if (user.Tutor != null)
+    var userToDelete = await _db.Users
+      .IgnoreQueryFilters()
+      .Include(u => u.Tutor)
+      .Include(u => u.Student)
+      .FirstOrDefaultAsync(u => u.Id == user.Id) ?? user;
+
+    if (userToDelete.Tutor != null)
     {
       var tutor = await _db.Tutors
+          .IgnoreQueryFilters()
           .Include(t => t.TutorSubjects)
           .Include(t => t.TeachingLevels)
           .Include(t => t.Address)
-          .FirstOrDefaultAsync(t => t.Id == user.Tutor.Id);
+          .FirstOrDefaultAsync(t => t.Id == userToDelete.Tutor.Id);
 
       if (tutor != null)
       {
@@ -575,11 +712,12 @@ public class AuthService
       }
     }
 
-    if (user.Student != null)
+    if (userToDelete.Student != null)
     {
       var student = await _db.Students
+          .IgnoreQueryFilters()
           .Include(s => s.Address)
-          .FirstOrDefaultAsync(s => s.Id == user.Student.Id);
+          .FirstOrDefaultAsync(s => s.Id == userToDelete.Student.Id);
       if (student != null)
       {
         if (student.Address != null)
@@ -590,40 +728,40 @@ public class AuthService
       }
     }
 
-    var passwordTokens = await _db.PasswordResetTokens.Where(t => t.UserId == user.Id).ToListAsync();
+    var passwordTokens = await _db.PasswordResetTokens.IgnoreQueryFilters().Where(t => t.UserId == userToDelete.Id).ToListAsync();
     if (passwordTokens.Any())
     {
       _db.PasswordResetTokens.RemoveRange(passwordTokens);
     }
 
-    var notifications = await _db.Notifications.Where(n => n.UserId == user.Id).ToListAsync();
+    var notifications = await _db.Notifications.IgnoreQueryFilters().Where(n => n.UserId == userToDelete.Id).ToListAsync();
     if (notifications.Any())
     {
       _db.Notifications.RemoveRange(notifications);
     }
 
-    var sentMessages = await _db.Messages.Where(m => m.SenderId == user.Id).ToListAsync();
+    var sentMessages = await _db.Messages.IgnoreQueryFilters().Where(m => m.SenderId == userToDelete.Id).ToListAsync();
     if (sentMessages.Any())
     {
       _db.Messages.RemoveRange(sentMessages);
     }
 
-    var receivedMessages = await _db.Messages.Where(m => m.ReceiverId == user.Id).ToListAsync();
+    var receivedMessages = await _db.Messages.IgnoreQueryFilters().Where(m => m.ReceiverId == userToDelete.Id).ToListAsync();
     if (receivedMessages.Any())
     {
       _db.Messages.RemoveRange(receivedMessages);
     }
 
-    if (user.AvatarFileId.HasValue)
+    if (userToDelete.AvatarFileId.HasValue)
     {
-      var avatarFile = await _db.Files.FindAsync(user.AvatarFileId.Value);
+      var avatarFile = await _db.Files.IgnoreQueryFilters().FirstOrDefaultAsync(file => file.Id == userToDelete.AvatarFileId.Value);
       if (avatarFile != null)
       {
         _db.Files.Remove(avatarFile);
       }
     }
 
-    _db.Users.Remove(user);
+    _db.Users.Remove(userToDelete);
     await _db.SaveChangesAsync();
   }
 

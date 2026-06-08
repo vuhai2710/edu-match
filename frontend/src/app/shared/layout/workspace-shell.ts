@@ -8,7 +8,8 @@ import {
   signal,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
+import { NgClass } from '@angular/common';
 import { Subscription, filter, firstValueFrom, startWith } from 'rxjs';
 
 import { AuthApiService } from '../../api/facades/auth-api';
@@ -19,7 +20,7 @@ import { SignalrService } from '../../core/realtime/signalr.service';
 
 @Component({
   selector: 'app-workspace-shell',
-  imports: [RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [RouterLink, NgClass, RouterOutlet],
   template: `
     @if (activeSegment() === 'admin') {
       <div class="min-h-screen bg-slate-50 flex font-sans">
@@ -94,7 +95,7 @@ import { SignalrService } from '../../core/realtime/signalr.service';
             @for (link of areaLinks(); track link.href) {
               <a
                 [routerLink]="link.href"
-                routerLinkActive="bg-[#d7ffb8] text-[#3f8f01] font-black border-b-2 border-[#b8f582] active"
+                [ngClass]="isActive(link.href) ? 'bg-[#d7ffb8] text-[#3f8f01] font-black border-b-2 border-[#b8f582] active' : ''"
                 class="group flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-50 [&.active]:hover:bg-[#d7ffb8] transition-colors uppercase tracking-wide"
               >
                 <!-- SVG Icon -->
@@ -298,7 +299,7 @@ import { SignalrService } from '../../core/realtime/signalr.service';
                 <!-- Notifications Bell -->
                 <a
                   [routerLink]="notificationsRoute()"
-                  routerLinkActive="bg-[#d7ffb8] active"
+                  [ngClass]="isActive(notificationsRoute()) ? 'bg-[#d7ffb8] active' : ''"
                   class="group p-2 rounded-xl hover:bg-slate-100 [&.active]:hover:bg-[#d7ffb8] transition-colors relative"
                 >
                   <svg
@@ -325,7 +326,7 @@ import { SignalrService } from '../../core/realtime/signalr.service';
                 <!-- Chat Bubble -->
                 <a
                   [routerLink]="chatRoute()"
-                  routerLinkActive="bg-[#d7ffb8] active"
+                  [ngClass]="isActive(chatRoute()) ? 'bg-[#d7ffb8] active' : ''"
                   class="group p-2 rounded-xl hover:bg-slate-100 [&.active]:hover:bg-[#d7ffb8] transition-colors relative"
                 >
                   <svg
@@ -538,7 +539,7 @@ import { SignalrService } from '../../core/realtime/signalr.service';
               @for (link of areaLinks(); track link.href) {
                 <a
                   [routerLink]="link.href"
-                  routerLinkActive="bg-[#d7ffb8] text-[#3f8f01] font-black border-b-2 border-[#b8f582] active"
+                  [ngClass]="isActive(link.href) ? 'bg-[#d7ffb8] text-[#3f8f01] font-black border-b-2 border-[#b8f582] active' : ''"
                   class="group flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-50 [&.active]:hover:bg-[#d7ffb8] transition-colors uppercase tracking-wide"
                 >
                   <div
@@ -725,7 +726,7 @@ import { SignalrService } from '../../core/realtime/signalr.service';
               @for (link of areaLinks(); track link.href) {
                 <a
                   [routerLink]="link.href"
-                  routerLinkActive="bg-[#d7ffb8] text-[#3f8f01] font-black border-b-2 border-[#b8f582] active"
+                  [ngClass]="isActive(link.href) ? 'bg-[#d7ffb8] text-[#3f8f01] font-black border-b-2 border-[#b8f582] active' : ''"
                   class="px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-50 [&.active]:hover:bg-[#d7ffb8] transition-colors uppercase tracking-wide"
                 >
                   {{ link.label }}
@@ -737,7 +738,7 @@ import { SignalrService } from '../../core/realtime/signalr.service';
               <!-- Notifications Bell -->
               <a
                 [routerLink]="notificationsRoute()"
-                routerLinkActive="bg-[#d7ffb8] active"
+                [ngClass]="isActive(notificationsRoute()) ? 'bg-[#d7ffb8] active' : ''"
                 class="group p-2 rounded-xl hover:bg-slate-100 [&.active]:hover:bg-[#d7ffb8] transition-colors relative"
               >
                 <svg
@@ -764,7 +765,7 @@ import { SignalrService } from '../../core/realtime/signalr.service';
               <!-- Chat Bubble -->
               <a
                 [routerLink]="chatRoute()"
-                routerLinkActive="bg-[#d7ffb8] active"
+                [ngClass]="isActive(chatRoute()) ? 'bg-[#d7ffb8] active' : ''"
                 class="group p-2 rounded-xl hover:bg-slate-100 [&.active]:hover:bg-[#d7ffb8] transition-colors relative"
               >
                 <svg
@@ -964,20 +965,29 @@ export class WorkspaceShellComponent implements OnInit, OnDestroy {
   });
 
   protected readonly activeMenuName = computed(() => {
-    const url = this.router.url;
-    if (url.startsWith('/admin/settings')) return 'Hồ sơ';
-    if (url.startsWith('/admin/notifications')) return 'Thông báo';
-    if (url.startsWith('/admin/chat')) return 'Trò chuyện';
+    const url = this.router.url.split('?')[0].split('#')[0];
+    if (url.includes('/settings')) return 'Hồ sơ';
+    if (url.includes('/notifications')) return 'Thông báo';
+    if (url.includes('/chat')) return 'Trò chuyện';
 
     const links = this.areaLinks();
-    const match = links.find((l) => {
-      if (l.href === '/admin/dashboard') {
-        return url === '/admin/dashboard' || url === '/admin';
-      }
-      return url.startsWith(l.href);
-    });
-    return match ? match.label : 'Quản trị';
+    const match = links.find((l) => this.isActive(l.href));
+    
+    if (match) return match.label;
+    
+    const role = this.session.role();
+    if (role === UserRole.Tutor) return 'Gia sư';
+    if (role === UserRole.Admin) return 'Quản trị';
+    return 'Học viên';
   });
+
+  protected isActive(href: string): boolean {
+    const url = this.router.url.split('?')[0].split('#')[0];
+    if (href === '/admin/dashboard') return url === '/admin/dashboard' || url === '/admin';
+    if (href === '/student/dashboard') return url === '/student/dashboard' || url === '/student';
+    if (href === '/tutor/dashboard') return url === '/tutor/dashboard' || url === '/tutor';
+    return url.startsWith(href);
+  }
 
   private signalrSub?: Subscription;
 

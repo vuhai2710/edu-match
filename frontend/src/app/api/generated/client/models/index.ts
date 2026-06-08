@@ -1126,6 +1126,8 @@ export interface TutorDashboardDto {
     totalReviews?: number;
     totalDeposits?: number;
     recentApplications?: Array<MyApplicationItemDto>;
+    pendingLearningRequests?: number;
+    recentLearningRequests?: Array<LearningRequestDto>;
 }
 
 export interface TutorDashboardDtoApiResponse {
