@@ -6,6 +6,7 @@ namespace EduMatch.Repositories.Interfaces
   {
     Task<FileEntity> CreateAsync(FileEntity file);
     Task<FileEntity?> GetByIdAsync(long id);
+    Task<int> CleanupExpiredTemporaryAsync(DateTime now);
     Task UpdateAsync(FileEntity file);
   }
 }

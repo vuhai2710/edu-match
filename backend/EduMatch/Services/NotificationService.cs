@@ -85,11 +85,22 @@ namespace EduMatch.Services
           .Group($"user:{userId}")
           .SendAsync("ReceiveNotification", payload);
 
-        _logger.LogInformation("Notification sent to user {UserId}", userId);
+        _logger.LogInformation(
+          "Notification sent to user {UserId}. Title={Title}, ReferenceType={ReferenceType}, ReferenceId={ReferenceId}",
+          userId,
+          title,
+          referenceType,
+          referenceId);
       }
       catch (System.Exception ex)
       {
-        _logger.LogError(ex, "Failed to send notification to user {UserId}", userId);
+        _logger.LogError(
+          ex,
+          "Failed to send notification to user {UserId}. Title={Title}, ReferenceType={ReferenceType}, ReferenceId={ReferenceId}",
+          userId,
+          title,
+          referenceType,
+          referenceId);
       }
     }
 

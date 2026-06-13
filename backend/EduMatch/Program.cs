@@ -298,6 +298,7 @@ builder.Services.AddHostedService<ScheduleExpiryBackgroundService>();
 builder.Services.AddHostedService<PaymentExpiryBackgroundService>();
 builder.Services.AddHostedService<ClassActivationBackgroundService>();
 builder.Services.AddHostedService<CompletionAutoConfirmBackgroundService>();
+builder.Services.AddHostedService<RegistrationUploadCleanupBackgroundService>();
 
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Email"));
 builder.Services.AddScoped<IEmailService, EmailService>();

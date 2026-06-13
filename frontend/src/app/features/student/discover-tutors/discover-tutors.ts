@@ -671,7 +671,7 @@ export class DiscoverTutorsPage implements OnInit, OnDestroy {
   }
 
   recommendationTitle(): string {
-    if (this.isRecommendationFallback()) return 'Gợi ý phổ biến';
+    if (this.isRecommendationFallback()) return 'Gia sư nổi bật';
     return this.hasActiveFilters() ? 'Gợi ý theo lựa chọn của bạn' : 'Gợi ý dành cho bạn';
   }
 

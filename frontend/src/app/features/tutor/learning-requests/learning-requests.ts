@@ -155,6 +155,7 @@ import { TactileSelectComponent } from '../../../shared/components/tactile-selec
                           Chấp nhận
                         </button>
                         <a [routerLink]="['/tutor/requests', request.id]"
+                           [queryParams]="{ action: 'propose' }"
                            class="tactile-button-blue w-full py-2 rounded-xl text-xs font-black uppercase text-center">
                           Đề xuất lịch
                         </a>

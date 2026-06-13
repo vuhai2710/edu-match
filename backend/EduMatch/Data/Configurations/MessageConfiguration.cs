@@ -11,6 +11,7 @@ namespace EduMatch.Data.Configurations
       builder.HasQueryFilter(e => !e.IsDeleted);
 
       builder.HasIndex(m => new { m.SenderId, m.ReceiverId });
+      builder.HasIndex(m => new { m.ReceiverId, m.IsRead });
 
       builder.HasOne(m => m.Sender)
         .WithMany(u => u.SentMessages)

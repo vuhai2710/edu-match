@@ -14,6 +14,8 @@ namespace EduMatch.Data.Configurations
 
       builder.HasIndex(u => u.PhoneNumber).IsUnique();
 
+      builder.HasIndex(u => u.RefreshToken);
+
       builder.Property(u => u.Email).HasMaxLength(256).IsRequired();
 
       builder.Property(u => u.PhoneNumber).HasMaxLength(10);
