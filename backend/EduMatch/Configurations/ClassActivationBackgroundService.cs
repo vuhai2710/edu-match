@@ -32,7 +32,7 @@ namespace EduMatch.Configurations
       {
         try
         {
-          await ProcessClassActivationsAsync(stoppingToken);
+          await ProcessClassActivationsAsync(DateTime.UtcNow, stoppingToken);
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
         {
@@ -47,39 +47,35 @@ namespace EduMatch.Configurations
       }
     }
 
-    private async Task ProcessClassActivationsAsync(CancellationToken ct)
+    internal async Task<int> ProcessClassActivationsAsync(DateTime nowUtc, CancellationToken ct)
     {
       using var scope = _scopeFactory.CreateScope();
       var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
       var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
 
-      var today = DateTime.UtcNow.Date;
-
       var classesToActivate = await db.Classes
         .Include(c => c.Tutor)
         .Where(c => c.Status == ClassStatus.PendingStart
           && c.StartDate.HasValue
-          && c.StartDate.Value.Date <= today)
+          && c.StartDate.Value <= nowUtc)
         .ToListAsync(ct);
 
       if (classesToActivate.Count == 0)
       {
-        return;
+        return 0;
       }
-
-      var now = DateTime.UtcNow;
 
       foreach (var cls in classesToActivate)
       {
         cls.Status = ClassStatus.Active;
-        cls.UpdatedAt = now;
+        cls.UpdatedAt = nowUtc;
       }
 
       await db.SaveChangesAsync(ct);
 
       _logger.LogInformation(
         "ClassActivationBackgroundService activated {Count} Classes at {Time}",
-        classesToActivate.Count, now);
+        classesToActivate.Count, nowUtc);
 
       foreach (var cls in classesToActivate)
       {
@@ -95,6 +91,8 @@ namespace EduMatch.Configurations
           cls.Id,
           $"/classes/{cls.Id}");
       }
+
+      return classesToActivate.Count;
     }
   }
 }

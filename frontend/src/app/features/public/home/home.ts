@@ -139,129 +139,6 @@ import { TactileSelectComponent } from '../../../shared/components/tactile-selec
                 [options]="provinces()"
                 valueKey="provinceId"
                 labelKey="provinceName"
-import { getApiErrorMessage } from '../../../core/http/api-error';
-import { MascotComponent } from '../../../shared/components/mascot/mascot';
-import { PaginationComponent } from '../../../shared/components/pagination/pagination';
-import { formatMoney } from '../../../shared/utils/api-ui';
-import { TactileSelectComponent } from '../../../shared/components/tactile-select/tactile-select';
-
-@Component({
-  selector: 'app-home-page',
-  imports: [RouterLink, MascotComponent, FormsModule, PaginationComponent, TactileSelectComponent],
-  template: `
-    <!-- Hero -->
-    <section class="relative overflow-hidden bg-gradient-to-b from-green-50 via-white to-slate-50">
-      <div
-        class="max-w-7xl mx-auto px-4 sm:px-6 py-16 md:py-24 grid md:grid-cols-2 gap-10 items-center"
-      >
-        <div class="space-y-6">
-          <div
-            class="inline-flex items-center gap-2 bg-green-100 text-green-800 px-4 py-2 rounded-full font-extrabold text-xs uppercase tracking-widest"
-          >
-            <span>🎓</span> Nền tảng kết nối học viên và gia sư
-          </div>
-          <h1
-            class="font-display text-4xl sm:text-5xl md:text-6xl font-black text-slate-900 leading-tight"
-          >
-            Tìm gia sư <span class="text-[#58cc02]">hoàn hảo</span> chỉ trong
-            <span class="text-duo-blue">5 phút</span>
-          </h1>
-          <p class="text-lg text-slate-600 leading-relaxed max-w-lg">
-            Kết nối 1-1 với gia sư chất lượng đã được xác minh. Học đúng cách, tiến bộ nhanh, từ
-            trực tiếp đến trực tuyến.
-          </p>
-          <div class="flex flex-col sm:flex-row gap-3 pt-2">
-            <a
-              routerLink="/auth/register/student"
-              class="tactile-button-green w-full sm:w-auto justify-center px-8 py-3.5 rounded-2xl text-lg font-extrabold uppercase inline-flex items-center gap-2 text-center"
-            >
-              Tôi là Học viên
-            </a>
-            <a
-              routerLink="/auth/register/tutor"
-              class="tactile-button-blue w-full sm:w-auto justify-center px-8 py-3.5 rounded-2xl text-lg font-extrabold uppercase inline-flex items-center gap-2 text-center"
-            >
-              Tôi là Gia sư
-            </a>
-          </div>
-        </div>
-        <div class="flex justify-center md:justify-end">
-          <app-mascot type="successGraduation" [size]="320" />
-        </div>
-      </div>
-    </section>
-
-    <!-- Discover Tutors Section -->
-    <section class="bg-slate-50 border-y border-slate-200 py-16">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 space-y-8">
-        <div class="text-center max-w-xl mx-auto">
-          <h2 class="font-display text-3xl md:text-4xl font-black text-slate-900">
-            Khám phá <span class="text-duo-blue">Gia sư</span>
-          </h2>
-          <p class="text-slate-500 mt-2 text-base">
-            Tìm gia sư và môn học phù hợp nhất để đạt kết quả xuất sắc
-          </p>
-        </div>
-
-        <div class="bg-white p-4 md:p-5 rounded-2xl border-2 border-slate-100 shadow-sm space-y-4">
-          <!-- Search and Sort row -->
-          <div class="grid md:grid-cols-[1fr_240px] gap-3">
-            <!-- Search input -->
-            <div class="relative w-full">
-              <input
-                type="text"
-                [ngModel]="searchQuery"
-                (ngModelChange)="onSearchQueryChange($event)"
-                placeholder="Tìm theo tên, mã gia sư, chuyên ngành"
-                class="tactile-input w-full text-sm font-semibold pl-10 pr-10"
-              />
-              @if (searchQuery) {
-                <button
-                  (click)="clearSearchQuery()"
-                  class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 font-bold w-5 h-5 flex items-center justify-center rounded-full hover:bg-slate-100 transition-all cursor-pointer"
-                >
-                  ✕
-                </button>
-              }
-            </div>
-
-            <!-- Sort dropdown -->
-            <div class="relative w-full">
-              <app-tactile-select
-                [value]="sortSelection()"
-                (valueChange)="onSortChange($event)"
-                [options]="sortOptions"
-                [clearable]="true"
-                defaultValue="createdat_desc"
-                [showPlaceholderOption]="false"
-              />
-            </div>
-          </div>
-
-          <!-- Filters row -->
-          <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            <!-- Subject select -->
-            <div class="relative">
-              <app-tactile-select
-                [value]="activeSubjectId()"
-                (valueChange)="setSubject($event)"
-                [options]="subjects()"
-                valueKey="id"
-                labelKey="name"
-                placeholder="Tất cả môn học"
-                [clearable]="true"
-                [defaultValue]="null"
-              />
-            </div>
-
-            <!-- Province select -->
-            <div class="relative">
-              <app-tactile-select
-                [value]="provinceId()"
-                (valueChange)="onProvinceChange($event)"
-                [options]="provinces()"
-                valueKey="provinceId"
-                labelKey="provinceName"
                 placeholder="Tất cả tỉnh / thành"
                 [clearable]="true"
                 [defaultValue]="null"
@@ -529,7 +406,6 @@ export class HomePage implements OnInit, OnDestroy {
   activeSubjectId = signal<number | null>(null);
   provinceId = signal<number | null>(null);
   wardCode = signal<string | null>(null);
-  wardSelect = viewChild<TactileSelectComponent>('wardSelect');
   isLoading = signal(false);
   isLoadingWards = signal(false);
   errorMessage = signal('');
@@ -546,6 +422,7 @@ export class HomePage implements OnInit, OnDestroy {
   minPrice = signal<number | null>(null);
   maxPrice = signal<number | null>(null);
   priceValidationError = signal<string>('');
+  wardSelect = viewChild<TactileSelectComponent>('wardSelect');
 
   filterSubject = new Subject<void>();
   private filterSubscription?: Subscription;
@@ -555,6 +432,181 @@ export class HomePage implements OnInit, OnDestroy {
   private readonly tutorsApi = inject(TutorsService);
   private readonly addressApi = inject(AddressService);
   private readonly lookupCache = inject(LookupCacheService);
+
+  readonly benefitCards = [
+    {
+      emoji: '🔍',
+      title: 'Tìm gia sư',
+      desc: 'Duyệt hàng ngàn gia sư với đánh giá & hồ sơ chi tiết, lọc theo môn học, vị trí, giá.',
+      bgClass: 'bg-green-100',
+    },
+    {
+      emoji: '📅',
+      title: 'Đặt lịch linh hoạt',
+      desc: 'Chọn lịch, số buổi và mục tiêu học tập. Gia sư xác nhận - bạn chỉ cần đợi kết quả!',
+      bgClass: 'bg-blue-100',
+    },
+    {
+      emoji: '💸',
+      title: 'Thanh toán an toàn',
+      desc: 'Đặt cọc minh bạch qua PayOS, hoàn tiền nếu gia sư hủy. Yên tâm 100%.',
+      bgClass: 'bg-orange-100',
+    },
+  ];
+
+  ngOnInit(): void {
+    if (this.session.isAuthenticated()) {
+      const role = this.session.role();
+      if (role === 'Tutor') {
+        void this.router.navigateByUrl('/tutor/dashboard');
+        return;
+      } else if (role === 'Admin') {
+        void this.router.navigateByUrl('/admin/dashboard');
+        return;
+      } else if (role === 'Student') {
+        void this.router.navigateByUrl('/student/dashboard');
+        return;
+      }
+    }
+
+    void this.loadInitialData();
+
+    this.filterSubscription = this.filterSubject.pipe(debounceTime(300)).subscribe(() => {
+      if (this.validatePrices()) {
+        this.page.set(1);
+        void this.loadTutors();
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.filterSubscription?.unsubscribe();
+  }
+
+  async loadTutors(): Promise<void> {
+    if (!this.validatePrices()) return;
+    this.isLoading.set(true);
+    this.errorMessage.set('');
+    try {
+      const response = await firstValueFrom(
+        this.tutorsApi.getTutors(
+          this.activeSubjectId() ?? undefined,
+          this.provinceId() ?? undefined,
+          this.wardCode() ?? undefined,
+          this.minPrice() ?? undefined,
+          this.maxPrice() ?? undefined,
+          this.page(),
+          this.pageSize(),
+          this.searchQuery.trim() || undefined,
+          this.sortColumn(),
+          this.sortDirection(),
+        ),
+      );
+      this.tutors.set(response.data?.items ?? []);
+      this.totalCount.set(response.data?.totalCount ?? 0);
+    } catch (error) {
+      this.errorMessage.set(getApiErrorMessage(error, 'Không tải được danh sách gia sư.'));
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
+
+  onSearchQueryChange(val: string): void {
+    this.searchQuery = val;
+    this.filterSubject.next();
+  }
+
+  clearSearchQuery(): void {
+    this.searchQuery = '';
+    this.filterSubject.next();
+  }
+
+  onMinPriceChange(val: number | null): void {
+    this.minPrice.set(val);
+    this.validatePrices();
+    this.filterSubject.next();
+  }
+
+  onMaxPriceChange(val: number | null): void {
+    this.maxPrice.set(val);
+    this.validatePrices();
+    this.filterSubject.next();
+  }
+
+  validatePrices(): boolean {
+    const min = this.minPrice();
+    const max = this.maxPrice();
+    if (min !== null && min !== undefined && max !== null && max !== undefined && min > max) {
+      this.priceValidationError.set('Giá tối thiểu không được lớn hơn giá tối đa.');
+      return false;
+    }
+    this.priceValidationError.set('');
+    return true;
+  }
+
+  hasActiveFilters(): boolean {
+    return !!(
+      this.searchQuery ||
+      this.activeSubjectId() !== null ||
+      this.provinceId() !== null ||
+      this.wardCode() !== null ||
+      this.minPrice() !== null ||
+      this.maxPrice() !== null ||
+      this.sortSelection() !== 'createdat_desc'
+    );
+  }
+
+  resetFilters(): void {
+    this.searchQuery = '';
+    this.activeSubjectId.set(null);
+    this.provinceId.set(null);
+    this.wardCode.set(null);
+    this.wards.set([]);
+    this.minPrice.set(null);
+    this.maxPrice.set(null);
+    this.sortSelection.set('createdat_desc');
+    this.sortColumn.set('createdat');
+    this.sortDirection.set('desc');
+    this.priceValidationError.set('');
+    this.page.set(1);
+    void this.loadTutors();
+  }
+
+  triggerSearch(): void {
+    this.page.set(1);
+    void this.loadTutors();
+  }
+
+  setSubject(subjectId: number | null): void {
+    this.activeSubjectId.set(subjectId);
+    this.page.set(1);
+    void this.loadTutors();
+  }
+
+  async onProvinceChange(provinceId: number | null): Promise<void> {
+    this.provinceId.set(provinceId);
+    this.wardCode.set(null);
+    this.wards.set([]);
+    this.page.set(1);
+    if (provinceId) {
+      this.isLoadingWards.set(true);
+      try {
+        const response = await firstValueFrom(this.addressApi.getWards(provinceId));
+        this.wards.set(response.data ?? []);
+        setTimeout(() => {
+          this.wardSelect()?.openDropdown();
+        });
+      } catch (error) {
+        this.errorMessage.set(getApiErrorMessage(error, 'Không tải được phường / xã.'));
+      } finally {
+        this.isLoadingWards.set(false);
+      }
+    }
+    void this.loadTutors();
+  }
+
+  setWard(wardCode: string | null): void {
+    this.wardCode.set(wardCode);
     this.page.set(1);
     void this.loadTutors();
   }
