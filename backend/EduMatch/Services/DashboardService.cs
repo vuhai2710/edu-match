@@ -263,6 +263,10 @@ namespace EduMatch.Services
                                                            || c.Status == ClassStatus.CancelledByAdmin)
                                                        && !c.IsDeleted);
 
+        var pendingLrCount = await _db.LearningRequests.CountAsync(lr => lr.StudentId == studentUserId 
+                                                       && (lr.Status == LearningRequestStatus.Pending || lr.Status == LearningRequestStatus.Negotiating) 
+                                                       && !lr.IsDeleted);
+
         var recentReqs = await reqQuery
           .OrderByDescending(r => r.CreatedAt)
           .Take(3)
@@ -289,6 +293,7 @@ namespace EduMatch.Services
           PendingClasses = pendingCls,
           CompletedClasses = completedCls,
           CancelledClasses = cancelledCls,
+          PendingLearningRequests = pendingLrCount,
           RecentRequests = recentReqs
         });
       });

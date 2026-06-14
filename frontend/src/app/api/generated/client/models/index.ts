@@ -955,6 +955,7 @@ export interface StudentDashboardDto {
     pendingClasses?: number;
     completedClasses?: number;
     cancelledClasses?: number;
+    pendingLearningRequests?: number;
     recentRequests?: Array<RecentRequestItemDto>;
 }
 

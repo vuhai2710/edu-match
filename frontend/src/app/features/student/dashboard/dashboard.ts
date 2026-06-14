@@ -90,7 +90,7 @@ import {
             >
               <div class="flex flex-col items-center justify-center">
                 <p class="font-display text-xl sm:text-2xl font-black text-duo-blue leading-none">
-                  {{ dashboard()?.openRequests ?? 0 }}
+                  {{ dashboard()?.pendingLearningRequests ?? 0 }}
                 </p>
                 <p class="text-[10px] sm:text-xs text-slate-500 font-bold mt-1">Yêu cầu học</p>
               </div>
