@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { LucideEye, LucideEyeOff } from '@lucide/angular';
@@ -151,6 +151,7 @@ import { TactileSelectComponent } from '../../../shared/components/tactile-selec
                 Phường / xã <span class="text-red-500">*</span>
               </label>
               <app-tactile-select
+                #wardSelect
                 [value]="wardCode()"
                 (valueChange)="wardCode.set($event); wardError.set('')"
                 [options]="wards()"
@@ -233,6 +234,8 @@ export class RegisterStudentPage implements OnInit {
   gradeLevel = Grade.Grade12;
   addressDetail = '';
   avatar: File | null = null;
+
+  wardSelect = viewChild<TactileSelectComponent>('wardSelect');
 
   showPassword = signal(false);
   fullNameError = signal('');
@@ -325,6 +328,9 @@ export class RegisterStudentPage implements OnInit {
     try {
       const response = await firstValueFrom(this.addressApi.getWards(provinceId));
       this.wards.set(response.data ?? []);
+      setTimeout(() => {
+        this.wardSelect()?.openDropdown();
+      }, 0);
     } catch (error) {
       this.errorMessage.set(getApiErrorMessage(error, 'Không tải được danh sách phường / xã.'));
     } finally {

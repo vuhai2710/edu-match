@@ -159,6 +159,7 @@ import { TactileSelectComponent } from '../../../shared/components/tactile-selec
                   Phường / xã <span class="text-red-500">*</span>
                 </label>
                 <app-tactile-select
+                  #wardSelect
                   [value]="wardCode()"
                   (valueChange)="wardCode.set($event)"
                   [options]="wards()"
@@ -270,6 +271,8 @@ import { TactileSelectComponent } from '../../../shared/components/tactile-selec
 })
 export class ProfileSettingsPage implements OnInit {
   protected readonly session = inject(SessionService);
+
+  wardSelect = viewChild<TactileSelectComponent>('wardSelect');
 
   fullName = '';
   email = '';
@@ -427,6 +430,9 @@ export class ProfileSettingsPage implements OnInit {
     this.wards.set([]);
     if (!provinceId) return;
     await this.loadWards(provinceId);
+    setTimeout(() => {
+      this.wardSelect()?.openDropdown();
+    }, 0);
   }
 
   async onSave(): Promise<void> {

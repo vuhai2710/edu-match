@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { LucideEye, LucideEyeOff } from '@lucide/angular';
@@ -168,6 +168,153 @@ import { TactileSelectComponent } from '../../../shared/components/tactile-selec
                 />
                 @if (provinceError()) {
                   <span class="text-xs font-bold text-duo-red mt-1 block">{{ provinceError() }}</span>
+import { UserRole } from '../../../core/auth/session.models';
+import { getApiErrorDetails, getApiErrorMessage, unwrapApiData } from '../../../core/http/api-error';
+import { MascotComponent } from '../../../shared/components/mascot/mascot';
+import { TactileSelectComponent } from '../../../shared/components/tactile-select/tactile-select';
+
+@Component({
+  selector: 'app-register-tutor-page',
+  imports: [
+    FormsModule,
+    RouterLink,
+    MascotComponent,
+    LucideEye,
+    LucideEyeOff,
+    TactileSelectComponent,
+  ],
+  template: `
+    <div class="min-h-[70vh] flex items-center justify-center py-12 px-4">
+      <div class="w-full max-w-3xl space-y-6">
+        @if (isRegisteredPending()) {
+          <div class="tactile-card p-8 text-center space-y-6 max-w-md mx-auto">
+            <div class="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto text-duo-orange">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-10 h-10">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h2 class="font-display text-2xl font-black text-slate-800">Đăng ký thành công</h2>
+            <p class="text-sm text-slate-600 font-bold leading-relaxed">
+              {{ registrationSuccessMessage() || 'Đã gửi yêu cầu đăng ký tài khoản gia sư. Vui lòng chờ quản trị viên phê duyệt hồ sơ của bạn.' }}
+            </p>
+            <div class="pt-2">
+              <a routerLink="/" class="tactile-button-blue block text-center w-full py-3 rounded-xl text-sm font-extrabold uppercase">
+                Về trang chủ
+              </a>
+            </div>
+          </div>
+        } @else {
+          <div class="text-center">
+            <app-mascot type="tutorWand" [size]="80" />
+            <h1 class="mt-4 font-display text-3xl font-black text-slate-900">Đăng ký Gia sư</h1>
+            <p class="mt-1 text-slate-500">Hoàn thiện hồ sơ để học viên có thể tìm thấy bạn.</p>
+          </div>
+
+          <div class="flex items-center gap-2 px-2">
+            <div class="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+              <div class="h-full bg-duo-blue rounded-full transition-all duration-500" [style.width.%]="progress()"></div>
+            </div>
+            <span class="text-xs font-bold text-slate-400">{{ progress() }}%</span>
+          </div>
+
+          <form (ngSubmit)="onRegister()" class="tactile-card p-6 sm:p-8 space-y-5">
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
+                  Họ và tên <span class="text-red-500">*</span>
+                </label>
+                <input type="text" [(ngModel)]="fullName" (ngModelChange)="fullNameError.set('')" name="fullName" class="tactile-input w-full text-sm font-semibold" />
+                @if (fullNameError()) {
+                  <span class="text-xs font-bold text-duo-red mt-1 block">{{ fullNameError() }}</span>
+                }
+              </div>
+              <div>
+                <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
+                  Email <span class="text-red-500">*</span>
+                </label>
+                <input type="email" [(ngModel)]="email" (ngModelChange)="emailError.set('')" name="email" placeholder="user@gmail.com" class="tactile-input w-full text-sm font-semibold" />
+                @if (emailError()) {
+                  <span class="text-xs font-bold text-duo-red mt-1 block">{{ emailError() }}</span>
+                }
+              </div>
+            </div>
+
+            <div class="grid sm:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
+                  Mật khẩu <span class="text-red-500">*</span>
+                </label>
+                <div class="relative">
+                  <input
+                    [type]="showPassword() ? 'text' : 'password'"
+                    [(ngModel)]="password"
+                    (ngModelChange)="onPasswordChange()"
+                    name="password"
+                    placeholder="Tối thiểu 6 ký tự"
+                    class="tactile-input w-full text-sm font-semibold pr-12"
+                  />
+                  <button
+                    (click)="showPassword.set(!showPassword())"
+                    type="button"
+                    [attr.aria-label]="showPassword() ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'"
+                    class="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-slate-500 transition-colors hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-duo-blue"
+                  >
+                    @if (showPassword()) {
+                      <svg lucideEyeOff class="h-5 w-5"></svg>
+                    } @else {
+                      <svg lucideEye class="h-5 w-5"></svg>
+                    }
+                  </button>
+                </div>
+                @if (passwordError()) {
+                  <span class="text-xs font-bold text-duo-red mt-1 block">{{ passwordError() }}</span>
+                }
+              </div>
+              <div>
+                <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
+                  Số điện thoại <span class="text-red-500">*</span>
+                </label>
+                <input
+                  type="tel"
+                  [(ngModel)]="phoneNumber"
+                  (ngModelChange)="phoneError.set('')"
+                  name="phoneNumber"
+                  maxlength="10"
+                  placeholder="0123456789"
+                  class="tactile-input w-full text-sm font-semibold"
+                />
+                @if (phoneError()) {
+                  <span class="text-xs font-bold text-duo-red mt-1 block">{{ phoneError() }}</span>
+                }
+              </div>
+              <div>
+                <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Giới tính</label>
+                <app-tactile-select
+                  [value]="gender"
+                  (valueChange)="gender = $event"
+                  [options]="genderOptions"
+                  valueKey="value"
+                  labelKey="label"
+                  [showPlaceholderOption]="false"
+                />
+              </div>
+            </div>
+
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-extrabold text-slate-700 mb-1.5">
+                  Tỉnh / thành <span class="text-red-500">*</span>
+                </label>
+                <app-tactile-select
+                  [value]="provinceId()"
+                  (valueChange)="onProvinceChange($event)"
+                  [options]="provinces()"
+                  valueKey="provinceId"
+                  labelKey="provinceName"
+                  placeholder="Chọn tỉnh / thành"
+                />
+                @if (provinceError()) {
+                  <span class="text-xs font-bold text-duo-red mt-1 block">{{ provinceError() }}</span>
                 }
               </div>
               <div>
@@ -175,6 +322,7 @@ import { TactileSelectComponent } from '../../../shared/components/tactile-selec
                   Phường / xã <span class="text-red-500">*</span>
                 </label>
                 <app-tactile-select
+                  #wardSelect
                   [value]="wardCode()"
                   (valueChange)="wardCode.set($event); wardError.set('')"
                   [options]="wards()"
@@ -386,6 +534,8 @@ export class RegisterTutorPage implements OnInit {
   avatarUpload: RegistrationFileUpload | null = null;
   cvUpload: RegistrationFileUpload | null = null;
 
+  wardSelect = viewChild<TactileSelectComponent>('wardSelect');
+
   showPassword = signal(false);
   fullNameError = signal('');
   emailError = signal('');
@@ -472,34 +622,6 @@ export class RegisterTutorPage implements OnInit {
   private readonly addressApi = inject(AddressService);
   private readonly lookupCache = inject(LookupCacheService);
   private readonly session = inject(SessionService);
-  private readonly router = inject(Router);
-
-  ngOnInit(): void {
-    void this.loadInitialData();
-  }
-
-  async onProvinceChange(provinceId: number | null): Promise<void> {
-    this.provinceId.set(provinceId);
-    this.wardCode.set(null);
-    this.wards.set([]);
-    this.provinceError.set('');
-    this.wardError.set('');
-    if (!provinceId) return;
-
-    this.isLoadingWards.set(true);
-    try {
-      const response = await firstValueFrom(this.addressApi.getWards(provinceId));
-      this.wards.set(response.data ?? []);
-    } catch (error) {
-      this.errorMessage.set(getApiErrorMessage(error, 'Không tải được danh sách phường / xã.'));
-    } finally {
-      this.isLoadingWards.set(false);
-    }
-  }
-
-  toggleSubject(subjectId?: number): void {
-    if (!subjectId) return;
-    this.subjectsError.set('');
     this.selectedSubjectIds.update((current) =>
       current.includes(subjectId)
         ? current.filter((id) => id !== subjectId)
