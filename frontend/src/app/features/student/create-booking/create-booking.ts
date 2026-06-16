@@ -19,10 +19,11 @@ import {
 } from '../../../shared/utils/api-ui';
 
 import { VietnameseDatePickerComponent } from '../../../shared/components/vietnamese-datepicker/vietnamese-datepicker';
+import { TactileSelectComponent } from '../../../shared/components/tactile-select/tactile-select';
 
 @Component({
   selector: 'app-create-booking-page',
-  imports: [FormsModule, VietnameseDatePickerComponent],
+  imports: [FormsModule, VietnameseDatePickerComponent, TactileSelectComponent],
   template: `
     @if (tutor(); as t) {
       <div class="max-w-3xl mx-auto space-y-6">
@@ -53,11 +54,14 @@ import { VietnameseDatePickerComponent } from '../../../shared/components/vietna
               @if (isSubjectFixed) {
                 <input type="text" [value]="getFixedSubjectName()" readonly class="tactile-input w-full text-sm font-semibold bg-slate-50 text-slate-500 cursor-not-allowed" />
               } @else {
-                <select [(ngModel)]="subjectId" class="tactile-input w-full text-sm font-semibold bg-white">
-                  @for (subject of t.subjects ?? []; track subject.subjectId) {
-                    <option [ngValue]="subject.subjectId">{{ subject.subjectName }}</option>
-                  }
-                </select>
+                <app-tactile-select
+                  [(value)]="subjectId"
+                  [options]="t.subjects ?? []"
+                  valueKey="subjectId"
+                  labelKey="subjectName"
+                  placeholder="Chọn môn học"
+                  [showPlaceholderOption]="false"
+                />
               }
             </div>
             <div>
@@ -72,12 +76,14 @@ import { VietnameseDatePickerComponent } from '../../../shared/components/vietna
           <div class="grid sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Số giờ mỗi buổi</label>
-              <select [(ngModel)]="hoursPerSession" (ngModelChange)="recalculateSlots()"
-                      class="tactile-input w-full text-sm font-semibold bg-white">
-                @for (hour of [0.5,1,1.5,2,2.5,3]; track hour) {
-                  <option [ngValue]="hour">{{ hour }} giờ</option>
-                }
-              </select>
+              <app-tactile-select
+                [value]="hoursPerSession"
+                (valueChange)="hoursPerSession = $event; recalculateSlots()"
+                [options]="hourOptions"
+                valueKey="value"
+                labelKey="label"
+                [showPlaceholderOption]="false"
+              />
             </div>
             <div>
               <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Ngân sách / giờ</label>
@@ -100,24 +106,26 @@ import { VietnameseDatePickerComponent } from '../../../shared/components/vietna
               <div class="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto] gap-3 items-end rounded-2xl border-2 border-slate-100 p-3">
                 <div>
                   <label class="block text-xs font-extrabold text-slate-500 mb-1">Ngày</label>
-                  <select [ngModel]="slot.day" (ngModelChange)="updateSlot(index, 'day', $event)"
-                          class="tactile-input w-full text-sm font-semibold bg-white">
-                    @for (day of dayOptions; track day.value) {
-                      <option [ngValue]="day.value">{{ day.label }}</option>
-                    }
-                  </select>
+                  <app-tactile-select
+                    [value]="slot.day"
+                    (valueChange)="updateSlot(index, 'day', $event)"
+                    [options]="dayOptions"
+                    valueKey="value"
+                    labelKey="label"
+                    [showPlaceholderOption]="false"
+                  />
                   @if (fieldErrors()['TimeSlots[' + index + '].Day']) {
                     <p class="text-xs font-bold text-duo-red mt-1">{{ fieldErrors()['TimeSlots[' + index + '].Day'] }}</p>
                   }
                 </div>
                 <div>
                   <label class="block text-xs font-extrabold text-slate-500 mb-1">Bắt đầu</label>
-                  <select [ngModel]="slot.startTime" (ngModelChange)="updateSlot(index, 'startTime', $event)"
-                          class="tactile-input w-full text-sm font-semibold bg-white">
-                    @for (time of getStartTimeOptions(slot.day); track time) {
-                      <option [value]="time">{{ time }}</option>
-                    }
-                  </select>
+                  <app-tactile-select
+                    [value]="slot.startTime"
+                    (valueChange)="updateSlot(index, 'startTime', $event)"
+                    [options]="getStartTimeOptions(slot.day)"
+                    [showPlaceholderOption]="false"
+                  />
                   @if (fieldErrors()['TimeSlots[' + index + '].StartTime']) {
                     <p class="text-xs font-bold text-duo-red mt-1">{{ fieldErrors()['TimeSlots[' + index + '].StartTime'] }}</p>
                   }
@@ -237,6 +245,7 @@ export class CreateBookingPage implements OnInit {
   fieldErrors = signal<Record<string, string>>({});
   depositPreview = signal<DepositPreviewResponseDto | null>(null);
   readonly dayOptions = DAY_OPTIONS;
+  readonly hourOptions = [0.5, 1, 1.5, 2, 2.5, 3].map(h => ({ value: h, label: `${h} giờ` }));
   readonly getStartTimeOptions = getStartTimeOptions;
 
   private readonly route = inject(ActivatedRoute);

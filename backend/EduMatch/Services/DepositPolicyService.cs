@@ -100,12 +100,6 @@ public class DepositPolicyService : IDepositPolicyService
           StatusCodes.Status200OK);
       }
     }
-    else if (await _depositPolicyRepository.HasOverlapAsync(dto.ActiveFrom, dto.ActiveTo, null))
-    {
-      return ApiResponse<DepositPolicyDto?>.Fail(
-        "Khoảng thời gian hiệu lực bị trùng với một chính sách khác.",
-        StatusCodes.Status409Conflict);
-    }
 
     var policy = new DepositPolicy
     {
@@ -142,7 +136,8 @@ public class DepositPolicyService : IDepositPolicyService
     }
 
     // Block editing expired time-based policies
-    if (policy.ActiveTo.HasValue && policy.ActiveTo.Value.Date < DateTime.UtcNow.Date)
+    var today = DateTime.UtcNow.AddHours(7).Date;
+    if (policy.ActiveTo.HasValue && policy.ActiveTo.Value.Date < today)
     {
       return ApiResponse<DepositPolicyDto?>.Fail(
         "Không thể chỉnh sửa chính sách đã hết hiệu lực.",
@@ -158,12 +153,6 @@ public class DepositPolicyService : IDepositPolicyService
           "Chính sách mặc định đã tồn tại.",
           StatusCodes.Status409Conflict);
       }
-    }
-    else if (await _depositPolicyRepository.HasOverlapAsync(dto.ActiveFrom, dto.ActiveTo, id))
-    {
-      return ApiResponse<DepositPolicyDto?>.Fail(
-        "Khoảng thời gian hiệu lực bị trùng với một chính sách khác.",
-        StatusCodes.Status409Conflict);
     }
 
     policy.DepositSessionCount = dto.DepositSessionCount;
@@ -200,7 +189,8 @@ public class DepositPolicyService : IDepositPolicyService
     }
 
     // Block deleting expired policies
-    if (policy.ActiveTo.HasValue && policy.ActiveTo.Value.Date < DateTime.UtcNow.Date)
+    var today = DateTime.UtcNow.AddHours(7).Date;
+    if (policy.ActiveTo.HasValue && policy.ActiveTo.Value.Date < today)
     {
       return ApiResponse.Fail(
         "Không thể xóa chính sách đã hết hiệu lực.",
@@ -273,19 +263,24 @@ public class DepositPolicyService : IDepositPolicyService
   {
     var messages = new List<string>();
 
-    if (dto.DepositSessionCount <= 0)
+    if (dto.DepositSessionCount <= 0 || dto.DepositSessionCount > 10)
     {
-      messages.Add("DepositSessionCount phải lớn hơn 0.");
+      messages.Add("Số buổi cọc phải từ 1 đến 10 buổi.");
     }
 
-    if (dto.DiscountPercent < 0 || dto.DiscountPercent >= 1)
+    if (IsDefaultPolicy(dto))
     {
-      messages.Add("DiscountPercent phải nằm trong khoảng từ 0 đến nhỏ hơn 1.");
+      if (dto.DiscountPercent != 0)
+      {
+        messages.Add("Chính sách mặc định chỉ cấu hình số buổi cọc, không cấu hình giảm giá.");
+      }
     }
-
-    if (IsDefaultPolicy(dto) && dto.DiscountPercent != 0)
+    else
     {
-      messages.Add("Chính sách mặc định chỉ cấu hình số buổi cọc, không cấu hình giảm giá.");
+      if (dto.DiscountPercent < 0.01m || dto.DiscountPercent > 1m)
+      {
+        messages.Add("Phần trăm giảm giá phải từ 1% đến 100%.");
+      }
     }
 
     if (dto.ActiveFrom.HasValue && dto.ActiveTo.HasValue && dto.ActiveTo.Value.Date < dto.ActiveFrom.Value.Date)

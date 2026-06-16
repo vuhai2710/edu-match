@@ -4,10 +4,10 @@ namespace EduMatch.DTOs.DepositPolicy;
 
 public class UpsertDepositPolicyDto
 {
-  [Range(1, int.MaxValue, ErrorMessage = "DepositSessionCount phải lớn hơn 0.")]
+  [Range(1, 10, ErrorMessage = "Số buổi cọc phải từ 1 đến 10 buổi.")]
   public int DepositSessionCount { get; set; }
 
-  [Range(typeof(decimal), "0", "0.9999", ErrorMessage = "DiscountPercent phải nằm trong khoảng từ 0 đến nhỏ hơn 1.")]
+  [Range(typeof(decimal), "0", "1", ErrorMessage = "DiscountPercent phải nằm trong khoảng từ 0 đến 1.")]
   public decimal DiscountPercent { get; set; }
 
   public DateTime? ActiveFrom { get; set; }
