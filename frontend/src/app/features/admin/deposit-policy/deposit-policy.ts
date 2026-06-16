@@ -258,12 +258,16 @@ import { VietnameseDatePickerComponent } from '../../../shared/components/vietna
                   <input
                     type="number"
                     min="1"
+                    max="10"
                     step="1"
                     [(ngModel)]="defaultDepositSessionCount"
                     class="w-full rounded-xl border-2 border-slate-200 px-3 py-2 focus:border-duo-blue outline-none bg-white font-black text-slate-800"
                   />
                   <span class="text-sm font-bold text-slate-600 flex-shrink-0">buổi</span>
                 </div>
+                @if (defaultDepositSessionCount < 1 || defaultDepositSessionCount > 10) {
+                  <p class="text-[11px] text-duo-red font-bold">Số buổi cọc phải từ 1 đến 10.</p>
+                }
                 @if (defaultPolicy()) {
                   <p class="text-[11px] text-slate-400 font-bold">
                     Cập nhật lần cuối:
@@ -347,12 +351,16 @@ import { VietnameseDatePickerComponent } from '../../../shared/components/vietna
                     <input
                       type="number"
                       min="1"
+                      max="10"
                       step="1"
                       [(ngModel)]="timeDepositSessionCount"
                       class="w-full rounded-xl border-2 border-slate-200 px-3 py-1.5 focus:border-duo-blue outline-none bg-white font-bold"
                     />
                     <span class="text-xs font-bold text-slate-600">buổi</span>
                   </div>
+                  @if (timeDepositSessionCount < 1 || timeDepositSessionCount > 10) {
+                    <p class="text-[11px] text-duo-red font-bold mt-1">Số buổi cọc phải từ 1 đến 10.</p>
+                  }
                 </div>
 
                 <!-- Giảm giá -->
@@ -363,8 +371,8 @@ import { VietnameseDatePickerComponent } from '../../../shared/components/vietna
                   <div class="relative">
                     <input
                       type="number"
-                      min="0"
-                      max="99"
+                      min="1"
+                      max="100"
                       step="1"
                       [ngModel]="timeDiscountPercentDisplay()"
                       (ngModelChange)="onTimeDiscountChange($event)"
@@ -375,6 +383,9 @@ import { VietnameseDatePickerComponent } from '../../../shared/components/vietna
                       >%</span
                     >
                   </div>
+                  @if (timeDiscountPercentDisplay() < 1 || timeDiscountPercentDisplay() > 100) {
+                    <p class="text-[11px] text-duo-red font-bold mt-1">Giảm giá phải từ 1% đến 100%.</p>
+                  }
                 </div>
               </div>
 
@@ -613,12 +624,16 @@ import { VietnameseDatePickerComponent } from '../../../shared/components/vietna
                     <input
                       type="number"
                       min="1"
+                      max="10"
                       step="1"
                       [(ngModel)]="editDepositSessionCount"
                       class="w-full rounded-xl border-2 border-slate-200 px-3 py-1.5 focus:border-duo-blue outline-none bg-white font-bold"
                     />
                     <span class="text-xs font-bold text-slate-600">buổi</span>
                   </div>
+                  @if (editDepositSessionCount < 1 || editDepositSessionCount > 10) {
+                    <p class="text-[11px] text-duo-red font-bold mt-1">Số buổi cọc phải từ 1 đến 10.</p>
+                  }
                 </div>
 
                 <!-- Giảm giá -->
@@ -629,8 +644,8 @@ import { VietnameseDatePickerComponent } from '../../../shared/components/vietna
                   <div class="relative">
                     <input
                       type="number"
-                      min="0"
-                      max="99"
+                      min="1"
+                      max="100"
                       step="1"
                       [ngModel]="editDiscountPercentDisplay()"
                       (ngModelChange)="onEditDiscountChange($event)"
@@ -641,6 +656,9 @@ import { VietnameseDatePickerComponent } from '../../../shared/components/vietna
                       >%</span
                     >
                   </div>
+                  @if (editDiscountPercentDisplay() < 1 || editDiscountPercentDisplay() > 100) {
+                    <p class="text-[11px] text-duo-red font-bold mt-1">Giảm giá phải từ 1% đến 100%.</p>
+                  }
                 </div>
               </div>
 
@@ -707,7 +725,7 @@ export class AdminDepositPolicyPage implements OnInit {
   isEditModalVisible = signal(false);
   editPolicyId = signal<number | null>(null);
   editDepositSessionCount = 1;
-  editDiscountPercentRaw = signal(0);
+  editDiscountPercentRaw = signal(0.01);
   editActiveFrom = '';
   editActiveTo = '';
   editError = signal('');
@@ -728,7 +746,7 @@ export class AdminDepositPolicyPage implements OnInit {
 
   // Time-based policy form state
   timeDepositSessionCount = 1;
-  timeDiscountPercentRaw = signal(0);
+  timeDiscountPercentRaw = signal(0.01);
   timeActiveFrom = '';
   timeActiveTo = '';
   isSubmittingTime = signal(false);
@@ -764,8 +782,7 @@ export class AdminDepositPolicyPage implements OnInit {
   }
 
   onTimeDiscountChange(value: number): void {
-    const pct = Math.max(0, Math.min(99, Number(value) || 0));
-    this.timeDiscountPercentRaw.set(pct / 100);
+    this.timeDiscountPercentRaw.set((Number(value) || 0) / 100);
   }
 
   percentDisplay(value?: number | null): number {
@@ -807,25 +824,37 @@ export class AdminDepositPolicyPage implements OnInit {
   }
 
   lifecycleLabel(p: DepositPolicyDto): string {
-    switch (this.lifecycleStatus(p)) {
-      case 'active':
+    const status = this.lifecycleStatus(p);
+    if (status === 'active') {
+      if (this.activePolicy()?.id === p.id) {
         return 'Đang áp dụng';
+      }
+      return 'Chờ áp dụng';
+    }
+    switch (status) {
       case 'upcoming':
         return 'Chưa hiệu lực';
       case 'expired':
         return 'Hết hiệu lực';
     }
+    return '';
   }
 
   lifecycleBadgeClass(p: DepositPolicyDto): string {
-    switch (this.lifecycleStatus(p)) {
-      case 'active':
+    const status = this.lifecycleStatus(p);
+    if (status === 'active') {
+      if (this.activePolicy()?.id === p.id) {
         return 'bg-green-50 text-duo-green';
+      }
+      return 'bg-orange-50 text-duo-orange';
+    }
+    switch (status) {
       case 'upcoming':
         return 'bg-blue-50 text-duo-blue';
       case 'expired':
         return 'bg-slate-100 text-slate-600';
     }
+    return '';
   }
 
   // ===== Actions =====
@@ -879,7 +908,7 @@ export class AdminDepositPolicyPage implements OnInit {
     if (!p.id) return;
     this.editPolicyId.set(p.id);
     this.editDepositSessionCount = p.depositSessionCount ?? 1;
-    this.editDiscountPercentRaw.set(p.discountPercent ?? 0);
+    this.editDiscountPercentRaw.set(p.discountPercent ?? 0.01);
     this.editActiveFrom = p.activeFrom ? new Date(p.activeFrom).toISOString().slice(0, 10) : '';
     this.editActiveTo = p.activeTo ? new Date(p.activeTo).toISOString().slice(0, 10) : '';
     this.editMinActiveFrom.set(this.editActiveFrom && this.editActiveFrom < this.minDate ? this.editActiveFrom : this.minDate);
@@ -898,20 +927,19 @@ export class AdminDepositPolicyPage implements OnInit {
   }
 
   onEditDiscountChange(value: number): void {
-    const pct = Math.max(0, Math.min(99, Number(value) || 0));
-    this.editDiscountPercentRaw.set(pct / 100);
+    this.editDiscountPercentRaw.set((Number(value) || 0) / 100);
   }
 
   async submitEdit(): Promise<void> {
     this.editError.set('');
 
-    if (this.editDepositSessionCount <= 0) {
-      this.editError.set('Số buổi cọc phải lớn hơn 0.');
+    if (this.editDepositSessionCount <= 0 || this.editDepositSessionCount > 10) {
+      this.editError.set('Số buổi cọc phải từ 1 đến 10 buổi.');
       return;
     }
     const discount = this.editDiscountPercentRaw();
-    if (discount < 0 || discount >= 1) {
-      this.editError.set('Phần trăm giảm giá phải từ 0 đến 99.');
+    if (discount < 0.01 || discount > 1) {
+      this.editError.set('Phần trăm giảm giá phải từ 1 đến 100.');
       return;
     }
 
@@ -979,8 +1007,8 @@ export class AdminDepositPolicyPage implements OnInit {
     this.defaultError.set('');
     this.defaultSuccess.set('');
 
-    if (this.defaultDepositSessionCount <= 0) {
-      this.defaultError.set('Số buổi cọc mặc định phải lớn hơn 0.');
+    if (this.defaultDepositSessionCount <= 0 || this.defaultDepositSessionCount > 10) {
+      this.defaultError.set('Số buổi cọc mặc định phải từ 1 đến 10 buổi.');
       return;
     }
 
@@ -1008,13 +1036,13 @@ export class AdminDepositPolicyPage implements OnInit {
     this.timeError.set('');
     this.timeSuccess.set('');
 
-    if (this.timeDepositSessionCount <= 0) {
-      this.timeError.set('Số buổi cọc phải lớn hơn 0.');
+    if (this.timeDepositSessionCount <= 0 || this.timeDepositSessionCount > 10) {
+      this.timeError.set('Số buổi cọc phải từ 1 đến 10 buổi.');
       return;
     }
     const discount = this.timeDiscountPercentRaw();
-    if (discount < 0 || discount >= 1) {
-      this.timeError.set('Phần trăm giảm giá phải từ 0 đến 99.');
+    if (discount < 0.01 || discount > 1) {
+      this.timeError.set('Phần trăm giảm giá phải từ 1 đến 100.');
       return;
     }
 
@@ -1073,7 +1101,7 @@ export class AdminDepositPolicyPage implements OnInit {
 
   resetTimeForm(): void {
     this.timeDepositSessionCount = 1;
-    this.timeDiscountPercentRaw.set(0);
+    this.timeDiscountPercentRaw.set(0.01);
     this.timeActiveFrom = '';
     this.timeActiveTo = '';
   }

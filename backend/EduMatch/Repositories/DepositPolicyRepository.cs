@@ -36,7 +36,7 @@ public class DepositPolicyRepository : Repository<DepositPolicy>, IDepositPolicy
 
   public async Task<DepositPolicy?> GetActivePolicyAsync()
   {
-    var today = DateTime.UtcNow.Date;
+    var today = DateTime.UtcNow.AddHours(7).Date;
 
     return await _dbSet
       .Where(x => !x.IsDeleted)
@@ -47,9 +47,7 @@ public class DepositPolicyRepository : Repository<DepositPolicy>, IDepositPolicy
         (x.ActiveTo == null || x.ActiveTo.Value.Date >= today))
       // Prioritize time-based policies over default (false=0 sorts before true=1)
       .OrderBy(x => x.ActiveFrom == null && x.ActiveTo == null)
-      // Among time-based policies, prefer the one with the latest start date
-      .ThenByDescending(x => x.ActiveFrom)
-      // Tiebreak by most recently updated
+      // Tiebreak by most recently updated so latest overlapping policy wins
       .ThenByDescending(x => x.UpdatedAt ?? x.CreatedAt)
       .FirstOrDefaultAsync();
   }
@@ -72,7 +70,7 @@ public class DepositPolicyRepository : Repository<DepositPolicy>, IDepositPolicy
   public async Task<bool> HasOverlapAsync(DateTime? activeFrom, DateTime? activeTo, long? excludeId)
   {
     var isDefaultPolicy = activeFrom == null && activeTo == null;
-    var today = DateTime.UtcNow.Date;
+    var today = DateTime.UtcNow.AddHours(7).Date;
     var fromDate = activeFrom?.Date;
     var toDate = activeTo?.Date;
 

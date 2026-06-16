@@ -33,7 +33,7 @@ namespace EduMatch.Controllers
     }
 
     [HttpGet("{id}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     [SwaggerOperation(OperationId = "getUserById")]
     [ProducesResponseType(typeof(ApiResponse<UserDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
@@ -41,7 +41,20 @@ namespace EduMatch.Controllers
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<UserDto>>> GetUserById(long id)
     {
-      return this.OkResponse(await _userService.GetUserByIdAsync(id));
+      var user = await _userService.GetUserByIdAsync(id);
+      
+      var currentUserId = GetCurrentUserId();
+      var isAdmin = User.IsInRole("Admin");
+
+      if (!isAdmin && currentUserId != id && user.Data != null)
+      {
+        user.Data.Email = string.Empty;
+        user.Data.Birth = null;
+        user.Data.School = null;
+        user.Data.IsGoogleAccount = false;
+      }
+
+      return this.OkResponse(user);
     }
 
     [HttpDelete("{id}")]
