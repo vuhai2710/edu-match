@@ -141,4 +141,10 @@ export class TactileSelectComponent {
     const found = this.options().find(opt => this.getOptionValue(opt) === val);
     return found ? this.getOptionLabel(found) : '';
   });
+
+  openDropdown() {
+    if (!this.disabled()) {
+      this.isOpen.set(true);
+    }
+  }
 }

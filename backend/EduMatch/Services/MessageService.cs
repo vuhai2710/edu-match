@@ -163,6 +163,13 @@ namespace EduMatch.Services
           .ToList();
     }
 
+    public Task<int> GetUnreadCountAsync(long userId)
+    {
+      return _db.Messages
+        .AsNoTracking()
+        .CountAsync(m => m.ReceiverId == userId && !m.IsRead && !m.IsDeleted);
+    }
+
     public async Task MarkAsReadAsync(long userId, long partnerId)
     {
       var unread = await _db.Messages

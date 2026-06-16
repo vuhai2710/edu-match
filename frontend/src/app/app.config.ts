@@ -1,5 +1,4 @@
 import {
-  APP_INITIALIZER,
   ApplicationConfig,
   ErrorHandler,
   LOCALE_ID,
@@ -12,7 +11,6 @@ import localeVi from '@angular/common/locales/vi';
 
 import { environment } from '../environments/environment';
 import { provideEduMatchApi } from './api/generated/provider';
-import { ProfileBootstrapService } from './core/auth/profile-bootstrap';
 import { provideAppEnv } from './core/config/app-env';
 import { AppErrorHandler } from './core/error/app-error-handler';
 import { authInterceptor } from './core/http/auth-interceptor';
@@ -35,11 +33,5 @@ export const appConfig: ApplicationConfig = {
         anchorScrolling: 'enabled',
       }),
     ),
-    {
-      provide: APP_INITIALIZER,
-      multi: true,
-      deps: [ProfileBootstrapService],
-      useFactory: (bootstrap: ProfileBootstrapService) => () => bootstrap.bootstrap(),
-    },
   ],
 };

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { Subject, Subscription, firstValueFrom } from 'rxjs';
@@ -12,10 +12,10 @@ import {
 } from '../../../api/generated/client/models';
 import {
   AddressService,
-  SubjectsService,
   TutorsService,
 } from '../../../api/generated/client/services';
 import { SessionService } from '../../../core/auth/session';
+import { LookupCacheService } from '../../../core/data/lookup-cache';
 import { getApiErrorMessage } from '../../../core/http/api-error';
 import { MascotComponent } from '../../../shared/components/mascot/mascot';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination';
@@ -148,6 +148,7 @@ import { TactileSelectComponent } from '../../../shared/components/tactile-selec
             <!-- Ward select -->
             <div class="relative">
               <app-tactile-select
+                #wardSelect
                 [value]="wardCode()"
                 (valueChange)="setWard($event)"
                 [options]="wards()"
@@ -421,6 +422,7 @@ export class HomePage implements OnInit, OnDestroy {
   minPrice = signal<number | null>(null);
   maxPrice = signal<number | null>(null);
   priceValidationError = signal<string>('');
+  wardSelect = viewChild<TactileSelectComponent>('wardSelect');
 
   filterSubject = new Subject<void>();
   private filterSubscription?: Subscription;
@@ -428,8 +430,8 @@ export class HomePage implements OnInit, OnDestroy {
   private readonly session = inject(SessionService);
   private readonly router = inject(Router);
   private readonly tutorsApi = inject(TutorsService);
-  private readonly subjectsApi = inject(SubjectsService);
   private readonly addressApi = inject(AddressService);
+  private readonly lookupCache = inject(LookupCacheService);
 
   readonly benefitCards = [
     {
@@ -591,6 +593,9 @@ export class HomePage implements OnInit, OnDestroy {
       try {
         const response = await firstValueFrom(this.addressApi.getWards(provinceId));
         this.wards.set(response.data ?? []);
+        setTimeout(() => {
+          this.wardSelect()?.openDropdown();
+        });
       } catch (error) {
         this.errorMessage.set(getApiErrorMessage(error, 'Không tải được phường / xã.'));
       } finally {
@@ -660,11 +665,11 @@ export class HomePage implements OnInit, OnDestroy {
   private async loadInitialData(): Promise<void> {
     try {
       const [subjectResponse, provinceResponse] = await Promise.all([
-        firstValueFrom(this.subjectsApi.getSubjects()),
-        firstValueFrom(this.addressApi.getProvinces()),
+        this.lookupCache.getSubjects(),
+        this.lookupCache.getProvinces(),
       ]);
-      this.subjects.set(subjectResponse.data ?? []);
-      this.provinces.set(provinceResponse.data ?? []);
+      this.subjects.set(subjectResponse);
+      this.provinces.set(provinceResponse);
     } catch (error) {
       this.errorMessage.set(getApiErrorMessage(error, 'Không tải được dữ liệu bộ lọc.'));
     }

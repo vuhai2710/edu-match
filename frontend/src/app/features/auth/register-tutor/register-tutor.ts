@@ -1,10 +1,14 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { LucideEye, LucideEyeOff } from '@lucide/angular';
 import { firstValueFrom } from 'rxjs';
 
-import { AuthApiService, RegisterAddressPayload } from '../../../api/facades/auth-api';
+import {
+  AuthApiService,
+  RegisterAddressPayload,
+  RegistrationFileUpload,
+} from '../../../api/facades/auth-api';
 import {
   AcademicDegree,
   EducationLevel,
@@ -14,8 +18,9 @@ import {
   TutorCareerStatus,
   WardDto,
 } from '../../../api/generated/client/models';
-import { AddressService, SubjectsService } from '../../../api/generated/client/services';
+import { AddressService } from '../../../api/generated/client/services';
 import { SessionService } from '../../../core/auth/session';
+import { LookupCacheService } from '../../../core/data/lookup-cache';
 import { UserRole } from '../../../core/auth/session.models';
 import { getApiErrorDetails, getApiErrorMessage, unwrapApiData } from '../../../core/http/api-error';
 import { MascotComponent } from '../../../shared/components/mascot/mascot';
@@ -170,6 +175,7 @@ import { TactileSelectComponent } from '../../../shared/components/tactile-selec
                   Phường / xã <span class="text-red-500">*</span>
                 </label>
                 <app-tactile-select
+                  #wardSelect
                   [value]="wardCode()"
                   (valueChange)="wardCode.set($event); wardError.set('')"
                   [options]="wards()"
@@ -293,7 +299,7 @@ import { TactileSelectComponent } from '../../../shared/components/tactile-selec
                       <span class="truncate">{{ avatar.name }}</span>
                       <span class="text-xs text-slate-400 font-normal shrink-0">({{ formatBytes(avatar.size) }})</span>
                     </div>
-                    <button type="button" (click)="avatar = null; avatarError.set('')" class="text-slate-400 hover:text-duo-red transition-colors p-1" title="Xóa ảnh">
+                    <button type="button" (click)="clearAvatar()" class="text-slate-400 hover:text-duo-red transition-colors p-1" title="Xóa ảnh">
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                       </svg>
@@ -302,6 +308,11 @@ import { TactileSelectComponent } from '../../../shared/components/tactile-selec
                 }
                 @if (avatarError()) {
                   <span class="text-xs font-bold text-duo-red mt-1 block">{{ avatarError() }}</span>
+                }
+                @if (isUploadingAvatar()) {
+                  <span class="text-xs font-bold text-duo-blue mt-1 block">Đang tải ảnh lên...</span>
+                } @else if (avatarUpload) {
+                  <span class="text-xs font-bold text-duo-green mt-1 block">Ảnh đã sẵn sàng.</span>
                 }
               </div>
               <div>
@@ -320,7 +331,7 @@ import { TactileSelectComponent } from '../../../shared/components/tactile-selec
                       <span class="truncate">{{ cv.name }}</span>
                       <span class="text-xs text-slate-400 font-normal shrink-0">({{ formatBytes(cv.size) }})</span>
                     </div>
-                    <button type="button" (click)="cv = null; cvError.set('')" class="text-slate-400 hover:text-duo-red transition-colors p-1" title="Xóa CV">
+                    <button type="button" (click)="clearCv()" class="text-slate-400 hover:text-duo-red transition-colors p-1" title="Xóa CV">
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                       </svg>
@@ -329,6 +340,11 @@ import { TactileSelectComponent } from '../../../shared/components/tactile-selec
                 }
                 @if (cvError()) {
                   <span class="text-xs font-bold text-duo-red mt-1 block">{{ cvError() }}</span>
+                }
+                @if (isUploadingCv()) {
+                  <span class="text-xs font-bold text-duo-blue mt-1 block">Đang tải CV lên...</span>
+                } @else if (cvUpload) {
+                  <span class="text-xs font-bold text-duo-green mt-1 block">CV đã sẵn sàng.</span>
                 }
               </div>
             </div>
@@ -368,6 +384,8 @@ export class RegisterTutorPage implements OnInit {
   major = '';
   avatar: File | null = null;
   cv: File | null = null;
+  avatarUpload: RegistrationFileUpload | null = null;
+  cvUpload: RegistrationFileUpload | null = null;
 
   showPassword = signal(false);
   fullNameError = signal('');
@@ -382,6 +400,7 @@ export class RegisterTutorPage implements OnInit {
   teachingLevelsError = signal('');
   avatarError = signal('');
   cvError = signal('');
+  wardSelect = viewChild<TactileSelectComponent>('wardSelect');
 
   provinces = signal<ProvinceDto[]>([]);
   wards = signal<WardDto[]>([]);
@@ -392,6 +411,8 @@ export class RegisterTutorPage implements OnInit {
   wardCode = signal<string | null>(null);
   isLoadingWards = signal(false);
   isSubmitting = signal(false);
+  isUploadingAvatar = signal(false);
+  isUploadingCv = signal(false);
   errorMessage = signal('');
   isRegisteredPending = signal(false);
   registrationSuccessMessage = signal('');
@@ -402,6 +423,7 @@ export class RegisterTutorPage implements OnInit {
     } else {
       this.passwordError.set('');
     }
+
   }
 
   validatePhone(): boolean {
@@ -450,7 +472,7 @@ export class RegisterTutorPage implements OnInit {
 
   private readonly authApi = inject(AuthApiService);
   private readonly addressApi = inject(AddressService);
-  private readonly subjectsApi = inject(SubjectsService);
+  private readonly lookupCache = inject(LookupCacheService);
   private readonly session = inject(SessionService);
   private readonly router = inject(Router);
 
@@ -470,6 +492,9 @@ export class RegisterTutorPage implements OnInit {
     try {
       const response = await firstValueFrom(this.addressApi.getWards(provinceId));
       this.wards.set(response.data ?? []);
+      setTimeout(() => {
+        this.wardSelect()?.openDropdown();
+      });
     } catch (error) {
       this.errorMessage.set(getApiErrorMessage(error, 'Không tải được danh sách phường / xã.'));
     } finally {
@@ -504,21 +529,82 @@ export class RegisterTutorPage implements OnInit {
     return this.selectedTeachingLevels().includes(level);
   }
 
-  onAvatarChange(event: Event): void {
+  async onAvatarChange(event: Event): Promise<void> {
     this.avatar = this.readFile(event);
+    this.avatarUpload = null;
     this.avatarError.set('');
     if (this.avatar && this.avatar.size > 5 * 1024 * 1024) {
       this.avatar = null;
       this.avatarError.set('Ảnh đại diện tối đa 5MB.');
     }
+    if (this.avatar) {
+      await this.uploadAvatar();
+    }
   }
 
-  onCvChange(event: Event): void {
+  async onCvChange(event: Event): Promise<void> {
     this.cv = this.readFile(event);
+    this.cvUpload = null;
     this.cvError.set('');
     if (this.cv && this.cv.size > 10 * 1024 * 1024) {
       this.cv = null;
       this.cvError.set('CV tối đa 10MB.');
+    }
+    if (this.cv) {
+      await this.uploadCv();
+    }
+  }
+
+  clearAvatar(): void {
+    this.avatar = null;
+    this.avatarUpload = null;
+    this.avatarError.set('');
+  }
+
+  clearCv(): void {
+    this.cv = null;
+    this.cvUpload = null;
+    this.cvError.set('');
+  }
+
+  private async uploadAvatar(): Promise<void> {
+    if (!this.avatar || this.isUploadingAvatar()) return;
+
+    this.isUploadingAvatar.set(true);
+    this.avatarError.set('');
+    try {
+      const response = await firstValueFrom(this.authApi.uploadRegistrationAvatar(this.avatar));
+      this.avatarUpload = unwrapApiData(response);
+    } catch (error) {
+      this.avatarUpload = null;
+      this.avatarError.set(getApiErrorMessage(error, 'Không tải được ảnh đại diện.'));
+    } finally {
+      this.isUploadingAvatar.set(false);
+    }
+  }
+
+  private async uploadCv(): Promise<void> {
+    if (!this.cv || this.isUploadingCv()) return;
+
+    this.isUploadingCv.set(true);
+    this.cvError.set('');
+    try {
+      const response = await firstValueFrom(this.authApi.uploadRegistrationCv(this.cv));
+      this.cvUpload = unwrapApiData(response);
+    } catch (error) {
+      this.cvUpload = null;
+      this.cvError.set(getApiErrorMessage(error, 'Không tải được CV.'));
+    } finally {
+      this.isUploadingCv.set(false);
+    }
+  }
+
+  private async ensureUploadsReady(): Promise<void> {
+    if (!this.avatarUpload) {
+      await this.uploadAvatar();
+    }
+    if (!this.cvUpload) {
+      await this.uploadCv();
     }
   }
 
@@ -534,8 +620,10 @@ export class RegisterTutorPage implements OnInit {
       Boolean(this.major.trim()) &&
       this.selectedSubjectIds().length > 0 &&
       this.selectedTeachingLevels().length > 0 &&
-      Boolean(this.avatar) &&
-      Boolean(this.cv)
+      Boolean(this.avatarUpload) &&
+      Boolean(this.cvUpload) &&
+      !this.isUploadingAvatar() &&
+      !this.isUploadingCv()
     );
   }
 
@@ -549,16 +637,19 @@ export class RegisterTutorPage implements OnInit {
     this.errorMessage.set('');
 
     try {
+      await this.ensureUploadsReady();
+      if (!this.avatarUpload || !this.cvUpload) {
+        return;
+      }
+
       const response = await firstValueFrom(
-        this.authApi.registerTutor({
+        this.authApi.registerTutorComplete({
           fullName: this.fullName,
           email: this.email,
           password: this.password,
           phoneNumber: this.phoneNumber,
           gender: this.gender,
           address,
-          avatar: this.avatar,
-          cv: this.cv,
           profile: this.profile || null,
           hourlyRate: this.hourlyRate,
           subjectIds: this.selectedSubjectIds(),
@@ -566,6 +657,10 @@ export class RegisterTutorPage implements OnInit {
           careerStatus: this.careerStatus,
           major: this.major,
           academicDegree: this.academicDegree,
+          avatarFileId: this.avatarUpload.fileId,
+          avatarUploadToken: this.avatarUpload.uploadToken,
+          cvFileId: this.cvUpload.fileId,
+          cvUploadToken: this.cvUpload.uploadToken,
         }),
       );
 
@@ -612,11 +707,11 @@ export class RegisterTutorPage implements OnInit {
   private async loadInitialData(): Promise<void> {
     try {
       const [provinceResponse, subjectResponse] = await Promise.all([
-        firstValueFrom(this.addressApi.getProvinces()),
-        firstValueFrom(this.subjectsApi.getSubjects()),
+        this.lookupCache.getProvinces(),
+        this.lookupCache.getSubjects(),
       ]);
-      this.provinces.set(provinceResponse.data ?? []);
-      this.subjects.set(subjectResponse.data ?? []);
+      this.provinces.set(provinceResponse);
+      this.subjects.set(subjectResponse);
     } catch (error) {
       this.errorMessage.set(getApiErrorMessage(error, 'Không tải được dữ liệu đăng ký.'));
     }

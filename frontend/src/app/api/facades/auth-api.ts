@@ -54,6 +54,21 @@ export interface RegisterTutorPayload extends RegisterStudentPayload {
   academicDegree: AcademicDegree;
 }
 
+export interface RegistrationFileUpload {
+  fileId: number;
+  fileUrl: string;
+  uploadToken: string;
+  purpose: string;
+  expiresAt: string;
+}
+
+export interface RegisterTutorCompletePayload extends Omit<RegisterTutorPayload, 'avatar' | 'cv'> {
+  avatarFileId: number;
+  avatarUploadToken: string;
+  cvFileId: number;
+  cvUploadToken: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthApiService {
   private readonly http = inject(HttpClient);
@@ -94,6 +109,31 @@ export class AuthApiService {
     return this.http.post<ApiResponse<LoginResponseDto>>(
       `${this.baseUrl}/register/tutor`,
       formData,
+    );
+  }
+
+  uploadRegistrationAvatar(file: File): Observable<ApiResponse<RegistrationFileUpload>> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<ApiResponse<RegistrationFileUpload>>(
+      `${this.environment.apiBaseUrl}/api/files/registration/avatar`,
+      formData,
+    );
+  }
+
+  uploadRegistrationCv(file: File): Observable<ApiResponse<RegistrationFileUpload>> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<ApiResponse<RegistrationFileUpload>>(
+      `${this.environment.apiBaseUrl}/api/files/registration/cv`,
+      formData,
+    );
+  }
+
+  registerTutorComplete(payload: RegisterTutorCompletePayload): Observable<ApiResponse<LoginResponseDto>> {
+    return this.http.post<ApiResponse<LoginResponseDto>>(
+      `${this.baseUrl}/register/tutor/complete`,
+      this.toTutorCompleteJson(payload),
     );
   }
 
@@ -156,5 +196,32 @@ export class AuthApiService {
     }
 
     return formData;
+  }
+
+  private toTutorCompleteJson(payload: RegisterTutorCompletePayload): Record<string, unknown> {
+    const address = payload.address;
+    return {
+      fullName: payload.fullName.trim(),
+      email: payload.email.trim(),
+      password: payload.password,
+      phoneNumber: payload.phoneNumber.trim(),
+      gender: payload.gender,
+      provinceId: address.provinceId,
+      provinceName: address.provinceName,
+      wardCode: address.wardCode,
+      wardName: address.wardName,
+      addressDetail: address.addressDetail?.trim() || null,
+      profile: payload.profile?.trim() || null,
+      hourlyRate: payload.hourlyRate,
+      subjectIds: payload.subjectIds,
+      teachingLevels: payload.teachingLevels,
+      careerStatus: payload.careerStatus,
+      major: payload.major.trim(),
+      academicDegree: payload.academicDegree,
+      avatarFileId: payload.avatarFileId,
+      avatarUploadToken: payload.avatarUploadToken,
+      cvFileId: payload.cvFileId,
+      cvUploadToken: payload.cvUploadToken,
+    };
   }
 }

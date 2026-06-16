@@ -74,9 +74,6 @@ namespace EduMatch.Services
       await _applicationRepository.CreateAsync(application);
 
       var tutorUser = tutorProfile.User ?? throw new DataConsistencyException("Tutor user relationship was not loaded.");
-      application.Tutor = tutorProfile;
-      application.TutorRequest = request;
-
       await _notificationService.SendAsync(
         request.StudentId,
         "Ứng tuyển mới",
@@ -85,6 +82,9 @@ namespace EduMatch.Services
         "Application",
         application.Id,
         $"/tutor-requests/{request.Id}/applications");
+
+      application.Tutor = tutorProfile;
+      application.TutorRequest = request;
 
       _logger.LogInformation("Tutor {TutorId} applied to Request {RequestId}", tutorProfile.Id, requestId);
 
@@ -324,9 +324,6 @@ namespace EduMatch.Services
 
       await _applicationRepository.CreateAsync(application);
 
-      application.Tutor = tutorProfile;
-      application.TutorRequest = request;
-
       await _notificationService.SendToMultipleAsync(
         new[] { request.StudentId, tutorProfile.UserId },
         "Ghép lớp mới",
@@ -335,6 +332,9 @@ namespace EduMatch.Services
         "Application",
         application.Id,
         $"/applications/{application.Id}");
+
+      application.Tutor = tutorProfile;
+      application.TutorRequest = request;
 
       return ApiResponse<ApplicationResponseDto>.SuccessResult(MapApplication(application), "Admin ghép lớp thành công");
     }

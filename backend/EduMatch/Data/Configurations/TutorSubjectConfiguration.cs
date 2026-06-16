@@ -13,6 +13,8 @@ namespace EduMatch.Data.Configurations
       builder.HasIndex(x => new { x.TutorId, x.SubjectId })
         .IsUnique();
 
+      builder.HasIndex(x => new { x.SubjectId, x.TutorId });
+
       builder.HasOne(x => x.Tutor)
         .WithMany(x => x.TutorSubjects)
         .HasForeignKey(x => x.TutorId)

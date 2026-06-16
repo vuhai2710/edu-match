@@ -59,7 +59,11 @@ import { VietnameseDatePickerComponent } from '../../../shared/components/vietna
               : 'space-y-6'
           "
         >
-          <div class="tactile-card p-6 h-full flex flex-col justify-between">
+          <div
+            class="tactile-card p-6 flex flex-col justify-between"
+            [class.h-full]="!proposal() && !proposalFormVisible()"
+            [class.self-start]="proposal() || proposalFormVisible()"
+          >
             <div class="space-y-4">
               <div class="flex items-start justify-between gap-3">
                 <div>
@@ -100,7 +104,10 @@ import { VietnameseDatePickerComponent } from '../../../shared/components/vietna
             </div>
 
             @if (lr.status === 'Pending') {
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-4">
+              <div class="grid gap-2 mt-4"
+                   [class.grid-cols-1]="true"
+                   [class.sm:grid-cols-3]="!proposalFormVisible()"
+                   [class.sm:grid-cols-2]="proposalFormVisible()">
                 <button
                   (click)="acceptRequest(lr)"
                   [disabled]="isWorking()"
@@ -108,13 +115,15 @@ import { VietnameseDatePickerComponent } from '../../../shared/components/vietna
                 >
                   Chấp nhận
                 </button>
-                <button
-                  (click)="openProposalForm()"
-                  [disabled]="isWorking() || proposalFormVisible()"
-                  class="tactile-button-blue w-full py-2.5 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60"
-                >
-                  Đề xuất lịch khác
-                </button>
+                @if (!proposalFormVisible()) {
+                  <button
+                    (click)="openProposalForm()"
+                    [disabled]="isWorking()"
+                    class="tactile-button-blue w-full py-2.5 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60"
+                  >
+                    Đề xuất lịch khác
+                  </button>
+                }
                 <button
                   (click)="rejectRequest(lr)"
                   [disabled]="isWorking()"
@@ -184,7 +193,10 @@ import { VietnameseDatePickerComponent } from '../../../shared/components/vietna
                         </div>
                       </div>
                     </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-6">
+                    <div class="grid gap-2 mt-6"
+                         [class.grid-cols-1]="true"
+                         [class.sm:grid-cols-3]="!proposalFormVisible()"
+                         [class.sm:grid-cols-2]="proposalFormVisible()">
                       <button
                         (click)="acceptProposal(p)"
                         [disabled]="isWorking()"
@@ -192,13 +204,15 @@ import { VietnameseDatePickerComponent } from '../../../shared/components/vietna
                       >
                         Chấp nhận đề xuất
                       </button>
-                      <button
-                        (click)="openProposalForm()"
-                        [disabled]="isWorking() || proposalFormVisible()"
-                        class="tactile-button-blue w-full py-2.5 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60"
-                      >
-                        Đề xuất lịch khác
-                      </button>
+                      @if (!proposalFormVisible()) {
+                        <button
+                          (click)="openProposalForm()"
+                          [disabled]="isWorking()"
+                          class="tactile-button-blue w-full py-2.5 rounded-xl text-sm font-extrabold uppercase disabled:opacity-60"
+                        >
+                          Đề xuất lịch khác
+                        </button>
+                      }
                       <button
                         (click)="rejectProposal(p)"
                         [disabled]="isWorking()"
@@ -684,6 +698,10 @@ export class TutorRequestDetailPage implements OnInit {
         }
       } else {
         this.proposal.set(null);
+      }
+
+      if (request.status === 'Pending' && this.route.snapshot.queryParamMap.get('action') === 'propose') {
+        this.openProposalForm();
       }
     } catch (error) {
       this.errorMessage.set(getApiErrorMessage(error, 'Không tải được yêu cầu học.'));

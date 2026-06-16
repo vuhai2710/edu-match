@@ -16,6 +16,7 @@ namespace EduMatch.Repositories
     public async Task<PagedResult<Tutor>> GetTutorsAsync(TutorQueryParameters parameters, bool isAdmin = false)
     {
       var query = _dbSet
+        .AsNoTracking()
         .Include(t => t.User)
           .ThenInclude(u => u.AvatarFile)
         .Include(t => t.Address)
@@ -32,13 +33,14 @@ namespace EduMatch.Repositories
 
       if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
       {
-        var searchTerm = parameters.SearchTerm.ToLower().Trim();
+        var searchTerm = parameters.SearchTerm.Trim();
+        var searchPattern = $"%{searchTerm}%";
         var exactTerm = parameters.SearchTerm.Trim();
         query = query.Where(t =>
             t.Code == exactTerm ||
-            (t.User.FullName != null && t.User.FullName.ToLower().Contains(searchTerm)) ||
-            (t.Profile != null && t.Profile.ToLower().Contains(searchTerm)) ||
-            (t.Major != null && t.Major.ToLower().Contains(searchTerm)));
+            (t.User.FullName != null && EF.Functions.ILike(t.User.FullName, searchPattern)) ||
+            (t.Profile != null && EF.Functions.ILike(t.Profile, searchPattern)) ||
+            (t.Major != null && EF.Functions.ILike(t.Major, searchPattern)));
       }
 
       if (parameters.ProvinceId.HasValue)
@@ -103,6 +105,7 @@ namespace EduMatch.Repositories
     public async Task<List<Tutor>> GetRecommendationCandidatesAsync(TutorRecommendationQueryParameters parameters, int rankingLimit)
     {
       var query = _dbSet
+        .AsNoTracking()
         .Include(t => t.User)
           .ThenInclude(u => u.AvatarFile)
         .Include(t => t.Address)
@@ -143,13 +146,14 @@ namespace EduMatch.Repositories
 
       if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
       {
-        var searchTerm = parameters.SearchTerm.ToLower().Trim();
+        var searchTerm = parameters.SearchTerm.Trim();
+        var searchPattern = $"%{searchTerm}%";
         var exactTerm = parameters.SearchTerm.Trim();
         query = query.Where(t =>
           t.Code == exactTerm ||
-          (t.User.FullName != null && t.User.FullName.ToLower().Contains(searchTerm)) ||
-          (t.Profile != null && t.Profile.ToLower().Contains(searchTerm)) ||
-          (t.Major != null && t.Major.ToLower().Contains(searchTerm)));
+          (t.User.FullName != null && EF.Functions.ILike(t.User.FullName, searchPattern)) ||
+          (t.Profile != null && EF.Functions.ILike(t.Profile, searchPattern)) ||
+          (t.Major != null && EF.Functions.ILike(t.Major, searchPattern)));
       }
 
       return await query
@@ -179,6 +183,7 @@ namespace EduMatch.Repositories
       var normalizedCode = code.Trim().ToUpper();
 
       return await _dbSet
+        .AsNoTracking()
         .Include(t => t.User)
           .ThenInclude(u => u.AvatarFile)
         .Include(t => t.Address)

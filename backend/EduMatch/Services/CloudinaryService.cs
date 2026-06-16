@@ -13,6 +13,11 @@ namespace EduMatch.Services
     private const long AvatarMaxSizeInBytes = 5 * 1024 * 1024;
     private const long CvMaxSizeInBytes = 10 * 1024 * 1024;
     private static readonly TimeSpan DefaultRawDownloadUrlTtl = TimeSpan.FromMinutes(30);
+    private static readonly string[] AllowedCvFolders =
+    [
+      "edumatch/cvs/",
+      "edumatch/registration/cvs/"
+    ];
 
     private static readonly HashSet<string> AvatarExtensions = [".jpg", ".jpeg", ".png", ".webp"];
     private static readonly HashSet<string> AvatarContentTypes = ["image/jpeg", "image/png", "image/webp"];
@@ -178,7 +183,7 @@ namespace EduMatch.Services
       }
 
       var publicId = string.Join('/', segments[publicIdStartIndex..]);
-      if (!publicId.StartsWith("edumatch/cvs/", StringComparison.OrdinalIgnoreCase))
+      if (!AllowedCvFolders.Any(folder => publicId.StartsWith(folder, StringComparison.OrdinalIgnoreCase)))
       {
         throw new ValidationException("URL không thuộc thư mục CV của hệ thống.", "INVALID_CLOUDINARY_CV_FOLDER");
       }

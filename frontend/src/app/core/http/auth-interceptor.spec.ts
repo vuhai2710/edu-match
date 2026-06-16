@@ -76,6 +76,8 @@ describe('authInterceptor', () => {
     session.setUser(refreshedUser);
     authApi.refreshToken.mockReturnValue(
       of({
+        success: true,
+        message: 'refreshed',
         data: {
           accessToken: 'fresh-token',
           refreshToken: 'fresh-refresh',

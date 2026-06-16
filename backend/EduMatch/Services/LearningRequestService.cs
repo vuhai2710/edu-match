@@ -115,10 +115,6 @@ namespace EduMatch.Services
         await _learningRequestRepository.AddAsync(entity);
         await _learningRequestRepository.SaveChangesAsync();
 
-        entity.Student = student.User;
-        entity.Tutor = tutor;
-        entity.Subject = subject;
-
         await _notificationService.SendAsync(
           tutor.UserId,
           "Yêu cầu học tập mới",
@@ -127,6 +123,10 @@ namespace EduMatch.Services
           "LearningRequest",
           entity.Id,
           $"/learning-requests/{entity.Id}");
+
+        entity.Student = student.User;
+        entity.Tutor = tutor;
+        entity.Subject = subject;
 
         return ApiResponse<LearningRequestDto>.SuccessResult(
           LearningRequestMapper.ToDto(entity, validatedTimeSlots),

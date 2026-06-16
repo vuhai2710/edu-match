@@ -1,13 +1,19 @@
 using EduMatch.Common.Exception;
+using EduMatch.DTOs;
 using EduMatch.Repositories.Interfaces;
 using EduMatch.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
+using Microsoft.IdentityModel.Tokens;
+using System.Security.Cryptography;
 using FileEntity = EduMatch.Models.File;
 
 namespace EduMatch.Services
 {
   public class FileService : IFileService
   {
+    private static readonly TimeSpan RegistrationUploadLifetime = TimeSpan.FromHours(24);
+    private const string RegistrationAvatarPurpose = "registration-avatar";
+    private const string RegistrationCvPurpose = "registration-cv";
     private readonly ICloudinaryService _cloudinaryService;
     private readonly IFileRepository _fileRepository;
 
@@ -47,6 +53,59 @@ namespace EduMatch.Services
       };
 
       return await _fileRepository.CreateAsync(file);
+    }
+
+    public async Task<RegistrationFileUploadDto> UploadRegistrationAvatarAsync(IFormFile formFile)
+    {
+      var file = await UploadAvatarAsync(formFile, "edumatch/registration/avatars");
+      return await MarkAsRegistrationDraftAsync(file, RegistrationAvatarPurpose);
+    }
+
+    public async Task<RegistrationFileUploadDto> UploadRegistrationCvAsync(IFormFile formFile)
+    {
+      var file = await UploadCvAsync(formFile, "edumatch/registration/cvs");
+      return await MarkAsRegistrationDraftAsync(file, RegistrationCvPurpose);
+    }
+
+    public async Task<FileEntity> ClaimRegistrationUploadAsync(long fileId, string uploadToken, string purpose)
+    {
+      if (fileId <= 0 || string.IsNullOrWhiteSpace(uploadToken) || string.IsNullOrWhiteSpace(purpose))
+      {
+        throw new ValidationException("Tệp tải lên không hợp lệ.", "INVALID_REGISTRATION_UPLOAD");
+      }
+
+      var file = await _fileRepository.GetByIdAsync(fileId);
+      if (file == null || file.IsDeleted)
+      {
+        throw new NotFoundException("Tệp tải lên không tồn tại.", "REGISTRATION_UPLOAD_NOT_FOUND");
+      }
+
+      if (!file.IsTemporary
+          || file.UsedAt != null
+          || !string.Equals(file.UploadToken, uploadToken.Trim(), StringComparison.Ordinal)
+          || !string.Equals(file.FileType, purpose, StringComparison.OrdinalIgnoreCase))
+      {
+        throw new ValidationException("Tệp tải lên không hợp lệ hoặc đã được sử dụng.", "INVALID_REGISTRATION_UPLOAD");
+      }
+
+      if (file.ExpiresAt.HasValue && file.ExpiresAt <= DateTime.UtcNow)
+      {
+        throw new ValidationException("Tệp tải lên đã hết hạn. Vui lòng tải lại tệp.", "REGISTRATION_UPLOAD_EXPIRED");
+      }
+
+      file.IsTemporary = false;
+      file.UploadToken = null;
+      file.UsedAt = DateTime.UtcNow;
+      file.ExpiresAt = null;
+      file.FileType = purpose == RegistrationAvatarPurpose ? "avatar" : "cv";
+      await _fileRepository.UpdateAsync(file);
+
+      return file;
+    }
+
+    public Task<int> CleanupExpiredRegistrationUploadsAsync(DateTime now)
+    {
+      return _fileRepository.CleanupExpiredTemporaryAsync(now);
     }
 
     public async Task<FileEntity> CreateAvatarReferenceAsync(string fileUrl, string? fileName = null)
@@ -120,6 +179,37 @@ namespace EduMatch.Services
         ".jpg" or ".jpeg" => "image/jpeg",
         _ => "image/jpeg"
       };
+    }
+
+    private async Task<RegistrationFileUploadDto> MarkAsRegistrationDraftAsync(FileEntity file, string purpose)
+    {
+      var token = GenerateUploadToken();
+      var expiresAt = DateTime.UtcNow.Add(RegistrationUploadLifetime);
+
+      file.FileType = purpose;
+      file.IsTemporary = true;
+      file.UploadToken = token;
+      file.ExpiresAt = expiresAt;
+      file.UsedAt = null;
+
+      await _fileRepository.UpdateAsync(file);
+
+      return new RegistrationFileUploadDto
+      {
+        FileId = file.Id,
+        FileUrl = file.FilePath,
+        UploadToken = token,
+        Purpose = purpose,
+        ExpiresAt = expiresAt
+      };
+    }
+
+    private static string GenerateUploadToken()
+    {
+      var bytes = new byte[32];
+      using var rng = RandomNumberGenerator.Create();
+      rng.GetBytes(bytes);
+      return Base64UrlEncoder.Encode(bytes);
     }
   }
 }

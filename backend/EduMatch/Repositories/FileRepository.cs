@@ -26,6 +26,25 @@ namespace EduMatch.Repositories
       return await _context.Files.FirstOrDefaultAsync(file => file.Id == id);
     }
 
+    public async Task<int> CleanupExpiredTemporaryAsync(DateTime now)
+    {
+      var expired = await _context.Files
+        .Where(file => file.IsTemporary
+                       && !file.IsDeleted
+                       && file.UsedAt == null
+                       && file.ExpiresAt != null
+                       && file.ExpiresAt <= now)
+        .ToListAsync();
+
+      foreach (var file in expired)
+      {
+        file.IsDeleted = true;
+        file.UpdatedAt = now;
+      }
+
+      return await _context.SaveChangesAsync();
+    }
+
     public async Task UpdateAsync(FileEntity file)
     {
       _context.Files.Update(file);

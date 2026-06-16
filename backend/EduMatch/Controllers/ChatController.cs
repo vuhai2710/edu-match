@@ -30,6 +30,14 @@ namespace EduMatch.Controllers
       return Ok(ApiResponse<List<ConversationSummaryDto>>.SuccessResult(result));
     }
 
+    [HttpGet("unread-count")]
+    [ProducesResponseType(typeof(ApiResponse<int>), StatusCodes.Status200OK)]
+    [SwaggerOperation(OperationId = "getUnreadChatCount")]
+    public async Task<ActionResult<ApiResponse<int>>> GetUnreadCount()
+    {
+      return Ok(ApiResponse<int>.SuccessResult(await _messageService.GetUnreadCountAsync(GetUserId())));
+    }
+
     [HttpGet("history/{partnerId}")]
     [ProducesResponseType(typeof(ApiResponse<List<MessageDto>>), StatusCodes.Status200OK)]
     [SwaggerOperation(OperationId = "getChatHistory")]

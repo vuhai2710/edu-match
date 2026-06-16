@@ -81,6 +81,11 @@ public class AuthService
     return RegisterAsync(dto, dto);
   }
 
+  public Task<LoginResponseDto> RegisterTutorCompleteAsync(RegisterTutorCompleteDto dto)
+  {
+    return RegisterAsync(dto, null, dto);
+  }
+
   public Task<ApiResponse<LoginResponseDto>> RegisterStudentResponseAsync(RegisterStudentDto dto)
   {
     return ServiceResponse.ExecuteAsync(async () =>
@@ -105,6 +110,15 @@ public class AuthService
     {
       var loginResponse = await GoogleLoginAsync(dto);
       return ApiResponse<LoginResponseDto>.SuccessResult(loginResponse, "Đăng nhập Google thành công", StatusCodes.Status200OK);
+    });
+  }
+
+  public Task<ApiResponse<LoginResponseDto>> RegisterTutorCompleteResponseAsync(RegisterTutorCompleteDto dto)
+  {
+    return ServiceResponse.ExecuteAsync(async () =>
+    {
+      var loginResponse = await RegisterTutorCompleteAsync(dto);
+      return ApiResponse<LoginResponseDto>.SuccessResult(loginResponse, "Đăng ký gia sư thành công", StatusCodes.Status200OK);
     });
   }
 
@@ -505,11 +519,11 @@ public class AuthService
     _logger.LogInformation("Refresh token invalidated for UserId={UserId}", user.Id);
   }
 
-  private async Task<LoginResponseDto> RegisterAsync(RegisterDto dto, RegisterTutorDto? tutorDto)
+  private async Task<LoginResponseDto> RegisterAsync(RegisterDto dto, RegisterTutorDto? tutorDto, RegisterTutorCompleteDto? tutorCompleteDto = null)
   {
-    var role = tutorDto == null ? UserRole.Student : UserRole.Tutor;
+    var role = tutorDto == null && tutorCompleteDto == null ? UserRole.Student : UserRole.Tutor;
 
-    ValidateRegisterDto(dto, tutorDto);
+    ValidateRegisterDto(dto, tutorDto, tutorCompleteDto);
 
     var normalizedEmail = dto.Email.ToLower().Trim();
     var normalizedPhoneNumber = dto.PhoneNumber.Trim();
@@ -563,6 +577,17 @@ public class AuthService
       avatarFile = await _fileService.UploadAvatarAsync(tutorDto.Avatar!);
       cvFile = await _fileService.UploadCvAsync(tutorDto.Cv!);
     }
+    else if (tutorCompleteDto != null)
+    {
+      avatarFile = await _fileService.ClaimRegistrationUploadAsync(
+        tutorCompleteDto.AvatarFileId,
+        tutorCompleteDto.AvatarUploadToken,
+        "registration-avatar");
+      cvFile = await _fileService.ClaimRegistrationUploadAsync(
+        tutorCompleteDto.CvFileId,
+        tutorCompleteDto.CvUploadToken,
+        "registration-cv");
+    }
 
     var user = new User
     {
@@ -584,7 +609,9 @@ public class AuthService
         user.Student = CreateStudentProfile(BuildAddressDto(dto), gradeLevel);
         break;
       case UserRole.Tutor:
-        user.Tutor = CreateTutorProfile(tutorDto!, cvFile);
+        user.Tutor = tutorDto != null
+          ? CreateTutorProfile(tutorDto, cvFile)
+          : CreateTutorProfile(tutorCompleteDto!, cvFile);
         break;
       default:
         throw new AppException("Vai trò đăng ký không được hỗ trợ", 400);
@@ -595,10 +622,16 @@ public class AuthService
 
     AssignProfileCode(user);
 
-    if (tutorDto != null && user.Tutor != null)
+    if (user.Tutor != null)
     {
-      await CreateTutorSubjectsAsync(user.Tutor, tutorDto.SubjectIds);
-      await CreateTutorTeachingLevelsAsync(user.Tutor, tutorDto.TeachingLevels);
+      IEnumerable<long> subjectIds = tutorDto?.SubjectIds
+        ?? tutorCompleteDto?.SubjectIds
+        ?? Enumerable.Empty<long>();
+      IEnumerable<EducationLevel> teachingLevels = tutorDto?.TeachingLevels
+        ?? tutorCompleteDto?.TeachingLevels
+        ?? Enumerable.Empty<EducationLevel>();
+      await CreateTutorSubjectsAsync(user.Tutor, subjectIds);
+      await CreateTutorTeachingLevelsAsync(user.Tutor, teachingLevels);
     }
 
     await _userRepository.SaveChangesAsync();
@@ -765,7 +798,7 @@ public class AuthService
     await _db.SaveChangesAsync();
   }
 
-  private void ValidateRegisterDto(RegisterDto dto, RegisterTutorDto? tutorDto)
+  private void ValidateRegisterDto(RegisterDto dto, RegisterTutorDto? tutorDto, RegisterTutorCompleteDto? tutorCompleteDto = null)
   {
     var errors = new Dictionary<string, string[]>();
 
@@ -816,6 +849,59 @@ public class AuthService
       if (tutorDto.AcademicDegree == null)
       {
         errors[nameof(tutorDto.AcademicDegree)] = ["Trình độ học vấn là bắt buộc."];
+      }
+    }
+
+    if (tutorCompleteDto != null)
+    {
+      if (tutorCompleteDto.AvatarFileId <= 0)
+      {
+        errors[nameof(tutorCompleteDto.AvatarFileId)] = ["Ảnh đại diện là bắt buộc."];
+      }
+
+      if (string.IsNullOrWhiteSpace(tutorCompleteDto.AvatarUploadToken))
+      {
+        errors[nameof(tutorCompleteDto.AvatarUploadToken)] = ["Upload token ảnh đại diện là bắt buộc."];
+      }
+
+      if (tutorCompleteDto.CvFileId <= 0)
+      {
+        errors[nameof(tutorCompleteDto.CvFileId)] = ["CV là bắt buộc."];
+      }
+
+      if (string.IsNullOrWhiteSpace(tutorCompleteDto.CvUploadToken))
+      {
+        errors[nameof(tutorCompleteDto.CvUploadToken)] = ["Upload token CV là bắt buộc."];
+      }
+
+      if (tutorCompleteDto.HourlyRate <= 0)
+      {
+        errors[nameof(tutorCompleteDto.HourlyRate)] = ["Mức lương phải lớn hơn 0."];
+      }
+
+      if (tutorCompleteDto.SubjectIds == null || tutorCompleteDto.SubjectIds.Count == 0)
+      {
+        errors[nameof(tutorCompleteDto.SubjectIds)] = ["Phải chọn ít nhất một môn dạy."];
+      }
+
+      if (tutorCompleteDto.TeachingLevels == null || tutorCompleteDto.TeachingLevels.Count == 0)
+      {
+        errors[nameof(tutorCompleteDto.TeachingLevels)] = ["Phải chọn ít nhất một lớp dạy."];
+      }
+
+      if (tutorCompleteDto.CareerStatus == null)
+      {
+        errors[nameof(tutorCompleteDto.CareerStatus)] = ["Trạng thái gia sư là bắt buộc."];
+      }
+
+      if (string.IsNullOrWhiteSpace(tutorCompleteDto.Major))
+      {
+        errors[nameof(tutorCompleteDto.Major)] = ["Ngành học là bắt buộc."];
+      }
+
+      if (tutorCompleteDto.AcademicDegree == null)
+      {
+        errors[nameof(tutorCompleteDto.AcademicDegree)] = ["Trình độ học vấn là bắt buộc."];
       }
     }
 
@@ -871,6 +957,22 @@ public class AuthService
   }
 
   private Tutor CreateTutorProfile(RegisterTutorDto dto, FileEntity? cvFile)
+  {
+    return new Tutor
+    {
+      Code = _codeGenerator.GenerateTemporaryCode("TUT"),
+      Profile = string.IsNullOrWhiteSpace(dto.Profile) ? null : dto.Profile.Trim(),
+      HourlyRate = dto.HourlyRate,
+      CareerStatus = dto.CareerStatus,
+      Major = dto.Major.Trim(),
+      AcademicDegree = dto.AcademicDegree,
+      Address = _mapper.Map<Address>(BuildAddressDto(dto)),
+      CvFileId = cvFile?.Id,
+      CvFile = cvFile
+    };
+  }
+
+  private Tutor CreateTutorProfile(RegisterTutorCompleteDto dto, FileEntity? cvFile)
   {
     return new Tutor
     {

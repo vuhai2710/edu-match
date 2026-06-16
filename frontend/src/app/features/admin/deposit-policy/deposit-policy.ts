@@ -230,7 +230,7 @@ import { VietnameseDatePickerComponent } from '../../../shared/components/vietna
               </div>
 
               <p class="text-xs text-slate-500 leading-relaxed">
-                Số buổi cọc mặc định áp dụng khi <strong>không có</strong> chính sách theo thời gian
+                Số buổi cọc mặc định áp dụng khi không có chính sách theo thời gian
                 nào đang hiệu lực. Khi đổi cọc mặc định, các khoảng thời gian có chính sách ưu tiên
                 đang chạy vẫn giữ nguyên.
               </p>
@@ -318,7 +318,7 @@ import { VietnameseDatePickerComponent } from '../../../shared/components/vietna
 
               <p class="text-xs text-slate-500 leading-relaxed">
                 Thiết lập số buổi cọc đặc biệt và phần tích chiết khấu tự động cho một khoảng thời
-                gian. Hệ thống sẽ <strong>tự động ưu tiên</strong> áp dụng chính sách này thay cho
+                gian. Hệ thống sẽ tự động ưu tiên áp dụng chính sách này thay cho
                 cọc mặc định khi ngày đặt nằm trong khoảng hiệu lực.
               </p>
 

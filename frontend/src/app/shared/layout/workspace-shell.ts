@@ -1,22 +1,25 @@
 import {
   Component,
   HostListener,
+  Injector,
   OnInit,
   OnDestroy,
   computed,
   inject,
   signal,
 } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { NgClass } from '@angular/common';
 import { Subscription, filter, firstValueFrom, startWith } from 'rxjs';
 
 import { AuthApiService } from '../../api/facades/auth-api';
-import { ChatService, NotificationsService } from '../../api/generated/client/services';
-import { UserRole } from '../../core/auth/session.models';
+import { NotificationsService } from '../../api/generated/client/services';
+import { ApiResponse, UserRole } from '../../core/auth/session.models';
 import { SessionService } from '../../core/auth/session';
 import { SignalrService } from '../../core/realtime/signalr.service';
+import { APP_ENV } from '../../core/config/app-env';
 
 @Component({
   selector: 'app-workspace-shell',
@@ -936,9 +939,10 @@ export class WorkspaceShellComponent implements OnInit, OnDestroy {
   protected readonly session = inject(SessionService);
   private readonly router = inject(Router);
   private readonly notificationsApi = inject(NotificationsService);
-  private readonly chatApi = inject(ChatService);
   private readonly authApi = inject(AuthApiService);
-  private readonly signalrService = inject(SignalrService);
+  private readonly injector = inject(Injector);
+  private readonly http = inject(HttpClient);
+  private readonly env = inject(APP_ENV);
 
   protected readonly globalToast = signal<{ title: string; message: string } | null>(null);
   protected readonly showProfile = signal(false);
@@ -992,16 +996,23 @@ export class WorkspaceShellComponent implements OnInit, OnDestroy {
   private signalrSub?: Subscription;
 
   ngOnInit(): void {
-    void this.loadUnreadCount();
-    void this.loadUnreadChatCount();
+    setTimeout(() => {
+      void this.loadUnreadCount();
+      void this.loadUnreadChatCount();
+      this.startRealtimeSubscriptions();
+    }, 0);
+  }
+
+  private startRealtimeSubscriptions(): void {
+    const signalrService = this.injector.get(SignalrService);
 
     // Subscribe to real-time events
-    this.signalrSub = this.signalrService.notification$.subscribe(() => {
+    this.signalrSub = signalrService.notification$.subscribe(() => {
       this.unreadCount.update((count) => count + 1);
     });
 
     this.signalrSub.add(
-      this.signalrService.message$.subscribe((message) => {
+      signalrService.message$.subscribe((message) => {
         if (message.senderId !== this.session.user()?.id) {
           void this.loadUnreadChatCount();
         }
@@ -1009,13 +1020,13 @@ export class WorkspaceShellComponent implements OnInit, OnDestroy {
     );
 
     this.signalrSub.add(
-      this.signalrService.messagesRead$.subscribe(() => {
+      signalrService.messagesRead$.subscribe(() => {
         void this.loadUnreadChatCount();
       }),
     );
 
     this.signalrSub.add(
-      this.signalrService.notificationUpdated$.subscribe((data) => {
+      signalrService.notificationUpdated$.subscribe((data) => {
         if (data.unreadCount !== undefined) {
           this.unreadCount.set(data.unreadCount);
         } else {
@@ -1025,13 +1036,13 @@ export class WorkspaceShellComponent implements OnInit, OnDestroy {
     );
 
     this.signalrSub.add(
-      this.signalrService.chatUnreadUpdated$.subscribe((data) => {
+      signalrService.chatUnreadUpdated$.subscribe((data) => {
         this.unreadChatCount.update((current) => Math.max(0, current - data.count));
       }),
     );
 
     this.signalrSub.add(
-      this.signalrService.depositPolicyUpdated$.subscribe((data) => {
+      signalrService.depositPolicyUpdated$.subscribe((data) => {
         if (this.session.role() === UserRole.Student) {
           this.globalToast.set({
             title: 'Chính sách đặt cọc thay đổi',
@@ -1168,12 +1179,10 @@ export class WorkspaceShellComponent implements OnInit, OnDestroy {
 
   private async loadUnreadChatCount(): Promise<void> {
     try {
-      const response = await firstValueFrom(this.chatApi.getConversations());
-      const totalUnread = (response.data ?? []).reduce(
-        (acc, conv) => acc + (conv.unreadCount ?? 0),
-        0,
+      const response = await firstValueFrom(
+        this.http.get<ApiResponse<number>>(`${this.env.apiBaseUrl}/api/Chat/unread-count`),
       );
-      this.unreadChatCount.set(totalUnread);
+      this.unreadChatCount.set(response.data ?? 0);
     } catch {
       this.unreadChatCount.set(0);
     }

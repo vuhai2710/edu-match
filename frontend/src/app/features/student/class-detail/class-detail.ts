@@ -387,7 +387,7 @@ import {
 
               <div>
                 <label class="block text-sm font-bold text-slate-700 mb-1"
-                  >Nhận xét chi tiết (Không bắt buộc)</label
+                  >Nhận xét chi tiết</label
                 >
                 <textarea
                   [(ngModel)]="reviewComment"

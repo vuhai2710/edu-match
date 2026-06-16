@@ -9,6 +9,7 @@ namespace EduMatch.Services.Interfaces
     Task<MessageDto> SaveMessageAsync(long senderId, SendMessageDto dto);
     Task<List<MessageDto>> GetConversationAsync(long userId, long partnerId, int page, int pageSize);
     Task<List<ConversationSummaryDto>> GetConversationListAsync(long userId);
+    Task<int> GetUnreadCountAsync(long userId);
     Task MarkAsReadAsync(long userId, long partnerId);
   }
 }

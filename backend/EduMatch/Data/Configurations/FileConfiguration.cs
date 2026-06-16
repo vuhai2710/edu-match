@@ -27,6 +27,14 @@ namespace EduMatch.Data.Configurations
 
       builder.Property(x => x.FilePath)
         .IsRequired();
+
+      builder.Property(x => x.UploadToken)
+        .HasMaxLength(128)
+        .IsRequired(false);
+
+      builder.HasIndex(x => x.UploadToken);
+
+      builder.HasIndex(x => new { x.IsTemporary, x.ExpiresAt });
     }
   }
 }

@@ -12,6 +12,9 @@ namespace EduMatch.Data.Configurations
 
       builder.Property(x => x.Code).IsRequired().HasMaxLength(20);
       builder.HasIndex(x => x.Code).IsUnique();
+      builder.HasIndex(x => new { x.ApprovalStatus, x.CreatedAt });
+      builder.HasIndex(x => x.HourlyRate);
+      builder.HasIndex(x => x.Rating);
 
       builder.Property(x => x.Profile)
         .HasMaxLength(2000)

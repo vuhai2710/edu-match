@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, computed, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Subject, Subscription, firstValueFrom } from 'rxjs';
@@ -103,6 +103,7 @@ import { TactileSelectComponent } from '../../../shared/components/tactile-selec
           <!-- Ward select -->
           <div class="relative">
             <app-tactile-select
+              #wardSelect
               [value]="wardCode()"
               (valueChange)="setWard($event)"
               [options]="wards()"
@@ -425,6 +426,7 @@ export class DiscoverTutorsPage implements OnInit, OnDestroy {
   activeSubjectId = signal<number | null>(null);
   provinceId = signal<number | null>(null);
   wardCode = signal<string | null>(null);
+  wardSelect = viewChild<TactileSelectComponent>('wardSelect');
   isLoading = signal(false);
   isLoadingRecommendations = signal(false);
   isLoadingWards = signal(false);
@@ -610,6 +612,9 @@ export class DiscoverTutorsPage implements OnInit, OnDestroy {
       try {
         const response = await firstValueFrom(this.addressApi.getWards(provinceId));
         this.wards.set(response.data ?? []);
+        setTimeout(() => {
+          this.wardSelect()?.openDropdown();
+        }, 0);
       } catch (error) {
         this.errorMessage.set(getApiErrorMessage(error, 'Không tải được phường / xã.'));
       } finally {
@@ -671,7 +676,7 @@ export class DiscoverTutorsPage implements OnInit, OnDestroy {
   }
 
   recommendationTitle(): string {
-    if (this.isRecommendationFallback()) return 'Gợi ý phổ biến';
+    if (this.isRecommendationFallback()) return 'Gia sư nổi bật';
     return this.hasActiveFilters() ? 'Gợi ý theo lựa chọn của bạn' : 'Gợi ý dành cho bạn';
   }
 

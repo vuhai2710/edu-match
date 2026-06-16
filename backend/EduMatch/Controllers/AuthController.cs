@@ -47,6 +47,15 @@ namespace EduMatch.Controllers
       return Ok(await _authService.RegisterTutorResponseAsync(dto));
     }
 
+    [HttpPost("register/tutor/complete")]
+    [SwaggerOperation(OperationId = "registerTutorComplete")]
+    [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> RegisterTutorComplete([FromBody] RegisterTutorCompleteDto dto)
+    {
+      return Ok(await _authService.RegisterTutorCompleteResponseAsync(dto));
+    }
+
     [HttpPost("login")]
     [AllowAnonymous]
     [EnableRateLimiting("auth-login")]
