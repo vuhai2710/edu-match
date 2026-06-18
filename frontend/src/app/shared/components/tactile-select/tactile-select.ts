@@ -9,14 +9,16 @@ import { Component, model, input, signal, computed, ElementRef, HostListener } f
       <!-- Trigger button -->
       <div 
         (click)="toggleDropdown($event)"
-        class="tactile-input w-full text-sm font-semibold bg-white pl-4 pr-10 py-2.5 cursor-pointer select-none flex items-center justify-between min-h-[46px]"
+        class="tactile-input w-full font-semibold bg-white cursor-pointer select-none flex items-center justify-between"
+        [class]="compact() ? 'text-xs pl-3 pr-8 py-1 min-h-[36px]' : 'text-sm pl-4 pr-10 py-2.5 min-h-[46px]'"
         [class.border-duo-blue]="isOpen()"
         [class.border-b-duo-blue-dark]="isOpen()"
         [class.bg-slate-50]="disabled()"
       >
-        <span [class.text-slate-400]="!selectedValueLabel()" class="truncate pr-4">
+        <span [class.text-slate-400]="!selectedValueLabel()" class="truncate pr-2">
           {{ selectedValueLabel() || placeholder() }}
         </span>
+
         
         <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5" (click)="$event.stopPropagation()">
           <!-- Clear Button -->
@@ -88,6 +90,7 @@ export class TactileSelectComponent {
   clearable = input<boolean>(false);
   defaultValue = input<any>(null);
   showPlaceholderOption = input<boolean>(true);
+  compact = input<boolean>(false);
 
   isOpen = signal(false);
 

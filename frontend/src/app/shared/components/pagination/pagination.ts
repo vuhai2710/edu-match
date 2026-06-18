@@ -1,10 +1,11 @@
 import { Component, computed, EventEmitter, input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { TactileSelectComponent } from '../tactile-select/tactile-select';
 
 @Component({
   selector: 'app-pagination',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, TactileSelectComponent],
   template: `
     <div class="flex flex-col sm:flex-row items-center justify-between gap-4 py-4 px-2 border-t border-slate-100">
       <!-- Left Side: Display Stats & Page Size Dropdown -->
@@ -19,13 +20,16 @@ import { FormsModule } from '@angular/forms';
 
         <div class="flex items-center gap-1.5 shrink-0">
           <span class="text-xs text-slate-400 font-semibold">Hiển thị:</span>
-          <select [ngModel]="pageSize()" 
-                  (ngModelChange)="changePageSize($event)" 
-                  class="tactile-select-compact">
-            @for (size of pageSizeOptions(); track size) {
-              <option [value]="size">{{ size }}</option>
-            }
-          </select>
+          <div class="w-[80px]">
+            <app-tactile-select
+              [value]="pageSize()"
+              (valueChange)="changePageSize($event)"
+              [options]="pageSizeOptions()"
+              [showPlaceholderOption]="false"
+              [clearable]="false"
+              [compact]="true"
+            />
+          </div>
         </div>
       </div>
 
@@ -154,33 +158,6 @@ import { FormsModule } from '@angular/forms';
       background-color: #f1f5f9;
       color: #94a3b8;
       border-color: #e2e8f0;
-    }
-
-    /* Compact Select Dropdown */
-    .tactile-select-compact {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      height: 36px;
-      min-width: 65px;
-      padding: 0 8px;
-      border-radius: 12px;
-      font-family: 'Fredoka', 'Nunito', ui-sans-serif, system-ui, sans-serif;
-      font-weight: 800;
-      font-size: 13px;
-      color: #475569;
-      background-color: #ffffff;
-      border: 2px solid #e2e8f0;
-      border-bottom-width: 4px;
-      border-bottom-color: #cbd5e1;
-      outline: none;
-      cursor: pointer;
-      box-sizing: border-box;
-      transition: all 0.1s ease;
-    }
-    .tactile-select-compact:focus {
-      border-color: #1cb0f6;
-      border-bottom-color: #1899d6;
     }
   `]
 })
