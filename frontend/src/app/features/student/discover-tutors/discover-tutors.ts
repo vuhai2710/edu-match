@@ -63,6 +63,8 @@ import { TactileSelectComponent } from '../../../shared/components/tactile-selec
               [value]="sortSelection()"
               (valueChange)="onSortChange($event)"
               [options]="sortOptions"
+              valueKey="value"
+              labelKey="label"
               [clearable]="true"
               defaultValue="createdat_desc"
               [showPlaceholderOption]="false"
