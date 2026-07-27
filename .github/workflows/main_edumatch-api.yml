@@ -7,6 +7,9 @@ on:
   push:
     branches:
       - main
+    paths:
+      - "backend/EduMatch/**"
+      - ".github/workflows/main_edumatch-api.yml"
   workflow_dispatch:
 
 jobs:
@@ -23,11 +26,14 @@ jobs:
         with:
           dotnet-version: '10.x'
 
+      - name: Restore
+        run: dotnet restore backend/EduMatch/EduMatch.csproj
+
       - name: Build with dotnet
-        run: dotnet build --configuration Release
+        run: dotnet build backend/EduMatch/EduMatch.csproj --configuration Release --no-restore
 
       - name: dotnet publish
-        run: dotnet publish -c Release -o "${{env.DOTNET_ROOT}}/myapp"
+        run: dotnet publish backend/EduMatch/EduMatch.csproj -c Release -o "${{env.DOTNET_ROOT}}/myapp" --no-build
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
