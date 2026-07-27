@@ -1,38 +1,65 @@
-name: Build and deploy ASP.NET Core app to Azure Web App - edumatch-api
+# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
+# More GitHub Actions for Azure: https://github.com/Azure/actions
+
+name: Build and deploy ASP.Net Core app to Azure Web App - edumatch-api
 
 on:
   push:
     branches:
       - main
-    paths:
-      - "backend/EduMatch/**"
-      - ".github/workflows/main_edumatch-api.yml"
   workflow_dispatch:
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: windows-latest
+    permissions:
+      contents: read #This is required for actions/checkout
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up .NET
+      - name: Set up .NET Core
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "10.x"
+          dotnet-version: '10.x'
 
-      - name: Restore
-        run: dotnet restore backend/EduMatch/EduMatch.csproj
+      - name: Build with dotnet
+        run: dotnet build --configuration Release
 
-      - name: Build
-        run: dotnet build backend/EduMatch/EduMatch.csproj --configuration Release --no-restore
+      - name: dotnet publish
+        run: dotnet publish -c Release -o "${{env.DOTNET_ROOT}}/myapp"
 
-      - name: Publish
-        run: dotnet publish backend/EduMatch/EduMatch.csproj -c Release -o publish --no-build
+      - name: Upload artifact for deployment job
+        uses: actions/upload-artifact@v4
+        with:
+          name: .net-app
+          path: ${{env.DOTNET_ROOT}}/myapp
+
+  deploy:
+    runs-on: windows-latest
+    needs: build
+    permissions:
+      id-token: write #This is required for requesting the JWT
+      contents: read #This is required for actions/checkout
+
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v4
+        with:
+          name: .net-app
+      
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_60D4E9E720694EE5AB40CF0A0B841F35 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_E301067E64FA47D0868DDF5E406C942D }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_7058C3B6092244A2A60AE505653E0209 }}
 
       - name: Deploy to Azure Web App
+        id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: "edumatch-api"
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: publish
+          app-name: 'edumatch-api'
+          slot-name: 'Production'
+          package: .
+          
