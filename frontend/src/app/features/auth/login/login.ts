@@ -68,6 +68,39 @@ import { GoogleSignInButtonComponent } from '../../../shared/components/google-s
             <p class="mt-1 text-slate-500">Chào mừng trở lại! Tiếp tục hành trình học tập.</p>
           </div>
 
+          <div class="tactile-card p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+            <div class="flex items-center justify-between flex-wrap gap-1">
+              <span class="text-xs font-black uppercase tracking-wider text-slate-500">Tài khoản thử nghiệm</span>
+              <span class="text-xs font-bold text-slate-600">Mật khẩu: <code class="bg-slate-200/80 px-1.5 py-0.5 rounded text-slate-800 font-mono">123456</code></span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <button
+                type="button"
+                (click)="fillAccount('admin@gmail.com')"
+                class="flex flex-col items-start p-2.5 rounded-xl border-2 border-slate-200 bg-white hover:border-purple-500 hover:bg-purple-50 transition-all text-left cursor-pointer group"
+              >
+                <span class="text-[11px] font-black text-purple-600 uppercase">Admin</span>
+                <span class="text-[11px] font-bold text-slate-600 truncate w-full">admin&#64;gmail.com</span>
+              </button>
+              <button
+                type="button"
+                (click)="fillAccount('ngocchau@gmail.com')"
+                class="flex flex-col items-start p-2.5 rounded-xl border-2 border-slate-200 bg-white hover:border-blue-500 hover:bg-blue-50 transition-all text-left cursor-pointer group"
+              >
+                <span class="text-[11px] font-black text-blue-600 uppercase">Học viên</span>
+                <span class="text-[11px] font-bold text-slate-600 truncate w-full">ngocchau&#64;gmail.com</span>
+              </button>
+              <button
+                type="button"
+                (click)="fillAccount('tran-mai-nhi.11573@gmail.com')"
+                class="flex flex-col items-start p-2.5 rounded-xl border-2 border-slate-200 bg-white hover:border-amber-500 hover:bg-amber-50 transition-all text-left cursor-pointer group"
+              >
+                <span class="text-[11px] font-black text-amber-600 uppercase">Gia sư</span>
+                <span class="text-[11px] font-bold text-slate-600 truncate w-full" title="tran-mai-nhi.11573@gmail.com">tran-mai-nhi...</span>
+              </button>
+            </div>
+          </div>
+
           <form (ngSubmit)="onLogin()" class="tactile-card p-6 sm:p-8 space-y-5">
             <div>
               <label class="block text-sm font-extrabold text-slate-700 mb-1.5">Email</label>
@@ -169,6 +202,14 @@ export class LoginPage {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly session = inject(SessionService);
+
+  fillAccount(selectedEmail: string): void {
+    this.email = selectedEmail;
+    this.password = '123456';
+    this.emailError.set('');
+    this.passwordError.set('');
+    this.errorMessage.set('');
+  }
 
   async onLogin(): Promise<void> {
     this.emailError.set('');
