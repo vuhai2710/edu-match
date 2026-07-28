@@ -22,6 +22,18 @@ using System.Threading.RateLimiting;
 var builder = WebApplication.CreateBuilder(args);
 
 var frontendBaseUrl = builder.Configuration["Frontend:BaseUrl"];
+var allowedOrigins = new[]
+{
+  "https://localhost:4200",
+  "http://localhost:4200",
+  "https://proud-pond-0eab79500.7.azurestaticapps.net",
+  "https://www.edumatch.online",
+  frontendBaseUrl
+}
+  .Where(origin => !string.IsNullOrWhiteSpace(origin))
+  .Select(origin => origin!)
+  .Distinct(StringComparer.OrdinalIgnoreCase)
+  .ToArray();
 
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
@@ -327,10 +339,7 @@ builder.Services.AddCors(options =>
   options.AddPolicy("AllowAngular", policy =>
   {
     policy
-      .WithOrigins(
-        "https://localhost:4200",
-        "http://localhost:4200",
-        frontendBaseUrl!)
+      .WithOrigins(allowedOrigins)
       .AllowAnyHeader()
       .AllowAnyMethod()
       .AllowCredentials();
