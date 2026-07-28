@@ -3,7 +3,7 @@ import { AppEnv } from '../app/core/config/app-env';
 export const environment: AppEnv = {
   production: true,
   appName: 'EduMatch',
-  appBaseUrl: 'https://proud-pond-0eab79500.7.azurestaticapps.net',
+  appBaseUrl: 'https://www.edumatch.online',
   apiBaseUrl: 'https://edumatch-api-gdagajg2gue9atb0.southeastasia-01.azurewebsites.net',
   hubBaseUrl: 'https://edumatch-api-gdagajg2gue9atb0.southeastasia-01.azurewebsites.net',
   googleClientId: '156523713376-8gk7ckvh0332kjgcpbb2qjvq2o4br68i.apps.googleusercontent.com',
